@@ -579,6 +579,21 @@ if ((Test-Path -LiteralPath $overlaySource -PathType Container) -and
             $syncedFiles++
         }
     }
+    elseif (-not (Test-Path -LiteralPath $seedSource -PathType Leaf)) {
+        Write-Host "UWAGA: brak $seedSource - stragan botow nie zostanie odswiezony." -ForegroundColor Yellow
+    }
+
+    # The migrate container's first act is `[ -s playerbots_seed.sql ] || exit 1`.
+    # A missing or empty seed therefore fails the whole start one second after
+    # the database comes up, and used to do so with nothing in the log but
+    # "exit 1". Refuse here, with the path, rather than let compose discover it.
+    if (-not (Test-Path -LiteralPath $seedStaged -PathType Leaf) -or
+        (Get-Item -LiteralPath $seedStaged).Length -eq 0) {
+        throw ("Brak pliku z postaciami botow: $seedStaged (lub jest pusty). " +
+               "Paczka jest niekompletna - uruchom aktualizacje z launchera albo " +
+               "rozpakuj archiwum serwera ponownie. Bez tego pliku playerbot-migrate " +
+               "konczy sie bledem exit 1 przy kazdym starcie.")
+    }
 
     if ($syncedFiles -gt 0) {
         Write-Host "Synchronised $syncedFiles playerbot build input(s) into the build context." -ForegroundColor DarkGray
@@ -606,6 +621,22 @@ try {
     }
     finally { $ErrorActionPreference = $previousPreference }
     if ($upExitCode -ne 0) {
+        # The one line that explains a failed start is inside the container that
+        # failed, and compose's own progress output never shows it. Pull it into
+        # this log so the next report from a player carries the cause, not just
+        # "exit 1". playerbot-migrate is named first because it is the service
+        # that fails fast and blocks everything behind it.
+        $previousPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            Write-Host '--- ostatnie linie logow kontenerow ---' -ForegroundColor DarkGray
+            foreach ($svc in @('playerbot-migrate', 'mariadb', 'game', 'panel')) {
+                Write-Host "[$svc]" -ForegroundColor DarkGray
+                & docker compose logs --no-color --no-log-prefix --tail 40 $svc 2>&1 |
+                    ForEach-Object { Write-Host "  $_" }
+            }
+        }
+        finally { $ErrorActionPreference = $previousPreference }
         throw "docker compose up failed with exit code $upExitCode"
     }
     if ($psExitCode -ne 0) {

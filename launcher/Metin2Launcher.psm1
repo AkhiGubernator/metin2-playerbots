@@ -500,6 +500,12 @@ function Sync-M2PlayerbotOverlay {
             $copied++
         }
     }
+    elseif (-not (Test-Path -LiteralPath $seedSource -PathType Leaf)) {
+        # Silent before: a missing source left the staged copy as it was, and if
+        # that was missing too the start failed a second after the database came
+        # up, with "exit 1" and nothing else. Say which file, and where.
+        Write-Warning "Brak $seedSource - playerbots_seed.sql nie zostal odswiezony."
+    }
 
     return $copied
 }

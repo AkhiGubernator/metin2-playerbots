@@ -481,6 +481,29 @@ function Sync-M2PlayerbotOverlay {
         }
     }
 
+    # The two data files the Dockerfile COPYs from the build context. The
+    # update builds the image straight after the files land - before
+    # start-server.ps1 runs and stages them - and a COPY of a file that is not
+    # there fails the whole build: "special_item_group.moonlight.txt: not
+    # found", five players in the first ten minutes of 1.29.1.
+    foreach ($pair in @(
+            @{ From = 'linux-port\overlays\playerbot\serverfiles\special_item_group.moonlight.txt';
+               To   = 'linux-port\docker\game\special_item_group.moonlight.txt' },
+            @{ From = 'linux-port\overlays\playerbot\serverfiles\mob_drop_item.m3.append.txt';
+               To   = 'linux-port\docker\game\mob_drop_item.m3.append.txt' })) {
+        $dataSource = Join-Path $ServerRoot $pair.From
+        $dataStaged = Join-Path $ServerRoot $pair.To
+        if (-not (Test-Path -LiteralPath $dataSource -PathType Leaf)) { continue }
+        $dataStagedHash = $null
+        if (Test-Path -LiteralPath $dataStaged -PathType Leaf) {
+            $dataStagedHash = (Get-FileHash -LiteralPath $dataStaged -Algorithm SHA256).Hash
+        }
+        if ($dataStagedHash -ne (Get-FileHash -LiteralPath $dataSource -Algorithm SHA256).Hash) {
+            Copy-Item -LiteralPath $dataSource -Destination $dataStaged -Force
+            $copied++
+        }
+    }
+
     # The migrate container mounts linux-port/docker/mariadb/playerbot, so the
     # seed it actually applies is a copy of the overlay's - staged there by
     # prepare-context.sh, which never runs on a player's machine. That copy was

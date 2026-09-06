@@ -60,6 +60,11 @@ linux-port/overlays/playerbot/patches/*.patch
 # a server-side bot cannot cross between cores, so this must ship with it.
 linux-port/docker/game/bin/m2-render-config
 linux-port/docker/game/Dockerfile
+# The chest table the Dockerfile COPYs, at the path the COPY reads it from.
+# The update builds the image the moment the files land, before start-server
+# gets to stage it, so the package puts it there itself.
+linux-port/docker/game/special_item_group.moonlight.txt
+linux-port/docker/game/mob_drop_item.m3.append.txt
 PACZKA_INFO.txt
 CHANGELOG.md
 VERSION

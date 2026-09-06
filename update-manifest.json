@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T13:35:00Z",
-  "statusMessage": "Aktualizacja 1.29.1. Naprawa: szkatulki Blasku Ksiezyca i trzy ksiegi z Metina nie docieraly do graczy w 1.29.0 - zmiana silnika nie trafiala przez aktualizacje; teraz jedzie w paczce. Kowal ze Zwojem Blogoslawienstwa od +6: porazka to spadek o poziom, nie strata, bot uzywa zwoju z plecaka w polu. Nowe mapy dla botow: Gora Sohan (od 26) i Loch Pajakow V1 (od 48). Uwaga: pierwszy start po tej aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T13:41:00Z",
+  "statusMessage": "Aktualizacja 1.29.2. Naprawa aktualizacji 1.29.1: budowanie obrazu padalo na brakujacym pliku tabeli szkatulki (special_item_group.moonlight.txt: not found). Paczka wklada plik prosto do kontekstu obrazu. Kto ma ten blad: klikniecie GRAJ dokancza budowanie. Reszta jak w 1.29.1: szkatulki i trzy ksiegi z Metina u graczy, zwoj w polu, Gora Sohan i Loch Pajakow V1. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.1",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.1/metin2-server-update-1.29.1.zip",
-    "sha256": "CC5D7F672798E0DF6CB0B21EA91DC9AA0A47C7BC05DCD1007A443375C661B055"
+    "version": "1.29.2",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.2/metin2-server-update-1.29.2.zip",
+    "sha256": "1BDB768678B9D9AF81A69338648A98815087B7DDAC7AE469AD552EE6A7EFFD84"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

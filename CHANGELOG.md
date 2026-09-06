@@ -17,6 +17,19 @@ every version here.
 
 ---
 
+## 1.29.2 — 2026-09-06
+
+### Naprawione
+
+- **Aktualizacja do 1.29.1 padała przy budowaniu obrazu.** Nowy plik obrazu
+  kopiuje tabelę szkatułki z kontekstu, a aktualizacja buduje obraz od razu
+  po wgraniu plików, zanim `start-server.ps1` zdąży ją tam podstawić:
+  „special_item_group.moonlight.txt: not found”. Paczka wkłada teraz ten plik
+  (i tabelę dropu M3) prosto do kontekstu, a launcher podstawia je także przy
+  aktualizacji. Kto już ma ten błąd: kliknięcie GRAJ dokańcza budowanie.
+
+---
+
 ## 1.29.1 — 2026-09-06
 
 ### Naprawione

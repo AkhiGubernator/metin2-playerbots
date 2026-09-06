@@ -522,7 +522,9 @@ if ((Test-Path -LiteralPath $overlaySource -PathType Container) -and
         @{ From = 'files\web_admin.quest';      To = 'linux-port\docker\game\quest\web_admin.quest' },
         @{ From = 'files\high_risk.quest';      To = 'linux-port\docker\game\quest\high_risk.quest' },
         @{ From = 'linux-port\overlays\playerbot\serverfiles\mob_drop_item.m3.append.txt';
-           To   = 'linux-port\docker\game\mob_drop_item.m3.append.txt' }
+           To   = 'linux-port\docker\game\mob_drop_item.m3.append.txt' },
+        @{ From = 'linux-port\overlays\playerbot\serverfiles\special_item_group.moonlight.txt';
+           To   = 'linux-port\docker\game\special_item_group.moonlight.txt' }
     )
     foreach ($pair in $stagedPairs) {
         $from = Join-Path $PSScriptRoot $pair.From

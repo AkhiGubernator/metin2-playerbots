@@ -45,6 +45,12 @@ linux-port/overlays/playerbot/tools/generate_seed.py
 # sides disagree.
 linux-port/overlays/playerbot/src/game/src/playerbot_*
 linux-port/docker/game/src/server/game/src/playerbot_*
+# Engine files carrying an overlay patch added after the full package was
+# built. prepare-context.sh never runs on a player's machine, so a patch that
+# only lives under overlays/playerbot/patches reaches nobody; the staged,
+# patched file does - the same way the playerbot sources do.
+linux-port/docker/game/src/server/game/src/item_manager.cpp
+linux-port/docker/game/src/server/game/src/config.cpp
 # The engine patches, by pattern for the same reason as the sources above: a
 # new one must not need an edit here to reach the people running the server.
 # The launcher applies whatever it finds in that directory and decides for
@@ -53,6 +59,7 @@ linux-port/overlays/playerbot/patches/*.patch
 # Assigns maps to game cores. The bots' route now includes Orc Valley, and
 # a server-side bot cannot cross between cores, so this must ship with it.
 linux-port/docker/game/bin/m2-render-config
+linux-port/docker/game/Dockerfile
 PACZKA_INFO.txt
 CHANGELOG.md
 VERSION

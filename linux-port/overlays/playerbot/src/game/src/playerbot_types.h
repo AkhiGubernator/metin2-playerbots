@@ -736,6 +736,12 @@ namespace
 	// fight and refused by the engine while the last one still runs, so a
 	// minute between attempts costs nothing and keeps the log readable.
 	const DWORD PLAYERBOT_MOONLIGHT_CHEST_VNUM = 50011;
+	// The Forgetting Scroll (ITEM_SKILLFORGET): one level off a skill and the
+	// point back. A skill that reached seventeen without turning Master is
+	// left there rather than pushed on - every further point is a point the
+	// bot never gets back - and a scroll from a counter buys another roll.
+	const DWORD PLAYERBOT_SKILL_FORGET_SCROLL_VNUM = 70037;
+	const BYTE PLAYERBOT_SKILL_MASTER_TRY_LEVEL = 17;
 	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
 	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
 	const DWORD PLAYERBOT_BOOSTER_VNUMS[] = { 71044, 71045 };

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T17:16:00Z",
-  "statusMessage": "Aktualizacja 1.29.7. Gora Sohan botow to teraz prawdziwa mapa 61 (Zarazeni 49-58, lod 62-66) dla botow od 48; mapa 43 byla druga wioska Jinno i boty z niej wracaja do Bokjung. Migrator nie sciaga juz botow na srodek Doliny przy kazdym starcie. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T18:15:00Z",
+  "statusMessage": "Aktualizacja 1.29.8. W panelu (zachowanie botow) mozna wylaczyc napisy botow nad glowa; wolanie o +7/+8/+9 zostaje. Srebrne i zlote skrzynie otwierane kluczem. Umiejetnosci zatrzymuja sie na 17 punktach, a Zwoj Zapomnienia z targowiska daje kolejne losowanie Mistrza. Boty od 48 ida do Lochu Pajakow i na Sohan. Panel liczy 7 misji Biologa. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.7",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.7/metin2-server-update-1.29.7.zip",
-    "sha256": "C513EA223A77958F199FF7B8E71014162D85D404AFFD2D521D7220BC012DBC6B"
+    "version": "1.29.8",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.8/metin2-server-update-1.29.8.zip",
+    "sha256": "734FABA6C84620A0523ECD60B3DE1CB891A89603D3C1DBFFED490EC550D978F0"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -290,6 +290,10 @@ namespace
 		// name of the stall they are deciding whether to open.
 		if (ch && ch->GetMyShop())
 			return;
+		// The operator's switch in the panel. The status text still goes to the
+		// panel's snapshot; only the line over the head is silenced.
+		if (!IsPlayerBotOverheadChatEnabled())
+			return;
 		if (!ch)
 			return;
 

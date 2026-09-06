@@ -29,6 +29,7 @@ BIOLOGIST_MISSIONS = (
     ("make_herb_lv15", 15, "Korzeń Gango", 5),
     ("make_herb_lv20", 20, "Bez", 10),
     ("make_herb_lv25", 25, "Grzyb Tue", 10),
+    ("collect_quest_lv30", 30, "Ząb Orka", 10),
 )
 
 # The official ``special.levelup_quest`` choices for the M1/M2 stage.  The
@@ -856,6 +857,7 @@ AI_WEIGHT_KEYS = [
 def read_ai_weights():
     """What the file says now. Anything missing or unreadable is neutral."""
     vals = {k: AI_W_NEUTRAL for k, _ in AI_WEIGHT_KEYS}
+    vals["CHAT"] = 1
     try:
         with open(AI_WEIGHTS, encoding="utf-8", errors="replace") as fh:
             for line in fh:
@@ -866,6 +868,9 @@ def read_ai_weights():
                 if len(parts) < 2:
                     continue
                 name = parts[0].upper()
+                if name == "CHAT":
+                    vals["CHAT"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                    continue
                 if name not in vals:
                     continue
                 try:
@@ -890,6 +895,8 @@ def write_ai_weights(vals):
             ""]
     for name, _ in AI_WEIGHT_KEYS:
         body.append("%s\t%d" % (name, vals[name]))
+    # Not a weight: whether bots say what they are doing over their heads.
+    body.append("CHAT\t%d" % (1 if vals.get("CHAT", 1) else 0))
     tmp = AI_WEIGHTS + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(body) + "\n")
@@ -2611,6 +2618,13 @@ T.update({
                   "pl":"Każda liczba to preferencja, nie rozkaz. 100 to dokładnie tak, jak serwer został zbudowany; 25 znaczy, że wybierze to cztery razy mniej botów, a 250 \u2014 dwa i pół raza więcej. Ucieczka z przegranej walki, wybór profesji i zdobycie broni nigdy nie podlegają tym suwakom \u2014 to nie są preferencje.",
                   "de":"Jede Zahl hier ist eine Vorliebe, kein Befehl. 100 ist genau so, wie der Server gebaut wurde; 25 heißt, ein Viertel so viele Bots wählen es, 250 zweieinhalbmal so viele. Überleben, Berufswahl und Waffensuche bleiben unberührt \u2014 das sind keine Vorlieben.",
                   "tr":"Buradaki her sayı bir tercih, emir değil. 100, sunucunun yapıldığı hâldir; 25 dörtte bir kadar bot bunu seçer, 250 iki buçuk katı. Hayatta kalma, meslek seçimi ve silah bulma bunlardan etkilenmez \u2014 onlar tercih değildir."},
+ "ai_chat":      {"en":"Bots talk over their heads","pl":"Boty piszą nad głową, co robią",
+                  "de":"Bots reden über ihren Köpfen","tr":"Botlar başlarının üstünde konuşur"},
+ "ai_chat_help": {"en":"The line over a bot's head (hunting, off to the blacksmith, fishing). Off for players who call it spam. The shout on the world channel about a +7/+8/+9 refine stays either way.",
+                  "pl":"Napis nad głową bota (poluje, idzie do kowala, łowi). Wyłącz dla graczy, którym to przeszkadza. Wołanie na czacie świata o ulepszeniu na +7/+8/+9 zostaje niezależnie od tego.",
+                  "de":"Die Zeile über dem Kopf eines Bots (jagt, geht zum Schmied, angelt). Aus für Spieler, die es Spam nennen. Der Ruf im Weltkanal über ein +7/+8/+9-Upgrade bleibt so oder so.",
+                  "tr":"Botun başının üstündeki satır (avlanıyor, demirciye gidiyor, balık tutuyor). Spam diyen oyuncular için kapatın. Dünya kanalındaki +7/+8/+9 bağırışı her halükârda kalır."},
+ "ai_chat_on":   {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
  "ai_live":      {"en":"Saved. The bots pick this up within five seconds \u2014 no restart, nobody is disconnected.",
                   "pl":"Zapisano. Boty odczytają to w ciągu pięciu sekund \u2014 bez restartu, nikt nie zostaje rozłączony.",
                   "de":"Gespeichert. Die Bots übernehmen das binnen fünf Sekunden \u2014 kein Neustart, niemand fliegt raus.",
@@ -4165,6 +4179,11 @@ TPL_AI = BASE.replace("__BODY__", """
 <div class="card">
 <form method="post">
 <input type="hidden" name="_csrf" value="{{csrf_token}}">
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">💬 {{t('ai_chat')}}</h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_chat_help')}}</p>
+  <label><input type="checkbox" name="CHAT" value="1" {% if cur.get('CHAT', 1) %}checked{% endif %}> {{t('ai_chat_on')}}</label>
+</div>
 {% for name, emoji in keys %}
 <div style="margin-bottom:18px">
   <h3 style="margin:0 0 2px">{{emoji}} {{t('aiw_' ~ name)}}
@@ -4248,7 +4267,7 @@ JOB_NAMES_MAP = {
 BIOLOGIST_NAMES_EN = {
  "make_herb_lv4":"Peach Blossom","make_herb_lv7":"Bellflower",
  "make_herb_lv10":"Kaki Blossom","make_herb_lv15":"Gango Root",
- "make_herb_lv20":"Lilac","make_herb_lv25":"Tue Mushroom",
+ "make_herb_lv20":"Lilac","make_herb_lv25":"Tue Mushroom","collect_quest_lv30":"Orc Tooth",
 }
 
 def localized_job_name(job, language=None):
@@ -5063,7 +5082,7 @@ function renderRankings() {
     } else if (g_selectedRankCategory === 'horse') {
       detailStr = '<span style="color:#c084fc;font-weight:700">' + I18N.horse_lv + ' ' + (b.horse_level || 0) + '</span>';
     } else if (g_selectedRankCategory === 'biologist') {
-      detailStr = '<span style="color:#4ade80;font-weight:700">' + (b.biologist_label || '0/6') + '</span>';
+      detailStr = '<span style="color:#4ade80;font-weight:700">' + (b.biologist_label || '0/7') + '</span>';
     } else if (g_selectedRankCategory === 'hunting') {
       detailStr = '<span style="color:#fb923c;font-weight:700">' + (b.hunting_label || I18N.none) + '</span>';
     } else if (g_selectedRankCategory === 'shops') {
@@ -5755,7 +5774,7 @@ function openBotModal(pid) {
               '<div style="grid-column:1 / -1"><b>' + I18N.current_goal + ':</b> <span style="color:#60a5fa;font-weight:700">' + escapeHtml(p.goal) + '</span></div>' +
               '<div style="grid-column:1 / -1"><b>' + I18N.action + ':</b> <span style="color:#ffd700">' + escapeHtml(p.action) + '</span></div>' +
               '<div><b>' + I18N.horse + ':</b> <span style="color:#c084fc;font-weight:700">Lv ' + (p.horse_level || 0) + '</span></div>' +
-              '<div><b>' + I18N.biologist + ':</b> <span style="color:#4ade80;font-weight:700">' + (p.biologist_completed || 0) + '/6</span></div>' +
+              '<div><b>' + I18N.biologist + ':</b> <span style="color:#4ade80;font-weight:700">' + (p.biologist_completed || 0) + '/7</span></div>' +
               '<div style="grid-column:1 / -1"><b>' + I18N.bio_stage + ':</b> <span style="color:#86efac">' + (p.biologist_label || I18N.no_data) + '</span></div>' +
               '<div style="grid-column:1 / -1"><b>' + I18N.hunting + ':</b> <span style="color:#fb923c">' + (p.hunting_label || I18N.no_data) + '</span></div>' +
               '</div>';
@@ -8561,6 +8580,7 @@ def ai_weights():
             # range, so a value that is out of range came from somewhere else and
             # the sane answer is the nearest legal one, not an error page.
             vals[name] = max(AI_W_MIN, min(AI_W_MAX, v))
+        vals["CHAT"] = 1 if request.form.get("CHAT") else 0
         try:
             write_ai_weights(vals)
         except OSError:

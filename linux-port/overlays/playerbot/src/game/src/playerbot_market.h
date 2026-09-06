@@ -97,6 +97,10 @@ namespace
 		if (offer->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM)
 			return CanPlayerBotAdvanceHorse(ch);
 
+		// A Forgetting Scroll, while a skill stands at seventeen unmastered.
+		if (offer->GetVnum() == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+			return GetPlayerBotStuckSkill(ch) != 0;
+
 		// A level-30 weapon of its own class, when it has none. This is the item
 		// bots cross the world to farm; buying one off a counter is the whole
 		// point of there being a market.
@@ -140,6 +144,9 @@ namespace
 			return true;
 		// A horse medal, while there is still a horse to raise.
 		if (CanPlayerBotAdvanceHorse(ch))
+			return true;
+		// A Forgetting Scroll for a skill stuck at seventeen.
+		if (GetPlayerBotStuckSkill(ch) != 0)
 			return true;
 		// And the level-30 weapon it would otherwise cross the world to farm.
 		return ch->GetLevel() >= 30 && !HasPlayerBotSpecialLevel30Weapon(ch, false);

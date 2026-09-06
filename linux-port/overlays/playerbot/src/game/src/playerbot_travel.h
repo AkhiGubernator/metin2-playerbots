@@ -200,18 +200,11 @@ namespace
 
 		const BYTE level = ch->GetLevel();
 		const DWORD draw = PlayerBotNavHash(ch->GetPlayerID() ^ 0x45534f54U);
-		// Forty-eight and up: the Spider Dungeon, Mount Sohan and the valley's
-		// camps share the population three ways, decided once per character so
-		// the answer does not change under a bot halfway there.
+		// Forty-eight and up: the Spider Dungeon for half, Mount Sohan for the
+		// other half, decided once per character so the answer does not change
+		// under a bot halfway there. The valley is for those still short of it.
 		if (level >= PLAYERBOT_SPIDER_MIN_LEVEL && level >= PLAYERBOT_SOHAN_MIN_LEVEL)
-		{
-			switch (draw % 3U)
-			{
-				case 0: return PLAYERBOT_MAP_SPIDER_V1;
-				case 1: return PLAYERBOT_MAP_SOHAN;
-				default: break;
-			}
-		}
+			return (draw & 1U) != 0 ? PLAYERBOT_MAP_SPIDER_V1 : PLAYERBOT_MAP_SOHAN;
 		if (level >= PLAYERBOT_ORC_VALLEY_MIN_LEVEL && level <= PLAYERBOT_ORC_VALLEY_MAX_LEVEL)
 			return PLAYERBOT_MAP_ORC_VALLEY;
 		// Thirty to thirty-five: the Fanatic islands and the desert share the

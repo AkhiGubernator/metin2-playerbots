@@ -551,6 +551,10 @@ namespace
 		// rank this high - the rest of ITEM_MATERIAL is scenery to an anvil.
 		if (IsPlayerBotTradeableMaterial(item))
 			return 500;
+		// A Forgetting Scroll sells well; the keeper keeps it only while one of
+		// its own skills is waiting for it.
+		if (item->GetVnum() == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+			return GetPlayerBotStuckSkill(ch) != 0 ? -1 : 800;
 		if (item->GetRefinedVnum() == 0 && item->GetType() == ITEM_MATERIAL)
 			return 200;
 		// Skill books. Stock for everyone; the Metin dropper's whole trade, so

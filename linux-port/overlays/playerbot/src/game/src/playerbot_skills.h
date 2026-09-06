@@ -335,6 +335,46 @@ namespace
 		return ch->GetSkillGroup() == bGroup;
 	}
 
+	// The first skill of the build that stands at seventeen or above and is
+	// still not Master: the one a Forgetting Scroll is for. Zero when none.
+	DWORD GetPlayerBotStuckSkill(LPCHARACTER ch)
+	{
+		if (!ch || ch->GetSkillGroup() == 0)
+			return 0;
+		const TJobSkillBuild build = GetPlayerBotSkillBuild(ch->GetJob(), ch->GetSkillGroup(), ch->GetPlayerID());
+		for (BYTE i = 0; i < build.bSkillCount; ++i)
+		{
+			const DWORD dwSkillVnum = build.dwSkills[i];
+			if (dwSkillVnum != 0 && ch->GetSkillMasterType(dwSkillVnum) == SKILL_NORMAL &&
+					ch->GetSkillLevel(dwSkillVnum) >= PLAYERBOT_SKILL_MASTER_TRY_LEVEL)
+				return dwSkillVnum;
+		}
+		return 0;
+	}
+
+	// The scroll, if the bag holds one: one level off the stuck skill, the
+	// point back, and the next pass rolls for Master again at seventeen. The
+	// engine reads the skill from the item's first socket.
+	bool UsePlayerBotForgetScroll(LPCHARACTER ch, DWORD dwSkillVnum)
+	{
+		if (!ch || dwSkillVnum == 0 || !ch->IsItemLoaded())
+			return false;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->GetVnum() != PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+				continue;
+			const BYTE before = ch->GetSkillLevel(dwSkillVnum);
+			item->SetSocket(0, (long)dwSkillVnum);
+			ch->UseItem(TItemPos(INVENTORY, cell));
+			sys_log(0, "PLAYERBOT_AI: forget scroll pid=%u name=%s skill=%u level=%u->%u points=%d",
+					ch->GetPlayerID(), ch->GetName(), dwSkillVnum, before, ch->GetSkillLevel(dwSkillVnum),
+					ch->GetPoint(POINT_SKILL));
+			return ch->GetSkillLevel(dwSkillVnum) < before;
+		}
+		return false;
+	}
+
 	void ManagePlayerBotSkills(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || ch->GetLevel() < 5 || dwNow < state.dwNextSkillCheckTime)
@@ -391,12 +431,20 @@ namespace
 			}
 		}
 
-		// Second pass: level primary max skill up to Master (17-20)
+		// A skill that reached seventeen and did not turn Master waits for a
+		// Forgetting Scroll instead of eating the points to twenty: the engine
+		// rolls at every point from seventeen on, and a scroll from the market
+		// buys the same roll back for the price of one level.
+		const DWORD dwStuckSkill = GetPlayerBotStuckSkill(ch);
+		if (dwStuckSkill != 0)
+			UsePlayerBotForgetScroll(ch, dwStuckSkill);
+
+		// Second pass: level primary max skill up to the Master roll at seventeen
 		if (build.dwPrimaryMaxSkill != 0 && ch->GetPoint(POINT_SKILL) > 0)
 		{
 			while (ch->GetPoint(POINT_SKILL) > 0 &&
 					ch->GetSkillMasterType(build.dwPrimaryMaxSkill) == SKILL_NORMAL &&
-					ch->GetSkillLevel(build.dwPrimaryMaxSkill) < 20)
+					ch->GetSkillLevel(build.dwPrimaryMaxSkill) < PLAYERBOT_SKILL_MASTER_TRY_LEVEL)
 			{
 				const BYTE bOldLevel = ch->GetSkillLevel(build.dwPrimaryMaxSkill);
 				ch->SkillLevelUp(build.dwPrimaryMaxSkill);
@@ -417,7 +465,7 @@ namespace
 
 			while (ch->GetPoint(POINT_SKILL) > 0 &&
 					ch->GetSkillMasterType(dwSkillVnum) == SKILL_NORMAL &&
-					ch->GetSkillLevel(dwSkillVnum) < 20)
+					ch->GetSkillLevel(dwSkillVnum) < PLAYERBOT_SKILL_MASTER_TRY_LEVEL)
 			{
 				const BYTE bOldLevel = ch->GetSkillLevel(dwSkillVnum);
 				ch->SkillLevelUp(dwSkillVnum);

@@ -17,6 +17,36 @@ every version here.
 
 ---
 
+## 1.29.8 — 2026-09-06
+
+### Nowe
+
+- **Srebrne i złote skrzynie otwierane kluczem.** Bot, który ma skrzynię
+  skarbów i pasujący klucz, używa klucza na skrzyni tak jak gracz: silnik
+  zabiera oboje i wydaje zawartość. Skrzynie i klucze nie idą do handlarza.
+- **Siedemnaście punktów i Zwój Zapomnienia.** Silnik losuje Mistrza przy
+  każdym punkcie od siedemnastego; bot wbijał do dwudziestu i tracił punkty.
+  Teraz zatrzymuje się na 17, a gdy Mistrz nie wszedł, szuka na targowisku
+  Zwoju Zapomnienia (70037, wypada z potworów): zwój cofa umiejętność o jeden
+  i oddaje punkt, bot wbija siedemnasty ponownie i losuje jeszcze raz. Bot
+  ze zwojem, któremu nie jest potrzebny, wystawia go na ladę; zwój nie jest
+  śmieciem.
+- **Boty od 48 idą tylko do Lochu Pająków i na Sohan**, po połowie. Dolina
+  zostaje dla 36–47, więc na obu wysokich mapach widać kogoś, mimo że
+  populacja sięga dopiero 50 poziomu.
+- **Przełącznik w panelu: czy boty piszą nad głową, co robią.** Zakładka
+  zachowania botów ma pole „Boty piszą nad głową, co robią”; wyłączone
+  ucisza napisy nad głowami (poluje, idzie do kowala, łowi) dla graczy,
+  którym to przeszkadza. Rdzeń odczytuje to w pięć sekund, bez restartu.
+  Wołanie na czacie świata o ulepszeniu na +7/+8/+9 zostaje niezależnie.
+
+### Naprawione
+
+- **Panel: Biolog liczył 6 misji, boty mają 7.** Ząb Orka dodany do listy
+  panelu (ranking, karta bota, etap), licznik 0/7.
+
+---
+
 ## 1.29.7 — 2026-09-06
 
 ### Naprawione

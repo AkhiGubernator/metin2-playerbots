@@ -75,6 +75,11 @@ namespace
 	};
 
 	int s_aiPlayerBotWeights[PLAYERBOT_WEIGHT_MAX];
+	// Whether bots say what they are doing over their heads. Off is what
+	// players who called it spam asked for; the refine shouts on the world
+	// channel are not covered - those are one line every few minutes.
+	bool s_bPlayerBotOverheadChat = true;
+	bool s_bPlayerBotOverheadChatReported = true;
 	bool s_bPlayerBotWeightsInitialised = false;
 	DWORD s_dwPlayerBotWeightNextCheck = 0;
 	time_t s_tPlayerBotWeightMtime = 0;
@@ -92,6 +97,7 @@ namespace
 	{
 		for (int i = 0; i < PLAYERBOT_WEIGHT_MAX; ++i)
 			s_aiPlayerBotWeights[i] = PLAYERBOT_WEIGHT_NEUTRAL;
+		s_bPlayerBotOverheadChat = true;
 		s_bPlayerBotWeightsInitialised = true;
 	}
 
@@ -120,6 +126,22 @@ namespace
 
 	void ApplyPlayerBotWeightLine(const char* szKey, long value)
 	{
+		// Not a weight: a switch, in the same file because the same five-second
+		// reload already delivers it to a running core.
+		if (PlayerBotWeightNameEquals(szKey, "CHAT"))
+		{
+			const bool enabled = value != 0;
+			// Reported against what was last reported, not the current flag: the
+			// reload resets the flag before this line is read, so "on" would never
+			// be seen as a change.
+			if (enabled != s_bPlayerBotOverheadChatReported)
+			{
+				sys_log(0, "PLAYERBOT_CONFIG: overhead chat %s", enabled ? "on" : "off");
+				s_bPlayerBotOverheadChatReported = enabled;
+			}
+			s_bPlayerBotOverheadChat = enabled;
+			return;
+		}
 		for (size_t i = 0; i < sizeof(PLAYERBOT_WEIGHT_NAMES) /
 				sizeof(PLAYERBOT_WEIGHT_NAMES[0]); ++i)
 		{
@@ -216,6 +238,13 @@ namespace
 		s_tPlayerBotWeightMtime = st.st_mtime;
 		s_lPlayerBotWeightSize = (long)st.st_size;
 		ReadPlayerBotWeightFile(szPath);
+	}
+
+	bool IsPlayerBotOverheadChatEnabled()
+	{
+		if (!s_bPlayerBotWeightsInitialised)
+			ResetPlayerBotWeights();
+		return s_bPlayerBotOverheadChat;
 	}
 
 	int GetPlayerBotWeight(BYTE bWeight)

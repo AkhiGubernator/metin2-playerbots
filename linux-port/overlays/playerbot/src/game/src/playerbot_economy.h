@@ -300,6 +300,12 @@ namespace
 		// and big potions it holds carry ANTI_SELL and never reach this rule.
 		if (vnum == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
 			return false;
+		// A treasure chest waits for its key, a key for its chest, and a
+		// Forgetting Scroll for a skill stuck at seventeen - this bot's or, across
+		// a counter, another's.
+		if (item->GetType() == ITEM_TREASURE_BOX || item->GetType() == ITEM_TREASURE_KEY ||
+				vnum == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+			return false;
 
 		// Fishing tackle and the catch worth keeping. Pearls are the entire point
 		// of a fishing trip -- they are what carries equipment to +7/+8/+9 -- and a

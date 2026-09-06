@@ -24,6 +24,32 @@ namespace
 		if (!ch || !ch->IsItemLoaded() || dwNow < state.dwNextChestTime)
 			return false;
 		state.dwNextChestTime = dwNow + PLAYERBOT_CHEST_INTERVAL;
+		// A treasure chest (the silver and gold ones) opens with a key, not by
+		// itself: the engine's path is "use the key on the chest", which removes
+		// both and hands out the chest's group. Any key whose lock value matches.
+		for (WORD boxCell = 0; boxCell < INVENTORY_MAX_NUM; ++boxCell)
+		{
+			LPITEM box = ch->GetInventoryItem(boxCell);
+			if (!box || box->GetType() != ITEM_TREASURE_BOX)
+				continue;
+			for (WORD keyCell = 0; keyCell < INVENTORY_MAX_NUM; ++keyCell)
+			{
+				LPITEM key = ch->GetInventoryItem(keyCell);
+				if (!key || key->GetType() != ITEM_TREASURE_KEY || key->GetValue(0) != box->GetValue(0))
+					continue;
+				if (ch->GetEmptyInventory(1) < 0)
+					return false;
+				const DWORD boxVnum = box->GetVnum(), keyVnum = key->GetVnum();
+				const int before = ch->GetEmptyInventory(1);
+				if (ch->UseItem(TItemPos(INVENTORY, keyCell), TItemPos(INVENTORY, boxCell)))
+				{
+					sys_log(0, "PLAYERBOT_CHEST: treasure pid=%u name=%s box=%u key=%u free_before=%d free_after=%d",
+							ch->GetPlayerID(), ch->GetName(), boxVnum, keyVnum, before, ch->GetEmptyInventory(1));
+					return true;
+				}
+				break;
+			}
+		}
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);

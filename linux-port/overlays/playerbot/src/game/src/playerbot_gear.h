@@ -320,7 +320,13 @@ namespace
 				}
 				else if (ch->GetJob() == JOB_WARRIOR)
 				{
-					if (ch->GetSkillGroup() == 2 && item->GetSubType() == WEAPON_TWO_HANDED)
+					// The two-handed weapon is worth the preference once the bot
+					// fights from the battle horse (level 11): that is where a
+					// Mental Warrior breaks Metin stones with it. Before that the
+					// flat bonus made a +4 spike win over a +6 sword with a
+					// thirty-percent bonus against monsters.
+					if (ch->GetSkillGroup() == 2 && item->GetSubType() == WEAPON_TWO_HANDED &&
+							ch->GetHorseLevel() >= PLAYERBOT_BATTLE_HORSE_LEVEL)
 						score += 200000; // Prefer two-handed for Mental Warrior
 					else if (ch->GetSkillGroup() == 1 && item->GetSubType() == WEAPON_SWORD)
 						score += 200000; // Prefer sword for Body Warrior

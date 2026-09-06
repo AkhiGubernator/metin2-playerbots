@@ -248,6 +248,12 @@ function Rebuild-Server {
     $previousPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
+        # `up --build` on a fresh engine has raced its own pull: the images
+        # were built, then "No such image: mariadb:10.11" while creating the
+        # database container, and the update was reported as failed although
+        # the second click succeeded. Pull what is not built first; a failure
+        # here is not final, `up` tries again.
+        docker compose --project-directory $composeDir -f $composeFile pull --ignore-buildable 2>&1 | Out-Null
         docker compose --project-directory $composeDir -f $composeFile up -d --build
         $buildExit = $LASTEXITCODE
     }

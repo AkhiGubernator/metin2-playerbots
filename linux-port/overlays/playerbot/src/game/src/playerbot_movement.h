@@ -489,13 +489,20 @@ namespace
 	bool ResumePlayerBotParkedRoute(LPCHARACTER ch, TPlayerBotAIState& state,
 			CPlayerBotNavigation& navigation, long mapIndex, long destX, long destY)
 	{
-		if (state.vecParkedRoute.empty() || state.lParkedMapIndex != mapIndex ||
-				DISTANCE_APPROX(destX - state.lParkedDestX, destY - state.lParkedDestY) >
-						PLAYERBOT_NAV_GOAL_REPLAN_DISTANCE)
+		if (state.vecParkedRoute.empty())
+			return false;
+		if (state.lParkedMapIndex != mapIndex)
 		{
 			state.vecParkedRoute.clear();
 			return false;
 		}
+		// A different destination is the fight itself - the step towards the
+		// monster, the walk to the drop - not a change of mind. The parked
+		// route waits for the hub to be asked for again; dropping it here is
+		// what left seven resumes a minute against a hundred far plans.
+		if (DISTANCE_APPROX(destX - state.lParkedDestX, destY - state.lParkedDestY) >
+				PLAYERBOT_NAV_GOAL_REPLAN_DISTANCE)
+			return false;
 		size_t bestIndex = state.vecParkedRoute.size();
 		int bestDistance = PLAYERBOT_NAV_RESUME_DISTANCE;
 		for (size_t i = 0; i < state.vecParkedRoute.size(); ++i)

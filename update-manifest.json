@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T15:15:00Z",
-  "statusMessage": "Aktualizacja 1.29.3. Misje polowan do 55 poziomu (boty staly na misjach z 14-17 poziomu), Zab Orka u Biologa, misja Biologa brana tam, gdzie bot stoi. Naprawy: paczka rozpakowana recznie bez pliku .env dostaje go automatycznie (haslo panelu w oknie i w linux-port/docker/.env), zbieranie logow bez .env nie pada, patch szkatulek naklada sie na czystej instalacji Linux. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T15:43:00Z",
+  "statusMessage": "Aktualizacja 1.29.4. Wojownik mentalny nie bierze juz iglicy +4 zamiast miecza +6 - premia za bron dwureczna dziala od 11 poziomu konia. Trasa przerwana walka jest wznawiana (mniejsze obciazenie procesora). Aktualizacja na swiezym Dockerze nie zglasza falszywego bledu budowy. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.3",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.3/metin2-server-update-1.29.3.zip",
-    "sha256": "A95DE71A5C363A33FEDFF33C9A30DD6A3911F73F7BD19A8F8300EADE5ABE5773"
+    "version": "1.29.4",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.4/metin2-server-update-1.29.4.zip",
+    "sha256": "A7888227619047F416B83F8305FD1105BC87A51CFC2607AB97EE87E01C962734"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

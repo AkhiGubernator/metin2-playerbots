@@ -17,6 +17,28 @@ every version here.
 
 ---
 
+## 1.29.4 — 2026-09-06
+
+### Naprawione
+
+- **Wojownik mentalny brał iglicę +4 zamiast miecza +6 z 30% na potwory.**
+  Premia +200000 punktów za broń dwuręczną biła każdą różnicę w ulepszeniu i
+  bonusach. Premia działa teraz dopiero od 11 poziomu konia (koń bojowy) —
+  wtedy dwuręczna ma sens, bo bot bije nią Metiny z siodła. Zgłoszenie od
+  gracza z Discorda.
+- **Zaparkowana trasa faktycznie wznawiana.** W 1.29.3 każdy krok do potwora
+  w trakcie walki (inny cel niż hub) kasował zaparkowaną trasę, więc wznowień
+  było 5–18 na minutę przy ~100 dalekich planach. Inny cel już jej nie
+  kasuje, robi to tylko zmiana mapy. Po poprawce: 200–360 wznowień na
+  minutę, dalekie plany spadły ze 100–170 do 46–94 na minutę, rdzeń z 56% na
+  35% przy 843 botach.
+- **Aktualizacja na świeżym silniku Dockera zgłaszała błąd, choć obrazy się
+  zbudowały.** `up --build` ścigał się z własnym pobieraniem i padał na
+  „No such image: mariadb:10.11”; druga próba przechodziła. Launcher pobiera
+  teraz obrazy obce przed budową.
+
+---
+
 ## 1.29.3 — 2026-09-06
 
 ### Naprawione

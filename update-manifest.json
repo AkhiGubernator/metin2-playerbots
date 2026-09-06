@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T21:04:00Z",
-  "statusMessage": "Aktualizacja 1.29.14. Ksiega rynku: stragany wystawiaja tylko tyle materialu, ile botom brakuje (jedna sonda, gdy nikt nie szuka), ceny z kotwica transakcji, regulatorem popyt/podaz i krokiem 5% na 10 minut; raport PLAYERBOT_MARKET: ledger co 10 minut. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T21:31:00Z",
+  "statusMessage": "Aktualizacja 1.29.15. Kupujacy sprawdza linie straganu po dojsciu (po id przedmiotu), koniec falszywych odmow zakupu; ceny na ladach skalowane do mediany portfela kupujacych zamiast groszy od handlarza. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.14",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.14/metin2-server-update-1.29.14.zip",
-    "sha256": "9C29BA929F5502FD11E81FA788B04F3D8004FE0B069485B3A90E28B84BD27FD0"
+    "version": "1.29.15",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.15/metin2-server-update-1.29.15.zip",
+    "sha256": "1916F6AFAAE15BF3681DE6AE359E8F59099121CCD08824DFA35A823BC51802B6"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

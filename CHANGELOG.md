@@ -17,6 +17,42 @@ every version here.
 
 ---
 
+## 1.29.15 — 2026-09-06
+
+### Naprawione
+
+- **Koniec fałszywych odmów zakupu.** W godzinie 22–23 było 2158 odmów na
+  501 zakupów, każda z wpisem silnika „this user seems to be a hacker”.
+  Przyczyna: prywatny sklep w silniku to siatka 5 kolumn × 8 wierszy, broń
+  zajmuje 3 pola w kolumnie, zbroja 2, a bot numerował linie 0, 1, 2…, więc
+  każdą linię od drugiego rzędu pod bronią lub zbroją silnik po cichu
+  pomijał („not empty position” w syserr, 280 razy na godzinę) i kupujący
+  trafiali w pusty slot. Linie są teraz układane na siatce tak jak robi to
+  silnik, oferta pamięta swój slot, a do tego jest identyfikowana po id
+  przedmiotu, którego właścicielem wciąż jest straganiarz (ten sam test,
+  który robi silnik), bo sprzedany stos bywa zastąpiony drugim takim samym
+  z plecaka. Po dojściu do stoiska bot czyta ofertę jeszcze raz i kupuje
+  to, co naprawdę tam leży, albo idzie do następnej lady. Wyprzedany
+  stragan zamyka się po id, nie po vnum.
+
+### Nowe
+
+- **Ceny skalowane do portfeli kupujących.** Cena bazowa była trzykrotnością
+  ceny u handlarza, a handlarz płaci grosze: materiał, którego brakowało
+  czterystu botom, stał za 600 yang na rynku, gdzie klienci mają po milion.
+  Co minutę liczona jest mediana wolnego złota botów, które chodzą po
+  zakupy (`wallet=` w raporcie `PLAYERBOT_MARKET: ledger`), i sztuka na
+  ladzie prosi o udział w niej: materiał 1,5 %, zapasowy sprzęt +4/+5/+6
+  odpowiednio 3/4,5/6 %, reszta 1 %, a cały stos najwyżej 30 % — żeby bot z
+  medianą portfela mógł go kupić. Marża handlarza zostaje tam, gdzie jest
+  wyższa; kamienie duszy trzymają tabelę po stopniu; +7/+8/+9 bez zmian.
+- **Pasmo rynku względem ceny bazowej.** Mediana transakcji koryguje cenę w
+  przedziale od ćwierci do czterokrotności ceny bazowej (dotąd: do
+  dwunastokrotności ceny u handlarza), więc jedna przepłata nie wywinduje
+  materiału, a stare tanie sprzedaże nie ściągną go z powrotem do groszy.
+
+---
+
 ## 1.29.14 — 2026-09-06
 
 ### Nowe

@@ -17,6 +17,36 @@ every version here.
 
 ---
 
+## 1.29.1 — 2026-09-06
+
+### Naprawione
+
+- **Szkatułki i trzy księgi z Metina nie docierały do graczy.** Zmiana w
+  silniku z 1.29.0 była patchem, a na Windows launcher nie nakłada patchy —
+  robi to tylko skrypt, który działa u autora. Do tego plik obrazu z podmianą
+  zawartości szkatułki nie jechał w paczce. Efekt: po aktualizacji 30 Metinów
+  nie dało ani jednej szkatułki i jedną księgę. Paczka wiezie teraz oba
+  spatchowane pliki silnika tak samo jak źródła botów, plik obrazu i tabelę
+  szkatułki; obraz zbudowany ścieżką gracza zawiera i tokeny, i tabelę.
+- **Kowal ze Zwojem Błogosławieństwa.** Bez zwoju porażka ulepszania niszczy
+  przedmiot — 1584 spalonych w jedno popołudnie. Ze zwojem z szkatułki bot
+  ulepsza od +6 wzwyż ścieżką silnika ze zwojem: porażka to spadek o poziom,
+  nie strata. Robi to z plecaka, w polu, bez kowala — jak gracz. W pierwsze
+  trzy minuty: 10 sukcesów, 13 spadków o poziom, zero spalonych.
+
+### Nowe
+
+- **Góra Sohan i Loch Pająków V1 dla botów.** Sohan (Żołnierze Czarnego
+  Wiatru i Dzicy, 26–36, trzy rodzaje Metinów) przyjmuje boty od 26: połowa
+  26–29 idzie tam zamiast czekać w Bokjung, a 30–35 dzieli się na trzy
+  między wyspy Fanatyków, pustynię i Sohan. Loch Pająków V1 (pająki 50–58)
+  bierze połowę botów od 48 zamiast Doliny. Dziesięć hubów Sohan i osiem
+  Lochu ze spawnów, wejścia z Town.txt, wyjścia przy NPC obok wejścia. Obie
+  mapy przeniesione na rdzeń, na którym działają boty. Panel zna obie mapy i
+  ma ich kafelki.
+
+---
+
 ## 1.29.0 — 2026-09-06
 
 ### Nowe

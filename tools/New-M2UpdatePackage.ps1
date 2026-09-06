@@ -103,6 +103,12 @@ try {
     }
 
     foreach ($name in $stagedNames) {
+        # An engine file shipped as its patched copy - item_manager.cpp,
+        # config.cpp - has no overlay source and the launcher's sync never
+        # touches it: Sync-M2PlayerbotOverlay copies what sits in the overlay
+        # directory, which is only ever playerbot_*. The pairing rule below is
+        # for the overlay sources alone.
+        if ($name -notlike 'playerbot_*') { continue }
         if ($overlayNames -notcontains $name) {
             # The launcher syncs overlay -> build context before every build, so
             # an overlay copy left behind by an older release would overwrite the

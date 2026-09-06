@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T12:25:00Z",
-  "statusMessage": "Aktualizacja 1.29.0. Dolina Orkow po poziomach: wyspy Fanatykow dla 30-39, obozy Czarnych Orkow dla grup po osiem od 40, wyspa srodkowa z Ksiegami Klatw od 45; jedna gildia zbiera sie na jednym obozie. Boty maja wspolna pamiec, gdzie stoi najwiecej potworow, i po niej wybieraja spot. Event Szkatulek Blasku Ksiezyca (zwoje bonusow, mikstury, wzmocnienia) - boty same je otwieraja; trzy Ksiegi Umiejetnosci z kazdego Metina. Cztery nowe osobowosci Dropek (Metiny, M3, M2, medale) zbieraja i sprzedaja. Panel w calosci po polsku. Launcher rozpoznaje port zarezerwowany przez Windows i mowi, co zrobic.",
+  "publishedAt": "2026-09-06T13:35:00Z",
+  "statusMessage": "Aktualizacja 1.29.1. Naprawa: szkatulki Blasku Ksiezyca i trzy ksiegi z Metina nie docieraly do graczy w 1.29.0 - zmiana silnika nie trafiala przez aktualizacje; teraz jedzie w paczce. Kowal ze Zwojem Blogoslawienstwa od +6: porazka to spadek o poziom, nie strata, bot uzywa zwoju z plecaka w polu. Nowe mapy dla botow: Gora Sohan (od 26) i Loch Pajakow V1 (od 48). Uwaga: pierwszy start po tej aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.0/metin2-server-update-1.29.0.zip",
-    "sha256": "C581DFF6ABD0735091835573D990AB243F22BA2EA2B78CB58104F9EE939351D0"
+    "version": "1.29.1",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.1/metin2-server-update-1.29.1.zip",
+    "sha256": "CC5D7F672798E0DF6CB0B21EA91DC9AA0A47C7BC05DCD1007A443375C661B055"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

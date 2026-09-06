@@ -599,6 +599,64 @@ namespace
 
 	const BYTE PLAYERBOT_ORC_VALLEY_MIN_LEVEL = 36;
 	const BYTE PLAYERBOT_ORC_VALLEY_MAX_LEVEL = 55;
+	// Orc Valley is three maps stacked by level, and the band above treated it
+	// as one. The outer islands hold the Esoteric Fanatic (35) and Arahan (38)
+	// - the wiki's marked spots, and what a player farms there from the
+	// thirties. The three Black Orc camps at (601,625), (774,923) and (933,639)
+	// are level 46 S_KNIGHT, a party's work at 40; the central island's
+	// Tormentors (49) carry the Curse Book and are a party's work at 45. A bot
+	// of 30-35 goes to the Fanatic islands or to the desert by the parity of
+	// its pid, so the desert keeps its Black Wind hunters and the horse trial.
+	const BYTE PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL = 30;
+	const BYTE PLAYERBOT_ORC_VALLEY_ESOTERIC_MAX_LEVEL = 39;
+	const BYTE PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL = 40;
+	const BYTE PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL = 45;
+	// A camp of level-46 knights is farmed by eight, not six; the engine's own
+	// ceiling is PARTY_MAX_MEMBER. Anyone of party level on this map may join
+	// one, not only the ten percent party cohort - eight of that cohort at the
+	// same level on the same island is a thing that never happens.
+	const int PLAYERBOT_ORC_VALLEY_PARTY_MAX = 8;
+	// A guild mate counts for twice a remembered friend when a party is being
+	// put together, and a leader with a guild picks the camp by the guild's id,
+	// so one guild ends up on one camp. That is what the map looked like on the
+	// servers this world imitates.
+	const int PLAYERBOT_GUILD_PARTY_POINTS = 8;
+	// How far a follower may fall behind a leader who is walking to a new camp
+	// before it gives the party up. The cohesion radius is for fighting as one
+	// formation; a thirty-kilometre relocation with a deferred route in the
+	// middle of it is not a reason to disband.
+	const int PLAYERBOT_PARTY_STRAGGLER_RADIUS = 9000;
+
+	// The population's memory of where the monsters are: a grid of cells this
+	// wide per map, each remembering how many monsters were in reach when a bot
+	// looked for something to hit there, and how often a fight started there.
+	// Halved every ten minutes so a spot somebody cleared an hour ago is not
+	// remembered as full. A hub with fewer looks than this is scored as an
+	// average spot - four monsters in reach, which a rich camp beats easily
+	// and a crowded one does not, so that unknown ground gets visited.
+	const int PLAYERBOT_SPOT_CELL = 6400;
+	const DWORD PLAYERBOT_SPOT_DECAY_INTERVAL = 600000;
+	const DWORD PLAYERBOT_SPOT_MIN_SAMPLES = 12;
+	const int PLAYERBOT_SPOT_UNKNOWN_PERMILLE = 4000;
+	const int PLAYERBOT_SPOT_CROWD_RADIUS = 5000;
+	// A hub this far away is worth half of one underfoot, and a hub once chosen
+	// is kept for this long unless the bot is standing on it with nothing to
+	// fight. The first version scored by share alone and re-chose on every
+	// wander decision: bots crossed the valley for a slightly better camp,
+	// then crossed back - 160 to 334 far plans a minute against 26 to 65
+	// before, eight thousand deferrals, and the tick at 57 s of every 60.
+	const int PLAYERBOT_HUB_HALF_WORTH_DISTANCE = 20000;
+	const DWORD PLAYERBOT_HUB_STICK_TIME = 240000;
+	const DWORD PLAYERBOT_SPOT_REPORT_INTERVAL = 600000;
+
+	// The Moonlight Treasure Chest and what comes out of it. A chest in the bag
+	// is opened on the next pass; the boosters are drunk at the start of a
+	// fight and refused by the engine while the last one still runs, so a
+	// minute between attempts costs nothing and keeps the log readable.
+	const DWORD PLAYERBOT_MOONLIGHT_CHEST_VNUM = 50011;
+	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
+	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
+	const DWORD PLAYERBOT_BOOSTER_VNUMS[] = { 71044, 71045 };
 	// Neither map sells anything, so a visit is bounded and ends in Bokjung.
 	const DWORD PLAYERBOT_FRONTIER_MAX_VISIT_TIME = 2400000;
 	// ...but it also has to start. Without a floor the bot re-evaluated its needs
@@ -656,6 +714,14 @@ namespace
 	// One bot in six that has no other calling trades for a living. Enough to give
 	// each market a few permanent faces without emptying the hunting grounds.
 	const DWORD PLAYERBOT_MERCHANT_SHARE = 6;
+	// One in this many of the ordinary adventurers becomes a dropper - an M3,
+	// M2 or medal one, drawn evenly. The Metin dropper is a third of the metin
+	// hunter role instead, because hunting stones is that role's whole day.
+	const DWORD PLAYERBOT_DROPPER_SHARE = 8;
+	// A dropper opens its stall on a third of its town visits, against one in
+	// ten for an adventurer and every visit for a merchant: it hunts for a
+	// living and sells what the hunt brought, not the other way round.
+	const int PLAYERBOT_DROPPER_SHOP_ROLL = 333;
 	// The chance, rolled again for every stall a bot puts up, that it chooses Joan
 	// over Bokjung. Joan is where the players are - three quarters of the live
 	// bots stand on map 21 at any moment - so that is where the stalls belong.
@@ -827,6 +893,10 @@ namespace
 	};
 
 	struct TPlayerBotMapPoint { long x; long y; };
+	// A hunting hub with the level band it is for and whether it is a party's
+	// work. A solo bot never picks a party hub; a leader with a party of the
+	// challenge size may.
+	struct TPlayerBotHuntingHub { long x; long y; BYTE bMinLevel; BYTE bMaxLevel; bool bNeedsParty; };
 	// Exact world coordinates of the two rare M2 enemies from
 	// metin2_map_b3/boss.txt (map base 102400,204800). They are the classic
 	// level-30 weapon hunt: Bestial Archer (533) and Specialist (534).
@@ -930,8 +1000,29 @@ namespace
 		// a stall because that is what it does, not because it happened to have a
 		// spare while passing through town.
 		BOT_PERSONALITY_MERCHANT,
-		BOT_PERSONALITY_WANDERER
+		BOT_PERSONALITY_WANDERER,
+		// The droppers. Each farms one thing for the market rather than for
+		// itself: the Metin dropper keeps the skill books a stone gives instead
+		// of vendoring the ones it cannot read, the M3 dropper stays on Waryong
+		// for the level-30 weapons whether or not it owns one, the M2 dropper
+		// camps the Bestials of Bokjung for theirs, and the medal dropper works
+		// the Monkey Dungeon past the point its own horse needs. Appended, never
+		// inserted - the id goes into the status file the panel reads.
+		BOT_PERSONALITY_METIN_DROPPER,
+		BOT_PERSONALITY_M3_DROPPER,
+		BOT_PERSONALITY_M2_DROPPER,
+		BOT_PERSONALITY_MEDAL_DROPPER
 	};
+
+	bool IsPlayerBotDropper(BYTE personality)
+	{
+		return personality == BOT_PERSONALITY_METIN_DROPPER ||
+				personality == BOT_PERSONALITY_M3_DROPPER ||
+				personality == BOT_PERSONALITY_M2_DROPPER ||
+				personality == BOT_PERSONALITY_MEDAL_DROPPER;
+	}
+
+	BYTE GetPlayerBotPersonalityByPID(DWORD dwPID);
 
 	enum EPlayerBotAmbition
 	{
@@ -970,6 +1061,8 @@ namespace
 			dwNextAttackTime(0),
 			dwNextPotionTime(0),
 			dwNextManaPotionTime(0),
+			dwNextChestTime(0),
+			dwNextBoosterTime(0),
 			dwNextPotionLogTime(0),
 			dwDeathDetectedTime(0),
 			dwNextReviveAttemptTime(0),
@@ -1117,7 +1210,9 @@ namespace
 			lCampX(0),
 			lCampY(0),
 			dwCampSince(0),
-			dwRelocateSince(0)
+			dwRelocateSince(0),
+			wHuntingHub(0xffff),
+			dwHubChosenTime(0)
 		{
 		}
 
@@ -1132,6 +1227,8 @@ namespace
 		DWORD dwNextAttackTime;
 		DWORD dwNextPotionTime;
 		DWORD dwNextManaPotionTime;
+		DWORD dwNextChestTime;
+		DWORD dwNextBoosterTime;
 		DWORD dwNextPotionLogTime;
 		DWORD dwDeathDetectedTime;
 		DWORD dwNextReviveAttemptTime;
@@ -1328,6 +1425,10 @@ namespace
 		long lCampY;
 		DWORD dwCampSince;
 		DWORD dwRelocateSince;
+		// Index of the last hub the wander chose on a hub map, so the choice is
+		// logged when it changes rather than on every decision.
+		WORD wHuntingHub;
+		DWORD dwHubChosenTime;
 	};
 
 	typedef std::map<DWORD, TPlayerBotAIState> TPlayerBotAIStateMap;
@@ -1337,6 +1438,16 @@ namespace
 	// rather than in the manager because the subsystems read it too - refining
 	// asks a bot for its personality long before the tick reaches it.
 	TPlayerBotAIStateMap s_mapPlayerBotAIStates;
+
+	// The personality behind a pid, for the rules that get a character and not
+	// a state - the travel gates, the stall's scoring. Steady adventurer when
+	// the pid is not a bot's.
+	BYTE GetPlayerBotPersonalityByPID(DWORD dwPID)
+	{
+		TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.find(dwPID);
+		return it == s_mapPlayerBotAIStates.end()
+				? (BYTE)BOT_PERSONALITY_STEADY_ADVENTURER : it->second.bPersonality;
+	}
 
 	// Changing goal or action is a state transition, so it lives with the
 	// state. Every subsystem does it, and each one used to have to be

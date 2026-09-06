@@ -1697,7 +1697,9 @@ namespace
 		state.dwNextPotionTime = dwNow + PLAYERBOT_POTION_INTERVAL;
 
 		// 27051 is the beginner red potion supplied by the level-one chest.
-		const DWORD redPotionVnums[] = { 27051, 27001, 27002, 27003 };
+		// 71018 and 71020 are the chest's Blessings of Life and of the Dragon: a
+		// full restore each, drunk last, when the ordinary reds have run out.
+		const DWORD redPotionVnums[] = { 27051, 27001, 27002, 27003, 71018, 71020 };
 		for (size_t potionIndex = 0; potionIndex < sizeof(redPotionVnums) / sizeof(redPotionVnums[0]); ++potionIndex)
 		{
 			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
@@ -1737,7 +1739,7 @@ namespace
 		state.dwNextManaPotionTime = dwNow + PLAYERBOT_POTION_INTERVAL;
 
 		// 27052 is the beginner blue potion, followed by standard small, medium, large blue potions.
-		const DWORD bluePotionVnums[] = { 27052, 27004, 27005, 27006 };
+		const DWORD bluePotionVnums[] = { 27052, 27004, 27005, 27006, 71020 };
 		for (size_t potionIndex = 0; potionIndex < sizeof(bluePotionVnums) / sizeof(bluePotionVnums[0]); ++potionIndex)
 		{
 			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)

@@ -489,12 +489,18 @@ namespace
 				m_dwNow(dwNow),
 				m_huntM2Bestials(owner && owner->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 &&
 						ShouldPlayerBotHuntM2Bestials(owner)),
-				m_pWantedDrops(NULL)
+				m_pWantedDrops(NULL),
+				m_iMonstersNear(0),
+				m_iMonsterLevelSum(0)
 			{
 			}
 
 			// The materials the owner is short of, computed once by the caller.
 			void SetWantedDrops(const std::set<DWORD>* pWanted) { m_pWantedDrops = pWanted; }
+			// Monsters within reach when this ran, whatever their level: what the
+			// spot memory learns a place by.
+			int MonstersNear() const { return m_iMonstersNear; }
+			int MonsterLevelSum() const { return m_iMonsterLevelSum; }
 
 			bool operator () (LPENTITY entity)
 			{
@@ -506,6 +512,16 @@ namespace
 					return false;
 				if (IsPlayerBotSafeZone(candidate->GetMapIndex(), candidate->GetX(), candidate->GetY()))
 					return false;
+
+				// Counted before any filter below has its say, so a level-46 camp
+				// is remembered as full by the level-36 bot that could not touch it.
+				if (candidate->IsMonster() && candidate->GetMapIndex() == m_owner->GetMapIndex() &&
+						DISTANCE_APPROX(m_owner->GetX() - candidate->GetX(),
+								m_owner->GetY() - candidate->GetY()) <= m_maxDistance)
+				{
+					++m_iMonstersNear;
+					m_iMonsterLevelSum += candidate->GetLevel();
+				}
 
 				if (candidate->IsStone())
 					RememberPlayerBotMetin(candidate, m_dwNow);
@@ -697,6 +713,8 @@ namespace
 			bool m_huntM2Bestials;
 			const std::set<DWORD>* m_pWantedDrops;
 			std::vector<TTargetCandidate> m_targets;
+			int m_iMonstersNear;
+			int m_iMonsterLevelSum;
 	};
 
 	// Worth the swing, or scenery? See PLAYERBOT_TRIVIAL_LEVEL_GAP. Stones are
@@ -906,6 +924,8 @@ namespace
 		collector.SetWantedDrops(&wantedDrops);
 		ch->GetSectree()->ForEachAround(collector);
 		collector.Sort();
+		RememberPlayerBotSpotSighting(ch->GetMapIndex(), ch->GetX(), ch->GetY(),
+				collector.MonstersNear(), collector.MonsterLevelSum(), dwNow);
 
 		std::vector<TTargetCandidate> targets = collector.GetTargets();
 
@@ -1480,6 +1500,7 @@ namespace
 		SetPlayerBotAction(state, BOT_ACTION_FIGHT, dwNow);
 		state.dwTargetVID = target->GetVID();
 		RememberPlayerBotMapRace(ch, target);
+		RememberPlayerBotSpotFight(ch->GetMapIndex(), target->GetX(), target->GetY(), dwNow);
 		ch->SetVictim(target);
 		// Aggressive packs often wake up as soon as the bot enters their radius. In
 		// that case running on is the authentic pull action; attacking would stop to

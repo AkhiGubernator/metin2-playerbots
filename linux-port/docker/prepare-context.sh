@@ -70,6 +70,7 @@ PLAYERBOT_SEED_GENERATOR="$PLAYERBOT_OVERLAY/tools/generate_seed.py"
 PLAYERBOT_SEED="$PLAYERBOT_OVERLAY/sql/playerbots_seed.sql"
 PLAYERBOT_MIGRATOR="$HERE/mariadb/playerbot/apply.sh"
 PLAYERBOT_M3_DROPS="$PLAYERBOT_OVERLAY/serverfiles/mob_drop_item.m3.append.txt"
+PLAYERBOT_MOONLIGHT_CHEST="$PLAYERBOT_OVERLAY/serverfiles/special_item_group.moonlight.txt"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -126,7 +127,8 @@ for p in \
   "$PLAYERBOT_SEED_GENERATOR" \
   "$PLAYERBOT_SEED" \
   "$PLAYERBOT_MIGRATOR" \
-  "$PLAYERBOT_M3_DROPS"
+  "$PLAYERBOT_M3_DROPS" \
+  "$PLAYERBOT_MOONLIGHT_CHEST"
 do
   [ -s "$p" ] || die "Playerbot overlay input is missing or empty: $p"
 done
@@ -256,6 +258,7 @@ for d in conf data locale package; do
 done
 
 cp -a "$PLAYERBOT_M3_DROPS" "$HERE/game/mob_drop_item.m3.append.txt"
+cp -a "$PLAYERBOT_MOONLIGHT_CHEST" "$HERE/game/special_item_group.moonlight.txt"
 info "M3/Waryong level-30 weapon and level-21 shield drop overlay staged"
 
 # share/bin is deliberately NOT copied. The binaries in the image come from the

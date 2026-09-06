@@ -198,6 +198,12 @@ namespace
 		const BYTE level = ch->GetLevel();
 		if (level >= PLAYERBOT_ORC_VALLEY_MIN_LEVEL && level <= PLAYERBOT_ORC_VALLEY_MAX_LEVEL)
 			return PLAYERBOT_MAP_ORC_VALLEY;
+		// Thirty to thirty-five: the Fanatic islands of Orc Valley for half the
+		// population, the desert for the other half, decided once per character
+		// so the answer does not change under a bot halfway there.
+		if (level >= PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL && level < PLAYERBOT_ORC_VALLEY_MIN_LEVEL &&
+				(PlayerBotNavHash(ch->GetPlayerID() ^ 0x45534f54U) & 1U) != 0)
+			return PLAYERBOT_MAP_ORC_VALLEY;
 		if (level >= PLAYERBOT_DESERT_MIN_LEVEL && level <= PLAYERBOT_DESERT_MAX_LEVEL)
 			return PLAYERBOT_MAP_DESERT;
 		return 0;
@@ -269,8 +275,13 @@ namespace
 
 	bool ShouldPlayerBotVisitM3(LPCHARACTER ch)
 	{
-		if (!HasPlayerBotM3ReadyEquipment(ch) || ch->GetLevel() > 24 ||
-				HasPlayerBotSpecialLevel30Weapon(ch, true))
+		if (!ch || !HasPlayerBotM3ReadyEquipment(ch))
+			return false;
+		// The M3 dropper is there for the weapons it will sell, so owning one
+		// changes nothing, and it stays as long as the map can still be hunted.
+		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_M3_DROPPER)
+			return ch->GetLevel() <= 32;
+		if (ch->GetLevel() > 24 || HasPlayerBotSpecialLevel30Weapon(ch, true))
 			return false;
 		// A stable third of the eligible population farms infected animals for
 		// class-specific level-30 weapons. Other bots remain in M2 for Bestials.
@@ -279,8 +290,13 @@ namespace
 
 	bool ShouldPlayerBotHuntM2Bestials(LPCHARACTER ch)
 	{
-		if (!ch || ch->GetLevel() < 25 || ch->GetLevel() > 35 ||
-				!HasPlayerBotM3ReadyEquipment(ch) ||
+		if (!ch || !HasPlayerBotM3ReadyEquipment(ch))
+			return false;
+		// The M2 dropper camps the two Bestials for the weapons it will sell,
+		// owned weapon or not, for as long as they are worth its level.
+		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_M2_DROPPER)
+			return ch->GetLevel() >= 25 && ch->GetLevel() <= 40;
+		if (ch->GetLevel() < 25 || ch->GetLevel() > 35 ||
 				HasPlayerBotSpecialLevel30Weapon(ch, true) ||
 				ShouldPlayerBotVisitM3(ch))
 			return false;
@@ -292,6 +308,13 @@ namespace
 
 	bool ShouldPlayerBotPursueHorseExpedition(LPCHARACTER ch, DWORD dwNow)
 	{
+		if (!ch)
+			return false;
+		// The medal dropper goes for the medals themselves, whatever its own horse
+		// needs, for as long as the dungeon's band lasts and a little beyond it.
+		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_MEDAL_DROPPER)
+			return ch->GetLevel() >= PLAYERBOT_MONKEY_MIN_LEVEL &&
+					ch->GetLevel() <= PLAYERBOT_MONKEY_MAX_LEVEL + 6;
 		if (!CanPlayerBotAdvanceHorse(ch))
 			return false;
 

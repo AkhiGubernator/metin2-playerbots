@@ -356,6 +356,13 @@ namespace
 		return state.bPersonality == BOT_PERSONALITY_MERCHANT;
 	}
 
+	// Who gets a merchant's counter - the bigger table and the medals for sale
+	// - without a merchant's day: the droppers hunt and sell, the merchant sells.
+	bool IsPlayerBotStallKeeper(const TPlayerBotAIState& state)
+	{
+		return IsPlayerBotMerchant(state) || IsPlayerBotDropper(state.bPersonality);
+	}
+
 	bool ShouldPlayerBotKeepShop(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
 		if (!ch || ch->GetLevel() < PLAYERBOT_SHOP_MIN_LEVEL)
@@ -364,6 +371,10 @@ namespace
 		// stays what it was: an occasional thing one bot in ten does with a spare.
 		if (IsPlayerBotMerchant(state))
 			return true;
+		if (IsPlayerBotDropper(state.bPersonality))
+			return PlayerBotWeightedRoll(
+					PlayerBotNavHash(ch->GetPlayerID() ^ 0x44524f50U) % 1000U,
+					PLAYERBOT_DROPPER_SHOP_ROLL, PLAYERBOT_WEIGHT_TRADE);
 		// One bot in ten, stretched or shrunk by the TRADE weight. Drawn against a
 		// thousand rather than ten so that the weight has somewhere to move: the
 		// odds at the neutral 100 are the same one in ten as before, over a
@@ -492,10 +503,11 @@ namespace
 			return 500;
 		if (item->GetRefinedVnum() == 0 && item->GetType() == ITEM_MATERIAL)
 			return 200;
-		// Skill books. No bot reads one - that is still unwritten - so they are
-		// pure stock, and a player will want them.
+		// Skill books. Stock for everyone; the Metin dropper's whole trade, so
+		// on its counter they go up beside the level-30 weapons.
 		if (item->GetType() == ITEM_SKILLBOOK)
-			return 400;
+			return GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER
+					? 1800 : 400;
 
 		// Ordinary spare gear, and only if somebody could want it. This used to
 		// be "return 1" for absolutely everything else, which is how counters
@@ -928,7 +940,7 @@ namespace
 
 		// Sorted best first, so the head of the list is the best score there is.
 		std::vector<std::pair<int, WORD> > scored;
-		CollectPlayerBotShopItems(ch, scored, IsPlayerBotMerchant(state));
+		CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state));
 		if (!IsPlayerBotStallWorthOpening(scored.size(),
 				scored.empty() ? 0 : scored[0].first))
 		{
@@ -973,7 +985,7 @@ namespace
 		TShopItemTable table[PLAYERBOT_SHOP_MERCHANT_ITEMS];
 		memset(table, 0, sizeof(table));
 		std::vector<TPlayerBotShopOffer> offers;
-		const BYTE tableLimit = IsPlayerBotMerchant(state)
+		const BYTE tableLimit = IsPlayerBotStallKeeper(state)
 				? PLAYERBOT_SHOP_MERCHANT_ITEMS : PLAYERBOT_SHOP_MAX_ITEMS;
 		BYTE tableCount = 0;
 		int bestScore = 0;

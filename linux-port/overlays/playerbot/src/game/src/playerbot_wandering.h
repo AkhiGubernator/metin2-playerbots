@@ -55,6 +55,82 @@ namespace
 		return firstIndex;
 	}
 
+	// The hub for this bot, from a banded table, by what the population has
+	// seen there. Level rules the band; a party hub needs a party of the
+	// challenge size with this bot leading it; among what is left the richest
+	// ground wins, its worth shared out among the bots already on it - except
+	// that a leader's own party and guild are not a crowd, so a guild converges
+	// on one camp instead of fleeing each other. Unknown ground is scored as an
+	// average spot, which is optimistic on purpose: it has to be looked at to
+	// be known. A small hash keeps equal scores from all resolving the same way.
+	bool ChoosePlayerBotHuntingHub(LPCHARACTER ch, const TPlayerBotHuntingHub* hubs,
+			size_t hubCount, DWORD dwNow, size_t excludeIndex, size_t& indexOut, int& scoreOut)
+	{
+		indexOut = 0;
+		scoreOut = 0;
+		if (!ch || !hubs || hubCount == 0)
+			return false;
+		CPlayerBotNavigation& navigation = CPlayerBotNavigation::instance(ch->GetMapIndex());
+		if (!navigation.Init(ch->GetMapIndex()))
+			return false;
+
+		const BYTE level = ch->GetLevel();
+		LPPARTY party = ch->GetParty();
+		const bool bLeadsParty = party && party->GetLeaderCharacter() == ch &&
+				(int)party->GetMemberCount() >= PLAYERBOT_PARTY_CHALLENGE_MIN_MEMBERS;
+		CGuild* guild = ch->GetGuild();
+		const DWORD dwSeed = guild ? (0x47494c44U ^ guild->GetID()) : ch->GetPlayerID();
+
+		std::vector<TPlayerBotCrowdEntry> crowd;
+		CollectPlayerBotCrowd(ch, ch->GetMapIndex(), crowd);
+
+		int bestScore = INT_MIN;
+		size_t best = 0;
+		bool bFound = false;
+		for (size_t i = 0; i < hubCount; ++i)
+		{
+			const TPlayerBotHuntingHub& hub = hubs[i];
+			if (i == excludeIndex || level < hub.bMinLevel || level > hub.bMaxLevel)
+				continue;
+			if (hub.bNeedsParty && !bLeadsParty)
+				continue;
+			if (!navigation.CanReach(ch->GetX(), ch->GetY(), hub.x, hub.y))
+				continue;
+			DWORD samples = 0;
+			int averageLevel = 0;
+			const int density = GetPlayerBotSpotDensityPermille(ch->GetMapIndex(), hub.x, hub.y, dwNow,
+					&samples, &averageLevel);
+			int worth = samples >= PLAYERBOT_SPOT_MIN_SAMPLES ? density : PLAYERBOT_SPOT_UNKNOWN_PERMILLE;
+			// Full of monsters the bot cannot touch is empty for the bot. A camp
+			// of knights ten levels up is remembered as rich by everyone who
+			// looked at it and is no place for a bot on its own; a leader with a
+			// party judges by the party's reach, which the challenge rules apply.
+			if (samples >= PLAYERBOT_SPOT_MIN_SAMPLES && !bLeadsParty &&
+					averageLevel > (int)level + PLAYERBOT_MAX_TARGET_LEVEL_DELTA)
+				worth = 0;
+			const int others = CountPlayerBotsNear(ch, crowd, hub.x, hub.y,
+					PLAYERBOT_SPOT_CROWD_RADIUS, hub.bNeedsParty);
+			// The bot's share of what is there: the monsters in reach divided among
+			// the bots already in reach of them, plus this one.
+			int score = worth / (1 + others);
+			// Nearer is better, all else equal: a camp across the delta costs a
+			// route of two hundred milliseconds to plan and three minutes to walk.
+			const int distance = DISTANCE_APPROX(ch->GetX() - hub.x, ch->GetY() - hub.y);
+			score = (int)((long long)score * PLAYERBOT_HUB_HALF_WORTH_DISTANCE /
+					(PLAYERBOT_HUB_HALF_WORTH_DISTANCE + distance));
+			score += (int)(PlayerBotNavHash(dwSeed ^ (DWORD)(i * 0x9e3779b9U)) % 150U);
+			if (score > bestScore)
+			{
+				bestScore = score;
+				best = i;
+				bFound = true;
+			}
+		}
+		indexOut = best;
+		scoreOut = bestScore;
+		return bFound;
+	}
+
 	void ManagePlayerBotWandering(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow);
 
 	// A frontier map is worked, not squatted on.
@@ -408,54 +484,66 @@ namespace
 		}
 		else if (IsPlayerBotFrontierMap(ch->GetMapIndex()))
 		{
-			// Densest spawn clusters of each map, snapped onto a real regen.txt
-			// coordinate so a hub can never be planted inside an obstacle, and
-			// verified walkable and inside the arrival point's region.
+			// Hubs are hand-placed on spawn points from regen.txt - a hub can never
+			// be planted inside an obstacle - and carry the level band they are
+			// for. Which of them a bot walks to is decided by what the population
+			// has seen there, see ChoosePlayerBotHuntingHub.
 			//
-			// Orc Valley's list used to hold twelve points inside a 37x35 km box,
-			// because that box was the one island a bot could reach while the
-			// navigation refused the bridges over the delta. The map's 532 spawn
-			// groups are spread over 133x131 km, and the old list reached 128 of
-			// them. These sixteen reach 250: generated from regen.txt by spawn
-			// density, spaced at least 12000 units apart so they cover the map
-			// rather than crowd its busiest corner.
-			const TPlayerBotMapPoint orcValleyHubs[16] = {
-				{ 315800, 732600 }, { 342600, 729800 }, { 335500, 758000 },
-				{ 328000, 743600 }, { 277800, 793500 }, { 347700, 797500 },
-				{ 334000, 800200 }, { 343200, 743100 }, { 391700, 696600 },
-				{ 330500, 727300 }, { 292200, 751000 }, { 365100, 777800 },
-				{ 271500, 683700 }, { 297600, 716400 }, { 302500, 777000 },
-				{ 336500, 703600 }
+			// Orc Valley by level: the five Fanatic (35) / Arahan (38) islands
+			// from the wiki's map of them, for thirty to thirty-nine; the sixteen
+			// density hubs that cover the rest of the map, for thirty-six and up
+			// on their own; the three Black Orc (46) camps for a party of forty
+			// and up; the central island's Tormentors (49), who carry the Curse
+			// Book, for a party of forty-five and up. Client-map cells for the
+			// player's eye: camps (601,625), (774,923), (933,639); centre (767,792).
+			const TPlayerBotHuntingHub orcValleyHubs[] = {
+				{ 276600, 684600, PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL, PLAYERBOT_ORC_VALLEY_ESOTERIC_MAX_LEVEL, false },
+				{ 281700, 795300, PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL, PLAYERBOT_ORC_VALLEY_ESOTERIC_MAX_LEVEL, false },
+				{ 290300, 799400, PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL, PLAYERBOT_ORC_VALLEY_ESOTERIC_MAX_LEVEL, false },
+				{ 348300, 705800, PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL, PLAYERBOT_ORC_VALLEY_ESOTERIC_MAX_LEVEL, false },
+				{ 391100, 738100, PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL, PLAYERBOT_ORC_VALLEY_ESOTERIC_MAX_LEVEL, false },
+				{ 315800, 732600, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 342600, 729800, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 335500, 758000, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 328000, 743600, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 277800, 793500, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 347700, 797500, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 334000, 800200, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 343200, 743100, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 391700, 696600, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 330500, 727300, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 292200, 751000, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 365100, 777800, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 271500, 683700, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 297600, 716400, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 302500, 777000, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false }, { 336500, 703600, PLAYERBOT_ORC_VALLEY_MIN_LEVEL, 255, false },
+				{ 316600, 728500, PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL, 255, true },
+				{ 333200, 758600, PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL, 255, true },
+				{ 350300, 726900, PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL, 255, true },
+				{ 332900, 747200, PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL, 255, true }
 			};
-			const TPlayerBotMapPoint desertHubs[12] = {
-				{ 291300, 515700 }, { 237500, 525900 }, { 264600, 526100 },
-				{ 317900, 526100 }, { 336900, 534300 }, { 245100, 542500 },
-				{ 264500, 552300 }, { 327700, 552900 }, { 253900, 570100 },
-				{ 327800, 579500 }, { 321600, 582700 }, { 273800, 614900 }
+			const TPlayerBotHuntingHub desertHubs[] = {
+				{ 291300, 515700, 0, 255, false }, { 237500, 525900, 0, 255, false }, { 264600, 526100, 0, 255, false },
+				{ 317900, 526100, 0, 255, false }, { 336900, 534300, 0, 255, false }, { 245100, 542500, 0, 255, false },
+				{ 264500, 552300, 0, 255, false }, { 327700, 552900, 0, 255, false }, { 253900, 570100, 0, 255, false },
+				{ 327800, 579500, 0, 255, false }, { 321600, 582700, 0, 255, false }, { 273800, 614900, 0, 255, false }
 			};
 			const bool inDesert = ch->GetMapIndex() == PLAYERBOT_MAP_DESERT;
-			const TPlayerBotMapPoint* hubs = inDesert ? desertHubs : orcValleyHubs;
-			// Taken from the array rather than written out, so the two lists are
-			// free to be different lengths - and to change length again without
-			// anybody having to remember three call sites.
+			const TPlayerBotHuntingHub* hubs = inDesert ? desertHubs : orcValleyHubs;
 			const size_t hubCount = inDesert
 					? sizeof(desertHubs) / sizeof(desertHubs[0])
 					: sizeof(orcValleyHubs) / sizeof(orcValleyHubs[0]);
 			const DWORD pid = ch->GetPlayerID();
+			size_t hubIndex = 0;
+			int hubScore = 0;
 			bool bHubReachable = false;
-			const size_t hubIndex = PickReachablePlayerBotHub(ch, hubs, hubCount,
-					(pid + state.uMetinHotspotIndex) % hubCount, bHubReachable);
-			if (!bHubReachable)
+			// The hub chosen a moment ago is still the hub, unless the bot has
+			// outgrown its band or the choice is old enough to revisit.
+			if (state.wHuntingHub < hubCount && state.dwHubChosenTime != 0 &&
+					dwNow - state.dwHubChosenTime < PLAYERBOT_HUB_STICK_TIME &&
+					ch->GetLevel() >= hubs[state.wHuntingHub].bMinLevel &&
+					ch->GetLevel() <= hubs[state.wHuntingHub].bMaxLevel)
 			{
-				// Nothing on the list can be reached from where this bot is. Work
-				// the ground it is standing on instead of replanning routes that
-				// cannot exist - the map still has monsters on this side of the
-				// wall, and a bot hunting them looks far better than one walking
-				// into it.
-				targetX = ch->GetX() + number(-1200, 1200);
-				targetY = ch->GetY() + number(-1200, 1200);
+				hubIndex = state.wHuntingHub;
+				bHubReachable = true;
 			}
 			else
+				bHubReachable = ChoosePlayerBotHuntingHub(ch, hubs, hubCount, dwNow,
+						(size_t)-1, hubIndex, hubScore);
+			if (bHubReachable)
 			{
 				long offsetX = 0, offsetY = 0;
 				GetPlayerBotStableOffset(pid,
@@ -465,32 +553,45 @@ namespace
 				targetY = hubs[hubIndex].y + offsetY;
 				if (DISTANCE_APPROX(ch->GetX() - targetX, ch->GetY() - targetY) < 1400)
 				{
-					// Standing on the hub. Wandering only runs when there is
-					// nothing left to fight here, so a seven-hundred-unit nudge
-					// followed by another ten seconds of waiting is how a bot ends
-					// up guarding one respawn for an hour. Take the next hub that
-					// can actually be reached from here instead.
-					++state.uMetinHotspotIndex;
-					bool bNextReachable = false;
-					const size_t nextIndex = PickReachablePlayerBotHub(ch, hubs, hubCount,
-							(pid + state.uMetinHotspotIndex) % hubCount, bNextReachable);
-					if (bNextReachable && nextIndex != hubIndex)
+					// Standing on the hub with nothing left to fight here. Choose
+					// again with this one left out - a seven-hundred-unit nudge and
+					// another ten seconds of waiting is how a bot ends up guarding
+					// one respawn for an hour.
+					size_t nextIndex = 0;
+					int nextScore = 0;
+					if (ChoosePlayerBotHuntingHub(ch, hubs, hubCount, dwNow, hubIndex, nextIndex, nextScore))
 					{
-						long nextOffsetX = 0, nextOffsetY = 0;
+						hubIndex = nextIndex;
+						hubScore = nextScore;
+						state.dwHubChosenTime = dwNow;
 						GetPlayerBotStableOffset(pid,
-								(inDesert ? 0x44455348U : 0x4f524348U) + (DWORD)nextIndex,
-								150, 700, nextOffsetX, nextOffsetY);
-						targetX = hubs[nextIndex].x + nextOffsetX;
-						targetY = hubs[nextIndex].y + nextOffsetY;
+								(inDesert ? 0x44455348U : 0x4f524348U) + (DWORD)hubIndex,
+								150, 700, offsetX, offsetY);
+						targetX = hubs[hubIndex].x + offsetX;
+						targetY = hubs[hubIndex].y + offsetY;
 					}
 					else
-					{
-						// Walled into a pocket with nowhere else to go. Work the
-						// ground here rather than plan a route that cannot exist.
-						targetX = ch->GetX() + number(-700, 700);
-						targetY = ch->GetY() + number(-700, 700);
-					}
+						bHubReachable = false;
 				}
+			}
+			if (!bHubReachable)
+			{
+				// Nothing on the list is for this bot from where it stands - walled
+				// into a pocket, or a party hub without the party. Work the ground
+				// here rather than plan a route that cannot exist.
+				targetX = ch->GetX() + number(-1200, 1200);
+				targetY = ch->GetY() + number(-1200, 1200);
+			}
+			else if (state.wHuntingHub != (WORD)hubIndex)
+			{
+				state.wHuntingHub = (WORD)hubIndex;
+				state.dwHubChosenTime = dwNow;
+				sys_log(0, "PLAYERBOT_SPOT: hub chosen pid=%u name=%s level=%u map=%ld hub=%u pos=(%ld,%ld) band=%u-%u party_hub=%d party=%u guild=%u score=%d",
+						pid, ch->GetName(), ch->GetLevel(), ch->GetMapIndex(), (unsigned int)hubIndex,
+						hubs[hubIndex].x, hubs[hubIndex].y, hubs[hubIndex].bMinLevel, hubs[hubIndex].bMaxLevel,
+						hubs[hubIndex].bNeedsParty ? 1 : 0,
+						ch->GetParty() ? (unsigned int)ch->GetParty()->GetMemberCount() : 0U,
+						ch->GetGuild() ? ch->GetGuild()->GetID() : 0U, hubScore);
 			}
 		}
 		else if (ch->GetMapIndex() == PLAYERBOT_MAP_MONKEY_EASY)

@@ -57,6 +57,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_movement.h"
 #include "playerbot_battle_horse.h"
 #include "playerbot_gear.h"
+#include "playerbot_consumables.h"
 #include "playerbot_activities.h"
 #include "playerbot_missions.h"
 #include "playerbot_skills.h"
@@ -85,7 +86,8 @@ namespace
 		if (role == BOT_ROLE_PARTY_FIGHTER)
 			return BOT_PERSONALITY_TEAM_COMPANION;
 		if (role == BOT_ROLE_METIN_HUNTER)
-			return BOT_PERSONALITY_METIN_BREAKER;
+			return (PlayerBotNavHash(ch->GetPlayerID() ^ 0x4d444f50U) % 3U) == 0
+					? BOT_PERSONALITY_METIN_DROPPER : BOT_PERSONALITY_METIN_BREAKER;
 
 		// Traders are drawn before the rest: a bot that trades for a living is not
 		// a variant of an adventurer, it is a different way of playing, and the
@@ -93,6 +95,16 @@ namespace
 		if ((PlayerBotNavHash(ch->GetPlayerID() ^ 0x4d524348U) %
 				PLAYERBOT_MERCHANT_SHARE) == 0)
 			return BOT_PERSONALITY_MERCHANT;
+		if ((PlayerBotNavHash(ch->GetPlayerID() ^ 0x44524f50U) %
+				PLAYERBOT_DROPPER_SHARE) == 0)
+		{
+			switch (PlayerBotNavHash(ch->GetPlayerID() ^ 0x4b494e44U) % 3U)
+			{
+				case 0: return BOT_PERSONALITY_M3_DROPPER;
+				case 1: return BOT_PERSONALITY_M2_DROPPER;
+				default: return BOT_PERSONALITY_MEDAL_DROPPER;
+			}
+		}
 
 		switch (PlayerBotNavHash(ch->GetPlayerID() ^ 0x50524f46U) % 4U)
 		{
@@ -117,6 +129,13 @@ namespace
 				return BOT_AMBITION_BIOLOGIST;
 			case BOT_PERSONALITY_MERCHANT:
 				return BOT_AMBITION_TRADE;
+			case BOT_PERSONALITY_METIN_DROPPER:
+				return BOT_AMBITION_METINS;
+			case BOT_PERSONALITY_M3_DROPPER:
+			case BOT_PERSONALITY_M2_DROPPER:
+				return BOT_AMBITION_EQUIPMENT;
+			case BOT_PERSONALITY_MEDAL_DROPPER:
+				return BOT_AMBITION_HORSE;
 			case BOT_PERSONALITY_WANDERER:
 				return BOT_AMBITION_HORSE;
 			case BOT_PERSONALITY_TEAM_COMPANION:
@@ -126,6 +145,28 @@ namespace
 				return (PlayerBotNavHash(ch->GetPlayerID() ^ 0x414d4249U) % 5U) == 0
 						? BOT_AMBITION_SKILLS : BOT_AMBITION_LEVEL;
 		}
+	}
+
+	// Who may be in a party. The ten-percent cohort everywhere; on Orc Valley,
+	// anyone of camp level - the Black Orc camps are a party's work and eight
+	// of the cohort at one level on one island never turns up.
+	bool IsPlayerBotPartyEligible(LPCHARACTER ch, const TPlayerBotAIState& state)
+	{
+		if (state.bBotRole == BOT_ROLE_PARTY_FIGHTER)
+			return true;
+		return ch && ch->GetMapIndex() == PLAYERBOT_MAP_ORC_VALLEY &&
+				ch->GetLevel() >= PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL;
+	}
+
+	int GetPlayerBotPartyDesiredMax(LPCHARACTER ch)
+	{
+		return (ch && ch->GetMapIndex() == PLAYERBOT_MAP_ORC_VALLEY)
+				? PLAYERBOT_ORC_VALLEY_PARTY_MAX : PLAYERBOT_PARTY_DESIRED_MAX;
+	}
+
+	bool ArePlayerBotsGuildMates(LPCHARACTER a, LPCHARACTER b)
+	{
+		return a && b && a->GetGuild() != NULL && a->GetGuild() == b->GetGuild();
 	}
 
 	void ManagePlayerBotParty(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
@@ -138,7 +179,7 @@ namespace
 		LPPARTY pParty = ch->GetParty();
 		// Party play is an explicit, deterministic cohort. Archer weighting is
 		// decided at login, while the total cohort remains close to ten percent.
-		if (state.bBotRole != BOT_ROLE_PARTY_FIGHTER)
+		if (!IsPlayerBotPartyEligible(ch, state))
 		{
 			if (pParty)
 			{
@@ -171,8 +212,18 @@ namespace
 				// by bots in separate sectors of the map.
 				int levelDelta = abs((int)ch->GetLevel() - (int)leader->GetLevel());
 				int distToLeader = DISTANCE_APPROX(ch->GetX() - leader->GetX(), ch->GetY() - leader->GetY());
+				// A leader walking to a new camp is followed, not left: the follower
+				// is on its way, and a deferred route in the middle of thirty
+				// kilometres is not a reason to disband. Fifty-seven of fifty-nine
+				// break-ups in the first hour of the camps were exactly that walk.
+				TPlayerBotAIStateMap::const_iterator leaderState =
+						s_mapPlayerBotAIStates.find(leader->GetPlayerID());
+				const bool bLeaderRelocating = leaderState != s_mapPlayerBotAIStates.end() &&
+						leaderState->second.dwRelocateSince != 0;
+				const int stragglerRadius = (bLeaderRelocating || state.bCurrentAction == BOT_ACTION_PARTY_ASSEMBLE)
+						? PLAYERBOT_PARTY_STRAGGLER_RADIUS * 4 : PLAYERBOT_PARTY_STRAGGLER_RADIUS;
 				if (levelDelta > 6 || leader->GetMapIndex() != ch->GetMapIndex() ||
-						distToLeader > PLAYERBOT_PARTY_COHESION_RADIUS)
+						distToLeader > stragglerRadius)
 				{
 					pParty->Quit(ch->GetPlayerID());
 					state.dwNextPartyCheckTime = dwNow + number(30000, 90000);
@@ -200,7 +251,7 @@ namespace
 		{
 			TPartyFinder(LPCHARACTER me, const TPlayerBotAIState& st)
 				: m_me(me), m_state(st), m_pTargetParty(NULL),
-				  m_pSoloCandidate(NULL), m_iSoloAffinity(-1) {}
+				  m_pSoloCandidate(NULL), m_iSoloAffinity(-1), m_bTargetPartyGuild(false) {}
 			bool operator()(LPENTITY ent)
 			{
 				if (!ent || !ent->IsType(ENTITY_CHARACTER))
@@ -214,7 +265,7 @@ namespace
 					TPlayerBotAIStateMap::const_iterator stateIt =
 							s_mapPlayerBotAIStates.find(candidate->GetPlayerID());
 					if (stateIt == s_mapPlayerBotAIStates.end() ||
-							stateIt->second.bBotRole != BOT_ROLE_PARTY_FIGHTER)
+							!IsPlayerBotPartyEligible(candidate, stateIt->second))
 						return true;
 
 					if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) > 3)
@@ -228,7 +279,7 @@ namespace
 						return true;
 
 					LPPARTY cp = candidate->GetParty();
-					if (cp && cp->GetMemberCount() < PLAYERBOT_PARTY_DESIRED_MAX)
+					if (cp && cp->GetMemberCount() < (DWORD)GetPlayerBotPartyDesiredMax(m_me))
 					{
 						LPCHARACTER leader = cp->GetLeaderCharacter();
 						if (leader && leader->GetMapIndex() == m_me->GetMapIndex())
@@ -239,8 +290,15 @@ namespace
 										PLAYERBOT_PARTY_COHESION_RADIUS) &&
 									IsPlayerBotPathClear(m_me->GetMapIndex(), m_me->GetX(), m_me->GetY(), leader->GetX(), leader->GetY()))
 							{
-								m_pTargetParty = cp;
-								return false; // Found existing local party with nearby leader
+								// A guild mate's party is taken at once; any other is
+								// kept in hand while the sweep looks for a guild mate's.
+								const bool bGuild = ArePlayerBotsGuildMates(m_me, leader);
+								if (bGuild || !m_pTargetParty)
+								{
+									m_pTargetParty = cp;
+									m_bTargetPartyGuild = bGuild;
+								}
+								return !bGuild;
 							}
 						}
 					}
@@ -250,7 +308,8 @@ namespace
 						// sector happened to hand over first. A bot that has hunted
 						// with somebody before will look for them again.
 						const int affinity = GetPlayerBotAffinity(
-								m_state, candidate->GetPlayerID());
+								m_state, candidate->GetPlayerID()) +
+								(ArePlayerBotsGuildMates(m_me, candidate) ? PLAYERBOT_GUILD_PARTY_POINTS : 0);
 						if (affinity > m_iSoloAffinity)
 						{
 							m_iSoloAffinity = affinity;
@@ -265,6 +324,7 @@ namespace
 			LPPARTY m_pTargetParty;
 			LPCHARACTER m_pSoloCandidate;
 			int m_iSoloAffinity;
+			bool m_bTargetPartyGuild;
 		};
 
 		TPartyFinder finder(ch, state);
@@ -1059,6 +1119,7 @@ void CPlayerBotManager::Update()
 		s_uPlayerBotLoadTargetSearches = s_uPlayerBotLoadTargetMisses = s_uPlayerBotLoadTargetUs = s_uPlayerBotLoadSnapshotUs = 0;
 		s_dwPlayerBotLoadReportTime = dwNow;
 	}
+	ReportPlayerBotSpotMemory(dwNow);
 
 	for (TPlayerBotMap::iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)
 	{
@@ -1409,6 +1470,8 @@ void CPlayerBotManager::Update()
 		UseHealthPotion(ch, state, dwNow);
 		UseManaPotion(ch, state, dwNow);
 		UseUtilityPotions(ch, state, dwNow);
+		ManagePlayerBotChests(ch, state, dwNow);
+		UsePlayerBotBoosters(ch, state, dwNow);
 		// This also catches a bot loaded from the database at critically low HP
 		// after a server restart.  Do not let it immediately reacquire a target.
 		if (!state.bRecoveringAfterDeath && ch->GetMaxHP() > 0 &&
@@ -1529,6 +1592,8 @@ void CPlayerBotManager::Update()
 					++s_uPlayerBotLoadTargetMisses;
 			}
 			state.dwTargetVID = target ? (DWORD)target->GetVID() : 0;
+			if (target && target->IsMonster())
+				RememberPlayerBotSpotFight(ch->GetMapIndex(), target->GetX(), target->GetY(), dwNow);
 
 			if (target)
 			{

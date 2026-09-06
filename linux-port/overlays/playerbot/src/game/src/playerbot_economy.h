@@ -295,6 +295,10 @@ namespace
 				vnum == PLAYERBOT_BATTLE_HORSE_BOOK_VNUM ||
 				(vnum >= 50701 && vnum <= 50706))
 			return false;
+		// A chest is opened on the next pass, not sold; the bonus scrolls, boosters
+		// and big potions it holds carry ANTI_SELL and never reach this rule.
+		if (vnum == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
+			return false;
 
 		// Fishing tackle and the catch worth keeping. Pearls are the entire point
 		// of a fishing trip -- they are what carries equipment to +7/+8/+9 -- and a
@@ -319,6 +323,10 @@ namespace
 
 		if (item->GetType() == ITEM_SKILLBOOK)
 		{
+			// The Metin dropper keeps every book: the ones it cannot read are what
+			// it puts on the counter.
+			if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER)
+				return false;
 			// Keep books for the selected build (also before profession selection).
 			// Books for another class/build may first be handed to a party member;
 			// if nobody needs them they become normal miscellaneous loot.

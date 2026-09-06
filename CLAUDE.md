@@ -178,6 +178,44 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   every neighbour of every node cost 31 s of every 60 at 850 bots. Only the
   walk (`SegmentClearWorld`, one segment per tick) asks live, as the safety net
   for anything placed after the grid was built.
+- **Hubs are placed by hand, chosen by memory.** A hunting hub is a
+  `TPlayerBotHuntingHub` - a spawn-point coordinate, a level band, and whether
+  it is a party's work - and `ChoosePlayerBotHuntingHub` picks among the ones a
+  bot qualifies for by what `playerbot_world_memory.h` has seen there: every
+  target search records the monsters within reach of the bot that ran it in a
+  6400-unit cell, halved every ten minutes. The memory says how full a place
+  is; the table says where a place is. Do not let it invent places - a bot
+  standing where a pack respawned round it is not standing where the pack
+  lives. Orc Valley's table is banded: Fanatic islands 30-39, the density hubs
+  36+, the three Black Orc camps 40+ with a party, the Curse Book island 45+
+  with a party. `PLAYERBOT_SPOT:` logs each choice and, every ten minutes, the
+  richest cells per map; a cell that keeps coming top with no hub on it is a
+  hub the table is missing.
+- **A hub is chosen by share, distance and time, in that order.** The score
+  is the monsters in reach divided among the bots already there, halved at
+  20 km, and a choice is kept for four minutes. The first version scored by
+  share alone and re-chose on every wander decision: bots crossed the valley
+  for a slightly better camp and back again - 160 to 334 far plans a minute
+  against 26 to 65, and the tick at 57 s of every 60.
+- **The engine patches under `overlays/playerbot/patches/` are applied with
+  `patch --fuzz=0` by prepare-context.sh**, in order, on top of the staged
+  port source - so a new one is diffed against the builder container's copy
+  of the file (which is that state), not against `m2src-cache`. 0006 adds two
+  CONFIG tokens (`MOONLIGHT_CHEST_PERMILLE`, `..._STONE_PERMILLE`, rendered by
+  `m2-render-config` from `M2_MOONLIGHT_CHEST_*`) and, in `CreateDropItem`,
+  tops a Metin stone up to three skill books and rolls the chest. The chest's
+  contents come from `serverfiles/special_item_group.moonlight.txt`; the
+  engine keeps the *first* group it reads for a vnum, so the Dockerfile cuts
+  the stock 50011 block out before appending ours. `playerbot_consumables.h`
+  opens the chest and drinks the boosters; the bonus scrolls, speed potions
+  and big potions it holds go through the code that already handled them.
+- **Droppers are personalities, not roles.** `IsPlayerBotDropper` names the
+  four; `GetPlayerBotPersonalityByPID` is how a rule that only has a
+  character asks. The travel gates (`ShouldPlayerBotVisitM3`,
+  `ShouldPlayerBotHuntM2Bestials`, `ShouldPlayerBotPursueHorseExpedition`)
+  answer for them by level alone, the stall treats them as keepers, and the
+  Metin dropper's books are never junk. Appending to the personality enum is
+  safe; inserting shifts every id in the panel's status file.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

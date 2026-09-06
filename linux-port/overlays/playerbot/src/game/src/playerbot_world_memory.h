@@ -141,6 +141,213 @@ namespace
 		// Half the encounters have to agree before this counts as "the" race.
 		return (bestCount * 2 >= it->second.dwSamples) ? best : PLAYERBOT_RACE_NONE;
 	}
+
+	// ------------------------------------------------------------ the spots
+	//
+	// Where the monsters are, as the population has seen it. Every target search
+	// counts the monsters within reach of the bot that ran it, level aside, and
+	// drops that count into the cell the bot stood in; every fight that starts
+	// is a mark on the cell it started in. Hubs are then chosen by what the cell
+	// under them has been seen to hold, divided among the bots already there.
+	//
+	// The hubs themselves stay hand-placed on spawn points: the memory says how
+	// full a place is, the table says where a place is. Letting the memory
+	// invent places would send bots to wherever they happened to stand when a
+	// pack respawned round them, which is not where the pack lives.
+	struct TPlayerBotSpotCell
+	{
+		DWORD dwSamples;
+		DWORD dwMonsters;
+		DWORD dwFights;
+		// Sum of the levels of the monsters counted, so a cell can say how strong
+		// its monsters are as well as how many: a camp of level-46 knights is
+		// full, and no place for a bot of thirty-six on its own.
+		DWORD dwLevelSum;
+		DWORD dwDecayStamp;
+		TPlayerBotSpotCell() : dwSamples(0), dwMonsters(0), dwFights(0), dwLevelSum(0), dwDecayStamp(0) {}
+	};
+	typedef std::map<unsigned long long, TPlayerBotSpotCell> TPlayerBotSpotMap;
+	TPlayerBotSpotMap s_mapSpotMemory;
+	DWORD s_dwSpotReportTime = 0;
+
+	unsigned long long PlayerBotSpotKey(long lMapIndex, long cellX, long cellY)
+	{
+		return ((unsigned long long)(DWORD)lMapIndex << 40) |
+				((unsigned long long)((DWORD)cellY & 0xfffffU) << 20) |
+				(unsigned long long)((DWORD)cellX & 0xfffffU);
+	}
+
+	void DecayPlayerBotSpotCell(TPlayerBotSpotCell& cell, DWORD dwNow)
+	{
+		if (cell.dwDecayStamp == 0)
+			cell.dwDecayStamp = dwNow;
+		while (dwNow - cell.dwDecayStamp >= PLAYERBOT_SPOT_DECAY_INTERVAL)
+		{
+			cell.dwSamples /= 2;
+			cell.dwMonsters /= 2;
+			cell.dwFights /= 2;
+			cell.dwLevelSum /= 2;
+			cell.dwDecayStamp += PLAYERBOT_SPOT_DECAY_INTERVAL;
+			if (cell.dwSamples == 0 && cell.dwMonsters == 0 && cell.dwFights == 0)
+			{
+				cell.dwDecayStamp = dwNow;
+				break;
+			}
+		}
+	}
+
+	TPlayerBotSpotCell& PlayerBotSpotCellAt(long lMapIndex, long x, long y, DWORD dwNow)
+	{
+		TPlayerBotSpotCell& cell = s_mapSpotMemory[PlayerBotSpotKey(lMapIndex,
+				x / PLAYERBOT_SPOT_CELL, y / PLAYERBOT_SPOT_CELL)];
+		DecayPlayerBotSpotCell(cell, dwNow);
+		return cell;
+	}
+
+	void RememberPlayerBotSpotSighting(long lMapIndex, long x, long y, int iMonsters, int iLevelSum, DWORD dwNow)
+	{
+		if (x < 0 || y < 0)
+			return;
+		TPlayerBotSpotCell& cell = PlayerBotSpotCellAt(lMapIndex, x, y, dwNow);
+		++cell.dwSamples;
+		cell.dwMonsters += (DWORD)std::max(0, iMonsters);
+		cell.dwLevelSum += (DWORD)std::max(0, iLevelSum);
+	}
+
+	void RememberPlayerBotSpotFight(long lMapIndex, long x, long y, DWORD dwNow)
+	{
+		if (x < 0 || y < 0)
+			return;
+		++PlayerBotSpotCellAt(lMapIndex, x, y, dwNow).dwFights;
+	}
+
+	// Monsters per look, in thousandths, over the cell and the eight around it -
+	// a hub sits on a cell edge as often as not. Zero with no looks; the caller
+	// decides what an unknown place is worth.
+	int GetPlayerBotSpotDensityPermille(long lMapIndex, long x, long y, DWORD dwNow, DWORD* pdwSamples, int* piAverageLevel)
+	{
+		DWORD samples = 0, monsters = 0, levels = 0;
+		const long cx = x / PLAYERBOT_SPOT_CELL;
+		const long cy = y / PLAYERBOT_SPOT_CELL;
+		for (long dy = -1; dy <= 1; ++dy)
+		{
+			for (long dx = -1; dx <= 1; ++dx)
+			{
+				TPlayerBotSpotMap::iterator it = s_mapSpotMemory.find(
+						PlayerBotSpotKey(lMapIndex, cx + dx, cy + dy));
+				if (it == s_mapSpotMemory.end())
+					continue;
+				DecayPlayerBotSpotCell(it->second, dwNow);
+				samples += it->second.dwSamples;
+				monsters += it->second.dwMonsters;
+				levels += it->second.dwLevelSum;
+			}
+		}
+		if (pdwSamples)
+			*pdwSamples = samples;
+		if (piAverageLevel)
+			*piAverageLevel = monsters == 0 ? 0 : (int)(levels / monsters);
+		return samples == 0 ? 0 : (int)((unsigned long long)monsters * 1000ULL / samples);
+	}
+
+	// Where the other bots on a map stand right now, taken once per decision
+	// so that scoring twenty-five hubs does not mean twenty-five walks over the
+	// state map. The asker's own party and guild are left out when asked to -
+	// the ones a leader wants beside it are not a crowd.
+	struct TPlayerBotCrowdEntry
+	{
+		long x;
+		long y;
+		LPPARTY pParty;
+		CGuild* pGuild;
+	};
+
+	void CollectPlayerBotCrowd(LPCHARACTER me, long lMapIndex, std::vector<TPlayerBotCrowdEntry>& out)
+	{
+		out.clear();
+		for (TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.begin();
+				it != s_mapPlayerBotAIStates.end(); ++it)
+		{
+			LPCHARACTER other = CHARACTER_MANAGER::instance().FindByPID(it->first);
+			if (!other || other == me || other->GetMapIndex() != lMapIndex)
+				continue;
+			TPlayerBotCrowdEntry entry;
+			entry.x = other->GetX();
+			entry.y = other->GetY();
+			entry.pParty = other->GetParty();
+			entry.pGuild = other->GetGuild();
+			out.push_back(entry);
+		}
+	}
+
+	int CountPlayerBotsNear(LPCHARACTER me, const std::vector<TPlayerBotCrowdEntry>& crowd,
+			long x, long y, int iRadius, bool bIgnoreOwnParty)
+	{
+		int count = 0;
+		LPPARTY myParty = (me && bIgnoreOwnParty) ? me->GetParty() : NULL;
+		CGuild* myGuild = (me && bIgnoreOwnParty) ? me->GetGuild() : NULL;
+		for (size_t i = 0; i < crowd.size(); ++i)
+		{
+			if (DISTANCE_APPROX(crowd[i].x - x, crowd[i].y - y) > iRadius)
+				continue;
+			if (myParty && crowd[i].pParty == myParty)
+				continue;
+			if (myGuild && crowd[i].pGuild == myGuild)
+				continue;
+			++count;
+		}
+		return count;
+	}
+
+	// Once in a while, what the population thinks the richest ground is. Read
+	// this against the hub tables: a cell nobody's hub covers that keeps coming
+	// top is a hub the table is missing.
+	void ReportPlayerBotSpotMemory(DWORD dwNow)
+	{
+		if (s_dwSpotReportTime == 0)
+		{
+			s_dwSpotReportTime = dwNow;
+			return;
+		}
+		if (dwNow - s_dwSpotReportTime < PLAYERBOT_SPOT_REPORT_INTERVAL)
+			return;
+		s_dwSpotReportTime = dwNow;
+
+		std::map<long, std::vector<std::pair<int, unsigned long long> > > byMap;
+		for (TPlayerBotSpotMap::iterator it = s_mapSpotMemory.begin(); it != s_mapSpotMemory.end(); ++it)
+		{
+			DecayPlayerBotSpotCell(it->second, dwNow);
+			if (it->second.dwSamples < PLAYERBOT_SPOT_MIN_SAMPLES)
+				continue;
+			const long map = (long)(it->first >> 40);
+			byMap[map].push_back(std::make_pair(
+					(int)((unsigned long long)it->second.dwMonsters * 1000ULL / it->second.dwSamples), it->first));
+		}
+		for (std::map<long, std::vector<std::pair<int, unsigned long long> > >::iterator m = byMap.begin();
+				m != byMap.end(); ++m)
+		{
+			std::sort(m->second.begin(), m->second.end());
+			std::string line;
+			int shown = 0;
+			for (size_t i = m->second.size(); i > 0 && shown < 3; --i, ++shown)
+			{
+				const unsigned long long key = m->second[i - 1].second;
+				const long cx = (long)(key & 0xfffffU);
+				const long cy = (long)((key >> 20) & 0xfffffU);
+				const TPlayerBotSpotCell& cell = s_mapSpotMemory[key];
+				char buf[96];
+				snprintf(buf, sizeof(buf), " (%ld,%ld)=%d.%d/look lvl~%u fights=%u looks=%u",
+						cx * PLAYERBOT_SPOT_CELL + PLAYERBOT_SPOT_CELL / 2,
+						cy * PLAYERBOT_SPOT_CELL + PLAYERBOT_SPOT_CELL / 2,
+						m->second[i - 1].first / 1000, (m->second[i - 1].first % 1000) / 100,
+						cell.dwMonsters ? (unsigned int)(cell.dwLevelSum / cell.dwMonsters) : 0U,
+						cell.dwFights, cell.dwSamples);
+				line += buf;
+			}
+			sys_log(0, "PLAYERBOT_SPOT: map=%ld cells=%u richest:%s",
+					m->first, (unsigned int)m->second.size(), line.c_str());
+		}
+	}
 }
 
 #endif

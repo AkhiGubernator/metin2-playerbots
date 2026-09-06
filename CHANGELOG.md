@@ -17,6 +17,53 @@ every version here.
 
 ---
 
+## 1.28.0 — 2026-09-06
+
+### Nowe
+
+- **Boty logują się stopniowo przez minutę po starcie serwera.** Do tej pory
+  cała populacja wchodziła do świata w jednej sekundzie: 848 postaci, każda w
+  pierwszym ticku prosiła o trasę, a budżet nawigacji to 32 plany na tick.
+  Kto nie dostał trasy, stał; strażnik bezczynności go resetował; reset prosił
+  znowu — 4075 resetów w pierwsze dziewięć minut i rdzeń na 99,9%. Teraz
+  logowanie idzie partiami po 15 na sekundę, a pierwsze ciężkie przebiegi bota
+  (ulepszanie, dobór sprzętu, zakupy, kamienie) są rozłożone po pidzie na tę
+  samą minutę. Populacja 850 botów jest w świecie po 66 sekundach.
+- **Raz na minutę serwer pisze, ile kosztowała populacja.** Linia
+  `PLAYERBOT_LOAD:` w syslogu: czas ticku, liczba i czas planów tras w czterech
+  koszykach odległości, odroczenia, szukanie celu, migawka panelu, skany mapy,
+  zapisy, resety strażnika. Bez tej linii pierwsza wersja wędrówki po materiał
+  została zdiagnozowana z samego CPU — i wszystkie skany populacji wpadły w
+  jedną sekundę.
+
+### Naprawione
+
+- **Zużycie CPU przy 850 botach spadło z 63–68% do 26% rdzenia.** Planer tras
+  pytał silnik o atrybut sektora na żywo dla każdego sąsiada każdego węzła A* —
+  do 24 razy na węzeł — choć siatka nawigacji ma ten sam bit spróbkowany w tym
+  samym punkcie. Tysiąc planów na minutę spędzało na tym 31 s z każdych 60.
+  Teraz planer czyta siatkę; tylko chód (segment przed botem, raz na tick)
+  pyta silnik, żeby wciąż zatrzymać bota przed czymś postawionym po zbudowaniu
+  siatki. Plan przez całą Dolinę Orków: 513 ms → 50–80 ms; plan na 256–1024
+  komórek: 35 ms → 5–10 ms.
+- **Jeden tick nie zatrzymuje już świata na pół sekundy.** Budżet planów na
+  tick liczył sztuki, a plan może kosztować 0,2 ms albo 80 ms. Obok liczby
+  jest teraz czas: po 50 ms planowania reszta próśb w tym ticku idzie
+  ścieżką odroczenia i wraca w ciągu dwóch sekund. Wiąże tylko w minucie po
+  starcie.
+- **Zapis postaci bota co 120 s zamiast co 30 s.** Silnik i tak zapisuje każdą
+  postać co 120 s, a awans poziomu wymusza zapis natychmiast; boty dokładały
+  cztery zbędne zapisy na jeden zapis silnika — blisko trzydzieści na sekundę.
+- **Launcher mówi, czego brakuje, zamiast „exit 1".** Kontener
+  `playerbot-migrate` kończy się w pierwszej sekundzie, gdy brak lub pusty jest
+  plik `playerbots_seed.sql`; launcher kopiował go tylko wtedy, gdy źródło
+  istniało, i milczał, gdy nie. Teraz brak źródła daje ostrzeżenie z pełną
+  ścieżką, brak pliku w paczce zatrzymuje start przed `docker compose` z
+  instrukcją co zrobić, a gdy `compose up` się nie uda, w logu launchera lądują
+  ostatnie 40 linii z `playerbot-migrate`, `mariadb`, `game` i `panel`.
+
+---
+
 ## 1.27.0 — 2026-09-06
 
 ### Nowe

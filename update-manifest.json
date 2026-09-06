@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-05T23:40:00Z",
-  "statusMessage": "Aktualizacja 1.27.0. Bot, ktoremu brakuje ulepszacza, idzie po niego do potwora, ktory go nosi - w pierwsze 24 minuty 385 botow wyruszylo 1845 razy, 500 z nich po Amulet Orka. Cena na straganie bierze sie z zakonczonych sprzedazy, nie ze stalego mnoznika. Bron wyceniana po tym, jak szkola zadaje obrazenia (fizyka kontra magia). Rybia Osc, Malz i perly sa ulepszaczami. Kamien Duszy wkladany jak u gracza: 30% szans, pekniety kamien przy porazce - wczesniej boty mialy 100% za darmo. Bot nie przekuje broni w stopien, ktorego nie zalozy.",
+  "publishedAt": "2026-09-06T08:14:00Z",
+  "statusMessage": "Aktualizacja 1.28.0. Zuzycie CPU przy 850 botach spadlo z 63-68% do 24% rdzenia: planer tras pytal silnik o atrybut sektora dla kazdego sasiada kazdego wezla A*, choc siatka nawigacji ma ten sam bit. Boty loguja sie stopniowo przez minute po starcie zamiast wszystkie w jednej sekundzie. Raz na minute serwer pisze w syslogu, ile kosztowala populacja (PLAYERBOT_LOAD). Launcher mowi, ktorego pliku brakuje, zamiast konczyc z exit 1, i zapisuje logi kontenerow przy nieudanym starcie.",
   "server": {
-    "version": "1.27.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.27.0/metin2-server-update-1.27.0.zip",
-    "sha256": "48E0593622CD3AF44384F547AA2249A083E096111AE19067ADA1FF4B8F29507A"
+    "version": "1.28.0",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.28.0/metin2-server-update-1.28.0.zip",
+    "sha256": "8406A337D6121C6493D39BECA110ECF6605A3F322F92013D24C0FC5EC4C9C26F"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

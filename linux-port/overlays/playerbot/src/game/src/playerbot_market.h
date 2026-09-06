@@ -441,6 +441,93 @@ namespace
 				(unsigned int)state.dwMarketStallVID, ch->GetX(), ch->GetY());
 		return ContinuePlayerBotMarketTrip(ch, state, dwNow, pitchX, pitchY);
 	}
+
+	// Once a minute, the ledger playerbot_world_memory.h keeps: every open
+	// counter's lines, and every bot short of a material with the money and
+	// the bag room to go and buy it. Walked here rather than kept up to date
+	// by the sites that change it, because those sites are a purchase, a
+	// stall closing, a refine consuming a material, a drop landing in a bag
+	// and a bot outgrowing a piece - and one walk a minute is cheaper than
+	// getting all five right. Eight hundred bags once a minute is what one
+	// target scan costs, and a target scan happens hundreds of times a minute.
+	//
+	// Every ten minutes it is written down: the counters, the shortages, and
+	// what the listing decisions said in between. Read the top of that list
+	// against the drops: a material with thirty bots short and nothing on any
+	// counter is not being held back by the ledger, it is not being found.
+	void RefreshPlayerBotMarketLedger(DWORD dwNow)
+	{
+		if (s_dwMarketLedgerTime != 0 &&
+				dwNow - s_dwMarketLedgerTime < PLAYERBOT_MARKET_LEDGER_INTERVAL)
+			return;
+		s_dwMarketLedgerTime = dwNow;
+		s_mapMarketLedger.clear();
+
+		DWORD stalls = 0, lines = 0, demandBots = 0;
+		std::set<DWORD> wanted;
+		for (TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.begin();
+				it != s_mapPlayerBotAIStates.end(); ++it)
+		{
+			LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(it->first);
+			if (!ch || !ch->IsItemLoaded())
+				continue;
+			const TPlayerBotAIState& state = it->second;
+			if (ch->GetMyShop() && !state.vecShopOffers.empty())
+			{
+				++stalls;
+				for (size_t k = 0; k < state.vecShopOffers.size(); ++k)
+				{
+					const TPlayerBotShopOffer& offer = state.vecShopOffers[k];
+					// A line that has been bought stays in the offer list; the
+					// item does not stay in the bag.
+					if (!FindPlayerBotStallItem(ch, offer.dwVnum, offer.bRefine))
+						continue;
+					AddPlayerBotMarketSupply(offer.dwVnum, offer.wCount);
+					++lines;
+				}
+			}
+			// A keeper counts as a buyer too: its counter closes within the
+			// half hour and its own anvil is still waiting.
+			if (!CanPlayerBotAffordMarket(ch))
+				continue;
+			CollectPlayerBotWantedMaterials(ch, wanted);
+			if (wanted.empty())
+				continue;
+			++demandBots;
+			for (std::set<DWORD>::const_iterator w = wanted.begin(); w != wanted.end(); ++w)
+				++s_mapMarketLedger[*w].dwDemandBots;
+		}
+
+		if (s_dwMarketReportTime != 0 &&
+				dwNow - s_dwMarketReportTime < PLAYERBOT_MARKET_REPORT_INTERVAL)
+			return;
+		s_dwMarketReportTime = dwNow;
+
+		std::vector<std::pair<DWORD, DWORD> > ranked; // demand, vnum
+		for (TPlayerBotMarketLedger::const_iterator e = s_mapMarketLedger.begin();
+				e != s_mapMarketLedger.end(); ++e)
+			ranked.push_back(std::make_pair(e->second.dwDemandBots, e->first));
+		std::sort(ranked.rbegin(), ranked.rend());
+		std::string top;
+		for (size_t i = 0; i < ranked.size() && i < 8; ++i)
+		{
+			const TPlayerBotMarketLedgerEntry& entry = s_mapMarketLedger[ranked[i].second];
+			const TItemTable* proto = ITEM_MANAGER::instance().GetTable(ranked[i].second);
+			char buf[128];
+			snprintf(buf, sizeof(buf), " %s(%u) D=%u S=%u/%u ask=%u",
+					proto ? proto->szLocaleName : "?", ranked[i].second,
+					entry.dwDemandBots, entry.dwSupplyUnits, entry.dwSupplyStalls,
+					GetPlayerBotLastAsk(ranked[i].second, 0, dwNow));
+			top += buf;
+		}
+		sys_log(0, "PLAYERBOT_MARKET: ledger stalls=%u lines=%u vnums=%u demand_bots=%u decisions list=%u probe=%u no_demand=%u overstock=%u top:%s",
+				stalls, lines, (unsigned int)s_mapMarketLedger.size(), demandBots,
+				s_auMarketDecisions[PLAYERBOT_LIST_LIST], s_auMarketDecisions[PLAYERBOT_LIST_PROBE],
+				s_auMarketDecisions[PLAYERBOT_LIST_NO_DEMAND], s_auMarketDecisions[PLAYERBOT_LIST_OVERSTOCK],
+				top.c_str());
+		for (int d = 0; d < PLAYERBOT_LIST_DECISIONS; ++d)
+			s_auMarketDecisions[d] = 0;
+	}
 }
 
 #endif

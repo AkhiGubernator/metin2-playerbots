@@ -460,20 +460,62 @@ namespace
 		if (item->GetType() == ITEM_METIN)
 			unit = PLAYERBOT_SHOP_PRICE_SOUL_STONE[std::min(4, GetPlayerBotSoulStoneGrade(item->GetVnum()))];
 
-		// What the market has paid outranks what the merchant would. Clamped to
-		// a floor of the merchant's own price - below that the stall is a worse
-		// deal than the NPC for the seller - and a ceiling that keeps one bot's
-		// overpayment from pricing the material out of every other bot's reach.
+		// That is the prior: what the counter asks before the market has said
+		// anything.
+		const DWORD prior = unit;
+		const DWORD dwNow = get_dword_time();
+
+		// What the market has paid, blended with the prior by how much of it
+		// there is - w = n / (n + n0), in log space so a tenfold gap is halved
+		// rather than averaged. Two sales move the number a third of the way;
+		// the full memory of eight, two thirds. It used to replace the prior
+		// outright at two sales, so one bot buying twice at a bad price set
+		// the price of the thing for everybody. Clamped first to a floor of the
+		// merchant's own price - below that the stall is a worse deal than the
+		// NPC for the seller - and a ceiling that keeps one overpayment from
+		// pricing the material out of every other bot's reach.
 		size_t samples = 0;
-		const DWORD paid = GetPlayerBotSaleUnitPrice(item->GetVnum(), refine,
-				get_dword_time(), &samples);
+		const DWORD paid = GetPlayerBotSaleUnitPrice(item->GetVnum(), refine, dwNow, &samples);
 		if (paid != 0)
 		{
 			const DWORD floor = std::max<DWORD>(1, npcUnit);
 			const DWORD cap = npcUnit == 0 ? PLAYERBOT_SALE_PRICE_CAP_FLAT
 					: npcUnit * PLAYERBOT_SALE_PRICE_CAP_MULT;
-			unit = std::min(std::max(paid, floor), std::max(floor, cap));
+			const DWORD market = std::min(std::max(paid, floor), std::max(floor, cap));
+			if (prior == 0)
+				unit = market;
+			else
+			{
+				const double w = (double)samples /
+						(double)(samples + PLAYERBOT_MARKET_ANCHOR_N0);
+				unit = (DWORD)(exp((1.0 - w) * log((double)prior) +
+						w * log((double)market)) + 0.5);
+			}
 		}
+
+		// Then the ledger, for a material: (D + q0) / (S + q0) to the fifth
+		// root, within [0.75, 1.35] - so twenty bots short of a thing against
+		// five units on the counters asks a fifth more, not four times. Nothing
+		// when the ledger has seen neither a counter nor a buyer: that is no
+		// information, not a shortage.
+		if (unit > 0 && IsPlayerBotTradeableMaterial(item))
+		{
+			const TPlayerBotMarketLedgerEntry* entry = GetPlayerBotMarketLedgerEntry(item->GetVnum());
+			if (entry && (entry->dwDemandBots > 0 || entry->dwSupplyUnits > 0))
+			{
+				const double ratio =
+						(double)(entry->dwDemandBots + PLAYERBOT_MARKET_REGULATOR_Q0) /
+						(double)(entry->dwSupplyUnits + PLAYERBOT_MARKET_REGULATOR_Q0);
+				const double mult = std::max(PLAYERBOT_MARKET_REGULATOR_MIN,
+						std::min(PLAYERBOT_MARKET_REGULATOR_MAX,
+							pow(ratio, PLAYERBOT_MARKET_REGULATOR_EXPONENT)));
+				unit = std::max<DWORD>(1, (DWORD)(unit * mult + 0.5));
+			}
+		}
+
+		// And a bounded step from wherever the last counter had it, so the
+		// market's price of a thing drifts rather than jumps.
+		unit = LimitPlayerBotAskStep(item->GetVnum(), refine, std::max<DWORD>(1, unit), dwNow);
 		const DWORD price = unit * (DWORD)item->GetCount();
 		return price == 0 ? 1U : price;
 	}
@@ -534,7 +576,40 @@ namespace
 				ch->GetLevel() < GetPlayerBotNextHorseRequiredLevel(ch->GetHorseLevel());
 	}
 
-	int ScorePlayerBotShopStock(LPCHARACTER ch, LPITEM item, bool merchant)
+	// Whether the market wants another stack of this material on a counter,
+	// and the reason when it does not. LIST while the counters hold fewer
+	// units than the bots short of it would buy; PROBE when nobody is short of
+	// it and nothing of it is on sale, so one stack finds out; NO_DEMAND when
+	// a stack is already finding out; OVERSTOCK when the buyers are covered.
+	// The two refusals are logged with the numbers, once a minute, because a
+	// material held back looks exactly like a material never dropped.
+	int DecidePlayerBotMaterialListing(LPCHARACTER ch, LPITEM item, bool report)
+	{
+		const TPlayerBotMarketLedgerEntry* entry = GetPlayerBotMarketLedgerEntry(item->GetVnum());
+		const DWORD supply = entry ? entry->dwSupplyUnits : 0;
+		const DWORD demand = entry ? entry->dwDemandBots : 0;
+		int decision;
+		if (demand == 0)
+			decision = supply == 0 ? PLAYERBOT_LIST_PROBE : PLAYERBOT_LIST_NO_DEMAND;
+		else
+		{
+			const DWORD target = demand * PLAYERBOT_MARKET_SUPPLY_PER_BUYER *
+					PLAYERBOT_MARKET_SUPPLY_MARGIN_PERCENT / 100;
+			decision = supply < target ? PLAYERBOT_LIST_LIST : PLAYERBOT_LIST_OVERSTOCK;
+		}
+		if (!report)
+			return decision;
+		++s_auMarketDecisions[decision];
+		if (decision == PLAYERBOT_LIST_NO_DEMAND || decision == PLAYERBOT_LIST_OVERSTOCK)
+			PlayerBotLogThrottled("PLAYERBOT_MARKET_HELD", get_dword_time(),
+					"PLAYERBOT_MARKET: held pid=%u name=%s vnum=%u count=%u reason=%s supply=%u demand=%u",
+					ch->GetPlayerID(), ch->GetName(), item->GetVnum(),
+					(unsigned int)item->GetCount(), s_apszMarketDecisionNames[decision],
+					supply, demand);
+		return decision;
+	}
+
+	int ScorePlayerBotShopStock(LPCHARACTER ch, LPITEM item, bool merchant, bool report)
 	{
 		if (!item)
 			return -1;
@@ -558,13 +633,25 @@ namespace
 		// have to farm for an hour. Only the ones some recipe actually consumes
 		// rank this high - the rest of ITEM_MATERIAL is scenery to an anvil.
 		if (IsPlayerBotTradeableMaterial(item))
-			return 500;
+		{
+			// ...and only as many of them as the market is short of. A probe
+			// ranks just below a wanted material, so a counter with both shows
+			// the wanted one first.
+			const int decision = DecidePlayerBotMaterialListing(ch, item, report);
+			if (decision == PLAYERBOT_LIST_LIST)
+				return 500;
+			if (decision == PLAYERBOT_LIST_PROBE)
+				return 450;
+			return -1;
+		}
 		// A Forgetting Scroll sells well; the keeper keeps it only while one of
 		// its own skills is waiting for it.
 		if (item->GetVnum() == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
 			return GetPlayerBotStuckSkill(ch) != 0 ? -1 : 800;
+		// An ITEM_MATERIAL no recipe consumes is scenery, not goods: it was put
+		// up for its type, and its type is not a reason anybody would buy it.
 		if (item->GetRefinedVnum() == 0 && item->GetType() == ITEM_MATERIAL)
-			return 200;
+			return -1;
 		// A soul stone the bot cannot seat - the wrong school's, no socket open,
 		// the wrong grade for the piece it keeps - is somebody else's set.
 		if (item->GetType() == ITEM_METIN)
@@ -631,6 +718,10 @@ namespace
 		outScored.clear();
 		if (!ch || !ch->IsItemLoaded())
 			return;
+		// Once a minute per bot the ledger decisions are counted and the
+		// refusals logged; the other scans of the same bag say nothing.
+		const bool report = ShouldReportPlayerBotMarketDecisions(
+				ch->GetPlayerID(), get_dword_time());
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
@@ -665,7 +756,7 @@ namespace
 				if (wearCell < 0 || ch->GetWear((BYTE)wearCell) == NULL)
 					continue;
 			}
-			const int score = ScorePlayerBotShopStock(ch, item, merchant);
+			const int score = ScorePlayerBotShopStock(ch, item, merchant, report);
 			if (score > 0)
 				outScored.push_back(std::make_pair(score, cell));
 		}
@@ -1229,6 +1320,10 @@ namespace
 		// CShopManager::Buy indexes by. A bot browsing the market reads this
 		// rather than the engine's structure.
 		state.vecShopOffers = offers;
+		// On the ledger now rather than at its next refresh - see
+		// AddPlayerBotMarketSupply for the three keepers this is about.
+		for (size_t i = 0; i < offers.size(); ++i)
+			AddPlayerBotMarketSupply(offers[i].dwVnum, offers[i].wCount);
 		sys_log(0, "PLAYERBOT_SHOP: opened pid=%u name=%s items=%u first_vnum=%u first_price=%u pos=(%ld,%ld) sign=\"%s\"",
 				ch->GetPlayerID(), ch->GetName(), (unsigned int)tableCount,
 				offers[0].dwVnum, offers[0].dwPrice, ch->GetX(), ch->GetY(), sign);

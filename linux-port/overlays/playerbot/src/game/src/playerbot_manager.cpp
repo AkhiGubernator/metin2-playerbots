@@ -1075,6 +1075,7 @@ void CPlayerBotManager::Update()
 		s_dwPlayerBotLoadReportTime = dwNow;
 	}
 	ReportPlayerBotSpotMemory(dwNow);
+	RefreshPlayerBotMarketLedger(dwNow);
 
 	for (TPlayerBotMap::iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)
 	{

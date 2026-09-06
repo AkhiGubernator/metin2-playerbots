@@ -284,6 +284,19 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   resets. CPU alone said "A*" once and the fix put every bot's map scan in the
   same second; the line says which plans, and how many milliseconds each.
 
+- **The market is a ledger, not a shelf.** `RefreshPlayerBotMarketLedger`
+  (`playerbot_market.h`, once a minute from the tick) counts the units on
+  every open counter and the bots short of each material with money to buy
+  it. `DecidePlayerBotMaterialListing` in `playerbot_town.h` lists a
+  material only while supply is under 1.5 x 5 x demand, allows one probe
+  stack when nobody is short, and logs `PLAYERBOT_MARKET: held ... reason=`
+  for the rest. `GetPlayerBotShopAskingPrice` blends the prior with the
+  sale median by n/(n+4) in log space, applies ((D+5)/(S+5))^0.2 within
+  [0.75, 1.35] for materials, and `LimitPlayerBotAskStep` lets a price move
+  five percent per ten minutes. `PLAYERBOT_MARKET: ledger` every ten minutes
+  is the report. A human buying from a counter is invisible to all of it:
+  the purchase goes through CShopManager and never reaches this code.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

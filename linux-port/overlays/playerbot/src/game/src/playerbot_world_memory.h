@@ -151,6 +151,136 @@ namespace
 		return std::max<DWORD>(1, median);
 	}
 
+	// The ledger: how many units of a thing stand on open counters and how
+	// many bots are short of it, rebuilt once a minute by
+	// RefreshPlayerBotMarketLedger in playerbot_market.h from every stall and
+	// every bag. Both are this minute's count, not a forecast: a bot short of a
+	// material stays short until it buys, and the world has no clock a
+	// forecast could run on. Before this, a counter carried every spare
+	// material its keeper had, so a market of forty stalls was thirty stalls
+	// of the same three things nobody was short of.
+	//
+	// What it cannot see is a human. A player buying from a counter goes
+	// through CShopManager without touching this code, so a material a player
+	// clears out every evening reads here as unsold. The sale memory above has
+	// the same blind spot; both say so rather than pretend otherwise.
+	struct TPlayerBotMarketLedgerEntry
+	{
+		DWORD dwSupplyUnits;
+		DWORD dwSupplyStalls;
+		DWORD dwDemandBots;
+		TPlayerBotMarketLedgerEntry() : dwSupplyUnits(0), dwSupplyStalls(0), dwDemandBots(0)
+		{
+		}
+	};
+	typedef std::map<DWORD, TPlayerBotMarketLedgerEntry> TPlayerBotMarketLedger;
+	TPlayerBotMarketLedger s_mapMarketLedger;
+	DWORD s_dwMarketLedgerTime = 0;
+	DWORD s_dwMarketReportTime = 0;
+
+	// What the listing decision said about a material, counted for the
+	// ten-minute report. The names are the reason codes an operator reads in
+	// PLAYERBOT_MARKET: held lines.
+	enum EPlayerBotListDecision
+	{
+		PLAYERBOT_LIST_LIST = 0,
+		PLAYERBOT_LIST_PROBE,
+		PLAYERBOT_LIST_NO_DEMAND,
+		PLAYERBOT_LIST_OVERSTOCK,
+		PLAYERBOT_LIST_DECISIONS
+	};
+	DWORD s_auMarketDecisions[PLAYERBOT_LIST_DECISIONS] = { 0, 0, 0, 0 };
+	// When each bot's decisions were last counted. The bag is scored again on
+	// every tick of the walk to the pitch - four times a second for half a
+	// minute - and counting each of those made one keeper with five held
+	// materials read as sixteen hundred refusals a minute.
+	std::map<DWORD, DWORD> s_mapMarketDecisionStamp;
+
+	bool ShouldReportPlayerBotMarketDecisions(DWORD pid, DWORD dwNow)
+	{
+		DWORD& stamp = s_mapMarketDecisionStamp[pid];
+		if (stamp != 0 && dwNow - stamp < PLAYERBOT_MARKET_LEDGER_INTERVAL)
+			return false;
+		stamp = dwNow;
+		return true;
+	}
+	const char* const s_apszMarketDecisionNames[PLAYERBOT_LIST_DECISIONS] = {
+		"LIST", "PROBE", "NO_DEMAND", "OVERSTOCK"
+	};
+
+	const TPlayerBotMarketLedgerEntry* GetPlayerBotMarketLedgerEntry(DWORD vnum)
+	{
+		TPlayerBotMarketLedger::const_iterator it = s_mapMarketLedger.find(vnum);
+		return it == s_mapMarketLedger.end() ? NULL : &it->second;
+	}
+
+	// A stall that has just opened goes on the ledger at once rather than at
+	// the next refresh: three keepers scoring the same material in the same
+	// minute would otherwise each see the counters empty of it and all three
+	// put it up.
+	void AddPlayerBotMarketSupply(DWORD vnum, WORD count)
+	{
+		if (vnum == 0 || count == 0)
+			return;
+		TPlayerBotMarketLedgerEntry& entry = s_mapMarketLedger[vnum];
+		entry.dwSupplyUnits += count;
+		++entry.dwSupplyStalls;
+	}
+
+	// The unit price the world's counters last asked for a thing, keyed like
+	// the sale memory, so the next counter asks within a step of it.
+	struct TPlayerBotAskMemory
+	{
+		DWORD dwUnit;
+		DWORD dwAskTime;
+		DWORD dwMovedTime;
+		TPlayerBotAskMemory() : dwUnit(0), dwAskTime(0), dwMovedTime(0)
+		{
+		}
+	};
+	typedef std::map<DWORD, TPlayerBotAskMemory> TPlayerBotAskMap;
+	TPlayerBotAskMap s_mapAskMemory;
+
+	DWORD GetPlayerBotLastAsk(DWORD vnum, BYTE refine, DWORD dwNow)
+	{
+		TPlayerBotAskMap::const_iterator it = s_mapAskMemory.find(PlayerBotSaleKey(vnum, refine));
+		if (it == s_mapAskMemory.end() || it->second.dwUnit == 0 ||
+				dwNow - it->second.dwAskTime >= PLAYERBOT_MARKET_ASK_STALE)
+			return 0;
+		return it->second.dwUnit;
+	}
+
+	// What a counter may ask now, given what the last one asked: within
+	// PLAYERBOT_MARKET_STEP_PERCENT of it per PLAYERBOT_MARKET_STEP_INTERVAL
+	// since the price last moved, so the market's price of a thing drifts at a
+	// bounded rate however far the regulator points. Forty stalls each stepping
+	// five percent from the one before would otherwise walk a price sevenfold
+	// in the ten minutes they take to open. An hour with no counter asking at
+	// all and the memory is dropped: the next ask starts fresh.
+	DWORD LimitPlayerBotAskStep(DWORD vnum, BYTE refine, DWORD wanted, DWORD dwNow)
+	{
+		TPlayerBotAskMemory& mem = s_mapAskMemory[PlayerBotSaleKey(vnum, refine)];
+		if (mem.dwUnit == 0 || dwNow - mem.dwAskTime >= PLAYERBOT_MARKET_ASK_STALE)
+		{
+			mem.dwUnit = wanted;
+			mem.dwAskTime = mem.dwMovedTime = dwNow;
+			return wanted;
+		}
+		mem.dwAskTime = dwNow;
+		const DWORD steps = std::min<DWORD>(PLAYERBOT_MARKET_STEP_MAX_STEPS,
+				1 + (dwNow - mem.dwMovedTime) / PLAYERBOT_MARKET_STEP_INTERVAL);
+		const DWORD span = PLAYERBOT_MARKET_STEP_PERCENT * steps;
+		const DWORD lo = std::max<DWORD>(1, mem.dwUnit * (100 - span) / 100);
+		const DWORD hi = std::max<DWORD>(lo, mem.dwUnit * (100 + span) / 100);
+		const DWORD unit = std::min(hi, std::max(lo, wanted));
+		if (unit != mem.dwUnit)
+		{
+			mem.dwUnit = unit;
+			mem.dwMovedTime = dwNow;
+		}
+		return unit;
+	}
+
 	// The race a map is made of, or PLAYERBOT_RACE_NONE while the sample is too
 	// small or too mixed to call. A guess made from ten kills is worse than none.
 	int GetPlayerBotDominantRace(long mapIndex)

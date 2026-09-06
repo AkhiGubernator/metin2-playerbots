@@ -470,6 +470,37 @@ namespace
 	const DWORD PLAYERBOT_SALE_RECENT = 600000;
 	const DWORD PLAYERBOT_SALE_STALE = 3600000;
 
+	// The market ledger (playerbot_world_memory.h): what the counters hold of
+	// a thing and how many bots are short of it, rebuilt this often, and how
+	// often it is written to the log.
+	const DWORD PLAYERBOT_MARKET_LEDGER_INTERVAL = 60000;
+	const DWORD PLAYERBOT_MARKET_REPORT_INTERVAL = 600000;
+	// A material goes on a counter only while the counters hold fewer units of
+	// it than the bots short of it would buy, with a margin: five units a buyer
+	// - one refine's worth and a spare - and half as much again on top. With
+	// nobody short of it one stack may stand as a probe; more than that is
+	// stock nobody asked for, and it stays in the bag.
+	const DWORD PLAYERBOT_MARKET_SUPPLY_PER_BUYER = 5;
+	const DWORD PLAYERBOT_MARKET_SUPPLY_MARGIN_PERCENT = 150;
+	// Pricing. The prior counts as this many sales when the market's median is
+	// blended in: after four sales the two weigh the same, after the full
+	// memory of eight the market has two thirds of the say.
+	const DWORD PLAYERBOT_MARKET_ANCHOR_N0 = 4;
+	// The regulator: (demand + q0) / (supply + q0) to this power, kept within
+	// these bounds. q0 is a typical stack, so one buyer against one counter is
+	// not a shortage.
+	const DWORD PLAYERBOT_MARKET_REGULATOR_Q0 = 5;
+	const double PLAYERBOT_MARKET_REGULATOR_EXPONENT = 0.2;
+	const double PLAYERBOT_MARKET_REGULATOR_MIN = 0.75;
+	const double PLAYERBOT_MARKET_REGULATOR_MAX = 1.35;
+	// How fast the market's ask for a thing may drift: this much per interval
+	// since it last moved, up to this many intervals at once; and how long an
+	// ask is remembered after the last counter carried the thing.
+	const DWORD PLAYERBOT_MARKET_STEP_PERCENT = 5;
+	const DWORD PLAYERBOT_MARKET_STEP_INTERVAL = 600000;
+	const DWORD PLAYERBOT_MARKET_STEP_MAX_STEPS = 6;
+	const DWORD PLAYERBOT_MARKET_ASK_STALE = 3600000;
+
 	const DWORD PLAYERBOT_PORTAL_WALK_TIMEOUT = 20000;
 	// What counts as having moved. Below this the bot is standing still, whether
 	// the navigation deferred the plan, backed off, or quietly reported success.

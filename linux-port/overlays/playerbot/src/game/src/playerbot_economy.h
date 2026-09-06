@@ -328,8 +328,15 @@ namespace
 		// vendored rod would simply have to be bought again for the next session.
 		// Ordinary fish and bones stay sellable: that is the angler's pocket money.
 		if (item->GetType() == ITEM_ROD || vnum == PLAYERBOT_FISHING_BAIT_VNUM ||
-				vnum == PLAYERBOT_SHELLFISH_VNUM ||
+				vnum == PLAYERBOT_SHELLFISH_VNUM || vnum == PLAYERBOT_CAMPFIRE_VNUM ||
 				(vnum >= PLAYERBOT_PEARL_FIRST_VNUM && vnum <= PLAYERBOT_PEARL_LAST_VNUM))
+			return false;
+		// A dead fish waits for the campfire at the end of the next session, as
+		// long as the bot has the wood for one; a grilled fish is a potion.
+		if (item->GetType() == ITEM_FISH && item->GetSubType() == FISH_DEAD &&
+				ch->CountSpecifyItem(PLAYERBOT_CAMPFIRE_VNUM) > 0)
+			return false;
+		if (vnum >= PLAYERBOT_GRILLED_FISH_FIRST_VNUM && vnum <= PLAYERBOT_GRILLED_FISH_LAST_VNUM)
 			return false;
 
 		// Arrows are ammunition, not a primary weapon/equipment candidate. Keep all

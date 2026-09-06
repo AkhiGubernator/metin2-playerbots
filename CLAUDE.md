@@ -337,6 +337,18 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
 - Shellfish (27987) and the three pearls (27992-27994) are hardcoded in
   `fishing.cpp` and `char_item.cpp`, not in `fishing.txt`. They carry 26 and 14
   recipes respectively, so fishing is the only route past the high refines.
+- **The rest of the fishing chain, as the engine does it.** A live fish
+  used (`fishing::UseFish`) becomes a dead fish, a bone, a shellfish or
+  nothing. A dead fish is grilled by handing it to a campfire: Dried Wood
+  (27600, the Fisherman's shop, 20 000 yang) used once spawns mob 12000 for
+  forty seconds, `CHARACTER::GiveItem(campfire, cell)` runs `fishing::Grill`
+  and the grilled fish (27863-27883) comes back - potions of 180/350/230 HP,
+  180/500 SP, a Carp for movement speed and a Rudd for dexterity
+  (USE_ABILITY_UP). A shellfish (27987, `char_item.cpp` case 27987) holds a
+  Stone Piece half the time, nothing 30%, then a white, blue or blood pearl
+  at 10/7/3% - so opening one is a bet the bot weighs against selling it
+  whole, and the population counts every outcome including the empty ones
+  (`PLAYERBOT_SHELLFISH:` every ten minutes).
 - Fishing: the rod goes in `WEAR_WEAPON`; bait is **not** consumed from the pouch
   but written into the rod's socket 2 by using a bait item. A cast bites after
   10–40 s and then leaves a 6 s window; `fishing::Compute` peaks ~3 s after the

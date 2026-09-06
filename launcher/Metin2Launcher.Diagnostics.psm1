@@ -119,6 +119,18 @@ function Get-M2LauncherErrorGuidance {
         }
     }
 
+    # Docker Desktop's own Linux disk went read-only or ran out of room, so the
+    # image could not be written. Nothing of the server is touched; the fix is
+    # a clean restart of the WSL machine and free space - never Docker's
+    # "Clean / Purge data", which takes the database with it.
+    if ($value -match '(?i)read-only file system|no space left on device|desktop-containerd.+(?:input/output error|meta\.db)') {
+        return [pscustomobject]@{
+            Code = 'DOCKER_DISK_BROKEN'
+            Title = 'Dysk maszyny Dockera jest tylko do odczytu albo pełny'
+            Message = 'Docker nie mógł zapisać obrazu na swoim dysku WSL (komunikat „read-only file system” albo „no space left on device”). Pliki serwera i baza są w porządku; to stan maszyny wirtualnej Docker Desktop po nieczystym zamknięciu lub braku miejsca.'
+            Remedy = 'Zamknij Docker Desktop (ikona w zasobniku → Quit), w PowerShell wykonaj: wsl --shutdown, sprawdź wolne miejsce na dysku z folderem %LOCALAPPDATA%\Docker\wsl (potrzeba kilku GB), uruchom Docker Desktop ponownie i kliknij GRAJ. Nie używaj w Docker Desktop opcji „Clean / Purge data” ani „Reset to factory defaults” - usuwają bazę z postaciami.'
+        }
+    }
     if ($value -match "(?i)playerbot-migrate.+didn.t complete successfully|database import was not ready after|user: 'unauthenticated'") {
         return [pscustomobject]@{
             Code = 'DB_USER_BROKEN'

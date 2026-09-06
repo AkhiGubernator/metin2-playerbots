@@ -17,6 +17,41 @@ every version here.
 
 ---
 
+## 1.29.11 — 2026-09-06
+
+### Naprawione
+
+- **Launcher rozpoznaje „read-only file system” Dockera.** Gdy dysk maszyny
+  WSL Docker Desktop przejdzie w tryb tylko do odczytu albo się zapełni,
+  budowa obrazu pada na `desktop-containerd/.../meta.db`, a launcher
+  odsyłał do logów. Teraz mówi, co zrobić: zamknąć Docker Desktop,
+  `wsl --shutdown`, sprawdzić miejsce w `%LOCALAPPDATA%\Docker\wsl`,
+  uruchomić Dockera i GRAJ — i czego nie robić („Clean / Purge data”
+  kasuje bazę z postaciami). Zgłoszenie z serwera (Ciapek).
+
+### Nowe
+
+- **Ryby pieczone na ognisku.** Martwa ryba szła dotąd do handlarza. Rybak
+  kupuje Wysuszone Drzewo (20 000 yang, więc dopiero gdy ma co najmniej 30
+  martwych ryb), na koniec sesji rozpala ognisko (silnik stawia je na 40 s)
+  i podaje mu martwe ryby; pieczone
+  wracają do plecaka i są używane jak mikstury: Karaś, Duży Karaś i Tenchi
+  jako czerwone, Ryba Mandaryna i Sum jako niebieskie, Pieczony Karp
+  (+20 ruchu) i Krasnopiórka (+10 zręczności) jak boostery na początku
+  walki. Wszystko przez natywną ścieżkę silnika (podanie przedmiotu
+  ognisku, `Grill`).
+- **Otwarcie małża to decyzja, nie odruch.** Silnik daje z małża w połowie
+  Kawałek Kamienia, w 30% nic, w 10/7/3% białą, niebieską i krwawą perłę.
+  Bot otwiera małża tylko wtedy, gdy oczekiwana wartość zawartości (ceny z
+  transakcji na targowisku, a bez nich cena u NPC) przebija wartość całego
+  małża; ostrożny kolekcjoner chce półtora raza tyle, specjalista od sprzętu
+  zadowala się mniej. Małż potrzebny własnej recepturze nadal zostaje.
+  Populacja pamięta wyniki wszystkich otwarć — także puste — i po 50
+  otwarciach liczy szansę z własnych danych; raport `PLAYERBOT_SHELLFISH:`
+  co 10 minut. Z audytu wiedzy o grze (sekcje 7 i 12).
+
+---
+
 ## 1.29.10 — 2026-09-06
 
 ### Naprawione

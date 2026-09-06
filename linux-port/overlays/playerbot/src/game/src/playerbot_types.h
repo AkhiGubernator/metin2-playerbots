@@ -764,7 +764,33 @@ namespace
 	const BYTE PLAYERBOT_SKILL_MASTER_TRY_LEVEL = 17;
 	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
 	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
-	const DWORD PLAYERBOT_BOOSTER_VNUMS[] = { 71044, 71045 };
+	// The chest's two boosters, and the two grilled fish that work the same
+	// way: a Carp for twenty movement speed, a Rudd for ten dexterity, ten
+	// minutes each (item_proto USE_ABILITY_UP).
+	const DWORD PLAYERBOT_BOOSTER_VNUMS[] = { 71044, 71045, 27866, 27873 };
+	// Fishing, the rest of the chain. A dead fish is grilled on a campfire:
+	// the Dried Wood (27600, from the Fisherman) burns for forty seconds as a
+	// campfire mob (12000) and takes fish handed to it - alive or dead - and
+	// hands back the grilled kind. The grilled potions (Crucian 180, Big
+	// Crucian 350, Tenchi 230 at once; Mandarin Fish 180 SP, Catfish 500 SP)
+	// go into the potion lists.
+	const DWORD PLAYERBOT_CAMPFIRE_VNUM = 27600;
+	const DWORD PLAYERBOT_CAMPFIRE_MOB_VNUM = 12000;
+	const DWORD PLAYERBOT_BAKE_WINDOW = 35000;
+	const int PLAYERBOT_BAKE_MIN_FISH = 30;
+	const int PLAYERBOT_BAKE_RANGE = 700;
+	const DWORD PLAYERBOT_GRILLED_FISH_FIRST_VNUM = 27863;
+	const DWORD PLAYERBOT_GRILLED_FISH_LAST_VNUM = 27876;
+	// What a shellfish holds, from the engine's own table (char_item.cpp,
+	// case 27987): half a Stone Piece, thirty percent nothing, then a white,
+	// a blue or a blood pearl. Thousandths. Once the population has opened
+	// enough of them, its own count replaces the table.
+	const DWORD PLAYERBOT_STONE_PIECE_VNUM = 27990;
+	const int PLAYERBOT_SHELLFISH_STONE_PERMILLE = 500;
+	const int PLAYERBOT_SHELLFISH_WHITE_PERMILLE = 100;
+	const int PLAYERBOT_SHELLFISH_BLUE_PERMILLE = 70;
+	const int PLAYERBOT_SHELLFISH_RED_PERMILLE = 30;
+	const DWORD PLAYERBOT_SHELLFISH_LEARN_SAMPLES = 50;
 	// The Blessing Scroll (CHUKBOK_SCROLL to the engine): a refine that fails
 	// under it drops the item one level instead of destroying it, at the
 	// table's own odds. The blacksmith without one removes the item on every
@@ -1291,6 +1317,7 @@ namespace
 			dwFishingCastTime(0),
 			dwFishingSessionEndTime(0),
 			dwNextFishingProgressLogTime(0),
+			dwBakeUntil(0),
 			dwNextWorldTravelTime(0),
 			dwTravelBlockedSince(0),
 			dwNextRemoteRefineReturnTime(0),
@@ -1467,6 +1494,8 @@ namespace
 		// inactivity watchdog, so nothing complained while it stood still for the
 		// whole session. This throttles one progress line instead.
 		DWORD dwNextFishingProgressLogTime;
+		// The campfire is burning and there are fish to hand it.
+		DWORD dwBakeUntil;
 		DWORD dwNextWorldTravelTime;
 		// Since when a live target has been holding world travel back.
 		DWORD dwTravelBlockedSince;

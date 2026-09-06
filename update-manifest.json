@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T19:33:00Z",
-  "statusMessage": "Aktualizacja 1.29.10. Docker Desktop znajdowany tez poza standardowym katalogiem (blad Nie znaleziono programu Docker Desktop po STOP). Mniejsze obciazenie procesora: gotowe trasy dla botow idacych ta sama droga. Boty zakladaja tarcze i zbroje ze swojego progu zamiast Bojowej Tarczy+6. Suwaki szkatulek w panelu, szyldy straganow mowia co jest na ladzie. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T19:54:00Z",
+  "statusMessage": "Aktualizacja 1.29.11. Rybacy piek martwe ryby na ognisku i uzywaja pieczonych jak mikstur; malz otwierany tylko gdy sie oplaca, z pamiecia wynikow. Launcher rozpoznaje blad dysku Dockera (read-only file system) i mowi, jak go naprawic. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.10",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.10/metin2-server-update-1.29.10.zip",
-    "sha256": "A9C7476E1BC952BABD6AE95C757230EAB1225B9C9B67C108B5A4E90DC0023DD2"
+    "version": "1.29.11",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.11/metin2-server-update-1.29.11.zip",
+    "sha256": "39DFA122301B6695E00258F07B50AE1F664E6FFEB553C5C9B5C87EFD55441519"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

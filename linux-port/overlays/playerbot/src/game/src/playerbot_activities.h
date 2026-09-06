@@ -292,6 +292,136 @@ namespace
 	// Defined in playerbot_economy.h, which this file precedes.
 	bool PlayerBotNeedsRefineMaterial(LPCHARACTER ch, DWORD materialVnum);
 
+	// What a thing is worth to sell: what the market has paid for it, else a
+	// fifth of the shop price, which is what the merchant pays.
+	long long GetPlayerBotVnumSaleValue(DWORD vnum, DWORD dwNow)
+	{
+		size_t samples = 0;
+		const DWORD paid = GetPlayerBotSaleUnitPrice(vnum, 0, dwNow, &samples);
+		if (paid != 0)
+			return (long long)paid;
+		TItemTable* proto = ITEM_MANAGER::instance().GetTable(vnum);
+		return proto ? (long long)(proto->dwShopBuyPrice / 5) : 0;
+	}
+
+	// Prying a shell open is a bet, not a step: half the time a Stone Piece,
+	// a third of the time nothing, a pearl the rest. Open it when what the bet
+	// pays on average beats what the shell sells for whole; the careful
+	// collector wants the bet to pay half again as much, the gear specialist
+	// takes a slightly worse one for the pearls it is after.
+	bool ShouldPlayerBotOpenShellfish(LPCHARACTER ch, DWORD dwNow)
+	{
+		if (!ch)
+			return false;
+		const long long expected =
+				(long long)GetPlayerBotShellfishPermille(PLAYERBOT_SHELL_STONE, PLAYERBOT_SHELLFISH_STONE_PERMILLE) *
+						GetPlayerBotVnumSaleValue(PLAYERBOT_STONE_PIECE_VNUM, dwNow) +
+				(long long)GetPlayerBotShellfishPermille(PLAYERBOT_SHELL_WHITE, PLAYERBOT_SHELLFISH_WHITE_PERMILLE) *
+						GetPlayerBotVnumSaleValue(PLAYERBOT_PEARL_FIRST_VNUM, dwNow) +
+				(long long)GetPlayerBotShellfishPermille(PLAYERBOT_SHELL_BLUE, PLAYERBOT_SHELLFISH_BLUE_PERMILLE) *
+						GetPlayerBotVnumSaleValue(PLAYERBOT_PEARL_FIRST_VNUM + 1, dwNow) +
+				(long long)GetPlayerBotShellfishPermille(PLAYERBOT_SHELL_RED, PLAYERBOT_SHELLFISH_RED_PERMILLE) *
+						GetPlayerBotVnumSaleValue(PLAYERBOT_PEARL_LAST_VNUM, dwNow);
+		const long long whole = GetPlayerBotVnumSaleValue(PLAYERBOT_SHELLFISH_VNUM, dwNow) * 1000;
+		TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
+		const BYTE personality = it != s_mapPlayerBotAIStates.end()
+				? it->second.bPersonality : BOT_PERSONALITY_STEADY_ADVENTURER;
+		const long long needed = personality == BOT_PERSONALITY_CAREFUL_COLLECTOR ? whole * 3 / 2
+				: (personality == BOT_PERSONALITY_GEAR_SPECIALIST ? whole * 4 / 5 : whole);
+		return expected >= needed;
+	}
+
+	// The campfire mob this bot lit, if it is still burning within reach.
+	struct FPlayerBotFindCampfire
+	{
+		LPCHARACTER m_owner;
+		LPCHARACTER m_found;
+		int m_bestDistance;
+		FPlayerBotFindCampfire(LPCHARACTER owner) : m_owner(owner), m_found(NULL), m_bestDistance(PLAYERBOT_BAKE_RANGE) {}
+		void operator()(LPENTITY entity)
+		{
+			if (!entity || !entity->IsType(ENTITY_CHARACTER))
+				return;
+			LPCHARACTER fire = static_cast<LPCHARACTER>(entity);
+			if (fire->GetRaceNum() != PLAYERBOT_CAMPFIRE_MOB_VNUM)
+				return;
+			const int distance = DISTANCE_APPROX(fire->GetX() - m_owner->GetX(), fire->GetY() - m_owner->GetY());
+			if (distance < m_bestDistance)
+			{
+				m_bestDistance = distance;
+				m_found = fire;
+			}
+		}
+	};
+
+	int CountPlayerBotDeadFish(LPCHARACTER ch)
+	{
+		int count = 0;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item && item->GetType() == ITEM_FISH && item->GetSubType() == FISH_DEAD)
+				count += item->GetCount();
+		}
+		return count;
+	}
+
+	// Light the fire at the end of a session with dead fish in the bag; the
+	// engine does the rest once the fish are handed over. Returns whether a
+	// fire was lit.
+	bool LightPlayerBotCampfire(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || CountPlayerBotDeadFish(ch) == 0)
+			return false;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->GetVnum() != PLAYERBOT_CAMPFIRE_VNUM)
+				continue;
+			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
+				return false;
+			state.dwBakeUntil = dwNow + PLAYERBOT_BAKE_WINDOW;
+			sys_log(0, "PLAYERBOT_FISHING: campfire lit pid=%u name=%s dead_fish=%d",
+					ch->GetPlayerID(), ch->GetName(), CountPlayerBotDeadFish(ch));
+			return true;
+		}
+		return false;
+	}
+
+	// Hand the dead fish to the fire, one pass a tick, while it burns. Owns
+	// the tick so the bot stands by its fire instead of walking off.
+	bool BakePlayerBotFish(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || state.dwBakeUntil == 0)
+			return false;
+		if (dwNow >= state.dwBakeUntil || !ch->GetSectree())
+		{
+			state.dwBakeUntil = 0;
+			return false;
+		}
+		FPlayerBotFindCampfire finder(ch);
+		ch->GetSectree()->ForEachAround(finder);
+		if (!finder.m_found)
+			return true; // lit a moment ago, not in the sectree yet
+		int baked = 0;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->GetType() != ITEM_FISH || item->GetSubType() != FISH_DEAD)
+				continue;
+			const int count = item->GetCount();
+			if (ch->GiveItem(finder.m_found, TItemPos(INVENTORY, cell)))
+				baked += count;
+		}
+		if (CountPlayerBotDeadFish(ch) == 0)
+		{
+			sys_log(0, "PLAYERBOT_FISHING: baked pid=%u name=%s fish=%d", ch->GetPlayerID(), ch->GetName(), baked);
+			state.dwBakeUntil = 0;
+			return false;
+		}
+		return true;
+	}
+
 	bool ProcessPlayerBotCatch(LPCHARACTER ch)
 	{
 		if (!ch)
@@ -312,10 +442,30 @@ namespace
 			// in its own right - twenty-six recipes on this proto consume one as
 			// it is. Prying open the one the bot's own anvil is about to ask for
 			// trades a certain material for a chance at a different one.
-			if (vnum == PLAYERBOT_SHELLFISH_VNUM && PlayerBotNeedsRefineMaterial(ch, vnum))
+			if (vnum == PLAYERBOT_SHELLFISH_VNUM &&
+					(PlayerBotNeedsRefineMaterial(ch, vnum) || !ShouldPlayerBotOpenShellfish(ch, get_dword_time())))
 				continue;
+			const int stoneBefore = ch->CountSpecifyItem(PLAYERBOT_STONE_PIECE_VNUM);
+			const int whiteBefore = ch->CountSpecifyItem(PLAYERBOT_PEARL_FIRST_VNUM);
+			const int blueBefore = ch->CountSpecifyItem(PLAYERBOT_PEARL_FIRST_VNUM + 1);
+			const int redBefore = ch->CountSpecifyItem(PLAYERBOT_PEARL_LAST_VNUM);
 			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
 				continue;
+			if (!aliveFish)
+			{
+				// What the shell held, counted whatever it was - the empty ones
+				// are what keeps the population's estimate honest.
+				int outcome = PLAYERBOT_SHELL_NOTHING;
+				if (ch->CountSpecifyItem(PLAYERBOT_PEARL_LAST_VNUM) > redBefore)
+					outcome = PLAYERBOT_SHELL_RED;
+				else if (ch->CountSpecifyItem(PLAYERBOT_PEARL_FIRST_VNUM + 1) > blueBefore)
+					outcome = PLAYERBOT_SHELL_BLUE;
+				else if (ch->CountSpecifyItem(PLAYERBOT_PEARL_FIRST_VNUM) > whiteBefore)
+					outcome = PLAYERBOT_SHELL_WHITE;
+				else if (ch->CountSpecifyItem(PLAYERBOT_STONE_PIECE_VNUM) > stoneBefore)
+					outcome = PLAYERBOT_SHELL_STONE;
+				RememberPlayerBotShellfishOutcome(outcome);
+			}
 
 			sys_log(0, "PLAYERBOT_FISHING: processed catch pid=%u name=%s vnum=%u kind=%s",
 					ch->GetPlayerID(), ch->GetName(), vnum,
@@ -394,11 +544,34 @@ namespace
 					ch->GetPlayerID(), ch->GetName(), PLAYERBOT_FISHING_BAIT_VNUM,
 					PLAYERBOT_FISHING_BAIT_BUNDLE, price);
 		}
+		// And one piece of Dried Wood for the end of the session, from the same
+		// counter: the dead fish get grilled instead of vendored. The wood costs
+		// twenty thousand and one fire takes any number of fish, so it is bought
+		// for a batch, not for the three fish of a short session.
+		if (ch->CountSpecifyItem(PLAYERBOT_CAMPFIRE_VNUM) <= 0 &&
+				CountPlayerBotDeadFish(ch) >= PLAYERBOT_BAKE_MIN_FISH)
+		{
+			TItemTable* proto = ITEM_MANAGER::instance().GetTable(PLAYERBOT_CAMPFIRE_VNUM);
+			if (proto)
+			{
+				const long long price = GetPlayerBotNpcPurchasePrice(proto, 1);
+				if (price > 0 && ch->GetGold() >= price &&
+						ch->AutoGiveItem(PLAYERBOT_CAMPFIRE_VNUM, 1, -1, false))
+				{
+					ch->PointChange(POINT_GOLD, -price);
+					bought = true;
+					sys_log(0, "PLAYERBOT_FISHING: bought campfire pid=%u name=%s price=%lld",
+							ch->GetPlayerID(), ch->GetName(), price);
+				}
+			}
+		}
 		return bought;
 	}
 
 	bool ManagePlayerBotFishing(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
+		if (state.dwBakeUntil != 0 && BakePlayerBotFish(ch, state, dwNow))
+			return true;
 		if (!ch || ch->IsDead())
 			return false;
 		if (ch->GetMapIndex() != PLAYERBOT_MAP_CHUNJO_M1)
@@ -446,7 +619,10 @@ namespace
 		// A session only ends between casts, so a fish already on the hook is
 		// still landed.
 		if (dwNow >= state.dwFishingSessionEndTime && !state.bIsFishing)
+		{
+			LightPlayerBotCampfire(ch, state, dwNow);
 			return EndPlayerBotFishingSession(ch, state, dwNow, "session_finished");
+		}
 
 		SetPlayerBotGoal(ch, state, BOT_GOAL_FISHING, dwNow);
 		SetPlayerBotAction(state, BOT_ACTION_FISHING, dwNow);

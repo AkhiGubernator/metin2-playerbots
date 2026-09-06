@@ -170,6 +170,44 @@ namespace
 	TPlayerBotSpotMap s_mapSpotMemory;
 	DWORD s_dwSpotReportTime = 0;
 
+	// What the population's shellfish held: stone, nothing, white, blue, red.
+	// Empty results count - a memory of the pearls alone would say every
+	// shell is worth prying open.
+	enum EPlayerBotShellfishOutcome
+	{
+		PLAYERBOT_SHELL_STONE = 0,
+		PLAYERBOT_SHELL_NOTHING,
+		PLAYERBOT_SHELL_WHITE,
+		PLAYERBOT_SHELL_BLUE,
+		PLAYERBOT_SHELL_RED,
+		PLAYERBOT_SHELL_MAX
+	};
+	DWORD s_auShellfishOutcomes[PLAYERBOT_SHELL_MAX] = { 0, 0, 0, 0, 0 };
+
+	void RememberPlayerBotShellfishOutcome(int outcome)
+	{
+		if (outcome >= 0 && outcome < PLAYERBOT_SHELL_MAX)
+			++s_auShellfishOutcomes[outcome];
+	}
+
+	DWORD GetPlayerBotShellfishSamples()
+	{
+		DWORD total = 0;
+		for (int i = 0; i < PLAYERBOT_SHELL_MAX; ++i)
+			total += s_auShellfishOutcomes[i];
+		return total;
+	}
+
+	// Thousandths of an outcome, from what was seen; the table's figure until
+	// enough shells have been opened for the count to mean anything.
+	int GetPlayerBotShellfishPermille(int outcome, int tablePermille)
+	{
+		const DWORD total = GetPlayerBotShellfishSamples();
+		if (total < PLAYERBOT_SHELLFISH_LEARN_SAMPLES || outcome < 0 || outcome >= PLAYERBOT_SHELL_MAX)
+			return tablePermille;
+		return (int)((unsigned long long)s_auShellfishOutcomes[outcome] * 1000ULL / total);
+	}
+
 	unsigned long long PlayerBotSpotKey(long lMapIndex, long cellX, long cellY)
 	{
 		return ((unsigned long long)(DWORD)lMapIndex << 40) |
@@ -312,6 +350,12 @@ namespace
 		if (dwNow - s_dwSpotReportTime < PLAYERBOT_SPOT_REPORT_INTERVAL)
 			return;
 		s_dwSpotReportTime = dwNow;
+
+		if (GetPlayerBotShellfishSamples() > 0)
+			sys_log(0, "PLAYERBOT_SHELLFISH: opened=%u stone=%u nothing=%u white=%u blue=%u red=%u",
+					GetPlayerBotShellfishSamples(), s_auShellfishOutcomes[PLAYERBOT_SHELL_STONE],
+					s_auShellfishOutcomes[PLAYERBOT_SHELL_NOTHING], s_auShellfishOutcomes[PLAYERBOT_SHELL_WHITE],
+					s_auShellfishOutcomes[PLAYERBOT_SHELL_BLUE], s_auShellfishOutcomes[PLAYERBOT_SHELL_RED]);
 
 		std::map<long, std::vector<std::pair<int, unsigned long long> > > byMap;
 		for (TPlayerBotSpotMap::iterator it = s_mapSpotMemory.begin(); it != s_mapSpotMemory.end(); ++it)

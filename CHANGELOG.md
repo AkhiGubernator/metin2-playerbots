@@ -17,6 +17,22 @@ every version here.
 
 ---
 
+## 1.29.5 — 2026-09-06
+
+### Naprawione
+
+- **Przejęcie starszej instalacji padało na „Cannot bind argument to parameter
+  'Value' because it is an empty string”.** Gdy launcher znajdował istniejący
+  serwer z poprzedniej wersji (kontenery `metin2-db` bez pliku tożsamości
+  `.m2install.json`), przepisywał jego `.env` do nowego — a każdy prawdziwy
+  `.env` ma puste wartości (`M2_BRAND=`, `M2_CLIENT_URL=`…), których funkcja
+  zapisu nie przyjmowała. GRAJ i aktualizacja kończyły się tym błędem w
+  kółko. Puste wartości są pomijane (nie nadpisują niczego), hasła i adresy
+  ze starego pliku przechodzą. Test przejęcia starej instalacji ma teraz
+  puste wartości w `.env`.
+
+---
+
 ## 1.29.4 — 2026-09-06
 
 ### Naprawione

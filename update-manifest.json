@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T15:43:00Z",
-  "statusMessage": "Aktualizacja 1.29.4. Wojownik mentalny nie bierze juz iglicy +4 zamiast miecza +6 - premia za bron dwureczna dziala od 11 poziomu konia. Trasa przerwana walka jest wznawiana (mniejsze obciazenie procesora). Aktualizacja na swiezym Dockerze nie zglasza falszywego bledu budowy. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T15:49:00Z",
+  "statusMessage": "Aktualizacja 1.29.5. Naprawa bledu z 1.29.4 przy przejmowaniu starszej instalacji: GRAJ i aktualizacja konczyly sie na Cannot bind argument to parameter Value. Kto ma ten blad: aktualizacja z launchera, potem GRAJ. Reszta jak w 1.29.4.",
   "server": {
-    "version": "1.29.4",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.4/metin2-server-update-1.29.4.zip",
-    "sha256": "A7888227619047F416B83F8305FD1105BC87A51CFC2607AB97EE87E01C962734"
+    "version": "1.29.5",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.5/metin2-server-update-1.29.5.zip",
+    "sha256": "3C92A80BB86D6A76BAE26A5D428623FA9F587A6BC49BEAD52F09AE8777CBFADB"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

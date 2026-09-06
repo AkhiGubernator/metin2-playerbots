@@ -27,7 +27,10 @@ function Set-DotEnvValue {
     param(
         [Parameter(Mandatory = $true)][string]$Content,
         [Parameter(Mandatory = $true)][string]$Name,
-        [Parameter(Mandatory = $true)][string]$Value
+        # A real .env is mostly empty values (M2_BRAND=, M2_CLIENT_URL=...);
+        # a Mandatory string refuses '' and the whole start died on the first
+        # one while adopting an older installation.
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value
     )
     $pattern = '(?m)^' + [Regex]::Escape($Name) + '=.*$'
     if ([Regex]::IsMatch($Content, $pattern)) {
@@ -210,6 +213,9 @@ function Merge-DotEnvFile {
         if ($line -match '^([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {
             $name = $Matches[1]
             if ($name -in @('M2_COMPOSE_PROJECT_NAME', 'M2_CONTAINER_PREFIX')) { continue }
+            # What the old file left blank must not blank what the new one
+            # has - the passwords and addresses are the point of the merge.
+            if ($Matches[2].Trim() -eq '') { continue }
             $Content = Set-DotEnvValue -Content $Content -Name $name -Value $Matches[2]
         }
     }

@@ -793,6 +793,8 @@ namespace
 		if (s_iMaterialScansThisTick >= PLAYERBOT_MATERIAL_SCANS_PER_TICK)
 			return false; // budget spent; the time is not consumed, so next tick
 		++s_iMaterialScansThisTick;
+		++s_uPlayerBotLoadScans;
+		TPlayerBotLoadTimer scanTimer(s_uPlayerBotLoadScanUs);
 		state.dwNextMaterialScanTime = dwNow + PLAYERBOT_MATERIAL_SCAN_INTERVAL;
 
 		LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(ch->GetMapIndex());

@@ -56,8 +56,19 @@ namespace
 	// new expensive HPA/A* requests wait for a later staggered slot.
 	const int PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK = 32;
 	const int PLAYERBOT_NAV_MAX_EXPANDED_NODES = 120000;
+	// A count is the wrong unit for the budget: a hop to the next monster plans
+	// in a fifth of a millisecond and a crossing of Orc Valley in eighty, so
+	// thirty-two of the latter held the whole core for half a second and every
+	// player on it felt the tick. The clock is the budget now, alongside the
+	// count: once a tick has spent this long planning, the rest of the requests
+	// take the deferred path and come back within two seconds. Fifty
+	// milliseconds four times a second is a fifth of the core at the most;
+	// the population asks for a tenth in the steady state, so this binds only
+	// in the minute after a start, which is exactly when it should.
+	const DWORD PLAYERBOT_NAV_PLAN_TIME_BUDGET_US = 50000;
 	DWORD s_dwPlayerBotNavBudgetStamp = 0;
 	int s_iPlayerBotNavHeavyPlansThisTick = 0;
+	DWORD s_uPlayerBotNavPlanUsThisTick = 0;
 
 	enum EPlayerBotNavPlanResult
 	{
@@ -409,14 +420,26 @@ namespace
 				{
 					s_dwPlayerBotNavBudgetStamp = now;
 					s_iPlayerBotNavHeavyPlansThisTick = 0;
+					s_uPlayerBotNavPlanUsThisTick = 0;
 				}
-				if (s_iPlayerBotNavHeavyPlansThisTick >= PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK)
+				if (s_iPlayerBotNavHeavyPlansThisTick >= PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK ||
+						s_uPlayerBotNavPlanUsThisTick >= PLAYERBOT_NAV_PLAN_TIME_BUDGET_US)
+				{
+					++s_uPlayerBotLoadPlanDeferred;
 					return PLAYERBOT_NAV_PLAN_DEFERRED;
+				}
 				++s_iPlayerBotNavHeavyPlansThisTick;
+				++s_uPlayerBotLoadPlans;
+				TPlayerBotLoadTimer planTickTimer(s_uPlayerBotNavPlanUsThisTick);
 
 				int sx, sy, tx, ty;
 				WorldToCell(startX, startY, sx, sy);
 				WorldToCell(targetX, targetY, tx, ty);
+				const int planCells = std::max(std::abs(sx - tx), std::abs(sy - ty));
+				const int planBucket = planCells < 64 ? 0 : planCells < 256 ? 1 : planCells < 1024 ? 2 : 3;
+				++s_uPlayerBotLoadPlanBucket[planBucket];
+				TPlayerBotLoadTimer planTimer(s_uPlayerBotLoadPlanUs);
+				TPlayerBotLoadTimer planBucketTimer(s_uPlayerBotLoadPlanBucketUs[planBucket]);
 				if (!FindNearestWalkableCell(sx, sy, 4, 0, seed))
 					return PLAYERBOT_NAV_PLAN_UNREACHABLE;
 
@@ -708,6 +731,15 @@ namespace
 				return gx >= 0 && gy >= 0 && gx < m_width && gy < m_height;
 			}
 
+			// The engine's own answer for the cell's centre point - the same point,
+			// and the same bits, that m_blocked was built from when the grid was made.
+			// The planner therefore never asks this: a corridor search put the
+			// question to the sectree tree up to twenty-four times for every node it
+			// expanded, and a thousand plans a minute spent thirty-one seconds of
+			// every sixty answering it. Only the walk keeps asking (SegmentClearWorld,
+			// once per tick for the segment in front of the bot) so that anything
+			// placed after the grid was built still stops a bot before it walks
+			// into it, and the stuck counter then asks for a new plan.
 			bool IsLiveBlockedCell(int gx, int gy) const
 			{
 				if (!IsInsideCell(gx, gy))
@@ -748,7 +780,7 @@ namespace
 			bool SegmentClearCells(int x0, int y0, int x1, int y1) const
 			{
 				if (IsBlockedCell(x0, y0) || IsBlockedCell(x1, y1) ||
-						IsLiveBlockedCell(x0, y0) || IsLiveBlockedCell(x1, y1))
+						IsBlockedCell(x0, y0) || IsBlockedCell(x1, y1))
 					return false;
 
 				const int dx = x1 - x0;
@@ -771,9 +803,9 @@ namespace
 						// The line crosses a cell corner: both side cells must be
 						// clear, otherwise this would be diagonal corner cutting.
 						if ((signX != 0 && (IsBlockedCell(x + signX, y) ||
-								IsLiveBlockedCell(x + signX, y))) ||
+								IsBlockedCell(x + signX, y))) ||
 								(signY != 0 && (IsBlockedCell(x, y + signY) ||
-								IsLiveBlockedCell(x, y + signY))))
+								IsBlockedCell(x, y + signY))))
 							return false;
 						x += signX;
 						y += signY;
@@ -791,7 +823,7 @@ namespace
 						++iy;
 					}
 
-					if (IsBlockedCell(x, y) || IsLiveBlockedCell(x, y))
+					if (IsBlockedCell(x, y))
 						return false;
 				}
 				return true;
@@ -813,7 +845,7 @@ namespace
 						for (int x = originX - radius; x <= originX + radius; ++x)
 						{
 							if (std::max(abs(x - originX), abs(y - originY)) != radius ||
-									IsBlockedCell(x, y) || IsLiveBlockedCell(x, y))
+									IsBlockedCell(x, y))
 								continue;
 							const int index = Index(x, y);
 							if (requiredComponent != 0 && m_component[index] != requiredComponent)
@@ -1115,11 +1147,11 @@ namespace
 						const int direction = (directionOffset + n) & 7;
 						const int nextX = currentX + moveX[direction];
 						const int nextY = currentY + moveY[direction];
-						if (IsBlockedCell(nextX, nextY) || IsLiveBlockedCell(nextX, nextY))
+						if (IsBlockedCell(nextX, nextY))
 							continue;
 						if (moveX[direction] != 0 && moveY[direction] != 0 &&
-								(IsLiveBlockedCell(currentX + moveX[direction], currentY) ||
-								 IsLiveBlockedCell(currentX, currentY + moveY[direction])))
+								(IsBlockedCell(currentX + moveX[direction], currentY) ||
+								 IsBlockedCell(currentX, currentY + moveY[direction])))
 							continue;
 						const int nextCell = Index(nextX, nextY);
 						if (m_cellRegion[nextCell] != regionID || m_nodeToken[nextCell] == token)
@@ -1231,13 +1263,11 @@ namespace
 						const int direction = (directionOffset + n) & 7;
 						const int nextX = currentX + moveX[direction];
 						const int nextY = currentY + moveY[direction];
-						if (IsBlockedCell(nextX, nextY) || IsLiveBlockedCell(nextX, nextY))
+						if (IsBlockedCell(nextX, nextY))
 							continue;
 						if (moveX[direction] != 0 && moveY[direction] != 0 &&
 								(IsBlockedCell(currentX + moveX[direction], currentY) ||
-								 IsBlockedCell(currentX, currentY + moveY[direction]) ||
-								 IsLiveBlockedCell(currentX + moveX[direction], currentY) ||
-								 IsLiveBlockedCell(currentX, currentY + moveY[direction])))
+								 IsBlockedCell(currentX, currentY + moveY[direction])))
 							continue;
 						const int nextCell = Index(nextX, nextY);
 						const DWORD nextRegion = m_cellRegion[nextCell];

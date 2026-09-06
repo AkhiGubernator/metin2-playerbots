@@ -79,7 +79,65 @@ namespace
 	const int PLAYERBOT_ARROW_SMALL_BUNDLE = 100;
 	const int PLAYERBOT_ARROW_LARGE_BUNDLE = 200;
 	const DWORD PLAYERBOT_POTION_LOG_INTERVAL = 10000;
-	const DWORD PLAYERBOT_PERSIST_INTERVAL = 30000;
+	// The engine already saves every character on save_event_second_cycle,
+	// which config.cpp sets to 120 s, and a level change forces a save below
+	// regardless of this timer. At 30 s the bots were adding four extra saves
+	// per engine save each - close to thirty a second across the population - for nothing
+	// the engine's own cycle does not already cover.
+	const DWORD PLAYERBOT_PERSIST_INTERVAL = 120000;
+
+	// What the population cost this minute, counted where it happens and
+	// reported once from Update. These are the things that do not log per
+	// event and are therefore invisible when the core is hot: A* searches, whole
+	// map snapshots for the material errand, and character saves.
+	DWORD s_uPlayerBotLoadPlans = 0;
+	DWORD s_uPlayerBotLoadScans = 0;
+	DWORD s_uPlayerBotLoadSaves = 0;
+	DWORD s_uPlayerBotLoadWatchdog = 0;
+	DWORD s_dwPlayerBotLoadReportTime = 0;
+	const DWORD PLAYERBOT_LOAD_REPORT_INTERVAL = 60000;
+	// And how long they took. A count says how often; only the clock says
+	// whether it matters. Microseconds from the monotonic clock, wrapping in a
+	// DWORD every 71 minutes - which the unsigned subtraction below survives.
+	DWORD s_uPlayerBotLoadPlanUs = 0;
+	DWORD s_uPlayerBotLoadScanUs = 0;
+	DWORD s_uPlayerBotLoadTickUs = 0;
+	DWORD s_uPlayerBotLoadTickMaxUs = 0;
+	DWORD s_uPlayerBotLoadTicks = 0;
+	// The two passes inside the tick that sweep the nine sectrees around a bot
+	// - looking for something to hit, and writing the panel snapshot - are
+	// counted apart, because a bot with nothing to hit repeats the sweep every
+	// tick and there is no event to see it by.
+	DWORD s_uPlayerBotLoadTargetSearches = 0;
+	DWORD s_uPlayerBotLoadTargetMisses = 0;
+	DWORD s_uPlayerBotLoadTargetUs = 0;
+	DWORD s_uPlayerBotLoadSnapshotUs = 0;
+	// Plans by how far they reach, in grid cells: under 64, under 256, under
+	// 1024, and beyond. A short hop to the next monster and a crossing of the
+	// whole valley are both "a plan", and only the split says which one is
+	// paying for the other.
+	DWORD s_uPlayerBotLoadPlanBucket[4] = { 0, 0, 0, 0 };
+	DWORD s_uPlayerBotLoadPlanBucketUs[4] = { 0, 0, 0, 0 };
+	// Plans a tick turned away because it had already spent its planning time.
+	// Deferred is not lost: the bot asks again within two seconds.
+	DWORD s_uPlayerBotLoadPlanDeferred = 0;
+
+	inline DWORD PlayerBotClockUs()
+	{
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		return (DWORD)((unsigned long long)ts.tv_sec * 1000000ULL + (unsigned long long)ts.tv_nsec / 1000ULL);
+	}
+
+	// Adds the scope's duration to a counter on the way out, whichever of the
+	// function's returns is taken.
+	struct TPlayerBotLoadTimer
+	{
+		DWORD& m_acc;
+		DWORD m_start;
+		explicit TPlayerBotLoadTimer(DWORD& acc) : m_acc(acc), m_start(PlayerBotClockUs()) {}
+		~TPlayerBotLoadTimer() { m_acc += PlayerBotClockUs() - m_start; }
+	};
 	const DWORD PLAYERBOT_RECOVERY_PROTECTION_INTERVAL = 3000;
 	const DWORD PLAYERBOT_RECOVERY_REST_HEAL_INTERVAL = 1000;
 	const DWORD PLAYERBOT_BUFF_FALLBACK_DURATION = 60000;
@@ -93,6 +151,21 @@ namespace
 	const DWORD PLAYERBOT_BROKEN_SOUL_STONE_VNUM = 28960;
 	const DWORD PLAYERBOT_PARTY_SHARE_INTERVAL = 20000;
 	const DWORD PLAYERBOT_GOAL_PLAN_INTERVAL = 5000;
+	// How long the population takes to log in after a start, and how often a
+	// batch goes out. The whole cohort used to be asked for in one call, and the
+	// database answered in one second: 848 characters entering the world at
+	// once, every one of them asking for a route in its first tick against a
+	// navigation budget of 32 plans per tick. What could not be planned stood
+	// still, the inactivity watchdog reset it, and the reset asked again - 4075
+	// resets in the first nine minutes, and one core pinned. A minute's worth of
+	// batches is long enough that no tick sees more arrivals than it can plan
+	// for, and short enough that nobody watching notices the world filling up.
+	const DWORD PLAYERBOT_SPAWN_WINDOW = 60000;
+	const DWORD PLAYERBOT_SPAWN_BATCH_INTERVAL = 1000;
+	// And the same spread for a bot's own first heavy passes - the refine, the
+	// gear pass, the shopping decision - which all had timers of zero and so
+	// all ran on the bot's first tick, whichever second it logged in.
+	const DWORD PLAYERBOT_FIRST_PASS_SPREAD = 60000;
 	const DWORD PLAYERBOT_STATUS_SNAPSHOT_INTERVAL = 2000;
 	// A Metin which repeatedly heals all dealt damage is not progress. Sample its
 	// lowest observed HP at a deliberately cheap cadence, give a newcomer time to

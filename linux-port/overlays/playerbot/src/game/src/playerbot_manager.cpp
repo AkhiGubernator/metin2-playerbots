@@ -33,6 +33,7 @@
 #include "utils.h"
 #include <queue>
 #include <set>
+#include <deque>
 #include <algorithm>
 #include <cstdlib>
 #include <climits>
@@ -620,6 +621,7 @@ namespace
 		if (dwNow - state.dwLastMeaningfulActivityTime < PLAYERBOT_INACTIVITY_RESET_TIME)
 			return false;
 
+		++s_uPlayerBotLoadWatchdog;
 		sys_err("PLAYERBOT_WATCHDOG: resetting inactive bot pid=%u name=%s pos=(%ld,%ld) action=%u goal=%u target=%u shop=%d phase=%u bio=%d stable=%d route=%u/%u",
 				ch->GetPlayerID(), ch->GetName(), ch->GetX(), ch->GetY(),
 				(unsigned int)state.bCurrentAction, (unsigned int)state.bLongTermGoal,
@@ -684,7 +686,12 @@ namespace
 }
 
 CPlayerBotManager::CPlayerBotManager()
-	: m_bRegistryLoaded(false),
+	: m_dwNextSpawnBatchTime(0),
+	  m_uSpawnBatchSize(0),
+	  m_bPendingSpawnEmpire(0),
+	  m_dwSpawnWindowStarted(0),
+	  m_uSpawnWindowTotal(0),
+	  m_bRegistryLoaded(false),
 	  m_bRegistryAvailable(false)
 {
 }
@@ -809,20 +816,58 @@ bool CPlayerBotManager::IsRegistered(DWORD dwPlayerID)
 			m_setRegisteredBots.find(dwPlayerID) != m_setRegisteredBots.end();
 }
 
+// Queues the first `count` registered identities and sends the first batch.
+// The rest go out from Update, a batch a second, so the cohort takes
+// PLAYERBOT_SPAWN_WINDOW to arrive instead of one second. Returns how many
+// were scheduled - the startup line in input_db.cpp prints this as
+// registered_started, and it is still the number that will be in the world
+// a minute later.
 size_t CPlayerBotManager::SpawnRegistered(size_t count, BYTE bEmpire)
 {
 	if (count == 0 || bEmpire != 2 || !LoadRegisteredBots())
 		return 0;
 
+	m_dequePendingSpawns.clear();
 	size_t selected = 0;
-	size_t spawned = 0;
 	for (TRegisteredPlayerBotSet::const_iterator it = m_setRegisteredBots.begin();
 			it != m_setRegisteredBots.end() && selected < count; ++it, ++selected)
+		m_dequePendingSpawns.push_back(*it);
+
+	const size_t batches = std::max<size_t>(1, PLAYERBOT_SPAWN_WINDOW / PLAYERBOT_SPAWN_BATCH_INTERVAL);
+	m_uSpawnBatchSize = std::max<size_t>(1, (selected + batches - 1) / batches);
+	m_bPendingSpawnEmpire = bEmpire;
+	m_dwSpawnWindowStarted = get_dword_time();
+	m_uSpawnWindowTotal = selected;
+	m_dwNextSpawnBatchTime = 0;
+	sys_log(0, "PLAYERBOT: staggered spawn scheduled=%u batch=%u every=%ums window=%ums",
+			(unsigned int)selected, (unsigned int)m_uSpawnBatchSize,
+			PLAYERBOT_SPAWN_BATCH_INTERVAL, PLAYERBOT_SPAWN_WINDOW);
+	// The first batch goes now: Update runs off an event that OnPlayerLoaded
+	// starts, so somebody has to be asked for before anybody can drain the
+	// queue.
+	SpawnPendingBatch(get_dword_time());
+	return selected;
+}
+
+// One batch from the queue, if one is due. Called from Update every tick and
+// once directly from SpawnRegistered.
+void CPlayerBotManager::SpawnPendingBatch(DWORD dwNow)
+{
+	if (m_dequePendingSpawns.empty() || dwNow < m_dwNextSpawnBatchTime)
+		return;
+	m_dwNextSpawnBatchTime = dwNow + PLAYERBOT_SPAWN_BATCH_INTERVAL;
+	size_t sent = 0;
+	while (!m_dequePendingSpawns.empty() && sent < m_uSpawnBatchSize)
 	{
-		if (Spawn(*it, bEmpire))
-			++spawned;
+		const DWORD pid = m_dequePendingSpawns.front();
+		m_dequePendingSpawns.pop_front();
+		Spawn(pid, m_bPendingSpawnEmpire);
+		++sent;
 	}
-	return spawned;
+	if (m_dequePendingSpawns.empty())
+		sys_log(0, "PLAYERBOT: staggered spawn complete scheduled=%u over=%ums",
+				(unsigned int)m_uSpawnWindowTotal,
+				(unsigned int)(dwNow - m_dwSpawnWindowStarted));
 }
 
 bool CPlayerBotManager::Despawn(DWORD dwPlayerID)
@@ -862,6 +907,20 @@ void CPlayerBotManager::OnPlayerLoaded(LPDESC d)
 		state.dwLastMeaningfulActivityTime = now;
 		state.lLastX = d->GetCharacter()->GetX();
 		state.lLastY = d->GetCharacter()->GetY();
+
+		// A fresh state has every timer at zero, so a bot's first refine, gear
+		// pass, shopping decision and bonus check all ran on its first tick -
+		// and with the whole population logging in together, on the same tick
+		// as everybody else's. Spread them across the login window by pid.
+		// Combat, potions and the watchdog are not touched: a bot that arrives
+		// among monsters still fights at once.
+		const DWORD spread = PlayerBotNavHash(dwPID ^ 0x46495253U) % PLAYERBOT_FIRST_PASS_SPREAD;
+		state.dwNextRefineCheckTime = now + spread;
+		state.dwNextEquipmentCheckTime = now + spread / 2;
+		state.dwNextGearAttemptTime = now + spread / 2;
+		state.dwNextShoppingTime = now + spread;
+		state.dwNextBonusCheckTime = now + spread;
+		state.dwNextSoulStoneTime = now + spread;
 
 		// Keep roughly one bot in ten eligible for party play, but deliberately
 		// weight Archer builds more heavily: about 30% of Archers and 7% of all
@@ -960,6 +1019,10 @@ void CPlayerBotManager::OnDescriptorDestroyed(LPDESC d)
 void CPlayerBotManager::Update()
 {
 	const DWORD dwNow = get_dword_time();
+	const DWORD dwTickStartUs = PlayerBotClockUs();
+
+	// The next batch of the cohort, if one is due - see PLAYERBOT_SPAWN_WINDOW.
+	SpawnPendingBatch(dwNow);
 
 	// Once for the whole population: the panel may have moved a weight since
 	// the last tick, and every bot planned below must see the same numbers.
@@ -967,6 +1030,35 @@ void CPlayerBotManager::Update()
 
 	static DWORD s_dwTick = 0;
 	++s_dwTick;
+
+	// Once a minute: what the last minute cost. Read this before tuning any
+	// budget - the first version of the material errand was diagnosed from CPU
+	// alone and put the whole population's scans in one second.
+	if (s_dwPlayerBotLoadReportTime == 0)
+		s_dwPlayerBotLoadReportTime = dwNow;
+	else if (dwNow - s_dwPlayerBotLoadReportTime >= PLAYERBOT_LOAD_REPORT_INTERVAL)
+	{
+		sys_log(0, "PLAYERBOT_LOAD: bots=%u ticks=%u tick_ms=%u tick_max_ms=%u targets=%u misses=%u target_ms=%u snapshot_ms=%u plans=%u deferred=%u plan_ms=%u p64=%u/%ums p256=%u/%ums p1024=%u/%ums pfar=%u/%ums scans=%u scan_ms=%u saves=%u watchdog=%u over=%ums",
+				(unsigned int)m_mapBots.size(), s_uPlayerBotLoadTicks,
+				s_uPlayerBotLoadTickUs / 1000, s_uPlayerBotLoadTickMaxUs / 1000,
+				s_uPlayerBotLoadTargetSearches, s_uPlayerBotLoadTargetMisses,
+				s_uPlayerBotLoadTargetUs / 1000, s_uPlayerBotLoadSnapshotUs / 1000,
+				s_uPlayerBotLoadPlans, s_uPlayerBotLoadPlanDeferred, s_uPlayerBotLoadPlanUs / 1000,
+				s_uPlayerBotLoadPlanBucket[0], s_uPlayerBotLoadPlanBucketUs[0] / 1000,
+				s_uPlayerBotLoadPlanBucket[1], s_uPlayerBotLoadPlanBucketUs[1] / 1000,
+				s_uPlayerBotLoadPlanBucket[2], s_uPlayerBotLoadPlanBucketUs[2] / 1000,
+				s_uPlayerBotLoadPlanBucket[3], s_uPlayerBotLoadPlanBucketUs[3] / 1000,
+				s_uPlayerBotLoadScans, s_uPlayerBotLoadScanUs / 1000,
+				s_uPlayerBotLoadSaves, s_uPlayerBotLoadWatchdog,
+				(unsigned int)(dwNow - s_dwPlayerBotLoadReportTime));
+		for (int b = 0; b < 4; ++b)
+			s_uPlayerBotLoadPlanBucket[b] = s_uPlayerBotLoadPlanBucketUs[b] = 0;
+		s_uPlayerBotLoadPlanDeferred = 0;
+		s_uPlayerBotLoadPlans = s_uPlayerBotLoadScans = s_uPlayerBotLoadSaves = s_uPlayerBotLoadWatchdog = 0;
+		s_uPlayerBotLoadPlanUs = s_uPlayerBotLoadScanUs = s_uPlayerBotLoadTickUs = s_uPlayerBotLoadTickMaxUs = s_uPlayerBotLoadTicks = 0;
+		s_uPlayerBotLoadTargetSearches = s_uPlayerBotLoadTargetMisses = s_uPlayerBotLoadTargetUs = s_uPlayerBotLoadSnapshotUs = 0;
+		s_dwPlayerBotLoadReportTime = dwNow;
+	}
 
 	for (TPlayerBotMap::iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)
 	{
@@ -1427,9 +1519,15 @@ void CPlayerBotManager::Update()
 			// Finish the group which is already fighting this bot (or its party)
 			// before choosing a fresh, possibly distant spawn. This is the server-side
 			// equivalent of a player clearing the pulled pack first.
-			target = FindPlayerBotEngagedTarget(ch);
-			if (!target)
-				target = FindDistributedTarget(ch, state, dwNow);
+			{
+				TPlayerBotLoadTimer targetTimer(s_uPlayerBotLoadTargetUs);
+				++s_uPlayerBotLoadTargetSearches;
+				target = FindPlayerBotEngagedTarget(ch);
+				if (!target)
+					target = FindDistributedTarget(ch, state, dwNow);
+				if (!target)
+					++s_uPlayerBotLoadTargetMisses;
+			}
 			state.dwTargetVID = target ? (DWORD)target->GetVID() : 0;
 
 			if (target)
@@ -1564,6 +1662,7 @@ void CPlayerBotManager::Update()
 	if (dwNow >= s_dwNextStatusSnapshotTime)
 	{
 		s_dwNextStatusSnapshotTime = dwNow + PLAYERBOT_STATUS_SNAPSHOT_INTERVAL;
+		TPlayerBotLoadTimer snapshotTimer(s_uPlayerBotLoadSnapshotUs);
 		const char* tempPath = "playerbot_status.tsv.tmp";
 		const char* finalPath = "playerbot_status.tsv";
 		FILE* snapshot = fopen(tempPath, "wb");
@@ -1609,6 +1708,12 @@ void CPlayerBotManager::Update()
 				remove(tempPath);
 		}
 	}
+
+	const DWORD dwTickUs = PlayerBotClockUs() - dwTickStartUs;
+	s_uPlayerBotLoadTickUs += dwTickUs;
+	if (dwTickUs > s_uPlayerBotLoadTickMaxUs)
+		s_uPlayerBotLoadTickMaxUs = dwTickUs;
+	++s_uPlayerBotLoadTicks;
 }
 
 bool CPlayerBotManager::IsManaged(DWORD dwPlayerID) const

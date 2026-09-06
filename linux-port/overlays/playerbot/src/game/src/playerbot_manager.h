@@ -9,6 +9,7 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 
 		bool	Spawn(DWORD dwPlayerID, BYTE bEmpire);
 		size_t	SpawnRegistered(size_t count, BYTE bEmpire);
+		void	SpawnPendingBatch(DWORD dwNow);
 		bool	Despawn(DWORD dwPlayerID);
 
 		void	OnPlayerLoaded(LPDESC d);
@@ -30,6 +31,14 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		TPlayerBotMap		m_mapBots;
 		THandleToPlayerMap	m_mapHandles;
 		TRegisteredPlayerBotSet m_setRegisteredBots;
+		// Spawns still to be sent, and when the next batch goes. Filled by
+		// SpawnRegistered, drained by Update, see PLAYERBOT_SPAWN_WINDOW.
+		std::deque<DWORD>	m_dequePendingSpawns;
+		DWORD			m_dwNextSpawnBatchTime;
+		size_t			m_uSpawnBatchSize;
+		BYTE			m_bPendingSpawnEmpire;
+		DWORD			m_dwSpawnWindowStarted;
+		size_t			m_uSpawnWindowTotal;
 		bool			m_bRegistryLoaded;
 		bool			m_bRegistryAvailable;
 };

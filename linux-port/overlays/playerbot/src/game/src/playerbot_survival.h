@@ -28,6 +28,7 @@ namespace
 				(PlayerBotNavHash(ch->GetPlayerID()) % 5001U);
 
 		ch->SaveReal();
+		++s_uPlayerBotLoadSaves;
 		ch->FlushDelayedSaveItem();
 		const DWORD playerID = ch->GetPlayerID();
 		db_clientdesc->DBPacket(HEADER_GD_FLUSH_CACHE, 0, &playerID, sizeof(playerID));

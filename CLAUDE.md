@@ -170,6 +170,19 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
 - `TMonkeyVisitContext` is initialised positionally in the test. Inserting a field
   silently shifts every later value while still compiling.
 - `CHARACTER::fishing()` dereferences the sectree map and tile with no null check.
+- **The route planner reads its own grid, never the sectree.** `m_blocked` in
+  `playerbot_navigation.h` is `ATTR_BLOCK|ATTR_OBJECT` sampled at every cell's
+  centre when the grid is built, and `IsLiveBlockedCell` asks the engine for the
+  same point - so inside A*, string pulling and goal snapping they are the same
+  answer at a thousand times the price. A corridor search that asked live for
+  every neighbour of every node cost 31 s of every 60 at 850 bots. Only the
+  walk (`SegmentClearWorld`, one segment per tick) asks live, as the safety net
+  for anything placed after the grid was built.
+- **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
+  `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
+  their cost, deferrals, target searches, snapshot, map scans, saves, watchdog
+  resets. CPU alone said "A*" once and the fix put every bot's map scan in the
+  same second; the line says which plans, and how many milliseconds each.
 
 ## Engine facts worth not re-deriving
 

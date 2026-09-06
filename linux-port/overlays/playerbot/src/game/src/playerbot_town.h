@@ -460,6 +460,23 @@ namespace
 		if (item->GetType() == ITEM_METIN)
 			unit = PLAYERBOT_SHOP_PRICE_SOUL_STONE[std::min(4, GetPlayerBotSoulStoneGrade(item->GetVnum()))];
 
+		// And scaled to the buyers' wallets, where that is more - see the
+		// PLAYERBOT_MARKET_*_WALLET_* constants for why the merchant's markup
+		// alone was a giveaway. A soul stone keeps its grade table.
+		const DWORD wallet = GetPlayerBotMarketMedianWallet();
+		if (wallet > 0 && item->GetType() != ITEM_METIN)
+		{
+			DWORD permille = PLAYERBOT_MARKET_OTHER_WALLET_PERMILLE;
+			if (IsPlayerBotTradeableMaterial(item))
+				permille = PLAYERBOT_MARKET_MATERIAL_WALLET_PERMILLE;
+			else if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) && refine > 2)
+				permille = PLAYERBOT_MARKET_GEAR_WALLET_PERMILLE_PER_REFINE * (refine - 2);
+			const unsigned long long count = std::max<DWORD>(1, item->GetCount());
+			const DWORD walletUnit = (DWORD)((unsigned long long)wallet * permille / 1000);
+			const DWORD stackCap = (DWORD)((unsigned long long)wallet *
+					PLAYERBOT_MARKET_STACK_WALLET_PERCENT / 100 / count);
+			unit = std::max(unit, std::max<DWORD>(1, std::min(walletUnit, stackCap)));
+		}
 		// That is the prior: what the counter asks before the market has said
 		// anything.
 		const DWORD prior = unit;
@@ -470,17 +487,20 @@ namespace
 		// rather than averaged. Two sales move the number a third of the way;
 		// the full memory of eight, two thirds. It used to replace the prior
 		// outright at two sales, so one bot buying twice at a bad price set
-		// the price of the thing for everybody. Clamped first to a floor of the
-		// merchant's own price - below that the stall is a worse deal than the
-		// NPC for the seller - and a ceiling that keeps one overpayment from
-		// pricing the material out of every other bot's reach.
+		// the price of the thing for everybody. Kept within a band round the
+		// prior - a quarter of it to four times it, and never under the
+		// merchant's own price, below which the stall is a worse deal than the
+		// NPC for the seller - so one overpayment cannot price a material out
+		// of every other bot's reach, and one giveaway cannot drag it back to
+		// the merchant's pennies.
 		size_t samples = 0;
 		const DWORD paid = GetPlayerBotSaleUnitPrice(item->GetVnum(), refine, dwNow, &samples);
 		if (paid != 0)
 		{
-			const DWORD floor = std::max<DWORD>(1, npcUnit);
-			const DWORD cap = npcUnit == 0 ? PLAYERBOT_SALE_PRICE_CAP_FLAT
-					: npcUnit * PLAYERBOT_SALE_PRICE_CAP_MULT;
+			const DWORD floor = std::max<DWORD>(std::max<DWORD>(1, npcUnit),
+					prior / PLAYERBOT_SALE_PRICE_CAP_MULT);
+			const DWORD cap = prior == 0 ? PLAYERBOT_SALE_PRICE_CAP_FLAT
+					: prior * PLAYERBOT_SALE_PRICE_CAP_MULT;
 			const DWORD market = std::min(std::max(paid, floor), std::max(floor, cap));
 			if (prior == 0)
 				unit = market;
@@ -943,6 +963,44 @@ namespace
 		}
 	}
 
+	// The first cell of the engine's shop grid where a line of this height fits,
+	// searched the way CGrid::FindBlank does - row by row, left to right - or
+	// -1 when the counter is full. See TPlayerBotShopOffer::bSlot for why the
+	// line's index in the table is not its slot.
+	int FindPlayerBotShopSlot(const bool* grid, int height)
+	{
+		for (int row = 0; row + height <= PLAYERBOT_SHOP_GRID_ROWS; ++row)
+			for (int col = 0; col < PLAYERBOT_SHOP_GRID_COLUMNS; ++col)
+			{
+				bool empty = true;
+				for (int h = 0; h < height && empty; ++h)
+					empty = !grid[(row + h) * PLAYERBOT_SHOP_GRID_COLUMNS + col];
+				if (empty)
+					return row * PLAYERBOT_SHOP_GRID_COLUMNS + col;
+			}
+		return -1;
+	}
+
+	void PutPlayerBotShopSlot(bool* grid, int slot, int height)
+	{
+		for (int h = 0; h < height; ++h)
+			grid[slot + h * PLAYERBOT_SHOP_GRID_COLUMNS] = true;
+	}
+
+	// The item behind a counter line, while it is still the keeper's to sell.
+	// The engine's own test, made before the walk instead of after it: the item
+	// by id, and its owner the keeper. Sold, and the id belongs to the buyer;
+	// dropped or vendored, and it belongs to nobody.
+	LPITEM FindPlayerBotOfferItem(LPCHARACTER keeper, const TPlayerBotShopOffer& offer)
+	{
+		if (!keeper || offer.dwItemID == 0)
+			return NULL;
+		LPITEM item = ITEM_MANAGER::instance().Find(offer.dwItemID);
+		if (!item || item->GetOwner() != keeper)
+			return NULL;
+		return item;
+	}
+
 	// Runs at the very top of the tick, ahead of the inactivity watchdog and the
 	// navigation rescues. Those both "continue", and a keeper that never reached
 	// the shop hook could not close its stall: the sign stayed over its head and
@@ -1001,21 +1059,12 @@ namespace
 		bool bSoldOut = !state.vecShopOffers.empty() && ch->IsItemLoaded();
 		if (bSoldOut)
 		{
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM && bSoldOut; ++cell)
-			{
-				LPITEM item = ch->GetInventoryItem(cell);
-				if (!item)
-					continue;
-				for (size_t i = 0; i < state.vecShopOffers.size(); ++i)
-				{
-					if (item->GetVnum() == state.vecShopOffers[i].dwVnum &&
-							item->GetRefineLevel() == state.vecShopOffers[i].bRefine)
-					{
-						bSoldOut = false;
-						break;
-					}
-				}
-			}
+			// Line by line, by item id - see TPlayerBotShopOffer::dwItemID. By
+			// vnum a counter whose every line had sold stayed open as long as
+			// the bag held a second stack of any of them.
+			for (size_t i = 0; i < state.vecShopOffers.size() && bSoldOut; ++i)
+				if (FindPlayerBotOfferItem(ch, state.vecShopOffers[i]))
+					bSoldOut = false;
 		}
 
 		// Whatever else happens, a corpse or a bot that is no longer standing on
@@ -1163,6 +1212,8 @@ namespace
 		const char* pszBook = NULL;
 		int iBooks = 0;
 		int iScrap = 0;
+		bool grid[PLAYERBOT_SHOP_GRID_CELLS];
+		memset(grid, 0, sizeof(grid));
 		for (size_t i = 0; i < scored.size() && tableCount < tableLimit; ++i)
 		{
 			const WORD cell = scored[i].second;
@@ -1173,18 +1224,27 @@ namespace
 			if (!proto || IS_SET(proto->dwAntiFlags,
 					ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP))
 				continue;
+			// Placed on the engine's grid by height, or the engine drops the
+			// line and every buyer who comes for it is refused at an empty slot.
+			const int height = std::max<int>(1, std::min<int>(PLAYERBOT_SHOP_GRID_ROWS, item->GetSize()));
+			const int slot = FindPlayerBotShopSlot(grid, height);
+			if (slot < 0)
+				continue;
+			PutPlayerBotShopSlot(grid, slot, height);
 			const DWORD price = GetPlayerBotShopAskingPrice(item);
 			table[tableCount].vnum = item->GetVnum();
 			table[tableCount].count = item->GetCount();
 			table[tableCount].pos = TItemPos(INVENTORY, cell);
 			table[tableCount].price = price;
-			table[tableCount].display_pos = tableCount;
+			table[tableCount].display_pos = (BYTE)slot;
 
 			TPlayerBotShopOffer offer;
 			offer.dwVnum = item->GetVnum();
 			offer.dwPrice = price;
 			offer.bRefine = item->GetRefineLevel();
 			offer.wCount = item->GetCount();
+			offer.dwItemID = item->GetID();
+			offer.bSlot = (BYTE)slot;
 			offers.push_back(offer);
 			if (scored[i].first > bestScore)
 				bestScore = scored[i].first;

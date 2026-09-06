@@ -293,9 +293,26 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   for the rest. `GetPlayerBotShopAskingPrice` blends the prior with the
   sale median by n/(n+4) in log space, applies ((D+5)/(S+5))^0.2 within
   [0.75, 1.35] for materials, and `LimitPlayerBotAskStep` lets a price move
-  five percent per ten minutes. `PLAYERBOT_MARKET: ledger` every ten minutes
-  is the report. A human buying from a counter is invisible to all of it:
-  the purchase goes through CShopManager and never reaches this code.
+  five percent per ten minutes. The prior is the merchant's price times
+  three or a share of the median shopping wallet, whichever is more -
+  the merchant pays pennies and the bots hold millions. `PLAYERBOT_MARKET:
+  ledger` every ten minutes is the report. A human buying from a counter
+  is invisible to all of it: the purchase goes through CShopManager and
+  never reaches this code.
+- **A counter line is a grid slot and an item id, not an index and a vnum.**
+  `CShop::SetShopItems` lays a private shop out on a five-column grid by
+  item height (a weapon is three cells, an armour two) and silently drops a
+  line whose `display_pos` is already covered ("not empty position" in
+  syserr); `CShopManager::Buy` indexes by that position. Numbering the
+  lines 0, 1, 2 lost every second-row line under a weapon, and buyers were
+  refused at empty slots with a hacker log line: 2158 refusals to 501
+  purchases in one hour. `FindPlayerBotShopSlot` places lines the way
+  `CGrid::FindBlank` does and `TPlayerBotShopOffer::bSlot` carries the
+  result; `dwItemID` and `FindPlayerBotOfferItem` (the item exists and the
+  keeper still owns it - the engine's own test) say whether the line is
+  still for sale, because a sold stack's vnum is often still in the bag as
+  a second stack. The buyer re-reads the counter on the tick it arrives,
+  whatever the browse clock says.
 
 ## Engine facts worth not re-deriving
 

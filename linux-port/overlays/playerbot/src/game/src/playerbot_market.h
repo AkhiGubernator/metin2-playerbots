@@ -63,23 +63,6 @@ namespace
 			int m_maxDistance;
 	};
 
-	// The item behind an offer. A private shop leaves its stock in the owner's
-	// inventory, so the real item - with its sockets and bonus lines - is still
-	// there to be looked at before deciding.
-	LPITEM FindPlayerBotStallItem(LPCHARACTER keeper, DWORD vnum, BYTE refine)
-	{
-		if (!keeper || vnum == 0 || !keeper->IsItemLoaded())
-			return NULL;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
-		{
-			LPITEM item = keeper->GetInventoryItem(cell);
-			if (item && item->GetVnum() == vnum &&
-					item->GetRefineLevel() == refine)
-				return item;
-		}
-		return NULL;
-	}
-
 	// Would this bot rather have the item than the money?
 	bool WantsPlayerBotStallItem(LPCHARACTER ch, LPITEM offer)
 	{
@@ -207,8 +190,7 @@ namespace
 				continue; // a nearer counter has already offered something
 
 			// A counter holds several things. Walk it and take the first line the
-			// buyer actually wants; the index is the slot, because the offers were
-			// recorded in the order they were handed to OpenMyShop.
+			// buyer actually wants; the offer carries the engine's slot for it.
 			for (size_t k = 0; k < it->second.vecShopOffers.size(); ++k)
 			{
 				const TPlayerBotShopOffer& candidate = it->second.vecShopOffers[k];
@@ -217,8 +199,9 @@ namespace
 						ch->GetGold() - (int)candidate.dwPrice <
 							(int)PLAYERBOT_SHOPPING_GOLD_FLOOR)
 					continue;
-				LPITEM candidateItem = FindPlayerBotStallItem(keeper,
-						candidate.dwVnum, candidate.bRefine);
+				// The real item, with its sockets and bonus lines, is still in
+				// the keeper's bag to be looked at - or it is sold, and it is not.
+				LPITEM candidateItem = FindPlayerBotOfferItem(keeper, candidate);
 				if (!WantsPlayerBotStallItem(ch, candidateItem))
 					continue;
 				// Room for this particular thing, not room in general. The engine
@@ -231,7 +214,7 @@ namespace
 				outPick.keeper = keeper;
 				outPick.dwVnum = candidate.dwVnum;
 				outPick.dwPrice = candidate.dwPrice;
-				outPick.bSlot = (BYTE)k;
+				outPick.bSlot = candidate.bSlot;
 				outPick.bRefine = candidate.bRefine;
 				outPick.wCount = candidate.wCount;
 				bestDistance = distance;
@@ -357,6 +340,18 @@ namespace
 				keeper ? PLAYERBOT_MARKET_STALL_APPROACH : PLAYERBOT_MARKET_ARRIVE))
 			return true; // still walking
 
+		// Standing at the counter. The line is read again now, whatever the
+		// browse clock says: what was on it two seconds ago is what the bot
+		// walked over for, what is on it this tick is what it can buy. Gone,
+		// and the bot heads for the next counter that has it, or the ring.
+		if (keeper && !havePick)
+		{
+			havePick = FindPlayerBotStallPick(ch, pick);
+			state.dwMarketBrowseTime = dwNow + PLAYERBOT_MARKET_BROWSE_INTERVAL;
+			state.dwMarketStallVID = havePick ? pick.keeper->GetVID() : 0;
+			if (!havePick || pick.keeper != keeper)
+				return true;
+		}
 		if (keeper && havePick && pick.keeper == keeper)
 		{
 			if (!BuyFromPlayerBotStall(ch, pick))
@@ -465,6 +460,7 @@ namespace
 
 		DWORD stalls = 0, lines = 0, demandBots = 0;
 		std::set<DWORD> wanted;
+		std::vector<DWORD> wallets;
 		for (TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.begin();
 				it != s_mapPlayerBotAIStates.end(); ++it)
 		{
@@ -480,7 +476,7 @@ namespace
 					const TPlayerBotShopOffer& offer = state.vecShopOffers[k];
 					// A line that has been bought stays in the offer list; the
 					// item does not stay in the bag.
-					if (!FindPlayerBotStallItem(ch, offer.dwVnum, offer.bRefine))
+					if (!FindPlayerBotOfferItem(ch, offer))
 						continue;
 					AddPlayerBotMarketSupply(offer.dwVnum, offer.wCount);
 					++lines;
@@ -490,12 +486,19 @@ namespace
 			// half hour and its own anvil is still waiting.
 			if (!CanPlayerBotAffordMarket(ch))
 				continue;
+			wallets.push_back((DWORD)std::max(0, ch->GetGold() - GetPlayerBotReservedGold(ch)));
 			CollectPlayerBotWantedMaterials(ch, wanted);
 			if (wanted.empty())
 				continue;
 			++demandBots;
 			for (std::set<DWORD>::const_iterator w = wanted.begin(); w != wanted.end(); ++w)
 				++s_mapMarketLedger[*w].dwDemandBots;
+		}
+
+		if (!wallets.empty())
+		{
+			std::sort(wallets.begin(), wallets.end());
+			s_dwMarketMedianWallet = wallets[wallets.size() / 2];
 		}
 
 		if (s_dwMarketReportTime != 0 &&
@@ -520,8 +523,9 @@ namespace
 					GetPlayerBotLastAsk(ranked[i].second, 0, dwNow));
 			top += buf;
 		}
-		sys_log(0, "PLAYERBOT_MARKET: ledger stalls=%u lines=%u vnums=%u demand_bots=%u decisions list=%u probe=%u no_demand=%u overstock=%u top:%s",
+		sys_log(0, "PLAYERBOT_MARKET: ledger stalls=%u lines=%u vnums=%u demand_bots=%u wallet=%u decisions list=%u probe=%u no_demand=%u overstock=%u top:%s",
 				stalls, lines, (unsigned int)s_mapMarketLedger.size(), demandBots,
+				s_dwMarketMedianWallet,
 				s_auMarketDecisions[PLAYERBOT_LIST_LIST], s_auMarketDecisions[PLAYERBOT_LIST_PROBE],
 				s_auMarketDecisions[PLAYERBOT_LIST_NO_DEMAND], s_auMarketDecisions[PLAYERBOT_LIST_OVERSTOCK],
 				top.c_str());

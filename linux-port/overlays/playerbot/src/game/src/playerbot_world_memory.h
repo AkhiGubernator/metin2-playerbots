@@ -177,6 +177,14 @@ namespace
 	TPlayerBotMarketLedger s_mapMarketLedger;
 	DWORD s_dwMarketLedgerTime = 0;
 	DWORD s_dwMarketReportTime = 0;
+	// The median of what a shopping bot has to spend, from the same walk. Zero
+	// until the first refresh, and the counters ask the merchant's markup alone.
+	DWORD s_dwMarketMedianWallet = 0;
+
+	DWORD GetPlayerBotMarketMedianWallet()
+	{
+		return s_dwMarketMedianWallet;
+	}
 
 	// What the listing decision said about a material, counted for the
 	// ten-minute report. The names are the reason codes an operator reads in

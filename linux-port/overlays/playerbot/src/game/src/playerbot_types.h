@@ -461,12 +461,27 @@ namespace
 	const int PLAYERBOT_WANTED_DROP_BONUS = 120000;
 
 	// Stall prices from what the market actually paid. Fewer sales than this and
-	// the counter falls back to the merchant-derived markup; the clamp keeps one
-	// wild purchase from pricing a material out of every other bot's reach.
+	// the counter asks its prior alone; the band keeps one wild purchase from
+	// moving a price more than this many times either way from that prior.
 	const size_t PLAYERBOT_SALE_MEMORY = 8;
 	const size_t PLAYERBOT_SALE_MIN_SAMPLES = 2;
-	const DWORD PLAYERBOT_SALE_PRICE_CAP_MULT = 12;
+	const DWORD PLAYERBOT_SALE_PRICE_CAP_MULT = 4;
 	const DWORD PLAYERBOT_SALE_PRICE_CAP_FLAT = 20000;
+	// What a counter asks, scaled to what the buyers carry. The merchant's
+	// price times three was the prior for everything, and the merchant pays
+	// pennies: a material four hundred bots were short of stood at six hundred
+	// yang on a market whose customers held a million each, which is not a
+	// market, it is a giveaway. The median spendable wallet of the bots that
+	// shop is measured once a minute with the ledger, and a unit asks this
+	// share of it - a refine material fifteen per mille, a spare at +4 to +6
+	// fifteen per refine step above +2, anything else ten - and a whole stack
+	// never more than this percent, so the stack stays within reach of a bot
+	// with the median wallet. The merchant's markup still applies where it is
+	// the higher of the two.
+	const DWORD PLAYERBOT_MARKET_MATERIAL_WALLET_PERMILLE = 15;
+	const DWORD PLAYERBOT_MARKET_GEAR_WALLET_PERMILLE_PER_REFINE = 15;
+	const DWORD PLAYERBOT_MARKET_OTHER_WALLET_PERMILLE = 10;
+	const DWORD PLAYERBOT_MARKET_STACK_WALLET_PERCENT = 30;
 	const DWORD PLAYERBOT_SALE_RECENT = 600000;
 	const DWORD PLAYERBOT_SALE_STALE = 3600000;
 
@@ -1013,6 +1028,15 @@ namespace
 	// One line on a stall's counter. CShop keeps its own item list private, and a
 	// bot browsing the market reads this instead - we are the ones who put the
 	// items there, so it is exactly what is on sale.
+	// The engine's private-shop grid, as SetShopItems lays it out: five columns,
+	// and rows down to SHOP_HOST_ITEM_MAX_NUM (forty) cells - the grid itself has
+	// nine rows, but the item vector has forty entries and a slot past them is
+	// out of bounds. A line occupies its cell and the cells below it, one per
+	// unit of the item's size.
+	const int PLAYERBOT_SHOP_GRID_COLUMNS = 5;
+	const int PLAYERBOT_SHOP_GRID_ROWS = 8;
+	const int PLAYERBOT_SHOP_GRID_CELLS = PLAYERBOT_SHOP_GRID_COLUMNS * PLAYERBOT_SHOP_GRID_ROWS;
+
 	struct TPlayerBotShopOffer
 	{
 		DWORD dwVnum;
@@ -1021,6 +1045,23 @@ namespace
 		// A stall line is a whole stack, priced as one. What a buyer paid for the
 		// line only says something about the material once it is divided by this.
 		WORD wCount;
+		// The item itself, by id. A line is sold once the engine has moved this
+		// item to its buyer, and that is the only fact that says so: the sold
+		// stack's vnum and refine are still in the keeper's bag whenever it
+		// carries a second stack of the same thing - a bought stack lands in its
+		// own cell and never merges - and matching by vnum found that second
+		// stack and walked a buyer over to a sold slot.
+		DWORD dwItemID;
+		// Where the line sits in the engine's shop, which is what CShopManager::Buy
+		// indexes by. Not the line's index in the table: a private shop is a grid
+		// of five columns and eight rows, a weapon is three cells tall and an
+		// armour two, and a line whose cell the item above already covers is
+		// dropped by SetShopItems with a "not empty position" in syserr - two
+		// hundred and eighty of them in an hour. Numbering the lines 0, 1, 2 put
+		// every line from the second row under a weapon or an armour, so the
+		// engine had nothing at those slots and refused every buyer who walked
+		// over for one: two thousand refusals to five hundred purchases.
+		BYTE bSlot;
 	};
 
 	struct TPlayerBotBiologistMission

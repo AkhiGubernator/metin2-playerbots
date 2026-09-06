@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T20:32:00Z",
-  "statusMessage": "Aktualizacja 1.29.13. Zestawy Kamieni Duszy wedlug stylu walki, stopien kamienia czytany poprawnie (dotad kazdy liczyl sie jako +0), gniazda na sprzecie +6 czekaja na +3/+4, kamienie na targowisku zamiast u handlarza. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T21:04:00Z",
+  "statusMessage": "Aktualizacja 1.29.14. Ksiega rynku: stragany wystawiaja tylko tyle materialu, ile botom brakuje (jedna sonda, gdy nikt nie szuka), ceny z kotwica transakcji, regulatorem popyt/podaz i krokiem 5% na 10 minut; raport PLAYERBOT_MARKET: ledger co 10 minut. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.13",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.13/metin2-server-update-1.29.13.zip",
-    "sha256": "AF1077AD7C4040B5F7272A77662F96249F48CBE6801A08696C88AD45DF03C484"
+    "version": "1.29.14",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.14/metin2-server-update-1.29.14.zip",
+    "sha256": "9C29BA929F5502FD11E81FA788B04F3D8004FE0B069485B3A90E28B84BD27FD0"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

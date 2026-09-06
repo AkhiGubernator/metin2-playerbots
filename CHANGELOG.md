@@ -17,6 +17,42 @@ every version here.
 
 ---
 
+## 1.29.14 — 2026-09-06
+
+### Nowe
+
+- **Księga rynku.** Co minutę serwer liczy, ile sztuk każdego materiału
+  stoi na otwartych straganach i ilu botów brakuje go do własnej receptury
+  (i ma za co kupić). Dotąd stragan wystawiał każdy zapasowy materiał, więc
+  czterdzieści straganów pokazywało te same rzeczy, których nikt nie
+  potrzebował.
+- **Limit podaży z kodami powodów.** Materiał trafia na ladę tylko wtedy,
+  gdy na straganach jest go mniej niż 1,5 × 5 sztuk na każdego
+  potrzebującego bota (`LIST`). Gdy nikt go nie potrzebuje, jeden stos może
+  stać jako sonda (`PROBE`); kolejne zostają w plecaku (`NO_DEMAND`), a przy
+  pokrytym popycie — `OVERSTOCK`. Odmowy z liczbami idą do logu raz na
+  minutę (`PLAYERBOT_MARKET: held`), a co 10 minut raport
+  `PLAYERBOT_MARKET: ledger` pokazuje osiem najbardziej poszukiwanych
+  materiałów (D = boty, S = sztuki/stragany, ask = ostatnia cena).
+- **Wycena z kotwicą i regulatorem.** Cena bazowa (3× cena u handlarza, dla
+  kamieni tabela po stopniu) łączy się z medianą prawdziwych transakcji
+  wagą n/(n+4) w skali logarytmicznej: dwie sprzedaże przesuwają cenę o
+  jedną trzecią, pełna pamięć ośmiu o dwie trzecie. Dotąd dwie sprzedaże
+  zastępowały cenę bazową w całości. Dla materiałów dochodzi regulator
+  popyt/podaż ((D+5)/(S+5))^0,2 w granicach 0,75–1,35, a cena rynkowa
+  przedmiotu może przesunąć się najwyżej o 5 % na 10 minut (do 30 % naraz
+  po godzinie bez ofert).
+- **Materiał bez receptury nie jest towarem.** Przedmiot typu MATERIAL,
+  którego żadna receptura nie zużywa, nie trafia już na ladę tylko dlatego,
+  że ma taki typ.
+
+Ograniczenie: zakupy graczy na straganach botów przechodzą przez silnik bez
+śladu w tej pamięci — księga i mediana widzą wyłącznie handel bot–bot.
+
+Z dokumentu o handlu i wycenie (etapy A, B i C).
+
+---
+
 ## 1.29.13 — 2026-09-06
 
 ### Naprawione

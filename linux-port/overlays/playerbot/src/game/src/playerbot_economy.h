@@ -256,6 +256,15 @@ namespace
 		return false;
 	}
 
+	int CountPlayerBotFreeInventoryCells(LPCHARACTER ch)
+	{
+		int free = 0;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			if (!ch->GetInventoryItem(cell))
+				++free;
+		return free;
+	}
+
 	bool IsPlayerBotJunkItem(LPCHARACTER ch, LPITEM item)
 	{
 		if (!ch || !item || item->IsEquipped() || item->isLocked())
@@ -278,6 +287,13 @@ namespace
 		// slot and sold the rest; that is how a Riba +9 went to a merchant
 		// because the same bot was carrying an axe +9. These go on a stall.
 		if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
+			return false;
+
+		// A scrap keeper's low refines are its stock, not its junk - until the
+		// bag runs short, and then the merchant gets them like anyone else's.
+		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+				IsPlayerBotScrapKeeper(ch->GetPlayerID()) &&
+				CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_SCRAP_KEEP_FREE_CELLS)
 			return false;
 
 		// Quest progress must survive every merchant visit. In particular, Horse
@@ -304,7 +320,7 @@ namespace
 		// Forgetting Scroll for a skill stuck at seventeen - this bot's or, across
 		// a counter, another's.
 		if (item->GetType() == ITEM_TREASURE_BOX || item->GetType() == ITEM_TREASURE_KEY ||
-				vnum == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+				item->GetType() == ITEM_GIFTBOX || vnum == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
 			return false;
 
 		// Fishing tackle and the catch worth keeping. Pearls are the entire point

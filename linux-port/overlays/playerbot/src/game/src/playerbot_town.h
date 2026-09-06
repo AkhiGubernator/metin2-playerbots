@@ -450,6 +450,11 @@ namespace
 		if (refine == 7)
 			return PLAYERBOT_SHOP_PRICE_PLUS7;
 		const DWORD npcUnit = GetPlayerBotNpcSellUnitPrice(item);
+		// Scrap gear is priced as scrap: twice what the merchant pays, so the
+		// player burning it at the blacksmith is not paying market money for it.
+		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+				refine < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
+			return std::max<DWORD>(1, npcUnit * PLAYERBOT_SCRAP_PRICE_MULT);
 		DWORD unit = npcUnit * PLAYERBOT_SHOP_MATERIAL_MARKUP;
 
 		// What the market has paid outranks what the merchant would. Clamped to
@@ -572,6 +577,11 @@ namespace
 		const BYTE type = item->GetType();
 		if (type == ITEM_WEAPON || type == ITEM_ARMOR)
 		{
+			// A scrap keeper puts the low refines out too, last in line after
+			// everything worth more: fodder for a player's blacksmith runs.
+			if (IsPlayerBotScrapKeeper(ch->GetPlayerID()) &&
+					item->GetRefineLevel() < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
+				return 100 + item->GetRefineLevel();
 			if (item->GetRefineLevel() < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
 				return -1;
 			// The refine floor alone let the whole of the twenties through, and

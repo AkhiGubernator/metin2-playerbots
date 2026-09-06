@@ -1320,6 +1320,9 @@ void CPlayerBotManager::Update()
 		}
 		else if (!bFightingMetin && state.dwStoneProgressVID != 0)
 		{
+			// The stone is gone - broken, or abandoned. Either way the loot pass
+			// gets its window to go for what lies round it.
+			state.dwStoneBrokenTime = dwNow;
 			ResetPlayerBotStoneProgress(state);
 		}
 

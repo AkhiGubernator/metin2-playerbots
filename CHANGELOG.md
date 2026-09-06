@@ -17,6 +17,34 @@ every version here.
 
 ---
 
+## 1.29.9 — 2026-09-06
+
+### Nowe
+
+- **Boty złomiarze (suwak w panelu, domyślnie wyłączone).** Zakładka
+  zachowania botów ma suwak „Boty złomiarze” 0–100%: taki udział
+  straganiarzy wystawia na ladę swoje słabe ulepszenia (+0 do +3) za
+  dwukrotność ceny NPC zamiast sprzedawać je handlarzowi — złom do palenia
+  u kowala, jak na serwerach hard. Złomiarz trzyma złom, dopóki ma ponad
+  20 wolnych komórek w plecaku. Pomysł z Discorda (Remigiusz).
+- **Łucznik ciągnie 3–4 cele naraz.** Multi-pull, dotąd tylko dla
+  tarczowników i wojowników mentalnych, działa też dla łucznika: jedna
+  grupa, limit czterech atakujących zamiast czternastu. Pomysł z Discorda
+  (Archded).
+- **Wypad po drop z Metina.** Przez 20 sekund od rozbicia kamienia bot idzie
+  po swoje przedmioty w promieniu 15 m mimo trwającej walki z przywołaną
+  hordą — jak gracz, który skacze po drop, zanim zabiorą go inni. Dotąd w
+  walce podnosił tylko to, co leżało w zasięgu ręki (300 jednostek, tyle
+  pozwala silnik). Pomysł z Discorda (Kordyl13).
+- **Wypady na bossów.** Wódz Orków (Dolina, poziom 50, co 30 minut) i
+  Królowa Pająków (koniec Lochu V1, poziom 60, co ~4 godziny) są hubami dla
+  drużyn: przywódca z drużyną (najpierw współgildianie) może je wybrać jak
+  obozy Czarnych Orków. Szkatułki bossów (Szkatułka Wodza Orków, Królowej
+  Pająków i pozostałe) boty otwierają tak jak Szkatułkę Księżycową i nie
+  sprzedają ich.
+
+---
+
 ## 1.29.8 — 2026-09-06
 
 ### Nowe

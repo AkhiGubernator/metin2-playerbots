@@ -53,7 +53,10 @@ namespace
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
-			if (!item || item->GetVnum() != PLAYERBOT_MOONLIGHT_CHEST_VNUM)
+			// The Moonlight chest, and every boss casket (ITEM_GIFTBOX: the Orc
+			// Chief's, the Spider Queen's) - the engine opens both the same way.
+			if (!item || (item->GetVnum() != PLAYERBOT_MOONLIGHT_CHEST_VNUM &&
+					item->GetType() != ITEM_GIFTBOX))
 				continue;
 			if (ch->GetEmptyInventory(1) < 0)
 				return false;

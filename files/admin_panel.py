@@ -858,6 +858,7 @@ def read_ai_weights():
     """What the file says now. Anything missing or unreadable is neutral."""
     vals = {k: AI_W_NEUTRAL for k, _ in AI_WEIGHT_KEYS}
     vals["CHAT"] = 1
+    vals["SCRAP"] = 0
     try:
         with open(AI_WEIGHTS, encoding="utf-8", errors="replace") as fh:
             for line in fh:
@@ -870,6 +871,12 @@ def read_ai_weights():
                 name = parts[0].upper()
                 if name == "CHAT":
                     vals["CHAT"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                    continue
+                if name == "SCRAP":
+                    try:
+                        vals["SCRAP"] = max(0, min(100, int(parts[1])))
+                    except ValueError:
+                        pass
                     continue
                 if name not in vals:
                     continue
@@ -897,6 +904,8 @@ def write_ai_weights(vals):
         body.append("%s\t%d" % (name, vals[name]))
     # Not a weight: whether bots say what they are doing over their heads.
     body.append("CHAT\t%d" % (1 if vals.get("CHAT", 1) else 0))
+    # Percent of stall keepers that sell scrap gear; 0 is off.
+    body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
     tmp = AI_WEIGHTS + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(body) + "\n")
@@ -2625,6 +2634,13 @@ T.update({
                   "de":"Die Zeile über dem Kopf eines Bots (jagt, geht zum Schmied, angelt). Aus für Spieler, die es Spam nennen. Der Ruf im Weltkanal über ein +7/+8/+9-Upgrade bleibt so oder so.",
                   "tr":"Botun başının üstündeki satır (avlanıyor, demirciye gidiyor, balık tutuyor). Spam diyen oyuncular için kapatın. Dünya kanalındaki +7/+8/+9 bağırışı her halükârda kalır."},
  "ai_chat_on":   {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
+ "ai_scrap":     {"en":"Scrap keepers","pl":"Boty złomiarze","de":"Schrotthändler-Bots","tr":"Hurdacı botlar"},
+ "ai_scrap_help":{"en":"The share of stall keepers that put their low refines (+0 to +3) on the counter, cheaply, instead of vendoring them - fodder for burning at the blacksmith, the way the hard servers play. Off by default.",
+                  "pl":"Udział straganiarzy, którzy wystawiają na ladę swoje słabe ulepszenia (+0 do +3) za grosze zamiast sprzedawać je NPC - złom do palenia u kowala, jak na serwerach hard. Domyślnie wyłączone.",
+                  "de":"Anteil der Standbetreiber, die ihre schwachen Verbesserungen (+0 bis +3) billig auf den Tresen legen statt sie zu verkaufen - Futter für den Schmied, wie auf den Hard-Servern. Standardmäßig aus.",
+                  "tr":"Tezgâhçıların, düşük yükseltmelerini (+0 ile +3) NPC'ye satmak yerine ucuza tezgâha koyan payı - demircide yakmalık, hard sunuculardaki gibi. Varsayılan olarak kapalı."},
+ "ai_scrap_off": {"en":"off","pl":"wyłączone","de":"aus","tr":"kapalı"},
+ "ai_scrap_all": {"en":"every keeper","pl":"każdy straganiarz","de":"jeder Händler","tr":"her tezgâhçı"},
  "ai_live":      {"en":"Saved. The bots pick this up within five seconds \u2014 no restart, nobody is disconnected.",
                   "pl":"Zapisano. Boty odczytają to w ciągu pięciu sekund \u2014 bez restartu, nikt nie zostaje rozłączony.",
                   "de":"Gespeichert. Die Bots übernehmen das binnen fünf Sekunden \u2014 kein Neustart, niemand fliegt raus.",
@@ -4183,6 +4199,16 @@ TPL_AI = BASE.replace("__BODY__", """
   <h3 style="margin:0 0 2px">💬 {{t('ai_chat')}}</h3>
   <p class="muted" style="margin:0 0 6px">{{t('ai_chat_help')}}</p>
   <label><input type="checkbox" name="CHAT" value="1" {% if cur.get('CHAT', 1) %}checked{% endif %}> {{t('ai_chat_on')}}</label>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">♻️ {{t('ai_scrap')}}
+      <span class="badge" id="v_SCRAP">{{cur.get('SCRAP', 0)}}%</span></h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_scrap_help')}}</p>
+  <input type="range" name="SCRAP" id="s_SCRAP" min="0" max="100" step="5" value="{{cur.get('SCRAP', 0)}}" style="width:100%"
+         oninput="document.getElementById('v_SCRAP').textContent=this.value+'%'">
+  <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
+    <span>0 — {{t('ai_scrap_off')}}</span><span>100 — {{t('ai_scrap_all')}}</span>
+  </div>
 </div>
 {% for name, emoji in keys %}
 <div style="margin-bottom:18px">
@@ -8581,6 +8607,10 @@ def ai_weights():
             # the sane answer is the nearest legal one, not an error page.
             vals[name] = max(AI_W_MIN, min(AI_W_MAX, v))
         vals["CHAT"] = 1 if request.form.get("CHAT") else 0
+        try:
+            vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
+        except (TypeError, ValueError):
+            vals["SCRAP"] = 0
         try:
             write_ai_weights(vals)
         except OSError:

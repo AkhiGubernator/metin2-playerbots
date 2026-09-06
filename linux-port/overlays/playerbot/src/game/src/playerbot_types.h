@@ -741,6 +741,20 @@ namespace
 	// left there rather than pushed on - every further point is a point the
 	// bot never gets back - and a scroll from a counter buys another roll.
 	const DWORD PLAYERBOT_SKILL_FORGET_SCROLL_VNUM = 70037;
+	// Scrap keepers: the share of stall keepers (percent, from the panel) that
+	// put their low refines on the counter instead of vendoring them, for the
+	// player who wants cheap fodder to burn at the blacksmith. A keeper stops
+	// hoarding scrap when its bag is down to this many free cells.
+	const int PLAYERBOT_SCRAP_KEEP_FREE_CELLS = 20;
+	const DWORD PLAYERBOT_SCRAP_PRICE_MULT = 2;
+	// After a Metin stone breaks its drops lie in a ring round it, and the
+	// pack it summoned is still on the bot. For this long the bot goes for its
+	// own drops within this reach anyway - the way a player dashes for them -
+	// rather than leaving them to whoever is not fighting.
+	const DWORD PLAYERBOT_METIN_LOOT_DASH_TIME = 20000;
+	const int PLAYERBOT_METIN_LOOT_DASH_RANGE = 1500;
+	// An archer pulls too, but a bow is not a shield: one group, four attackers.
+	const int PLAYERBOT_MULTI_PULL_ARCHER_MAX_AGGRESSORS = 4;
 	const BYTE PLAYERBOT_SKILL_MASTER_TRY_LEVEL = 17;
 	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
 	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
@@ -1305,6 +1319,7 @@ namespace
 			dwTownWaitUntil(0),
 			dwStoneFightStartTime(0),
 			dwStoneProgressVID(0),
+			dwStoneBrokenTime(0),
 			dwStoneLastProgressTime(0),
 			dwNextStoneProgressCheckTime(0),
 			dwNextNavPlanTime(0),
@@ -1490,6 +1505,7 @@ namespace
 		DWORD dwTownWaitUntil;
 		DWORD dwStoneFightStartTime;
 		DWORD dwStoneProgressVID;
+		DWORD dwStoneBrokenTime;
 		DWORD dwStoneLastProgressTime;
 		DWORD dwNextStoneProgressCheckTime;
 		DWORD dwNextNavPlanTime;

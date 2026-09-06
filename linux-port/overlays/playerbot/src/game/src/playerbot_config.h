@@ -79,6 +79,9 @@ namespace
 	// players who called it spam asked for; the refine shouts on the world
 	// channel are not covered - those are one line every few minutes.
 	bool s_bPlayerBotOverheadChat = true;
+	// Percent of stall keepers that sell scrap gear. Zero is off, and the
+	// default: it is the "hard server" flavour, asked for by name.
+	int s_iPlayerBotScrapPercent = 0;
 	bool s_bPlayerBotOverheadChatReported = true;
 	bool s_bPlayerBotWeightsInitialised = false;
 	DWORD s_dwPlayerBotWeightNextCheck = 0;
@@ -98,6 +101,7 @@ namespace
 		for (int i = 0; i < PLAYERBOT_WEIGHT_MAX; ++i)
 			s_aiPlayerBotWeights[i] = PLAYERBOT_WEIGHT_NEUTRAL;
 		s_bPlayerBotOverheadChat = true;
+		s_iPlayerBotScrapPercent = 0;
 		s_bPlayerBotWeightsInitialised = true;
 	}
 
@@ -140,6 +144,14 @@ namespace
 				s_bPlayerBotOverheadChatReported = enabled;
 			}
 			s_bPlayerBotOverheadChat = enabled;
+			return;
+		}
+		if (PlayerBotWeightNameEquals(szKey, "SCRAP"))
+		{
+			const int percent = value < 0 ? 0 : (value > 100 ? 100 : (int)value);
+			if (percent != s_iPlayerBotScrapPercent)
+				sys_log(0, "PLAYERBOT_CONFIG: scrap keepers %d%%", percent);
+			s_iPlayerBotScrapPercent = percent;
 			return;
 		}
 		for (size_t i = 0; i < sizeof(PLAYERBOT_WEIGHT_NAMES) /
@@ -238,6 +250,18 @@ namespace
 		s_tPlayerBotWeightMtime = st.st_mtime;
 		s_lPlayerBotWeightSize = (long)st.st_size;
 		ReadPlayerBotWeightFile(szPath);
+	}
+
+	// Whether this bot is one of the scrap keepers: a fixed share by pid, so
+	// the same bots keep the role between restarts and the panel's slider
+	// says how many there are.
+	bool IsPlayerBotScrapKeeper(DWORD dwPID)
+	{
+		if (!s_bPlayerBotWeightsInitialised)
+			ResetPlayerBotWeights();
+		if (s_iPlayerBotScrapPercent <= 0)
+			return false;
+		return (int)((dwPID * 2654435761U) % 100U) < s_iPlayerBotScrapPercent;
 	}
 
 	bool IsPlayerBotOverheadChatEnabled()

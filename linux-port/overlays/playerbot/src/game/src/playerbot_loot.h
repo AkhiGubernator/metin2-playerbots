@@ -310,7 +310,13 @@ namespace
 		// live target or an attacking pack exists, perform only non-blocking Z pickup.
 		// Once the threat scan says the pack is clear, recent combat no longer hides
 		// the 25 m loot search: the bot finishes its own drop before choosing a new mob.
-		if (bFightingActiveTarget || state.bLootThreatNearby)
+		// A Metin just broke: its drops are the bot's for a few seconds and lie
+		// in a ring round where the stone stood, and the pack it summoned is
+		// still on the bot. Go for them anyway, within reach, the way a player
+		// dashes for them - or the bots that are not fighting will have them.
+		const bool metinDash = state.dwStoneBrokenTime != 0 &&
+				dwNow - state.dwStoneBrokenTime < PLAYERBOT_METIN_LOOT_DASH_TIME;
+		if ((bFightingActiveTarget || state.bLootThreatNearby) && !metinDash)
 		{
 			TryPlayerBotCombatPickup(ch, state, dwNow);
 			return false;
@@ -318,7 +324,8 @@ namespace
 		if (dwNow < state.dwNextLootSearchTime)
 			return false;
 
-		CCollectPlayerBotLoot collector(ch, PLAYERBOT_LOOT_SEARCH_RANGE,
+		CCollectPlayerBotLoot collector(ch,
+				metinDash ? PLAYERBOT_METIN_LOOT_DASH_RANGE : PLAYERBOT_LOOT_SEARCH_RANGE,
 				state.mapFailedLootVIDs, dwNow);
 		ch->GetSectree()->ForEachAround(collector);
 		collector.Sort();

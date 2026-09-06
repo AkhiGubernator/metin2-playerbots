@@ -1238,6 +1238,15 @@ namespace
 		return true;
 	}
 
+	// An Archer Ninja with a bow in hand.
+	bool IsPlayerBotArcher(LPCHARACTER ch)
+	{
+		if (!ch || ch->GetJob() != JOB_ASSASSIN || ch->GetSkillGroup() != 2)
+			return false;
+		LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+		return weapon && weapon->GetType() == ITEM_WEAPON && weapon->GetSubType() == WEAPON_BOW;
+	}
+
 	bool IsPlayerBotMultiPullBuild(LPCHARACTER ch, bool* naturalTank)
 	{
 		if (naturalTank)
@@ -1251,6 +1260,11 @@ namespace
 		LPITEM armor = ch->GetWear(WEAR_BODY);
 		LPITEM shield = ch->GetWear(WEAR_SHIELD);
 		LPITEM helmet = ch->GetWear(WEAR_HEAD);
+		// The archer pulls the way it plays on the hard servers: three or four
+		// on the string at once. No shield to ask for; the cap on attackers is
+		// what keeps it alive.
+		if (IsPlayerBotArcher(ch))
+			return armor && helmet;
 		if (!weapon || !armor || !shield || !helmet ||
 				(weapon->GetType() == ITEM_WEAPON &&
 				 weapon->GetSubType() == WEAPON_BOW))
@@ -1447,9 +1461,9 @@ namespace
 
 			state.bMultiPullActive = true;
 			state.bMultiPullGroups = 0;
-			state.bMultiPullDesiredGroups = naturalTank
+			state.bMultiPullDesiredGroups = IsPlayerBotArcher(ch) ? 1 : (naturalTank
 					? (BYTE)(2 + PlayerBotNavHash(ch->GetPlayerID() ^
-							(dwNow / 60000U)) % 3U) : 2;
+							(dwNow / 60000U)) % 3U) : 2);
 			state.dwMultiPullStartedTime = dwNow;
 			state.dwNextMultiPullActionTime = dwNow;
 			state.iMultiPullStartHPPercent = hpPercent;
@@ -1464,13 +1478,15 @@ namespace
 		}
 
 		const int aggressors = CountPlayerBotPullAggressors(ch);
+		const int aggressorCap = IsPlayerBotArcher(ch)
+				? PLAYERBOT_MULTI_PULL_ARCHER_MAX_AGGRESSORS : PLAYERBOT_MULTI_PULL_MAX_AGGRESSORS;
 		if (hpPercent <= PLAYERBOT_MULTI_PULL_MIN_HP_PERCENT ||
 				state.iMultiPullStartHPPercent - hpPercent >= PLAYERBOT_MULTI_PULL_MAX_HP_LOSS_PERCENT ||
-				aggressors >= PLAYERBOT_MULTI_PULL_MAX_AGGRESSORS ||
+				aggressors >= aggressorCap ||
 				dwNow - state.dwMultiPullStartedTime >= PLAYERBOT_MULTI_PULL_TIMEOUT)
 		{
 			const char* reason = hpPercent <= PLAYERBOT_MULTI_PULL_MIN_HP_PERCENT
-					? "low_hp" : (aggressors >= PLAYERBOT_MULTI_PULL_MAX_AGGRESSORS
+					? "low_hp" : (aggressors >= aggressorCap
 						? "aggressor_cap" : (dwNow - state.dwMultiPullStartedTime >=
 							PLAYERBOT_MULTI_PULL_TIMEOUT ? "timeout" : "hp_loss"));
 			FinishPlayerBotMultiPull(ch, state, dwNow, reason);

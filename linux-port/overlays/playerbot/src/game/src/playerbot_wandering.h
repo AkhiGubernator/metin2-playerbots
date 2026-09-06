@@ -513,7 +513,10 @@ namespace
 				{ 316600, 728500, PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL, 255, true },
 				{ 333200, 758600, PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL, 255, true },
 				{ 350300, 726900, PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL, 255, true },
-				{ 332900, 747200, PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL, 255, true }
+				{ 332900, 747200, PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL, 255, true },
+				// The Orc Chief (691, level 50, boss) from boss.txt, cell (770,757),
+				// back every thirty minutes: a raid for a party, guild mates first.
+				{ 333000, 741300, PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL, 255, true }
 			};
 			const TPlayerBotHuntingHub desertHubs[] = {
 				{ 291300, 515700, 0, 255, false }, { 237500, 525900, 0, 255, false }, { 264600, 526100, 0, 255, false },
@@ -546,7 +549,10 @@ namespace
 				{ 70000, 505300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 80400, 519800, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
 				{ 69800, 517300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 70300, 527500, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
 				{ 82100, 527400, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 59500, 517700, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
-				{ 58600, 504300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 59800, 527600, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }
+				{ 58600, 504300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 59800, 527600, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
+				// The Spider Queen (2091, level 60, boss) at the end of the dungeon,
+				// boss.txt cell (385,387), back every four hours: a party's raid.
+				{ 89700, 525100, PLAYERBOT_SPIDER_MIN_LEVEL, 255, true }
 			};
 			const bool inDesert = ch->GetMapIndex() == PLAYERBOT_MAP_DESERT;
 			const TPlayerBotHuntingHub* hubs = orcValleyHubs;

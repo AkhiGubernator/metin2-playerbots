@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T18:15:00Z",
-  "statusMessage": "Aktualizacja 1.29.8. W panelu (zachowanie botow) mozna wylaczyc napisy botow nad glowa; wolanie o +7/+8/+9 zostaje. Srebrne i zlote skrzynie otwierane kluczem. Umiejetnosci zatrzymuja sie na 17 punktach, a Zwoj Zapomnienia z targowiska daje kolejne losowanie Mistrza. Boty od 48 ida do Lochu Pajakow i na Sohan. Panel liczy 7 misji Biologa. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T18:37:00Z",
+  "statusMessage": "Aktualizacja 1.29.9. Boty zlomiarze (suwak w panelu, domyslnie wylaczone), lucznik ciagnie 3-4 cele, wypad po drop z Metina, wypady druzyn na Wodza Orkow i Krolowa Pajakow, szkatulki bossow otwierane. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.8",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.8/metin2-server-update-1.29.8.zip",
-    "sha256": "734FABA6C84620A0523ECD60B3DE1CB891A89603D3C1DBFFED490EC550D978F0"
+    "version": "1.29.9",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.9/metin2-server-update-1.29.9.zip",
+    "sha256": "91BD5D54ED5EBBC3B2FB8D81BFECE4D0875F77502A4838724EF4D5FFC5064CFD"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

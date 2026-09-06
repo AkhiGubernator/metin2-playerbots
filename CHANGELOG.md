@@ -17,6 +17,30 @@ every version here.
 
 ---
 
+## 1.29.12 — 2026-09-06
+
+### Nowe
+
+- **Pamięć dropu materiałów per spot, z zerami.** Każdy podniesiony materiał
+  (typ `ITEM_MATERIAL`) jest liczony w komórce spotu, w której leżał. Bot,
+  któremu brakuje materiału do własnej receptury, wybiera hub, gdzie ten
+  materiał już wypadał (warto o połowę więcej), a komórka z długim
+  rejestrem walk i bez tego dropu nie dostaje premii — zera są obserwacją
+  tak samo jak trafienia. Dotąd wybór szedł wyłącznie z tabel dropu.
+- **Bonus rasowy według tego, co bot naprawdę bije.** Ocena ekwipunku
+  (Silny przeciw Orkom, Nieumarłym…) brała rasę dominującą całej mapy.
+  Teraz każdy bot prowadzi własny histogram ras z ostatnich walk (połowiony
+  co 10 minut) i po 20 walkach to on decyduje; mapa jest zapasem. Pustynia
+  ma skorpiony obok nieumarłych, Dolina orków obok mistyków — liczy się
+  konkretny cel.
+- **Wojownik mentalny rozdaje statystyki jak tank.** 2 WIT : 1 SIŁ do 90,
+  potem ZR; Body bez zmian (2 SIŁ : 1 WIT). Reszta klas była już zgodna z
+  audytem (sura i szaman INT:WIT, ninja ZR:WIT).
+
+Z audytu wiedzy o grze (sekcje 3, 8 i 11).
+
+---
+
 ## 1.29.11 — 2026-09-06
 
 ### Naprawione

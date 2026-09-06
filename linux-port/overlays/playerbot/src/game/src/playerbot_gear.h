@@ -368,7 +368,7 @@ namespace
 		// place where nothing orcish ever spawns.
 		if (ch)
 		{
-			const int dominant = GetPlayerBotDominantRace(ch->GetMapIndex());
+			const int dominant = GetPlayerBotFightingRace(ch);
 			if (dominant != PLAYERBOT_RACE_NONE)
 			{
 				const BYTE wanted = GetPlayerBotRaceApplyType(dominant);

@@ -83,6 +83,11 @@ namespace
 
 		std::vector<TPlayerBotCrowdEntry> crowd;
 		CollectPlayerBotCrowd(ch, ch->GetMapIndex(), crowd);
+		// What this bot is short of at the anvil. A hub where one of those has
+		// been picked up is worth more to it; one with a long record of fights
+		// and none of it is not.
+		std::set<DWORD> wanted;
+		CollectPlayerBotWantedMaterials(ch, wanted);
 
 		int bestScore = INT_MIN;
 		size_t best = 0;
@@ -110,6 +115,16 @@ namespace
 				worth = 0;
 			const int others = CountPlayerBotsNear(ch, crowd, hub.x, hub.y,
 					PLAYERBOT_SPOT_CROWD_RADIUS, hub.bNeedsParty);
+			bool dropsWanted = false;
+			for (std::set<DWORD>::const_iterator w = wanted.begin(); w != wanted.end() && !dropsWanted; ++w)
+			{
+				DWORD fights = 0;
+				const DWORD drops = GetPlayerBotSpotDropCount(ch->GetMapIndex(), hub.x, hub.y, *w, &fights);
+				if (drops > 0 && !(fights >= PLAYERBOT_SPOT_MATERIAL_BARREN_FIGHTS && drops == 0))
+					dropsWanted = true;
+			}
+			if (dropsWanted)
+				worth += worth * PLAYERBOT_SPOT_MATERIAL_BONUS_PERCENT / 100;
 			// The bot's share of what is there: the monsters in reach divided among
 			// the bots already in reach of them, plus this one.
 			int score = worth / (1 + others);

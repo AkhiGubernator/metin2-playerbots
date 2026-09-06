@@ -53,7 +53,21 @@ namespace
 			switch (ch->GetJob())
 			{
 				case JOB_WARRIOR:
-					// STR : VIT = 2 : 1 until 90, then DEX
+					if (ch->GetSkillGroup() == 2)
+					{
+						// Mental: VIT : STR = 2 : 1 until 90, then DEX. It holds the
+						// group and earns by outlasting it; Body earns by the blow.
+						if (ht < 90 && (ht < st * 2 || st >= 90))
+							targetStat = POINT_HT;
+						else if (st < 90)
+							targetStat = POINT_ST;
+						else if (dx < 90)
+							targetStat = POINT_DX;
+						else if (iq < 90)
+							targetStat = POINT_IQ;
+						break;
+					}
+					// Body: STR : VIT = 2 : 1 until 90, then DEX
 					if (st < 90 && (st < ht * 2 || ht >= 90))
 						targetStat = POINT_ST;
 					else if (ht < 90)

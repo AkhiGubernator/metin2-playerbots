@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T19:54:00Z",
-  "statusMessage": "Aktualizacja 1.29.11. Rybacy piek martwe ryby na ognisku i uzywaja pieczonych jak mikstur; malz otwierany tylko gdy sie oplaca, z pamiecia wynikow. Launcher rozpoznaje blad dysku Dockera (read-only file system) i mowi, jak go naprawic. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T20:13:00Z",
+  "statusMessage": "Aktualizacja 1.29.12. Boty pamietaja, gdzie wypadaly materialy (takze gdzie nie wypadaly), bonus rasowy w ekwipunku liczony z tego, co bot naprawde bije, wojownik mentalny rozdaje statystyki jak tank. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.11",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.11/metin2-server-update-1.29.11.zip",
-    "sha256": "39DFA122301B6695E00258F07B50AE1F664E6FFEB553C5C9B5C87EFD55441519"
+    "version": "1.29.12",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.12/metin2-server-update-1.29.12.zip",
+    "sha256": "E503EA5983B16897BF984440CD1E8791C4625C181439792BB25D109B2BC467EB"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

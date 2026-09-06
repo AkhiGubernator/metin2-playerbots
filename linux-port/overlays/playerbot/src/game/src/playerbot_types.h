@@ -777,6 +777,17 @@ namespace
 	const DWORD PLAYERBOT_CAMPFIRE_VNUM = 27600;
 	const DWORD PLAYERBOT_CAMPFIRE_MOB_VNUM = 12000;
 	const DWORD PLAYERBOT_BAKE_WINDOW = 35000;
+	// The race histogram a bot keeps of what it has been fighting: five race
+	// flags (animal, undead, devil, orc, mystic), halved every ten minutes,
+	// and trusted over the map's aggregate once it holds this many.
+	const int PLAYERBOT_RACE_HISTOGRAM_SLOTS = 5;
+	const DWORD PLAYERBOT_RACE_HISTOGRAM_DECAY = 600000;
+	const DWORD PLAYERBOT_RACE_HISTOGRAM_MIN_SAMPLES = 20;
+	// A hub where a wanted material has been seen to drop is worth half as
+	// much again to a bot short of it; a cell with this many fights and no
+	// drop of it has told the bot all it needs to know.
+	const int PLAYERBOT_SPOT_MATERIAL_BONUS_PERCENT = 50;
+	const DWORD PLAYERBOT_SPOT_MATERIAL_BARREN_FIGHTS = 200;
 	const int PLAYERBOT_BAKE_MIN_FISH = 30;
 	const int PLAYERBOT_BAKE_RANGE = 700;
 	const DWORD PLAYERBOT_GRILLED_FISH_FIRST_VNUM = 27863;
@@ -1353,6 +1364,7 @@ namespace
 			dwStoneFightStartTime(0),
 			dwStoneProgressVID(0),
 			dwStoneBrokenTime(0),
+			dwRaceHistogramStamp(0),
 			dwStoneLastProgressTime(0),
 			dwNextStoneProgressCheckTime(0),
 			dwNextNavPlanTime(0),
@@ -1541,6 +1553,9 @@ namespace
 		DWORD dwStoneFightStartTime;
 		DWORD dwStoneProgressVID;
 		DWORD dwStoneBrokenTime;
+		// What this bot has fought lately, by race flag; see the world memory.
+		WORD awRaceHistogram[PLAYERBOT_RACE_HISTOGRAM_SLOTS] = { 0, 0, 0, 0, 0 };
+		DWORD dwRaceHistogramStamp;
 		DWORD dwStoneLastProgressTime;
 		DWORD dwNextStoneProgressCheckTime;
 		DWORD dwNextNavPlanTime;

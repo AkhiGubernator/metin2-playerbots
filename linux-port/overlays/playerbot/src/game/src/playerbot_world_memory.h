@@ -46,7 +46,37 @@ namespace
 		if (target->IsRaceFlag(RACE_FLAG_DEVIL))  ++mem.dwByRace[PLAYERBOT_RACE_DEVIL];
 		if (target->IsRaceFlag(RACE_FLAG_ORC))    ++mem.dwByRace[PLAYERBOT_RACE_ORC];
 		if (target->IsRaceFlag(RACE_FLAG_MILGYO)) ++mem.dwByRace[PLAYERBOT_RACE_MILGYO];
+
+		// And the bot's own account of it. The map is an approximation - the
+		// desert has scorpions beside its undead, the valley orcs beside its
+		// mystics - and the concrete target decides what a race bonus is worth
+		// to the bot that wears it. Halved every ten minutes so a move to the
+		// other end of the map is forgotten in half an hour.
+		TPlayerBotAIStateMap::iterator it = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
+		if (it == s_mapPlayerBotAIStates.end())
+			return;
+		TPlayerBotAIState& state = it->second;
+		const DWORD dwNow = get_dword_time();
+		if (state.dwRaceHistogramStamp == 0)
+			state.dwRaceHistogramStamp = dwNow;
+		while (dwNow - state.dwRaceHistogramStamp >= PLAYERBOT_RACE_HISTOGRAM_DECAY)
+		{
+			for (int r = 0; r < PLAYERBOT_RACE_HISTOGRAM_SLOTS; ++r)
+				state.awRaceHistogram[r] /= 2;
+			state.dwRaceHistogramStamp += PLAYERBOT_RACE_HISTOGRAM_DECAY;
+		}
+		const bool flags[PLAYERBOT_RACE_HISTOGRAM_SLOTS] = {
+			target->IsRaceFlag(RACE_FLAG_ANIMAL), target->IsRaceFlag(RACE_FLAG_UNDEAD),
+			target->IsRaceFlag(RACE_FLAG_DEVIL), target->IsRaceFlag(RACE_FLAG_ORC),
+			target->IsRaceFlag(RACE_FLAG_MILGYO) };
+		for (int r = 0; r < PLAYERBOT_RACE_HISTOGRAM_SLOTS; ++r)
+			if (flags[r] && state.awRaceHistogram[r] < 60000)
+				++state.awRaceHistogram[r];
 	}
+
+	// The race this bot has actually been fighting, when it has fought enough
+	// to say; the map's aggregate until then. The slots are the enum's order.
+	int GetPlayerBotFightingRace(LPCHARACTER ch);
 
 	BYTE GetPlayerBotRaceApplyType(int race)
 	{
@@ -142,6 +172,32 @@ namespace
 		return (bestCount * 2 >= it->second.dwSamples) ? best : PLAYERBOT_RACE_NONE;
 	}
 
+	int GetPlayerBotFightingRace(LPCHARACTER ch)
+	{
+		if (!ch)
+			return PLAYERBOT_RACE_NONE;
+		TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
+		if (it != s_mapPlayerBotAIStates.end())
+		{
+			DWORD total = 0;
+			int best = PLAYERBOT_RACE_NONE;
+			WORD bestCount = 0;
+			for (int r = 0; r < PLAYERBOT_RACE_HISTOGRAM_SLOTS; ++r)
+			{
+				total += it->second.awRaceHistogram[r];
+				if (it->second.awRaceHistogram[r] > bestCount)
+				{
+					bestCount = it->second.awRaceHistogram[r];
+					best = r;
+				}
+			}
+			// Half of what it fought has to agree, the same bar the map is held to.
+			if (total >= PLAYERBOT_RACE_HISTOGRAM_MIN_SAMPLES)
+				return (DWORD)bestCount * 2 >= total ? best : PLAYERBOT_RACE_NONE;
+		}
+		return GetPlayerBotDominantRace(ch->GetMapIndex());
+	}
+
 	// ------------------------------------------------------------ the spots
 	//
 	// Where the monsters are, as the population has seen it. Every target search
@@ -208,12 +264,42 @@ namespace
 		return (int)((unsigned long long)s_auShellfishOutcomes[outcome] * 1000ULL / total);
 	}
 
+	// What dropped where: a material vnum per spot cell, counted at pickup.
+	// A cell with two hundred fights and no Bear Hide is as much a fact as one
+	// with twenty hides - it is the zeros that stop a bot camping a barren
+	// spot on the strength of a drop table.
+	typedef std::map<unsigned long long, std::map<DWORD, DWORD> > TPlayerBotSpotDropMap;
+	TPlayerBotSpotDropMap s_mapSpotDrops;
+
 	unsigned long long PlayerBotSpotKey(long lMapIndex, long cellX, long cellY)
 	{
 		return ((unsigned long long)(DWORD)lMapIndex << 40) |
 				((unsigned long long)((DWORD)cellY & 0xfffffU) << 20) |
 				(unsigned long long)((DWORD)cellX & 0xfffffU);
 	}
+
+	void RememberPlayerBotSpotDrop(long lMapIndex, long x, long y, DWORD vnum)
+	{
+		++s_mapSpotDrops[PlayerBotSpotKey(lMapIndex, x / PLAYERBOT_SPOT_CELL, y / PLAYERBOT_SPOT_CELL)][vnum];
+	}
+
+	// Drops of a vnum seen in the cell, and how many fights that cell has had,
+	// so the caller can tell "unknown" from "barren".
+	DWORD GetPlayerBotSpotDropCount(long lMapIndex, long x, long y, DWORD vnum, DWORD* pFights)
+	{
+		const unsigned long long key = PlayerBotSpotKey(lMapIndex, x / PLAYERBOT_SPOT_CELL, y / PLAYERBOT_SPOT_CELL);
+		if (pFights)
+		{
+			TPlayerBotSpotMap::const_iterator cell = s_mapSpotMemory.find(key);
+			*pFights = cell != s_mapSpotMemory.end() ? cell->second.dwFights : 0;
+		}
+		TPlayerBotSpotDropMap::const_iterator it = s_mapSpotDrops.find(key);
+		if (it == s_mapSpotDrops.end())
+			return 0;
+		std::map<DWORD, DWORD>::const_iterator drop = it->second.find(vnum);
+		return drop != it->second.end() ? drop->second : 0;
+	}
+
 
 	void DecayPlayerBotSpotCell(TPlayerBotSpotCell& cell, DWORD dwNow)
 	{

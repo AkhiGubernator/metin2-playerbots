@@ -237,10 +237,13 @@ namespace
 
 		const DWORD itemVID = pickup->GetVID();
 		const DWORD itemVnum = pickup->GetVnum();
+		const bool material = pickup->GetType() == ITEM_MATERIAL;
 		state.dwNextLootPickupTime = dwNow + GetPlayerBotLootPickupInterval(pickup);
 		if (ch->PickupItem(itemVID))
 		{
 			state.mapLootSeenSince.erase(itemVID);
+			if (material)
+				RememberPlayerBotSpotDrop(ch->GetMapIndex(), ch->GetX(), ch->GetY(), itemVnum);
 			if (itemVnum == PLAYERBOT_HORSE_MEDAL_VNUM)
 			{
 				const int looted = std::max(0,
@@ -369,10 +372,13 @@ namespace
 				return true;
 
 			const DWORD itemVnum = nearest->GetVnum();
+			const bool material = nearest->GetType() == ITEM_MATERIAL;
 			state.dwNextLootPickupTime = dwNow + GetPlayerBotLootPickupInterval(nearest);
 			if (ch->PickupItem(nearestVID))
 			{
 				state.mapLootSeenSince.erase(nearestVID);
+				if (material)
+					RememberPlayerBotSpotDrop(ch->GetMapIndex(), ch->GetX(), ch->GetY(), itemVnum);
 				if (itemVnum == PLAYERBOT_HORSE_MEDAL_VNUM)
 				{
 					const int looted = std::max(0,

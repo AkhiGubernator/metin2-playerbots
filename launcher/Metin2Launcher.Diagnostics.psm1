@@ -60,6 +60,20 @@ function Get-M2LauncherErrorGuidance {
         $port = $Matches.port
     }
 
+    # Not a busy port: Windows itself refused the bind. Hyper-V and WSL reserve
+    # random port ranges after a restart ("excluded port ranges"), and when
+    # 11000 or 13000 falls inside one, compose fails one second after the
+    # images are built with a message about access permissions. Five updates
+    # in a row went that way for one player before this branch existed.
+    if ($value -match '(?i)ports are not available|forbidden by its access permissions|zabroniony przez uprawnienia|WSAEACCES|\b10013\b') {
+        return [pscustomobject]@{
+            Code = 'PORT_EXCLUDED'
+            Title = "Windows zarezerwował port $port"
+            Message = "Port $port nie jest zajęty przez program - jest w zakresie, który Windows (Hyper-V/WSL) zarezerwował dla siebie po ostatnim restarcie. Docker nie może na nim nasłuchiwać, więc serwer nie wstaje. Pliki serwera i baza są w porządku."
+            Remedy = 'Uruchom PowerShell jako administrator i wykonaj: net stop winnat, potem kliknij GRAJ w launcherze, a gdy serwer wstanie, wykonaj: net start winnat. Zwykle pomaga też zwykły restart Windows. Sprawdzenie zakresów: netsh interface ipv4 show excludedportrange protocol=tcp'
+        }
+    }
+
     if ($value -match '(?i)port is already allocated|address already in use|failed programming external connectivity|bind for .+ failed|port \d{2,5} (?:jest zajęty|zajmuje)') {
         return [pscustomobject]@{
             Code = 'PORT_IN_USE'
@@ -214,6 +228,32 @@ function Get-M2DockerPortOwner {
     return $null
 }
 
+# The TCP ranges Windows has reserved for itself (Hyper-V, WSL, NAT). A port
+# inside one cannot be bound by anything, Docker included, and the failure
+# only shows up a second after the images are built. Empty when netsh is
+# missing or says nothing - never a reason to refuse a start on its own.
+function Get-M2ExcludedPortRanges {
+    $ranges = @()
+    try {
+        $lines = & netsh interface ipv4 show excludedportrange protocol=tcp 2>$null
+        foreach ($line in @($lines)) {
+            if ("$line" -match '^\s*(\d+)\s+(\d+)\s*\*?\s*$') {
+                $ranges += [pscustomobject]@{ Start = [int]$Matches[1]; End = [int]$Matches[2] }
+            }
+        }
+    }
+    catch { }
+    return $ranges
+}
+
+function Get-M2ExcludedPortHit {
+    param([Parameter(Mandatory = $true)][int]$Port, [object[]]$Ranges)
+    foreach ($r in @($Ranges)) {
+        if ($Port -ge $r.Start -and $Port -le $r.End) { return $r }
+    }
+    return $null
+}
+
 function Get-M2DockerPreflight {
     param(
         [Parameter(Mandatory = $true)][string]$ServerRoot,
@@ -328,6 +368,43 @@ function Get-M2DockerPreflight {
         }
         else {
             [void]$checks.Add("OK: port panelu $panelPort jest wolny.")
+        }
+    }
+
+    # Ports the stack binds on the host, against the ranges Windows reserved.
+    # The game ports are the ones that fail in practice: a range that starts
+    # at 11000 or 13000 blocks the login server or the channel, and nothing
+    # in the launcher used to say so.
+    $excludedRanges = Get-M2ExcludedPortRanges
+    if ($excludedRanges.Count -gt 0) {
+        $envPath = Join-Path $root 'linux-port\docker\.env'
+        $authPort = 11000
+        $dbPort = 3306
+        if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+            $m = Select-String -LiteralPath $envPath -Pattern '^M2_AUTH_PORT=(\d+)$' | Select-Object -First 1
+            if ($m) { $authPort = [int]$m.Matches[0].Groups[1].Value }
+            $m = Select-String -LiteralPath $envPath -Pattern '^M2_DB_PUBLISH_PORT=(\d+)$' | Select-Object -First 1
+            if ($m) { $dbPort = [int]$m.Matches[0].Groups[1].Value }
+        }
+        $stackPorts = @(
+            @{ Port = $authPort; Name = 'serwer logowania' },
+            @{ Port = 13000; Name = 'kanal gry' },
+            @{ Port = 13001; Name = 'kanal gry' },
+            @{ Port = 13002; Name = 'kanal gry' },
+            @{ Port = $dbPort; Name = 'baza danych' },
+            @{ Port = [int]$panelPort; Name = 'panel' }
+        )
+        $hits = @()
+        foreach ($p in $stackPorts) {
+            $hit = Get-M2ExcludedPortHit -Port $p.Port -Ranges $excludedRanges
+            if ($hit) { $hits += "$($p.Port) ($($p.Name), zakres $($hit.Start)-$($hit.End))" }
+        }
+        if ($hits.Count -gt 0) {
+            [void]$checks.Add("BŁĄD: Windows zarezerwował porty serwera: $($hits -join ', ').")
+            [void]$blocking.Add('Port serwera leży w zakresie zarezerwowanym przez Windows (Hyper-V/WSL), więc Docker nie może na nim nasłuchiwać. Uruchom PowerShell jako administrator: net stop winnat, kliknij GRAJ, a po starcie serwera: net start winnat. Zwykle pomaga też restart Windows.')
+        }
+        else {
+            [void]$checks.Add('OK: żaden port serwera nie leży w zakresie zarezerwowanym przez Windows.')
         }
     }
 

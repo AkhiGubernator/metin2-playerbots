@@ -614,7 +614,10 @@ try {
     $previousPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        & docker @composeArguments
+        # Shown as it arrives and kept: the one line that says why a start
+        # failed comes from compose itself, and the failure branch below wants
+        # to read it after the fact.
+        $composeOutput = & docker @composeArguments 2>&1 | ForEach-Object { $line = "$_"; Write-Host $line; $line }
         $upExitCode = $LASTEXITCODE
         & docker compose ps
         $psExitCode = $LASTEXITCODE
@@ -637,6 +640,21 @@ try {
             }
         }
         finally { $ErrorActionPreference = $previousPreference }
+        # Windows refused the bind: the port sits in a range Hyper-V or WSL
+        # reserved after the last restart. Say so, with the two commands that
+        # free it - the exit code alone sent one player through five identical
+        # update attempts.
+        $composeText = ($composeOutput | ForEach-Object { "$_" }) -join "`n"
+        if ($composeText -match '(?i)ports are not available|forbidden by its access permissions|zabroniony przez uprawnienia|WSAEACCES|\b10013\b') {
+            $port = if ($composeText -match '(?i)listen (?:tcp\d? )?[^\s:]+:(\d{2,5})') { $Matches[1] } else { '11000' }
+            Write-Host ''
+            Write-Host "Windows zarezerwowal port $port dla siebie (Hyper-V/WSL), wiec Docker nie moze na nim nasluchiwac." -ForegroundColor Yellow
+            Write-Host 'To nie jest zajety port ani blad plikow serwera. Uruchom PowerShell jako administrator i wykonaj:' -ForegroundColor Yellow
+            Write-Host '    net stop winnat' -ForegroundColor Yellow
+            Write-Host 'potem kliknij GRAJ, a gdy serwer wstanie:' -ForegroundColor Yellow
+            Write-Host '    net start winnat' -ForegroundColor Yellow
+            Write-Host 'Zwykle pomaga tez restart Windows. Zakresy: netsh interface ipv4 show excludedportrange protocol=tcp' -ForegroundColor Yellow
+        }
         throw "docker compose up failed with exit code $upExitCode"
     }
     if ($psExitCode -ne 0) {

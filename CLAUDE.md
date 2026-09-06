@@ -200,7 +200,12 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
 - **The engine patches under `overlays/playerbot/patches/` are applied with
   `patch --fuzz=0` by prepare-context.sh**, in order, on top of the staged
   port source - so a new one is diffed against the builder container's copy
-  of the file (which is that state), not against `m2src-cache`. 0006 adds two
+  of the file (which is that state), not against `m2src-cache`. That state
+  is **before** the High Risk step, which runs later in the same script and
+  inserts `#include "high_risk.h"`: 0006 once carried that line as context,
+  applied by luck on any machine whose cache already held a High Risk tree,
+  and failed every fresh `installer/install.sh`. Dry-run a new patch against
+  `m2src-cache/tree/port40250/server` with `--fuzz=0` before shipping it. 0006 adds two
   CONFIG tokens (`MOONLIGHT_CHEST_PERMILLE`, `..._STONE_PERMILLE`, rendered by
   `m2-render-config` from `M2_MOONLIGHT_CHEST_*`) and, in `CreateDropItem`,
   tops a Metin stone up to three skill books and rolls the chest. The chest's
@@ -230,6 +235,26 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   host. Adding a fifth map: a row in each helper, a hub table in
   `playerbot_wandering.h`, the navigation whitelist, the panel's bounds,
   names and tiles, and the core's MAP_ALLOW.
+- **A mission is only as good as the map its monster stands on.** The
+  level-up hunt (`PLAYERBOT_HUNTING_MISSIONS`, rows to 55) is driven by the
+  engine's own `levelup` quest flags and its kill hook; the bot only picks
+  the row and the option. Before the row was chosen by pid alone, and nearly
+  every bot at forty was found holding a mission from fifteen with `remain`
+  untouched, waiting for a wolf on a map it had left for good. Now
+  `PLAYERBOT_HUNTING_MOB_HOMES` says where each monster stands (read out of
+  the regen files - measure, do not guess), the option whose monster is on
+  the bot's map wins, and a row is passed over without reward when it is
+  outgrown by `PLAYERBOT_HUNTING_OUTGROWN_LEVELS`, has no hosted monster, or
+  has hung for `PLAYERBOT_HUNTING_STALL_SECONDS`. The Biologist's chain has
+  the same shape: the quest's kill hook drops the specimen only once the
+  state says `go_to_disciple`, so the mission is taken wherever the bot
+  stands (663 of 876 bots had never taken the mushroom mission because they
+  passed level 25 outside Joan); only the hand-in walks to Joan.
+  `GetActivePlayerBotBiologistMission` prefers what the bot already carries,
+  then what stands on its map, then the first row undone. The Orc Tooth
+  row has a second half, `key_item`, that waits for the Soul Stone; the
+  state index of a compiled quest is a hash, not a position (see
+  `quest/object/state/`), so never compare it with a small integer.
 - **Droppers are personalities, not roles.** `IsPlayerBotDropper` names the
   four; `GetPlayerBotPersonalityByPID` is how a rule that only has a
   character asks. The travel gates (`ShouldPlayerBotVisitM3`,
@@ -237,6 +262,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   answer for them by level alone, the stall treats them as keepers, and the
   Metin dropper's books are never junk. Appending to the personality enum is
   safe; inserting shifts every id in the panel's status file.
+- **A route a fight interrupts is parked, not dropped.** `ClearPlayerBotRoute`
+  keeps a route with `PLAYERBOT_NAV_PARK_MIN_WAYPOINTS` left in
+  `vecParkedRoute`, and `MovePlayerBot` takes it up again from the nearest
+  waypoint the bot can walk straight to when the same destination is asked
+  for on the same map. Before this a valley crossing to a hub 70 km away was
+  planned from scratch after every fight along the way - a far plan costs
+  150-250 ms, and there were 100-170 of them a minute, 20-29 s of every 60.
+  `PLAYERBOT_LOAD` reports `resumed=`; `PLAYERBOT_NAV: far plan` names the
+  destination of every plan over 1024 cells, which is how the pattern was
+  found (the same hub from the same few hundred metres, every two seconds).
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

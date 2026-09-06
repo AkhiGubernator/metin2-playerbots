@@ -35,9 +35,8 @@ diff --git a/game/src/config.cpp b/game/src/config.cpp
 diff --git a/game/src/item_manager.cpp b/game/src/item_manager.cpp
 --- a/game/src/item_manager.cpp
 +++ b/game/src/item_manager.cpp
-@@ -19,6 +19,9 @@
+@@ -19,5 +19,8 @@
  #include "item_manager.h"
- #include "high_risk.h"
  
 +extern int g_iMoonlightChestPermille;
 +extern int g_iMoonlightChestStonePermille;
@@ -45,7 +44,7 @@ diff --git a/game/src/item_manager.cpp b/game/src/item_manager.cpp
  #include "../../common/VnumHelper.h"
  #include "DragonSoul.h"
  #include "cube.h"
-@@ -1044,6 +1047,36 @@
+@@ -1032,6 +1035,36 @@
  		}
  	}
  

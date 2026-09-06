@@ -1098,12 +1098,13 @@ void CPlayerBotManager::Update()
 		s_dwPlayerBotLoadReportTime = dwNow;
 	else if (dwNow - s_dwPlayerBotLoadReportTime >= PLAYERBOT_LOAD_REPORT_INTERVAL)
 	{
-		sys_log(0, "PLAYERBOT_LOAD: bots=%u ticks=%u tick_ms=%u tick_max_ms=%u targets=%u misses=%u target_ms=%u snapshot_ms=%u plans=%u deferred=%u plan_ms=%u p64=%u/%ums p256=%u/%ums p1024=%u/%ums pfar=%u/%ums scans=%u scan_ms=%u saves=%u watchdog=%u over=%ums",
+		sys_log(0, "PLAYERBOT_LOAD: bots=%u ticks=%u tick_ms=%u tick_max_ms=%u targets=%u misses=%u target_ms=%u snapshot_ms=%u plans=%u deferred=%u resumed=%u plan_ms=%u p64=%u/%ums p256=%u/%ums p1024=%u/%ums pfar=%u/%ums scans=%u scan_ms=%u saves=%u watchdog=%u over=%ums",
 				(unsigned int)m_mapBots.size(), s_uPlayerBotLoadTicks,
 				s_uPlayerBotLoadTickUs / 1000, s_uPlayerBotLoadTickMaxUs / 1000,
 				s_uPlayerBotLoadTargetSearches, s_uPlayerBotLoadTargetMisses,
 				s_uPlayerBotLoadTargetUs / 1000, s_uPlayerBotLoadSnapshotUs / 1000,
-				s_uPlayerBotLoadPlans, s_uPlayerBotLoadPlanDeferred, s_uPlayerBotLoadPlanUs / 1000,
+				s_uPlayerBotLoadPlans, s_uPlayerBotLoadPlanDeferred, s_uPlayerBotLoadPlanResumed,
+				s_uPlayerBotLoadPlanUs / 1000,
 				s_uPlayerBotLoadPlanBucket[0], s_uPlayerBotLoadPlanBucketUs[0] / 1000,
 				s_uPlayerBotLoadPlanBucket[1], s_uPlayerBotLoadPlanBucketUs[1] / 1000,
 				s_uPlayerBotLoadPlanBucket[2], s_uPlayerBotLoadPlanBucketUs[2] / 1000,
@@ -1113,7 +1114,7 @@ void CPlayerBotManager::Update()
 				(unsigned int)(dwNow - s_dwPlayerBotLoadReportTime));
 		for (int b = 0; b < 4; ++b)
 			s_uPlayerBotLoadPlanBucket[b] = s_uPlayerBotLoadPlanBucketUs[b] = 0;
-		s_uPlayerBotLoadPlanDeferred = 0;
+		s_uPlayerBotLoadPlanDeferred = s_uPlayerBotLoadPlanResumed = 0;
 		s_uPlayerBotLoadPlans = s_uPlayerBotLoadScans = s_uPlayerBotLoadSaves = s_uPlayerBotLoadWatchdog = 0;
 		s_uPlayerBotLoadPlanUs = s_uPlayerBotLoadScanUs = s_uPlayerBotLoadTickUs = s_uPlayerBotLoadTickMaxUs = s_uPlayerBotLoadTicks = 0;
 		s_uPlayerBotLoadTargetSearches = s_uPlayerBotLoadTargetMisses = s_uPlayerBotLoadTargetUs = s_uPlayerBotLoadSnapshotUs = 0;

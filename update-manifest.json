@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T13:41:00Z",
-  "statusMessage": "Aktualizacja 1.29.2. Naprawa aktualizacji 1.29.1: budowanie obrazu padalo na brakujacym pliku tabeli szkatulki (special_item_group.moonlight.txt: not found). Paczka wklada plik prosto do kontekstu obrazu. Kto ma ten blad: klikniecie GRAJ dokancza budowanie. Reszta jak w 1.29.1: szkatulki i trzy ksiegi z Metina u graczy, zwoj w polu, Gora Sohan i Loch Pajakow V1. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T15:15:00Z",
+  "statusMessage": "Aktualizacja 1.29.3. Misje polowan do 55 poziomu (boty staly na misjach z 14-17 poziomu), Zab Orka u Biologa, misja Biologa brana tam, gdzie bot stoi. Naprawy: paczka rozpakowana recznie bez pliku .env dostaje go automatycznie (haslo panelu w oknie i w linux-port/docker/.env), zbieranie logow bez .env nie pada, patch szkatulek naklada sie na czystej instalacji Linux. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.2",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.2/metin2-server-update-1.29.2.zip",
-    "sha256": "1BDB768678B9D9AF81A69338648A98815087B7DDAC7AE469AD552EE6A7EFFD84"
+    "version": "1.29.3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.3/metin2-server-update-1.29.3.zip",
+    "sha256": "A95DE71A5C363A33FEDFF33C9A30DD6A3911F73F7BD19A8F8300EADE5ABE5773"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

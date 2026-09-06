@@ -216,10 +216,77 @@ function Merge-DotEnvFile {
     return $Content
 }
 
+function New-DotEnvSecret {
+    # Read only by the server, never typed: hex, so it can never hold a space
+    # or a quote that the game's config parser would split on.
+    $bytes = New-Object byte[] 24
+    $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
+    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+    return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
+function New-DotEnvPassphrase {
+    # Read off the screen and typed into a browser, so the alphabet leaves out
+    # the characters people confuse: 0/O and 1/l/I.
+    $alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    $bytes = New-Object byte[] 20
+    $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
+    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+    $sb = New-Object System.Text.StringBuilder
+    foreach ($b in $bytes) { [void]$sb.Append($alphabet[$b % $alphabet.Length]) }
+    return $sb.ToString()
+}
+
+function Initialize-DotEnvFile {
+    param([Parameter(Mandatory = $true)][string]$EnvPath)
+    # The installer writes this file. A copy unpacked by hand from the
+    # repository has none, and every launcher action used to stop here - and
+    # the rebuild after an update ran compose without it, so the update could
+    # never finish either. Seed it the way the installer would: the example,
+    # fresh passwords, everything bound to localhost.
+    $statePath = Join-Path $PSScriptRoot '.m2install.json'
+    if (Test-Path -LiteralPath $statePath -PathType Leaf) {
+        # An identity without its .env means the passwords are gone, and a
+        # database volume built with them would reject fresh ones forever.
+        # That is the one case a new file cannot fix; say so instead.
+        $known = ''
+        try {
+            $state = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $known = [string]$state.projectName
+        }
+        catch { $known = '' }
+        if ($known) {
+            $volume = Invoke-DockerQuery @('volume', 'inspect', "${known}_db-data")
+            if ($volume.ExitCode -eq 0) {
+                throw ("Brak pliku $EnvPath, a baza serwera '$known' juz istnieje. Hasla do niej byly tylko w tym pliku. " +
+                    "Przywroc .env z kopii (katalog backups lub inny folder), albo zacznij od nowa: usuniecie bazy kasuje wszystkie postacie.")
+            }
+        }
+    }
+
+    $example = Join-Path (Split-Path -Parent $EnvPath) '.env.example'
+    $content = ''
+    if (Test-Path -LiteralPath $example -PathType Leaf) {
+        $content = [IO.File]::ReadAllText($example)
+    }
+    $panelPassword = New-DotEnvPassphrase
+    $content = Set-DotEnvValue -Content $content -Name 'M2_DB_ROOT_PASSWORD' -Value (New-DotEnvSecret)
+    $content = Set-DotEnvValue -Content $content -Name 'M2_DB_PASSWORD' -Value (New-DotEnvSecret)
+    $content = Set-DotEnvValue -Content $content -Name 'M2_PANEL_PASSWORD' -Value $panelPassword
+    $content = Set-DotEnvValue -Content $content -Name 'M2_ADMINPAGE_PASSWORD' -Value (New-DotEnvSecret)
+    foreach ($name in @('M2_PUBLIC_ADDRESS', 'M2_CLIENT_ADDRESS', 'M2_HOST_BIND_ADDRESS', 'M2_PANEL_BIND_ADDRESS')) {
+        $content = Set-DotEnvValue -Content $content -Name $name -Value '127.0.0.1'
+    }
+    [IO.File]::WriteAllText($EnvPath, $content, [Text.UTF8Encoding]::new($false))
+    Write-Host "Nie bylo pliku .env (instalator nie byl uruchamiany) - utworzono go z nowymi haslami." -ForegroundColor Yellow
+    Write-Host "Haslo do panelu administracyjnego: $panelPassword" -ForegroundColor Yellow
+    Write-Host "Zapisz je. Jest tez w pliku linux-port\docker\.env (M2_PANEL_PASSWORD)." -ForegroundColor Yellow
+}
+
 function Initialize-InstallationIdentity {
     $envPath = Join-Path $PSScriptRoot 'linux-port\docker\.env'
     if (-not (Test-Path -LiteralPath $envPath -PathType Leaf)) {
-        throw "Missing Docker environment file: $envPath"
+        Initialize-DotEnvFile -EnvPath $envPath
     }
     $statePath = Join-Path $PSScriptRoot '.m2install.json'
     $project = ''

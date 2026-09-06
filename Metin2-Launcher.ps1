@@ -220,6 +220,15 @@ function Rebuild-Server {
         Write-Host 'Silnik Dockera jest zatrzymany - uruchamiam go przed budowaniem.' -ForegroundColor Yellow
         Start-Docker
     }
+    # Compose needs the .env before it can build anything - the database
+    # passwords are required variables. A copy unpacked by hand has no .env
+    # until start-server.ps1 writes one, and that used to run only after this
+    # build, so the update failed and "click GRAJ" failed the same way.
+    $identityScript = Join-Path $serverRoot 'start-server.ps1'
+    if (Test-Path -LiteralPath $identityScript -PathType Leaf) {
+        & $identityScript -IdentityOnly
+        if ($LASTEXITCODE -ne 0) { throw "Przygotowanie pliku .env zakonczylo sie kodem $LASTEXITCODE." }
+    }
     # The overlay is the source of truth; the build context is only a copy of
     # it. Refresh the copy before Docker reads it, or an update that added a
     # source file compiles against the previous one - or, as in 1.23.2, against

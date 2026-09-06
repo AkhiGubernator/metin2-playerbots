@@ -121,6 +121,7 @@ namespace
 	// Plans a tick turned away because it had already spent its planning time.
 	// Deferred is not lost: the bot asks again within two seconds.
 	DWORD s_uPlayerBotLoadPlanDeferred = 0;
+	DWORD s_uPlayerBotLoadPlanResumed = 0;
 
 	inline DWORD PlayerBotClockUs()
 	{
@@ -626,6 +627,15 @@ namespace
 		}
 	}
 
+	// The four maps a bot goes to for good once it has outgrown Bokjung. A
+	// mission whose monster is not on one of these, while the bot is, will not
+	// be hunted - the bot is not passing through.
+	bool IsPlayerBotFrontierMapIndex(long mapIndex)
+	{
+		return mapIndex == PLAYERBOT_MAP_ORC_VALLEY || mapIndex == PLAYERBOT_MAP_DESERT ||
+				mapIndex == PLAYERBOT_MAP_SOHAN || mapIndex == PLAYERBOT_MAP_SPIDER_V1;
+	}
+
 	const char* GetPlayerBotFrontierName(long mapIndex)
 	{
 		switch (mapIndex)
@@ -928,8 +938,22 @@ namespace
 		{ 10, "make_herb_lv10", 50703, 177, 5,  90, 5000,  6500,   "Kwiat Kaki" },
 		{ 15, "make_herb_lv15", 50704, 181, 5,  90, 10000, 25000,  "Korzen Gango" },
 		{ 20, "make_herb_lv20", 50705, 182, 10, 80, 15000, 95000,  "Bez" },
-		{ 25, "make_herb_lv25", 50706, 183, 10, 70, 20000, 200000, "Grzyb Tue" }
+		{ 25, "make_herb_lv25", 50706, 183, 10, 70, 20000, 200000, "Grzyb Tue" },
+		// The Orc Tooth. Ten from the Orcs (601) of the valley, one in twenty
+		// kills while the quest is open; sixty percent of what is handed in is
+		// accepted, the rest is spoiled, as in the quest without the elixir. The
+		// quest's twenty-two hours between hand-ins are not kept - a bot hands
+		// in what it carries. Then the second half: Jinunggyi's Soul Stone
+		// (30220), one in five hundred Elite Orc kills while the quest waits for
+		// it, and the reward is the quest's own, ten movement speed for good.
+		{ 30, "collect_quest_lv30", 30006, 601, 10, 60, 0, 0, "Zab Orka" }
 	};
+	const size_t PLAYERBOT_BIOLOGIST_ORC_TOOTH_INDEX = 6;
+	const DWORD PLAYERBOT_ORC_TOOTH_VNUM = 30006;
+	const DWORD PLAYERBOT_JINUNGGYI_STONE_VNUM = 30220;
+	const DWORD PLAYERBOT_ELITE_ORC_VNUM = 631;
+	const DWORD PLAYERBOT_ORC_TOOTH_REWARD_BOX_VNUM = 50109;
+	const int PLAYERBOT_ORC_TOOTH_REWARD_MOV_SPEED = 10;
 	const size_t PLAYERBOT_BIOLOGIST_MISSION_COUNT =
 			sizeof(PLAYERBOT_BIOLOGIST_MISSIONS) / sizeof(PLAYERBOT_BIOLOGIST_MISSIONS[0]);
 
@@ -948,7 +972,20 @@ namespace
 	};
 
 	const BYTE PLAYERBOT_HUNTING_FIRST_LEVEL = 2;
-	const BYTE PLAYERBOT_HUNTING_MAX_LEVEL = 25;
+	// The table now runs to 55, which is as far as the hosted maps reach: every
+	// row past 25 is questlib's own. Not every row can be done here - the
+	// Bestial Arahans, the plagued of the newer Sohan, the strong apes and the
+	// demons stand on maps this world does not host - so a bot picks the option
+	// that stands where it is, then one that stands anywhere hosted, and a row
+	// with neither is passed over rather than left to block every row after
+	// it. A row a bot accepted and could not finish inside two hours is passed
+	// over the same way: the monster is somewhere the bot is not going.
+	const BYTE PLAYERBOT_HUNTING_MAX_LEVEL = 55;
+	const int PLAYERBOT_HUNTING_STALL_SECONDS = 7200;
+	// A mission this many levels below the bot is outgrown: its monster stands
+	// on a map the bot has left for good. Nearly every bot at forty was found
+	// holding a mission from fifteen, waiting for a wolf it would never see.
+	const int PLAYERBOT_HUNTING_OUTGROWN_LEVELS = 10;
 	const TPlayerBotHuntingMission PLAYERBOT_HUNTING_MISSIONS[] = {
 		{ 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 },
 		{ 171, 10, 172, 5, 10 }, { 171, 20, 172, 10, 10 },
@@ -962,8 +999,54 @@ namespace
 		{ 184, 10, 182, 10, 10 }, { 182, 20, 183, 10, 10 },
 		{ 183, 20, 352, 15, 10 }, { 352, 20, 185, 10, 0 },
 		{ 185, 25, 354, 10, 0 }, { 354, 20, 451, 40, 0 },
-		{ 451, 60, 402, 80, 0 }, { 551, 80, 454, 20, 0 }
+		{ 451, 60, 402, 80, 0 }, { 551, 80, 454, 20, 0 },
+		{ 552, 80, 456, 20, 0 }, { 456, 30, 554, 20, 0 },
+		{ 651, 35, 554, 30, 0 }, { 651, 40, 652, 30, 0 },
+		{ 652, 40, 2102, 30, 0 }, { 652, 50, 2102, 45, 0 },
+		{ 653, 45, 2051, 40, 0 }, { 751, 35, 2103, 30, 0 },
+		{ 751, 40, 2103, 40, 0 }, { 752, 40, 2052, 30, 0 },
+		{ 754, 20, 2106, 20, 0 }, { 773, 30, 2003, 20, 0 },
+		{ 774, 40, 2004, 20, 0 }, { 756, 40, 2005, 30, 0 },
+		{ 757, 40, 2158, 20, 0 }, { 931, 40, 5123, 25, 0 },
+		{ 932, 30, 5123, 30, 0 }, { 932, 40, 2031, 35, 0 },
+		{ 933, 40, 2031, 40, 0 }, { 771, 50, 2032, 45, 0 },
+		{ 772, 30, 5124, 30, 0 }, { 933, 35, 5125, 30, 0 },
+		{ 934, 40, 5125, 35, 0 }, { 773, 40, 2033, 45, 0 },
+		{ 774, 40, 5126, 20, 0 }, { 775, 50, 5126, 30, 0 },
+		{ 934, 45, 2034, 45, 0 }, { 934, 50, 2034, 50, 0 },
+		{ 776, 40, 1001, 30, 0 }, { 777, 40, 1301, 35, 0 }
 	};
+
+	// Where a hunting-mission monster stands, among the hosted maps: read out of
+	// the regen files of the fourteen maps this world hosts. A vnum with no row
+	// stands nowhere a bot can go.
+	struct TPlayerBotMobHome { DWORD vnum; long map1; long map2; };
+	const TPlayerBotMobHome PLAYERBOT_HUNTING_MOB_HOMES[] = {
+		{ 552, 23, 43 }, { 456, 23, 43 }, { 554, 23, 43 },
+		{ 651, 64, 0 }, { 652, 64, 0 }, { 653, 64, 0 },
+		{ 751, 64, 0 }, { 752, 64, 0 }, { 754, 64, 0 }, { 756, 64, 0 }, { 757, 64, 0 },
+		{ 2102, 63, 0 }, { 2051, 63, 0 }, { 2052, 63, 0 }, { 2106, 63, 0 },
+		{ 2003, 63, 0 }, { 2004, 63, 0 }, { 2005, 63, 0 }, { 2158, 63, 0 },
+		{ 2103, 63, 64 },
+		{ 2031, 104, 0 }, { 2032, 104, 0 }, { 2033, 104, 0 }, { 2034, 104, 0 },
+		// The Biologist's Orc Tooth: the Orc and the Elite Orc of the valley.
+		{ 601, 64, 0 }, { 631, 64, 0 }
+	};
+
+	bool IsPlayerBotHuntingMobHosted(DWORD vnum, long lMapIndex = 0)
+	{
+		// Everything the first twenty-five rows ask for lives in Joan and Bokjung.
+		if (vnum < 500)
+			return lMapIndex == 0 || lMapIndex == PLAYERBOT_MAP_CHUNJO_M1 || lMapIndex == PLAYERBOT_MAP_CHUNJO_M2;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_HUNTING_MOB_HOMES) / sizeof(PLAYERBOT_HUNTING_MOB_HOMES[0]); ++i)
+		{
+			const TPlayerBotMobHome& home = PLAYERBOT_HUNTING_MOB_HOMES[i];
+			if (home.vnum != vnum)
+				continue;
+			return lMapIndex == 0 || home.map1 == lMapIndex || home.map2 == lMapIndex;
+		}
+		return false;
+	}
 
 	struct TPlayerBotMapPoint { long x; long y; };
 	// A hunting hub with the level band it is for and whether it is a party's
@@ -1249,6 +1332,9 @@ namespace
 			lRouteDestX(0),
 			lRouteDestY(0),
 			lRouteMapIndex(0),
+			lParkedDestX(0),
+			lParkedDestY(0),
+			lParkedMapIndex(0),
 			lIssuedWaypointX(0),
 			lIssuedWaypointY(0),
 			lNavProgressX(0),
@@ -1436,6 +1522,14 @@ namespace
 		long lRouteDestX;
 		long lRouteDestY;
 		long lRouteMapIndex;
+		// The route a fight interrupted, kept so the walk resumes from the
+		// nearest waypoint instead of being planned again from scratch. A far
+		// plan costs two hundred milliseconds; a valley crossing meets a fight
+		// every few seconds.
+		std::vector<PIXEL_POSITION> vecParkedRoute;
+		long lParkedDestX;
+		long lParkedDestY;
+		long lParkedMapIndex;
 		long lIssuedWaypointX;
 		long lIssuedWaypointY;
 		long lNavProgressX;

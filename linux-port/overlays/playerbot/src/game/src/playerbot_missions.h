@@ -25,12 +25,16 @@ namespace
 
 	int GetPlayerBotBiologistStateIndex(size_t missionIndex, const char* stateName)
 	{
-		static int s_complete[PLAYERBOT_BIOLOGIST_MISSION_COUNT] = { -1, -1, -1, -1, -1, -1 };
-		static int s_collecting[PLAYERBOT_BIOLOGIST_MISSION_COUNT] = { -1, -1, -1, -1, -1, -1 };
+		// Sized by the table, not by a literal: a seventh mission with a
+		// six-entry initialiser would have read a zero as a real state index.
+		static std::vector<int> s_complete(PLAYERBOT_BIOLOGIST_MISSION_COUNT, -1);
+		static std::vector<int> s_collecting(PLAYERBOT_BIOLOGIST_MISSION_COUNT, -1);
+		static std::vector<int> s_keyItem(PLAYERBOT_BIOLOGIST_MISSION_COUNT, -1);
 		if (missionIndex >= PLAYERBOT_BIOLOGIST_MISSION_COUNT)
 			return -1;
 
-		int* cache = strcmp(stateName, "__complete") == 0 ? s_complete : s_collecting;
+		std::vector<int>& cache = strcmp(stateName, "__complete") == 0 ? s_complete
+				: (strcmp(stateName, "key_item") == 0 ? s_keyItem : s_collecting);
 		if (cache[missionIndex] < 0)
 			cache[missionIndex] = quest::CQuestManager::instance().GetQuestStateIndex(
 					PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex].questName, stateName);
@@ -47,24 +51,66 @@ namespace
 				ch->GetQuestFlag(GetPlayerBotBiologistFlag(mission, "__status")) == completeState;
 	}
 
+	// The Orc Tooth quest has a second half: the teeth are in, and the quest
+	// waits in key_item for Jinunggyi's Soul Stone from the Elite Orcs.
+	bool IsPlayerBotBiologistKeyPhase(LPCHARACTER ch, size_t missionIndex)
+	{
+		if (!ch || missionIndex != PLAYERBOT_BIOLOGIST_ORC_TOOTH_INDEX)
+			return false;
+		const int keyState = GetPlayerBotBiologistStateIndex(missionIndex, "key_item");
+		return keyState >= 0 && ch->GetQuestFlag(GetPlayerBotBiologistFlag(
+				PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex], "__status")) == keyState;
+	}
+
+	// What the mission wants carried right now, and how many: the collection
+	// item, or in the second half of the Orc Tooth quest, the one stone.
+	DWORD GetPlayerBotBiologistWantedItem(LPCHARACTER ch, size_t missionIndex, int* outRequired)
+	{
+		const TPlayerBotBiologistMission& mission = PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex];
+		if (IsPlayerBotBiologistKeyPhase(ch, missionIndex))
+		{
+			if (outRequired)
+				*outRequired = 1;
+			return PLAYERBOT_JINUNGGYI_STONE_VNUM;
+		}
+		if (outRequired)
+			*outRequired = mission.requiredCount;
+		return mission.itemVnum;
+	}
+
 	const TPlayerBotBiologistMission* GetActivePlayerBotBiologistMission(
 			LPCHARACTER ch, size_t* outIndex = NULL)
 	{
 		if (!ch)
 			return NULL;
+		// Three passes: a mission whose specimens the bot already carries, then
+		// one whose monster stands on this map, then the first left undone. A bot
+		// that outgrew the mushrooms and lives among the Orcs collects teeth
+		// instead of collecting nothing - and hands in what it carries before the
+		// map it hands in on offers it something else.
+		int carrying = -1, here = -1, first = -1;
 		for (size_t i = 0; i < PLAYERBOT_BIOLOGIST_MISSION_COUNT; ++i)
 		{
 			const TPlayerBotBiologistMission& mission = PLAYERBOT_BIOLOGIST_MISSIONS[i];
 			if (ch->GetLevel() < mission.requiredLevel)
 				break;
-			if (!IsPlayerBotBiologistMissionComplete(ch, i))
-			{
-				if (outIndex)
-					*outIndex = i;
-				return &mission;
-			}
+			if (IsPlayerBotBiologistMissionComplete(ch, i))
+				continue;
+			if (first < 0)
+				first = (int)i;
+			int required = 0;
+			const DWORD wanted = GetPlayerBotBiologistWantedItem(ch, i, &required);
+			if (carrying < 0 && ch->CountSpecifyItem(wanted) > 0)
+				carrying = (int)i;
+			if (here < 0 && IsPlayerBotHuntingMobHosted(mission.mobVnum, ch->GetMapIndex()))
+				here = (int)i;
 		}
-		return NULL;
+		const int pick = carrying >= 0 ? carrying : (here >= 0 ? here : first);
+		if (pick < 0)
+			return NULL;
+		if (outIndex)
+			*outIndex = (size_t)pick;
+		return &PLAYERBOT_BIOLOGIST_MISSIONS[pick];
 	}
 
 	bool HasPlayerBotCompletedEarlyBiologist(LPCHARACTER ch)
@@ -89,6 +135,8 @@ namespace
 			return false;
 
 		const std::string statusFlag = GetPlayerBotBiologistFlag(mission, "__status");
+		if (IsPlayerBotBiologistKeyPhase(ch, missionIndex))
+			return true;
 		if (ch->GetQuestFlag(statusFlag) != collectingState)
 		{
 			quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
@@ -189,6 +237,12 @@ namespace
 			expPercent = expRoll < 9 ? 2 : (expRoll < 23 ? 3 :
 					(expRoll < 62 ? 4 : (expRoll < 86 ? 6 :
 					(expRoll < 95 ? 8 : 10))));
+			// questlib narrows the range as the levels climb: "2-5" from 31,
+			// "1-4" from 51.
+			if (missionLevel >= 51)
+				expPercent = std::min(expPercent, number(1, 4));
+			else if (missionLevel >= 31)
+				expPercent = std::min(expPercent, number(2, 5));
 		}
 
 		if (rewardGold > 0)
@@ -219,9 +273,19 @@ namespace
 
 		const TPlayerBotHuntingMission& mission =
 				PLAYERBOT_HUNTING_MISSIONS[missionLevel];
-		// The two official choices are split deterministically, so 350 bots do not
-		// all converge on the same species after accepting the same mission.
-		const int selection = ((ch->GetPlayerID() + missionLevel) % 2) + 1;
+		// The option that stands where the bot is; else one that stands anywhere
+		// hosted; else the pid decides, as it always did for the rows where both
+		// options are next door.
+		int selection = ((ch->GetPlayerID() + missionLevel) % 2) + 1;
+		const bool firstHere = IsPlayerBotHuntingMobHosted(mission.firstMobVnum, ch->GetMapIndex());
+		const bool secondHere = IsPlayerBotHuntingMobHosted(mission.secondMobVnum, ch->GetMapIndex());
+		const bool firstAnywhere = IsPlayerBotHuntingMobHosted(mission.firstMobVnum);
+		const bool secondAnywhere = IsPlayerBotHuntingMobHosted(mission.secondMobVnum);
+		if (firstHere != secondHere)
+			selection = firstHere ? 1 : 2;
+		else if (firstAnywhere != secondAnywhere)
+			selection = firstAnywhere ? 1 : 2;
+		ch->SetQuestFlag("levelup.botsince", (int)get_global_time());
 		const int count = selection == 2 ? mission.secondCount : mission.firstCount;
 		ch->SetQuestFlag("levelup.current", missionLevel);
 		ch->SetQuestFlag("levelup.select", selection);
@@ -243,7 +307,33 @@ namespace
 		const int completed = std::max(0, ch->GetQuestFlag("levelup.complete"));
 		if (current == 0)
 		{
-			const int next = std::max<int>(PLAYERBOT_HUNTING_FIRST_LEVEL, completed + 1);
+			int next = std::max<int>(PLAYERBOT_HUNTING_FIRST_LEVEL, completed + 1);
+			// Rows with nothing to hunt on any hosted map are passed over, so the
+			// rows after them stay reachable. No reward for a hunt not hunted.
+			// On a frontier map the bot is there to stay, so a row whose monsters
+			// are all elsewhere is passed over too: the ones at Orc Valley were
+			// found holding Sohan missions with the count untouched.
+			const long mapIndex = ch->GetMapIndex();
+			const bool settled = IsPlayerBotFrontierMapIndex(mapIndex);
+			const char* why = NULL;
+			while (next <= PLAYERBOT_HUNTING_MAX_LEVEL && next <= ch->GetLevel())
+			{
+				const TPlayerBotHuntingMission& row = PLAYERBOT_HUNTING_MISSIONS[next];
+				if (next + PLAYERBOT_HUNTING_OUTGROWN_LEVELS < ch->GetLevel())
+					why = "outgrown";
+				else if (!IsPlayerBotHuntingMobHosted(row.firstMobVnum) &&
+						!IsPlayerBotHuntingMobHosted(row.secondMobVnum))
+					why = "no hosted monster";
+				else if (settled && !IsPlayerBotHuntingMobHosted(row.firstMobVnum, mapIndex) &&
+						!IsPlayerBotHuntingMobHosted(row.secondMobVnum, mapIndex))
+					why = "elsewhere";
+				else
+					break;
+				sys_log(0, "PLAYERBOT_HUNTING: passed over pid=%u name=%s mission_level=%d level=%d map=%ld (%s)",
+						ch->GetPlayerID(), ch->GetName(), next, ch->GetLevel(), mapIndex, why);
+				ch->SetQuestFlag("levelup.complete", next);
+				++next;
+			}
 			if (next <= PLAYERBOT_HUNTING_MAX_LEVEL && next <= ch->GetLevel())
 				StartPlayerBotHuntingMission(ch, next);
 			return;
@@ -256,6 +346,27 @@ namespace
 		const int remain = ch->GetQuestFlag("levelup.remain");
 		if (remain > 0)
 		{
+			// Accepted long ago and not finished: the monster is somewhere this
+			// bot is not going. Pass it over rather than hold every row after it.
+			const int since = ch->GetQuestFlag("levelup.botsince");
+			if (since <= 0)
+				ch->SetQuestFlag("levelup.botsince", (int)get_global_time());
+			const bool outgrown = current + PLAYERBOT_HUNTING_OUTGROWN_LEVELS < ch->GetLevel();
+			const DWORD chosenMob = GetActivePlayerBotHuntingMobVnum(ch);
+			const bool elsewhere = IsPlayerBotFrontierMapIndex(ch->GetMapIndex()) && chosenMob != 0 &&
+					!IsPlayerBotHuntingMobHosted(chosenMob, ch->GetMapIndex());
+			if (outgrown || elsewhere ||
+					(since > 0 && (int)get_global_time() - since > PLAYERBOT_HUNTING_STALL_SECONDS))
+			{
+				sys_log(0, "PLAYERBOT_HUNTING: passed over pid=%u name=%s mission_level=%d level=%d map=%ld remain=%d (%s)",
+						ch->GetPlayerID(), ch->GetName(), current, ch->GetLevel(), ch->GetMapIndex(), remain,
+						outgrown ? "outgrown" : (elsewhere ? "elsewhere" : "stalled"));
+				ch->SetQuestFlag("levelup.complete", current);
+				ch->SetQuestFlag("levelup.current", 0);
+				ch->SetQuestFlag("levelup.remain", 0);
+				ch->SetQuestFlag("levelup.buttonstate", 0);
+				return;
+			}
 			// Existing bots reached buttonstate=1 at login and waited forever for a
 			// click. Accept once, preserving a mission already in progress.
 			if (ch->GetQuestFlag("levelup.buttonstate") != -1)

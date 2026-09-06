@@ -890,15 +890,18 @@ namespace
 		}
 
 		DWORD desiredBiologistMobVnum = 0;
+		size_t biologistIndex = 0;
 		const TPlayerBotBiologistMission* biologistMission =
-				GetActivePlayerBotBiologistMission(ch);
+				GetActivePlayerBotBiologistMission(ch, &biologistIndex);
 		if (biologistMission && !state.bVisitingBiologist)
 		{
 			const int accepted = std::max(0, ch->GetQuestFlag(
 					GetPlayerBotBiologistFlag(*biologistMission, "collect_count")));
 			const int remaining = std::max(0,
 					(int)biologistMission->requiredCount - accepted);
-			if (ch->CountSpecifyItem(biologistMission->itemVnum) < remaining)
+			if (IsPlayerBotBiologistKeyPhase(ch, biologistIndex))
+				desiredBiologistMobVnum = PLAYERBOT_ELITE_ORC_VNUM;
+			else if (ch->CountSpecifyItem(biologistMission->itemVnum) < remaining)
 				desiredBiologistMobVnum = biologistMission->mobVnum;
 		}
 		const DWORD desiredHuntingMobVnum = GetActivePlayerBotHuntingMobVnum(ch);

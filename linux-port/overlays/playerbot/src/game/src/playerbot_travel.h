@@ -124,14 +124,17 @@ namespace
 				ch->GetJob() <= JOB_SHAMAN)
 			return true;
 
+		size_t missionIndex = 0;
 		const TPlayerBotBiologistMission* mission =
-				GetActivePlayerBotBiologistMission(ch);
+				GetActivePlayerBotBiologistMission(ch, &missionIndex);
 		if (!mission)
 			return false;
-		const int accepted = std::max(0, ch->GetQuestFlag(
+		int required = mission->requiredCount;
+		const DWORD wantedVnum = GetPlayerBotBiologistWantedItem(ch, missionIndex, &required);
+		const int accepted = IsPlayerBotBiologistKeyPhase(ch, missionIndex) ? 0 : std::max(0, ch->GetQuestFlag(
 				GetPlayerBotBiologistFlag(*mission, "collect_count")));
-		const int remaining = std::max(0, (int)mission->requiredCount - accepted);
-		return remaining > 0 && ch->CountSpecifyItem(mission->itemVnum) >= remaining;
+		const int remaining = std::max(0, required - accepted);
+		return remaining > 0 && ch->CountSpecifyItem(wantedVnum) >= remaining;
 	}
 
 	// Above this level Bokjung has nothing left to offer, so nothing there is
@@ -180,8 +183,7 @@ namespace
 
 	bool IsPlayerBotFrontierMap(long mapIndex)
 	{
-		return mapIndex == PLAYERBOT_MAP_ORC_VALLEY || mapIndex == PLAYERBOT_MAP_DESERT ||
-				mapIndex == PLAYERBOT_MAP_SOHAN || mapIndex == PLAYERBOT_MAP_SPIDER_V1;
+		return IsPlayerBotFrontierMapIndex(mapIndex);
 	}
 
 	// The map whose ordinary spawns still sit inside this bot's useful level

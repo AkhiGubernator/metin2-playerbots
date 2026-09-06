@@ -638,7 +638,11 @@ function New-M2SupportBundle {
         }
 
         $envPath = Join-Path $root 'linux-port\docker\.env'
-        $safeEnv = Get-M2SanitizedEnv -EnvPath $envPath
+        # An empty array returned from a function arrives here as $null, and
+        # WriteAllLines refuses it: a player with no .env could not even send
+        # the logs that would have shown it.
+        [string[]]$safeEnv = @(Get-M2SanitizedEnv -EnvPath $envPath)
+        if ($safeEnv.Count -eq 0) { $safeEnv = @('(brak pliku .env)') }
         [IO.File]::WriteAllLines((Join-Path $work 'environment-redacted.txt'), $safeEnv, [Text.UTF8Encoding]::new($false))
 
         $composeDir = Join-Path $root 'linux-port\docker'

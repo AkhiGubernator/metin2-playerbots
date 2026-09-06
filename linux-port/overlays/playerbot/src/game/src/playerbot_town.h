@@ -187,7 +187,7 @@ namespace
 
 	bool ManagePlayerBotBiologist(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
-		if (!ch || ch->GetMapIndex() != 21 || state.bVisitingShop)
+		if (!ch || state.bVisitingShop)
 			return false;
 		if (!state.bVisitingBiologist && dwNow < state.dwNextBiologistCheckTime)
 			return false;
@@ -202,13 +202,25 @@ namespace
 			state.bVisitingBiologist = false;
 			return false;
 		}
+		// The mission is taken wherever the bot stands: the quest's kill hook
+		// only drops the specimen once the state says so, and a bot that never
+		// passed through Joan at the right level would otherwise never collect
+		// anything. Only the hand-in needs the Biologist, who is in Joan.
 		if (!EnsurePlayerBotBiologistMissionStarted(ch, missionIndex))
 			return false;
+		if (ch->GetMapIndex() != 21)
+		{
+			state.bVisitingBiologist = false;
+			return false;
+		}
 
-		const int accepted = std::max(0, ch->GetQuestFlag(
+		const bool keyPhase = IsPlayerBotBiologistKeyPhase(ch, missionIndex);
+		int required = mission->requiredCount;
+		const DWORD wantedVnum = GetPlayerBotBiologistWantedItem(ch, missionIndex, &required);
+		const int accepted = keyPhase ? 0 : std::max(0, ch->GetQuestFlag(
 				GetPlayerBotBiologistFlag(*mission, "collect_count")));
-		const int remaining = std::max(0, (int)mission->requiredCount - accepted);
-		const int carried = ch->CountSpecifyItem(mission->itemVnum);
+		const int remaining = std::max(0, required - accepted);
+		const int carried = ch->CountSpecifyItem(wantedVnum);
 		if (!state.bVisitingBiologist && carried < remaining)
 			return false;
 
@@ -258,11 +270,30 @@ namespace
 		if (dwNow < state.dwNextBiologistActionTime)
 			return true;
 
-		if (ch->CountSpecifyItem(mission->itemVnum) <= 0)
+		if (ch->CountSpecifyItem(wantedVnum) <= 0)
 		{
 			state.bVisitingBiologist = false;
 			state.dwNextBiologistActionTime = 0;
 			state.dwNextBiologistCheckTime = dwNow + number(5000, 12000);
+			ClearPlayerBotRoute(state, true);
+			return false;
+		}
+
+		// The second half of the Orc Tooth quest: the stone is handed in, and the
+		// reward is what the quest's own last state gives - ten movement speed
+		// for sixty years, and the box.
+		if (keyPhase)
+		{
+			ch->RemoveSpecifyItem(wantedVnum, 1);
+			ch->AddAffect(AFFECT_COLLECT, POINT_MOV_SPEED, PLAYERBOT_ORC_TOOTH_REWARD_MOV_SPEED,
+					0, 60L * 60L * 24L * 365L * 60L, 0, false);
+			ch->AutoGiveItem(PLAYERBOT_ORC_TOOTH_REWARD_BOX_VNUM, 1, -1, false);
+			sys_log(0, "PLAYERBOT_BIOLOGIST: soul stone handed in pid=%u name=%s quest=%s mov_speed=+%d",
+					ch->GetPlayerID(), ch->GetName(), mission->questName, PLAYERBOT_ORC_TOOTH_REWARD_MOV_SPEED);
+			CompletePlayerBotBiologistMission(ch, missionIndex);
+			state.bVisitingBiologist = false;
+			state.dwNextBiologistActionTime = 0;
+			state.dwNextBiologistCheckTime = dwNow + number(10000, 25000);
 			ClearPlayerBotRoute(state, true);
 			return false;
 		}
@@ -279,6 +310,25 @@ namespace
 				ch->GetPlayerID(), ch->GetName(), mission->questName, acceptedNow ? 1 : 0,
 				newAccepted, mission->requiredCount, ch->CountSpecifyItem(mission->itemVnum));
 
+		// Ten teeth in: the Orc Tooth quest does not end here, it waits in
+		// key_item for the stone. The quest's own kill hook drops it, one in
+		// five hundred Elite Orcs, once the state says so.
+		if (newAccepted >= mission->requiredCount && missionIndex == PLAYERBOT_BIOLOGIST_ORC_TOOTH_INDEX)
+		{
+			const int keyState = GetPlayerBotBiologistStateIndex(missionIndex, "key_item");
+			quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
+			if (pc && keyState >= 0)
+			{
+				pc->SetQuestState(mission->questName, keyState);
+				sys_log(0, "PLAYERBOT_BIOLOGIST: teeth accepted, waiting for the soul stone pid=%u name=%s",
+						ch->GetPlayerID(), ch->GetName());
+			}
+			state.bVisitingBiologist = false;
+			state.dwNextBiologistActionTime = 0;
+			state.dwNextBiologistCheckTime = dwNow + number(10000, 25000);
+			ClearPlayerBotRoute(state, true);
+			return false;
+		}
 		if (newAccepted >= mission->requiredCount &&
 				CompletePlayerBotBiologistMission(ch, missionIndex))
 		{
@@ -579,7 +629,8 @@ namespace
 			// Biologist specimens stay: they are quest progress, not goods. Horse
 			// medals used to be excluded here as well, which meant nobody could
 			// ever buy one; whether they are for sale is now the scoring's call.
-			if (vnum >= 50701 && vnum <= 50706)
+			if ((vnum >= 50701 && vnum <= 50706) || vnum == PLAYERBOT_ORC_TOOTH_VNUM ||
+					vnum == PLAYERBOT_JINUNGGYI_STONE_VNUM)
 				continue;
 			// Spare gear is the most interesting thing a stall can offer, but the
 			// bot must never put up the only weapon or armour it owns for a slot

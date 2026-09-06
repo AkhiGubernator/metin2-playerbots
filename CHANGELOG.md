@@ -17,6 +17,67 @@ every version here.
 
 ---
 
+## 1.29.3 — 2026-09-06
+
+### Naprawione
+
+- **Świeża instalacja na Linuksie (`installer/install.sh`) padała na patchu
+  szkatułek.** Hunk patcha 0006 zakładał, że w `item_manager.cpp` jest już
+  `#include "high_risk.h"`, a tę linię wstawia dopiero krok High Risk, który
+  w `prepare-context.sh` idzie po overlayu botów. Na czystym drzewie r40250
+  `patch --fuzz=0` odrzucał hunk; na maszynie, gdzie w cache było już drzewo
+  z High Risk, nakładał się przypadkiem. Kontekst hunku nie zależy już od tej
+  linii. Zgłoszenie z dokładną diagnozą przyszło od gracza.
+- **Paczka rozpakowana ręcznie (bez instalatora) nie miała pliku `.env` i nic
+  nie działało.** GRAJ kończył się na „Missing Docker environment file”, a po
+  aktualizacji dokańczanie budowy uruchamiało compose bez haseł bazy
+  (`M2_DB_PASSWORD is missing a value`) — i tak w kółko, bo budowa szła
+  przed krokiem, który plik tworzy. `start-server.ps1` tworzy teraz `.env`
+  z `.env.example`, nowymi hasłami i adresami 127.0.0.1, wypisując hasło
+  panelu; dokańczanie budowy najpierw przygotowuje `.env`. Gdy jest już
+  baza z tej instalacji, a `.env` zniknął, launcher mówi wprost, że hasła
+  trzeba przywrócić z kopii, zamiast wymyślać nowe, których baza nie przyjmie.
+- **Zbieranie logów padało bez pliku `.env`** („WriteAllLines: wartość nie
+  może być zerowa”) — akurat u gracza, któremu logi były najbardziej
+  potrzebne. Pusta lista zmiennych zapisuje się jako „(brak pliku .env)”.
+- **Przerwany marsz jest parkowany, nie kasowany.** Bot idący przez Dolinę do
+  odległego huba zatrzymywał się na każdą walkę, trasa szła do kosza, a po
+  walce rdzeń liczył ją od zera (200 ms za każdym razem, 100–170 dalekich
+  planów na minutę). Trasa przerwana walką jest teraz zachowywana i
+  podejmowana od najbliższego punktu, na który bot może wejść prosto.
+  W pierwszej obserwacji wznowień jest jeszcze niewiele (7–18 na minutę);
+  linia `PLAYERBOT_LOAD` mówi `resumed=`, a każdy daleki plan ma wpis
+  `PLAYERBOT_NAV: far plan` z celem — dalsze strojenie w następnym wydaniu.
+
+### Nowe
+
+- **Misje polowań do 55 poziomu.** Tabela kończyła się na 25, a w praktyce
+  prawie każdy bot stał od tygodni na misji z 14–17 poziomu: przyjął ją w
+  Joan, wyrósł z jej potwora i nigdy po niego nie wrócił. Tabela sięga teraz
+  55 (ostatni wiersz wykonalny na hostowanych mapach). Bot wybiera tę z dwóch
+  opcji, której potwór stoi na jego mapie, a gdy żadna — tę, która stoi
+  gdziekolwiek. Misja o ponad dziesięć poziomów niższa od bota, misja bez
+  potwora na żadnej mapie, misja z potworem na innej mapie niż ta, na której
+  bot osiadł, i misja wisząca dwie godziny są oddawane jako pominięte, bez
+  nagrody, żeby nie blokowały następnych. Nagroda z
+  doświadczenia zwęża się jak w questlib: 2–5% od 31, 1–4% od 51. Panel zna
+  nazwy potworów nowych wierszy.
+- **Ząb Orka u Biologa.** Siódma misja Biologa: dziesięć Zębów Orka z Orków w
+  Dolinie, oddawane po jednym, 60% szansy na przyjęcie i spalony ząb przy
+  porażce — jak u gracza bez eliksiru, tylko bez 22 godzin czekania między
+  oddaniami. Po dziesiątym zębie quest czeka na Kamień Duszy Jinunggyi
+  (1/500 z Elitarnych Orków, przez własny hook questu), bot poluje wtedy na
+  Elitarne Orki, a Kamień oddaje Biologowi: +10 szybkości ruchu na 60 lat i
+  skrzynka, jak w skrypcie. Ząb i Kamień nie idą do handlarza ani na ladę.
+- **Misję Biologa bot bierze tam, gdzie stoi.** Dotąd przyjmował ją tylko na
+  M1, a okazy spadają dopiero po przyjęciu — bot, który minął 25 poziom poza
+  Joan, nie zbierał nic (663 z 876 botów miało Grzyb Tue nietknięty). Teraz
+  przyjmuje ją gdziekolwiek, a do Biologa idzie dopiero z kompletem. Z
+  zaległych misji wybiera tę, której okazy już niesie, potem tę, której potwór
+  stoi na jego mapie — bot z Doliny zbiera zęby zamiast wracać po grzyby.
+
+---
+
 ## 1.29.2 — 2026-09-06
 
 ### Naprawione

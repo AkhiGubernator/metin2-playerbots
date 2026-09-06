@@ -323,6 +323,17 @@ namespace
 
 	void ClearPlayerBotRoute(TPlayerBotAIState& state, bool clearGoal)
 	{
+		// A long route that still has somewhere to go is parked, not dropped:
+		// whoever clears it - a fight, a pickup - will ask for the same
+		// destination again in a moment.
+		if (state.uRouteIndex + PLAYERBOT_NAV_PARK_MIN_WAYPOINTS <= state.vecRoute.size() &&
+				state.lRouteMapIndex != 0)
+		{
+			state.vecParkedRoute.swap(state.vecRoute);
+			state.lParkedDestX = state.lRouteDestX;
+			state.lParkedDestY = state.lRouteDestY;
+			state.lParkedMapIndex = state.lRouteMapIndex;
+		}
 		state.vecRoute.clear();
 		state.uRouteIndex = 0;
 		state.lIssuedWaypointX = 0;
@@ -471,6 +482,47 @@ namespace
 		}
 	}
 
+	// The parked route is the one being asked for again if it is on this map
+	// and to the same place; it is taken up at the nearest waypoint the bot can
+	// walk straight to. Everything else - a new goal, a different map, a fight
+	// that carried the bot off the line - falls through to a fresh plan.
+	bool ResumePlayerBotParkedRoute(LPCHARACTER ch, TPlayerBotAIState& state,
+			CPlayerBotNavigation& navigation, long mapIndex, long destX, long destY)
+	{
+		if (state.vecParkedRoute.empty() || state.lParkedMapIndex != mapIndex ||
+				DISTANCE_APPROX(destX - state.lParkedDestX, destY - state.lParkedDestY) >
+						PLAYERBOT_NAV_GOAL_REPLAN_DISTANCE)
+		{
+			state.vecParkedRoute.clear();
+			return false;
+		}
+		size_t bestIndex = state.vecParkedRoute.size();
+		int bestDistance = PLAYERBOT_NAV_RESUME_DISTANCE;
+		for (size_t i = 0; i < state.vecParkedRoute.size(); ++i)
+		{
+			const PIXEL_POSITION& waypoint = state.vecParkedRoute[i];
+			const int distance = DISTANCE_APPROX(ch->GetX() - waypoint.x, ch->GetY() - waypoint.y);
+			if (distance < bestDistance)
+			{
+				bestDistance = distance;
+				bestIndex = i;
+			}
+		}
+		// The waypoints after the nearest one are the walk that is left; the
+		// bot must be able to step onto the line, not merely be near it.
+		if (bestIndex >= state.vecParkedRoute.size() ||
+				!navigation.SegmentClearWorld(ch->GetX(), ch->GetY(),
+						state.vecParkedRoute[bestIndex].x, state.vecParkedRoute[bestIndex].y))
+		{
+			state.vecParkedRoute.clear();
+			return false;
+		}
+		state.vecRoute.swap(state.vecParkedRoute);
+		state.vecParkedRoute.clear();
+		state.uRouteIndex = bestIndex;
+		return true;
+	}
+
 	bool MovePlayerBot(LPCHARACTER ch, long destX, long destY, DWORD dwNow,
 			int targetSnapRadius = 4, bool flexibleTargetSnap = false,
 			bool allowHorse = false, bool fightOnHorse = false,
@@ -563,7 +615,13 @@ namespace
 				return true;
 			}
 
-			if (navigation.SegmentClearWorld(ch->GetX(), ch->GetY(), destX, destY))
+			size_t resumedIndex = 0;
+			if (ResumePlayerBotParkedRoute(ch, state, navigation, mapIndex, destX, destY))
+			{
+				++s_uPlayerBotLoadPlanResumed;
+				resumedIndex = state.uRouteIndex;
+			}
+			else if (navigation.SegmentClearWorld(ch->GetX(), ch->GetY(), destX, destY))
 			{
 				BuildPlayerBotStraightRoute(ch->GetX(), ch->GetY(), destX, destY, state.vecRoute);
 			}
@@ -606,7 +664,7 @@ namespace
 			}
 			state.bNavDeferredCount = 0;
 
-			state.uRouteIndex = 0;
+			state.uRouteIndex = resumedIndex;
 			state.lIssuedWaypointX = 0;
 			state.lIssuedWaypointY = 0;
 			state.lNavProgressX = ch->GetX();

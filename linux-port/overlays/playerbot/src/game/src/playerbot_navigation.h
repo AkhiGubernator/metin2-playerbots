@@ -50,6 +50,10 @@ namespace
 	// moving target; SegmentClearWorld still validates every new segment.
 	const int PLAYERBOT_NAV_ARRIVAL_DISTANCE = 100;
 	const int PLAYERBOT_NAV_GOAL_REPLAN_DISTANCE = 400;
+	// A parked route is worth keeping from this many waypoints left, and is
+	// resumed from a waypoint within this reach of where the fight ended.
+	const size_t PLAYERBOT_NAV_PARK_MIN_WAYPOINTS = 6;
+	const int PLAYERBOT_NAV_RESUME_DISTANCE = 2500;
 	// This is one global budget for the manager update, not one budget per map.
 	// Giving M1, M2, M3 and the Monkey Dungeon 64 searches each multiplied the
 	// old M1 load by four. Already built routes still advance every update; only
@@ -440,6 +444,12 @@ namespace
 				const int planCells = std::max(std::abs(sx - tx), std::abs(sy - ty));
 				const int planBucket = planCells < 64 ? 0 : planCells < 256 ? 1 : planCells < 1024 ? 2 : 3;
 				++s_uPlayerBotLoadPlanBucket[planBucket];
+				// A far plan is the one thing the load line cannot attribute: it
+				// costs a hundred times a near one, and only the destination says
+				// which subsystem asked for it.
+				if (planBucket == 3)
+					sys_log(0, "PLAYERBOT_NAV: far plan map=%ld from=(%ld,%ld) to=(%ld,%ld) cells=%d",
+							m_mapIndex, startX, startY, targetX, targetY, planCells);
 				TPlayerBotLoadTimer planTimer(s_uPlayerBotLoadPlanUs);
 				TPlayerBotLoadTimer planBucketTimer(s_uPlayerBotLoadPlanBucketUs[planBucket]);
 				if (!FindNearestWalkableCell(sx, sy, 4, 0, seed))

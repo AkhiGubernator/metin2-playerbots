@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T08:14:00Z",
-  "statusMessage": "Aktualizacja 1.28.0. Zuzycie CPU przy 850 botach spadlo z 63-68% do 24% rdzenia: planer tras pytal silnik o atrybut sektora dla kazdego sasiada kazdego wezla A*, choc siatka nawigacji ma ten sam bit. Boty loguja sie stopniowo przez minute po starcie zamiast wszystkie w jednej sekundzie. Raz na minute serwer pisze w syslogu, ile kosztowala populacja (PLAYERBOT_LOAD). Launcher mowi, ktorego pliku brakuje, zamiast konczyc z exit 1, i zapisuje logi kontenerow przy nieudanym starcie.",
+  "publishedAt": "2026-09-06T12:25:00Z",
+  "statusMessage": "Aktualizacja 1.29.0. Dolina Orkow po poziomach: wyspy Fanatykow dla 30-39, obozy Czarnych Orkow dla grup po osiem od 40, wyspa srodkowa z Ksiegami Klatw od 45; jedna gildia zbiera sie na jednym obozie. Boty maja wspolna pamiec, gdzie stoi najwiecej potworow, i po niej wybieraja spot. Event Szkatulek Blasku Ksiezyca (zwoje bonusow, mikstury, wzmocnienia) - boty same je otwieraja; trzy Ksiegi Umiejetnosci z kazdego Metina. Cztery nowe osobowosci Dropek (Metiny, M3, M2, medale) zbieraja i sprzedaja. Panel w calosci po polsku. Launcher rozpoznaje port zarezerwowany przez Windows i mowi, co zrobic.",
   "server": {
-    "version": "1.28.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.28.0/metin2-server-update-1.28.0.zip",
-    "sha256": "8406A337D6121C6493D39BECA110ECF6605A3F322F92013D24C0FC5EC4C9C26F"
+    "version": "1.29.0",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.0/metin2-server-update-1.29.0.zip",
+    "sha256": "C581DFF6ABD0735091835573D990AB243F22BA2EA2B78CB58104F9EE939351D0"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

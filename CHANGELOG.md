@@ -17,6 +17,74 @@ every version here.
 
 ---
 
+## 1.29.0 — 2026-09-06
+
+### Nowe
+
+- **Dolina Orków po poziomach, obozy Czarnych Orków dla grup po osiem.** Pięć
+  wysp Fanatyków (35) i Arahanów (38) dla botów 30–39, szesnaście hubów
+  gęstości dla 36+, trzy obozy Czarnych Orków (46) — (601,625), (774,923),
+  (933,639) — dla grupy 40+, a wyspa środkowa z Dręczycielami (49), którzy
+  noszą Księgę Klątw, dla grupy 45+. Boty 30–35 idą na wyspy Fanatyków albo
+  na pustynię, po parzystości pidu. Grupa w Dolinie ma do ośmiu osób; każdy
+  bot poziomu obozu może do niej wejść, nie tylko dziesięcioprocentowa
+  kohorta; współgildianin liczy się w doborze za dwóch przyjaciół, a lider
+  z gildią wybiera obóz po numerze gildii, więc jedna gildia zbiera się na
+  jednym obozie. Marudera za liderem w drodze do nowego obozu grupa nie
+  wyrzuca — 57 z 59 rozpadów pierwszej godziny to była właśnie ta droga.
+- **Wspólna pamięć populacji: gdzie stoi najwięcej potworów.** Każde szukanie
+  celu zapisuje w komórce 6400 jednostek, ile potworów było w zasięgu, jakiego
+  poziomu i ile walk tam zaczęto; wpisy maleją o połowę co dziesięć minut.
+  Hub wybiera się po udziale (potwory w zasięgu podzielone przez boty, które
+  już tam są), o połowę taniej na 20 km, i trzyma cztery minuty. Obóz pełen
+  potworów, których bot nie tknie sam, jest dla niego pusty. Raz na dziesięć
+  minut `PLAYERBOT_SPOT:` wypisuje najbogatsze komórki każdej mapy — komórka
+  bez huba, która wciąż wychodzi na wierzch, to hub, którego brakuje tabeli.
+- **Szkatułka Blasku Księżyca jako event.** Szansa na tysiąc na zabity potwór
+  (`M2_MOONLIGHT_CHEST_PERMILLE`, domyślnie 10) i osobno na kamień Metin
+  (`M2_MOONLIGHT_CHEST_STONE_PERMILLE`, domyślnie 300), z CONFIG, bez
+  przebudowy; 0 wyłącza. W środku, po wadze: Zaczarowanie i Wzmocnienie
+  Przedmiotu, Zielona i Fioletowa Mikstura po pięć, Dłoń Krytyka i Dłoń
+  Przebicia po trzy, Błogosławieństwo Życia i Smoka, Zwój Błogosławieństwa,
+  Księga Umiejętności. Bot otwiera szkatułkę w ciągu sekund, zwoje bonusów
+  idą przez istniejący dobór bonusów (własny zwój przed kupnem), mikstury
+  szybkości przez istniejące picie, wzmocnienia pije na początku walki, a
+  Błogosławieństwa są ostatnią miksturą w zapasie. W pierwsze pół godziny:
+  315 otwartych szkatułek, 876 wypitych wzmocnień.
+- **Trzy Księgi Umiejętności z każdego Metina.** Tabela dawała jedną z szansą
+  od ćwierci do całości; teraz liczba ksiąg z kamienia jest dopełniana do
+  trzech, każda z losową umiejętnością tak jak dotąd.
+- **Cztery osobowości „Dropek”.** Dropek Metinów (co trzeci łowca Metinów)
+  zbiera Księgi Umiejętności — także te, których nie przeczyta — i stawia je
+  na straganie obok broni 30 lv. Dropek z M3 siedzi na Waryong po bronie 30
+  lv do 32 poziomu, niezależnie od tego, czy ma własną. Dropek z M2 obozuje
+  u Bestii w Bokjung po ich bronie do 40 poziomu. Dropek medali chodzi do
+  Łatwego Lochu Małp po medale do 32 poziomu, nie tylko póki jego koń ich
+  potrzebuje, i sprzedaje nadwyżkę. Co ósmy zwykły poszukiwacz jest jednym
+  z trzech ostatnich. Dropek otwiera stragan na co trzeciej wizycie w mieście
+  i dostaje stół handlarza. Panel zna ich nazwy.
+- **Panel po polsku.** 305 wpisów słownika interfejsu miało tylko angielski,
+  niemiecki i turecki, więc polska przeglądarka dostawała angielski; strona
+  konta miała teksty wpisane na sztywno. Wszystko przetłumaczone.
+
+### Naprawione
+
+- **Launcher rozpoznaje port zarezerwowany przez Windows.** Po restarcie
+  Hyper-V/WSL rezerwuje losowe zakresy portów; gdy 11000 albo 13000 w nie
+  trafi, `docker compose` pada sekundę po zbudowaniu obrazów z „ports are
+  not available … zabroniony przez uprawnienia”, a launcher pokazywał to jako
+  nieznany błąd. Jeden gracz przeszedł tak pięć identycznych prób
+  aktualizacji. Teraz diagnostyka sprawdza `netsh interface ipv4 show
+  excludedportrange` przed startem, a po błędzie launcher wypisuje, co zrobić:
+  `net stop winnat`, GRAJ, `net start winnat`.
+- **Wybór huba nie goni najlepszego spotu przez całą mapę.** Pierwsza wersja
+  pamięci spotów przełączała hub przy każdej decyzji: 160–334 dalekich planów
+  na minutę, osiem tysięcy odroczeń, tick 57 s z 60. Waga odległości i
+  przyklejenie do wyboru na cztery minuty sprowadziły to do 33–65 planów i
+  ticku 10–18 s.
+
+---
+
 ## 1.28.0 — 2026-09-06
 
 ### Nowe

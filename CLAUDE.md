@@ -209,6 +209,27 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   the stock 50011 block out before appending ours. `playerbot_consumables.h`
   opens the chest and drinks the boosters; the bonus scrolls, speed potions
   and big potions it holds go through the code that already handled them.
+- **An engine patch reaches a player only as the staged file.** On Windows
+  the launcher stages the overlay itself and `prepare-context.sh` never runs,
+  so a patch under `overlays/playerbot/patches` is applied on this machine
+  and nowhere else; and `patch` inside the image cannot be trusted either -
+  the staged engine files carry mixed line endings and the core patch fails
+  its own reverse check on them. What ships is the patched file itself,
+  listed in `launcher/server-update-files.txt` next to the `playerbot_*`
+  sources (`item_manager.cpp`, `config.cpp` for 0006). A new engine patch
+  means: apply it to `linux-port/docker/game/src/server` with `patch -p1`,
+  and add every file it touches to that list. 1.29.0 shipped without this and
+  nobody got a chest.
+- **The frontier is four maps and one table.** `GetPlayerBotFrontierArrival`,
+  `GetPlayerBotFrontierExit` and `GetPlayerBotFrontierName` in
+  `playerbot_types.h` answer for Orc Valley, the desert, Mount Sohan (43,
+  Black Wind and Wild soldiers 26-36, three Metin kinds) and the Spider
+  Dungeon V1 (104, knights 50-58); `GetPlayerBotFrontierMapForLevel` routes
+  by level and pid. Both new maps were moved onto the game1 core in
+  `m2-render-config` - a bot cannot walk onto a map its own core does not
+  host. Adding a fifth map: a row in each helper, a hub table in
+  `playerbot_wandering.h`, the navigation whitelist, the panel's bounds,
+  names and tiles, and the core's MAP_ALLOW.
 - **Droppers are personalities, not roles.** `IsPlayerBotDropper` names the
   four; `GetPlayerBotPersonalityByPID` is how a rule that only has a
   character asks. The travel gates (`ShouldPlayerBotVisitM3`,

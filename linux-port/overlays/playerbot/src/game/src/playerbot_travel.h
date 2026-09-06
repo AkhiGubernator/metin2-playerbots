@@ -180,7 +180,8 @@ namespace
 
 	bool IsPlayerBotFrontierMap(long mapIndex)
 	{
-		return mapIndex == PLAYERBOT_MAP_ORC_VALLEY || mapIndex == PLAYERBOT_MAP_DESERT;
+		return mapIndex == PLAYERBOT_MAP_ORC_VALLEY || mapIndex == PLAYERBOT_MAP_DESERT ||
+				mapIndex == PLAYERBOT_MAP_SOHAN || mapIndex == PLAYERBOT_MAP_SPIDER_V1;
 	}
 
 	// The map whose ordinary spawns still sit inside this bot's useful level
@@ -196,16 +197,28 @@ namespace
 			return PLAYERBOT_MAP_DESERT;
 
 		const BYTE level = ch->GetLevel();
+		const DWORD draw = PlayerBotNavHash(ch->GetPlayerID() ^ 0x45534f54U);
+		// Forty-eight and up: the Spider Dungeon for half, the valley's camps
+		// for the other half, decided once per character so the answer does not
+		// change under a bot halfway there.
+		if (level >= PLAYERBOT_SPIDER_MIN_LEVEL && (draw & 1U) != 0)
+			return PLAYERBOT_MAP_SPIDER_V1;
 		if (level >= PLAYERBOT_ORC_VALLEY_MIN_LEVEL && level <= PLAYERBOT_ORC_VALLEY_MAX_LEVEL)
 			return PLAYERBOT_MAP_ORC_VALLEY;
-		// Thirty to thirty-five: the Fanatic islands of Orc Valley for half the
-		// population, the desert for the other half, decided once per character
-		// so the answer does not change under a bot halfway there.
-		if (level >= PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL && level < PLAYERBOT_ORC_VALLEY_MIN_LEVEL &&
-				(PlayerBotNavHash(ch->GetPlayerID() ^ 0x45534f54U) & 1U) != 0)
-			return PLAYERBOT_MAP_ORC_VALLEY;
-		if (level >= PLAYERBOT_DESERT_MIN_LEVEL && level <= PLAYERBOT_DESERT_MAX_LEVEL)
-			return PLAYERBOT_MAP_DESERT;
+		// Thirty to thirty-five: the Fanatic islands, the desert and Mount Sohan
+		// share the population three ways.
+		if (level >= PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL && level < PLAYERBOT_ORC_VALLEY_MIN_LEVEL)
+		{
+			switch (draw % 3U)
+			{
+				case 0: return PLAYERBOT_MAP_ORC_VALLEY;
+				case 1: return PLAYERBOT_MAP_SOHAN;
+				default: return PLAYERBOT_MAP_DESERT;
+			}
+		}
+		// Twenty-six to twenty-nine: Sohan for half, Bokjung keeps the rest.
+		if (level >= PLAYERBOT_SOHAN_MIN_LEVEL && (draw & 2U) != 0)
+			return PLAYERBOT_MAP_SOHAN;
 		return 0;
 	}
 
@@ -772,15 +785,14 @@ namespace
 						? GetPlayerBotFrontierMapForLevel(ch) : 0;
 				if (directMap != 0)
 				{
-					const bool toDesert = directMap == PLAYERBOT_MAP_DESERT;
+					long arriveX = 0, arriveY = 0;
+					GetPlayerBotFrontierArrival(directMap, arriveX, arriveY);
+					char reason[48];
+					snprintf(reason, sizeof(reason), "m1_direct_to_%s", GetPlayerBotFrontierName(directMap));
 					SetPlayerBotGoal(ch, state, BOT_GOAL_LEVEL_UP, dwNow);
 					return MovePlayerBotToWorldPortal(ch, state,
 							PLAYERBOT_M1_TELEPORTER_X, PLAYERBOT_M1_TELEPORTER_Y,
-							directMap,
-							toDesert ? PLAYERBOT_DESERT_ARRIVAL_X : PLAYERBOT_ORC_VALLEY_ARRIVAL_X,
-							toDesert ? PLAYERBOT_DESERT_ARRIVAL_Y : PLAYERBOT_ORC_VALLEY_ARRIVAL_Y,
-							dwNow,
-							toDesert ? "m1_direct_to_desert" : "m1_direct_to_orc_valley");
+							directMap, arriveX, arriveY, dwNow, reason);
 				}
 			}
 
@@ -872,14 +884,14 @@ namespace
 					? GetPlayerBotFrontierMapForLevel(ch) : 0;
 			if (frontierMap != 0)
 			{
-				const bool toDesert = frontierMap == PLAYERBOT_MAP_DESERT;
+				long arriveX = 0, arriveY = 0;
+				GetPlayerBotFrontierArrival(frontierMap, arriveX, arriveY);
+				char reason[48];
+				snprintf(reason, sizeof(reason), "level_to_%s", GetPlayerBotFrontierName(frontierMap));
 				SetPlayerBotGoal(ch, state, BOT_GOAL_LEVEL_UP, dwNow);
 				return MovePlayerBotToWorldPortal(ch, state,
 						PLAYERBOT_M2_TO_M3_TELEPORTER_X, PLAYERBOT_M2_TO_M3_TELEPORTER_Y,
-						frontierMap,
-						toDesert ? PLAYERBOT_DESERT_ARRIVAL_X : PLAYERBOT_ORC_VALLEY_ARRIVAL_X,
-						toDesert ? PLAYERBOT_DESERT_ARRIVAL_Y : PLAYERBOT_ORC_VALLEY_ARRIVAL_Y,
-						dwNow, toDesert ? "level_to_desert" : "level_to_orc_valley");
+						frontierMap, arriveX, arriveY, dwNow, reason);
 			}
 
 			// Sending a bot back to Joan is only right when it has outgrown
@@ -959,10 +971,9 @@ namespace
 				reason = "frontier_services_to_m2";
 			else if (outOfBand)
 				reason = "frontier_level_graduated";
-			const bool inDesert = mapIndex == PLAYERBOT_MAP_DESERT;
-			return MovePlayerBotToWorldPortal(ch, state,
-					inDesert ? PLAYERBOT_DESERT_EXIT_X : PLAYERBOT_ORC_VALLEY_EXIT_X,
-					inDesert ? PLAYERBOT_DESERT_EXIT_Y : PLAYERBOT_ORC_VALLEY_EXIT_Y,
+			long exitX = 0, exitY = 0;
+			GetPlayerBotFrontierExit(mapIndex, exitX, exitY);
+			return MovePlayerBotToWorldPortal(ch, state, exitX, exitY,
 					PLAYERBOT_MAP_CHUNJO_M2, PLAYERBOT_M2_FROM_M3_X, PLAYERBOT_M2_FROM_M3_Y,
 					dwNow, reason);
 		}

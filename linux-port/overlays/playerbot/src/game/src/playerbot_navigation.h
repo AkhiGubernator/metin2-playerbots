@@ -185,7 +185,9 @@ namespace
 						mapIndex != PLAYERBOT_MAP_CHUNJO_M3 &&
 						mapIndex != PLAYERBOT_MAP_MONKEY_EASY &&
 						mapIndex != PLAYERBOT_MAP_ORC_VALLEY &&
-						mapIndex != PLAYERBOT_MAP_DESERT)
+						mapIndex != PLAYERBOT_MAP_DESERT &&
+						mapIndex != PLAYERBOT_MAP_SOHAN &&
+						mapIndex != PLAYERBOT_MAP_SPIDER_V1)
 					return false;
 
 				if (m_initialized && m_mapIndex == mapIndex)

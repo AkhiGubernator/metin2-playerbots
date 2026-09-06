@@ -42,6 +42,8 @@ MAPS = [
     (25, "metin2_map_monkey_dungeon_12", 844800, 435200, 76800, 76800),
     (63, "metin2_map_n_desert_01", 204800, 486400, 153600, 153600),
     (64, "map_n_threeway", 256000, 665600, 153600, 153600),
+    (43, "metin2_map_c3", 819200, 204800, 102400, 102400),
+    (104, "metin2_map_spiderdungeon", 51200, 486400, 76800, 76800),
 ]
 
 # Sand and dark earth rather than the old dark green. Two reasons, both about

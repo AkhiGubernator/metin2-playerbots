@@ -703,11 +703,10 @@ namespace
 				outMap = mapIndex; outX = PLAYERBOT_M3_ARRIVAL_X; outY = PLAYERBOT_M3_ARRIVAL_Y; break;
 			case PLAYERBOT_MAP_MONKEY_EASY:
 				outMap = mapIndex; outX = PLAYERBOT_MONKEY_EASY_ARRIVAL_X; outY = PLAYERBOT_MONKEY_EASY_ARRIVAL_Y; break;
-			case PLAYERBOT_MAP_ORC_VALLEY:
-				outMap = mapIndex; outX = PLAYERBOT_ORC_VALLEY_ARRIVAL_X; outY = PLAYERBOT_ORC_VALLEY_ARRIVAL_Y; break;
-			case PLAYERBOT_MAP_DESERT:
-				outMap = mapIndex; outX = PLAYERBOT_DESERT_ARRIVAL_X; outY = PLAYERBOT_DESERT_ARRIVAL_Y; break;
-			default: break;
+			default:
+				if (GetPlayerBotFrontierArrival(mapIndex, outX, outY))
+					outMap = mapIndex;
+				break;
 		}
 	}
 

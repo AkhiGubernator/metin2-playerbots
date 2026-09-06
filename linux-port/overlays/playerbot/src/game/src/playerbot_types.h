@@ -572,6 +572,71 @@ namespace
 	const long PLAYERBOT_ORC_VALLEY_EXIT_Y = 740200;
 	const long PLAYERBOT_DESERT_EXIT_X = 219700;
 	const long PLAYERBOT_DESERT_EXIT_Y = 499900;
+
+	// Two more frontier maps. Mount Sohan (metin2_map_c3) is Black Wind and
+	// Wild soldiers at 26 to 36 with three Metin kinds at 25 to 35 - the same
+	// band as the desert and the Fanatic islands, so from 26 a bot may go
+	// there instead of waiting in Bokjung, and at 30-35 the three maps share
+	// the population by pid. The Spider Dungeon (metin2_map_spiderdungeon,
+	// "Kuahklo Dong") is knights of 50 to 58 and nothing else: from 48, half
+	// of the population takes it instead of Orc Valley. Both used to sit on a
+	// core the bots do not run on; m2-render-config moves them. Arrivals are
+	// the Chunjo entries of Town.txt, exits the NPC beside each - Sohan's
+	// Staruszek (20009) at cell (136,899), the dungeon's Yongbi teleporter
+	// (10015) at (88,82) - so a bot never crosses the map to leave.
+	const long PLAYERBOT_MAP_SOHAN = 43;
+	const long PLAYERBOT_MAP_SPIDER_V1 = 104;
+	const long PLAYERBOT_SOHAN_ARRIVAL_X = 832800;
+	const long PLAYERBOT_SOHAN_ARRIVAL_Y = 294200;
+	const long PLAYERBOT_SOHAN_EXIT_X = 832800;
+	const long PLAYERBOT_SOHAN_EXIT_Y = 294700;
+	const long PLAYERBOT_SPIDER_ARRIVAL_X = 60000;
+	const long PLAYERBOT_SPIDER_ARRIVAL_Y = 496600;
+	const long PLAYERBOT_SPIDER_EXIT_X = 60000;
+	const long PLAYERBOT_SPIDER_EXIT_Y = 494600;
+	const BYTE PLAYERBOT_SOHAN_MIN_LEVEL = 26;
+	const BYTE PLAYERBOT_SOHAN_MAX_LEVEL = 39;
+	const BYTE PLAYERBOT_SPIDER_MIN_LEVEL = 48;
+
+	// Where a frontier map is entered and where it is left, by map. Every
+	// place that used to choose between the valley and the desert with a
+	// ternary asks here instead, so a third and fourth map is a row, not a
+	// sweep through the sources.
+	bool GetPlayerBotFrontierArrival(long mapIndex, long& outX, long& outY)
+	{
+		switch (mapIndex)
+		{
+			case PLAYERBOT_MAP_ORC_VALLEY: outX = PLAYERBOT_ORC_VALLEY_ARRIVAL_X; outY = PLAYERBOT_ORC_VALLEY_ARRIVAL_Y; return true;
+			case PLAYERBOT_MAP_DESERT: outX = PLAYERBOT_DESERT_ARRIVAL_X; outY = PLAYERBOT_DESERT_ARRIVAL_Y; return true;
+			case PLAYERBOT_MAP_SOHAN: outX = PLAYERBOT_SOHAN_ARRIVAL_X; outY = PLAYERBOT_SOHAN_ARRIVAL_Y; return true;
+			case PLAYERBOT_MAP_SPIDER_V1: outX = PLAYERBOT_SPIDER_ARRIVAL_X; outY = PLAYERBOT_SPIDER_ARRIVAL_Y; return true;
+			default: return false;
+		}
+	}
+
+	bool GetPlayerBotFrontierExit(long mapIndex, long& outX, long& outY)
+	{
+		switch (mapIndex)
+		{
+			case PLAYERBOT_MAP_ORC_VALLEY: outX = PLAYERBOT_ORC_VALLEY_EXIT_X; outY = PLAYERBOT_ORC_VALLEY_EXIT_Y; return true;
+			case PLAYERBOT_MAP_DESERT: outX = PLAYERBOT_DESERT_EXIT_X; outY = PLAYERBOT_DESERT_EXIT_Y; return true;
+			case PLAYERBOT_MAP_SOHAN: outX = PLAYERBOT_SOHAN_EXIT_X; outY = PLAYERBOT_SOHAN_EXIT_Y; return true;
+			case PLAYERBOT_MAP_SPIDER_V1: outX = PLAYERBOT_SPIDER_EXIT_X; outY = PLAYERBOT_SPIDER_EXIT_Y; return true;
+			default: return false;
+		}
+	}
+
+	const char* GetPlayerBotFrontierName(long mapIndex)
+	{
+		switch (mapIndex)
+		{
+			case PLAYERBOT_MAP_ORC_VALLEY: return "orc_valley";
+			case PLAYERBOT_MAP_DESERT: return "desert";
+			case PLAYERBOT_MAP_SOHAN: return "sohan";
+			case PLAYERBOT_MAP_SPIDER_V1: return "spider_v1";
+			default: return "frontier";
+		}
+	}
 	// Ordinary spawns are levels 18-25 in Orc Valley and 26-30 in the Desert, but
 	// the Metins tell a different story: 40/45/50 in the Desert and 45/48/50 in
 	// Orc Valley. A stone is only worth breaking between stoneLevel-9 and
@@ -657,6 +722,14 @@ namespace
 	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
 	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
 	const DWORD PLAYERBOT_BOOSTER_VNUMS[] = { 71044, 71045 };
+	// The Blessing Scroll (CHUKBOK_SCROLL to the engine): a refine that fails
+	// under it drops the item one level instead of destroying it, at the
+	// table's own odds. The blacksmith without one removes the item on every
+	// failure - 1584 pieces in one afternoon. Scrolls come from the chest and
+	// are scarce, so they are spent where a failure costs most: from +6 up.
+	const DWORD PLAYERBOT_BLESSING_SCROLL_VNUM = 25040;
+	const BYTE PLAYERBOT_SCROLL_REFINE_MIN_PLUS = 6;
+	const DWORD PLAYERBOT_SCROLL_REFINE_INTERVAL = 45000;
 	// Neither map sells anything, so a visit is bounded and ends in Bokjung.
 	const DWORD PLAYERBOT_FRONTIER_MAX_VISIT_TIME = 2400000;
 	// ...but it also has to start. Without a floor the bot re-evaluated its needs
@@ -1063,6 +1136,7 @@ namespace
 			dwNextManaPotionTime(0),
 			dwNextChestTime(0),
 			dwNextBoosterTime(0),
+			dwNextScrollRefineTime(0),
 			dwNextPotionLogTime(0),
 			dwDeathDetectedTime(0),
 			dwNextReviveAttemptTime(0),
@@ -1229,6 +1303,7 @@ namespace
 		DWORD dwNextManaPotionTime;
 		DWORD dwNextChestTime;
 		DWORD dwNextBoosterTime;
+		DWORD dwNextScrollRefineTime;
 		DWORD dwNextPotionLogTime;
 		DWORD dwDeathDetectedTime;
 		DWORD dwNextReviveAttemptTime;

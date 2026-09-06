@@ -521,11 +521,46 @@ namespace
 				{ 264500, 552300, 0, 255, false }, { 327700, 552900, 0, 255, false }, { 253900, 570100, 0, 255, false },
 				{ 327800, 579500, 0, 255, false }, { 321600, 582700, 0, 255, false }, { 273800, 614900, 0, 255, false }
 			};
+			// Mount Sohan's ten densest spawn cells, snapped onto a spawn point, for
+			// the 26-39 band the map is; the Spider Dungeon's eight, for forty-eight
+			// and up - knights of 50 to 58, and the level filter keeps a bot on its
+			// own off the ones it cannot touch.
+			const TPlayerBotHuntingHub sohanHubs[] = {
+				{ 902400, 287700, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 850600, 288700, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 902800, 225600, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 901500, 249200, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 876500, 288900, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 838900, 262200, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 851000, 224100, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 863700, 276300, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 852100, 275000, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 874500, 275600, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false }
+			};
+			const TPlayerBotHuntingHub spiderHubs[] = {
+				{ 70000, 505300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 80400, 519800, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
+				{ 69800, 517300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 70300, 527500, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
+				{ 82100, 527400, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 59500, 517700, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
+				{ 58600, 504300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 59800, 527600, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }
+			};
 			const bool inDesert = ch->GetMapIndex() == PLAYERBOT_MAP_DESERT;
-			const TPlayerBotHuntingHub* hubs = inDesert ? desertHubs : orcValleyHubs;
-			const size_t hubCount = inDesert
-					? sizeof(desertHubs) / sizeof(desertHubs[0])
-					: sizeof(orcValleyHubs) / sizeof(orcValleyHubs[0]);
+			const TPlayerBotHuntingHub* hubs = orcValleyHubs;
+			size_t hubCount = sizeof(orcValleyHubs) / sizeof(orcValleyHubs[0]);
+			if (inDesert)
+			{
+				hubs = desertHubs;
+				hubCount = sizeof(desertHubs) / sizeof(desertHubs[0]);
+			}
+			else if (ch->GetMapIndex() == PLAYERBOT_MAP_SOHAN)
+			{
+				hubs = sohanHubs;
+				hubCount = sizeof(sohanHubs) / sizeof(sohanHubs[0]);
+			}
+			else if (ch->GetMapIndex() == PLAYERBOT_MAP_SPIDER_V1)
+			{
+				hubs = spiderHubs;
+				hubCount = sizeof(spiderHubs) / sizeof(spiderHubs[0]);
+			}
 			const DWORD pid = ch->GetPlayerID();
 			size_t hubIndex = 0;
 			int hubScore = 0;

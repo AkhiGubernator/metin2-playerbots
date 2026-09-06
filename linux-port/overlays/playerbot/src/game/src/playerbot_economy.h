@@ -644,13 +644,36 @@ namespace
 			// normal success/failure roll.  The return value only says that an attempt
 			// was performed, so compare the result item count to log its real outcome.
 			const int resultCountBefore = ch->CountSpecifyItem(nextVnum);
-			if (ch->DoRefine(item, false))
+			// With a Blessing Scroll in the bag and a level worth protecting, go
+			// the scroll's way: the engine reads the scroll from the cell set by
+			// SetRefineMode, spends it, and on failure hands back the item one
+			// level down rather than nothing.
+			int scrollCell = -1;
+			if (plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS)
+			{
+				for (WORD cell = 0; cell < INVENTORY_MAX_NUM && scrollCell < 0; ++cell)
+				{
+					LPITEM scroll = ch->GetInventoryItem(cell);
+					if (scroll && scroll->GetVnum() == PLAYERBOT_BLESSING_SCROLL_VNUM)
+						scrollCell = cell;
+				}
+			}
+			bool attempted = false;
+			if (scrollCell >= 0)
+			{
+				ch->SetRefineMode(scrollCell);
+				attempted = ch->DoRefineWithScroll(item);
+				ch->ClearRefineMode();
+			}
+			else
+				attempted = ch->DoRefine(item, false);
+			if (attempted)
 			{
 				const bool success = ch->CountSpecifyItem(nextVnum) > resultCountBefore;
 				BroadcastPlayerBotRefineSuccess(ch, item, (int)plusLevel + 1);
-				sys_log(0, "PLAYERBOT_AI: refine %s pid=%u name=%s old_vnum=%u new_vnum=%u plus=%u",
-						success ? "SUCCESS" : "FAILED_BURNED", ch->GetPlayerID(), ch->GetName(),
-						oldVnum, nextVnum, plusLevel + 1);
+				sys_log(0, "PLAYERBOT_AI: refine %s pid=%u name=%s old_vnum=%u new_vnum=%u plus=%u scroll=%d",
+						success ? "SUCCESS" : (scrollCell >= 0 ? "FAILED_DOWNGRADED" : "FAILED_BURNED"),
+						ch->GetPlayerID(), ch->GetName(), oldVnum, nextVnum, plusLevel + 1, scrollCell >= 0 ? 1 : 0);
 				++refinedCount;
 			}
 			else
@@ -665,6 +688,97 @@ namespace
 		}
 
 		return refinedCount > 0;
+	}
+
+	// The Blessing Scroll works from the bag, wherever the bot stands - a
+	// player uses one in the field, not at the anvil - so a bot carrying one
+	// does not wait for its next town visit to put it to use. In a quiet
+	// moment it takes the lowest worn piece at +6 or better, pays the table's
+	// fee and materials, and refines it under the scroll: on failure the piece
+	// comes back one level down instead of not at all.
+	bool ManagePlayerBotScrollRefine(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || !ch->IsItemLoaded() || dwNow < state.dwNextScrollRefineTime)
+			return false;
+		if (state.bCurrentAction == BOT_ACTION_FIGHT || state.bVisitingShop ||
+				state.bRecoveringAfterDeath || state.bTacticalRetreat || ch->IsDead())
+			return false;
+		state.dwNextScrollRefineTime = dwNow + PLAYERBOT_SCROLL_REFINE_INTERVAL;
+
+		int scrollCell = -1;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM && scrollCell < 0; ++cell)
+		{
+			LPITEM scroll = ch->GetInventoryItem(cell);
+			if (scroll && scroll->GetVnum() == PLAYERBOT_BLESSING_SCROLL_VNUM)
+				scrollCell = cell;
+		}
+		if (scrollCell < 0)
+			return false;
+
+		const BYTE wearSlots[] = {
+			WEAR_WEAPON, WEAR_BODY, WEAR_HEAD, WEAR_SHIELD,
+			WEAR_FOOTS, WEAR_WRIST, WEAR_NECK, WEAR_EAR
+		};
+		LPITEM best = NULL;
+		BYTE bestWear = 0;
+		for (size_t i = 0; i < sizeof(wearSlots) / sizeof(wearSlots[0]); ++i)
+		{
+			LPITEM item = ch->GetWear(wearSlots[i]);
+			if (!item || item->GetRefinedVnum() == 0 || item->isLocked() || item->IsExchanging())
+				continue;
+			const BYTE plus = item->GetRefineLevel();
+			if (plus < PLAYERBOT_SCROLL_REFINE_MIN_PLUS || plus >= GetPlayerBotRefineTarget(ch, item))
+				continue;
+			if (!IsPlayerBotWearableAtLevel(ch, item->GetRefinedVnum()))
+				continue;
+			const TRefineTable* recipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+			if (!recipe)
+				continue;
+			if (ch->GetGold() - GetPlayerBotReservedGold(ch) < (int)recipe->cost)
+				continue;
+			bool materials = true;
+			for (int m = 0; m < recipe->material_count && materials; ++m)
+				if (recipe->materials[m].vnum != 0 &&
+						ch->CountSpecifyItem(recipe->materials[m].vnum) < recipe->materials[m].count)
+					materials = false;
+			if (!materials)
+				continue;
+			if (!best || plus < best->GetRefineLevel())
+			{
+				best = item;
+				bestWear = wearSlots[i];
+			}
+		}
+		if (!best)
+			return false;
+
+		// Off, refined, and back on: the engine will not touch a worn piece, and
+		// the result is a new item in the same cell whatever the outcome.
+		if (ch->GetEmptyInventory(best->GetSize()) < 0)
+			return false;
+		const DWORD oldVnum = best->GetVnum();
+		const DWORD nextVnum = best->GetRefinedVnum();
+		const BYTE plus = best->GetRefineLevel();
+		if (!ch->UnequipItem(best) || best->IsEquipped())
+			return false;
+		const WORD cell = best->GetCell();
+		const int before = ch->CountSpecifyItem(nextVnum);
+		ch->SetRefineMode(scrollCell);
+		const bool attempted = ch->DoRefineWithScroll(best);
+		ch->ClearRefineMode();
+		LPITEM after = ch->GetInventoryItem(cell);
+		if (after)
+			ch->EquipItem(after);
+		if (attempted)
+		{
+			const bool success = ch->CountSpecifyItem(nextVnum) > before;
+			if (success)
+				BroadcastPlayerBotRefineSuccess(ch, after ? after : best, (int)plus + 1);
+			sys_log(0, "PLAYERBOT_AI: refine %s pid=%u name=%s old_vnum=%u new_vnum=%u plus=%u scroll=1 place=field wear=%u",
+					success ? "SUCCESS" : "FAILED_DOWNGRADED", ch->GetPlayerID(), ch->GetName(),
+					oldVnum, nextVnum, (unsigned int)plus + 1, (unsigned int)bestWear);
+		}
+		return attempted;
 	}
 
 	bool ManagePlayerBotMiscMerchant(LPCHARACTER ch)

@@ -1247,16 +1247,8 @@ void CPlayerBotManager::Update()
 						fallbackX = PLAYERBOT_MONKEY_EASY_ARRIVAL_X;
 						fallbackY = PLAYERBOT_MONKEY_EASY_ARRIVAL_Y;
 					}
-					else if (currentMap == PLAYERBOT_MAP_ORC_VALLEY)
-					{
-						fallbackX = PLAYERBOT_ORC_VALLEY_ARRIVAL_X;
-						fallbackY = PLAYERBOT_ORC_VALLEY_ARRIVAL_Y;
-					}
-					else if (currentMap == PLAYERBOT_MAP_DESERT)
-					{
-						fallbackX = PLAYERBOT_DESERT_ARRIVAL_X;
-						fallbackY = PLAYERBOT_DESERT_ARRIVAL_Y;
-					}
+					else
+						GetPlayerBotFrontierArrival(currentMap, fallbackX, fallbackY);
 					foundSafe = navigation.FindNearestWalkableWorld(
 							fallbackX, fallbackY, 30, safe, ch->GetPlayerID());
 				}
@@ -1472,6 +1464,7 @@ void CPlayerBotManager::Update()
 		UseUtilityPotions(ch, state, dwNow);
 		ManagePlayerBotChests(ch, state, dwNow);
 		UsePlayerBotBoosters(ch, state, dwNow);
+		ManagePlayerBotScrollRefine(ch, state, dwNow);
 		// This also catches a bot loaded from the database at critically low HP
 		// after a server restart.  Do not let it immediately reacquire a target.
 		if (!state.bRecoveringAfterDeath && ch->GetMaxHP() > 0 &&

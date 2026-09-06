@@ -17,6 +17,30 @@ every version here.
 
 ---
 
+## 1.29.7 — 2026-09-06
+
+### Naprawione
+
+- **„Góra Sohan” botów była drugą wioską Jinno.** Od 1.29.0 boty 26–39
+  szły na mapę 43 (`metin2_map_c3`, żołnierze 26–36) pod nazwą Sohan.
+  Prawdziwa Góra Sohan to mapa 61 (`map_n_snowm_01`): Zarażeni 49–58 na
+  południu, lodowe stwory i Yeti 62–66 na północy. Boty od 48 dzielą się
+  teraz na trzy: Loch Pająków, Sohan i Dolinę; 30–35 na pół między wyspy
+  Fanatyków i pustynię; poniżej 30 zostają w Bokjung. Czternaście hubów
+  Sohan z regen tej mapy (osiem wśród Zarażonych od 48, sześć w lodzie od
+  58), wejście ze spawnu miasta. Misje polowań na Zarażonych (wiersze od
+  41) są wykonalne, bo ich potwory mają teraz mapę. Mapa 43 wraca na rdzeń
+  Jinno, a boty, które na niej stały, migrator odsyła do Bokjung przy
+  pierwszym starcie po aktualizacji. Panel ma granice i kafelek mapy 61;
+  lista map, na których bot może stać, zna też 61 i 104 (dotąd boty z Lochu
+  Pająków wracały do Bokjung po każdym restarcie).
+- **Migrator nie ściąga już botów na środkową wyspę Doliny.** Krok z czasów,
+  gdy nawigacja nie znała mostów, przy każdym starcie przenosił każdego bota
+  spoza środkowej wyspy z powrotem na nią — 207 botów z wysp Fanatyków i
+  obozów Czarnych Orków na każdy restart. Usunięty.
+
+---
+
 ## 1.29.6 — 2026-09-06
 
 ### Naprawione

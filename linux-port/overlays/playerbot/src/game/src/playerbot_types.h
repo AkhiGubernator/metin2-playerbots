@@ -585,18 +585,25 @@ namespace
 	// the Chunjo entries of Town.txt, exits the NPC beside each - Sohan's
 	// Staruszek (20009) at cell (136,899), the dungeon's Yongbi teleporter
 	// (10015) at (88,82) - so a bot never crosses the map to leave.
-	const long PLAYERBOT_MAP_SOHAN = 43;
+	const long PLAYERBOT_MAP_SOHAN = 61;
 	const long PLAYERBOT_MAP_SPIDER_V1 = 104;
-	const long PLAYERBOT_SOHAN_ARRIVAL_X = 832800;
-	const long PLAYERBOT_SOHAN_ARRIVAL_Y = 294200;
-	const long PLAYERBOT_SOHAN_EXIT_X = 832800;
-	const long PLAYERBOT_SOHAN_EXIT_Y = 294700;
+	// map_n_snowm_01, base (358400,153600), 153600 square; the town spawn from
+	// its Town.txt (cell 768,768). 43 was the second Jinno village and carried
+	// soldiers of 26-36; Sohan proper is the Infected of 49-58 in the south and
+	// the ice creatures of 62-66 in the north.
+	const long PLAYERBOT_SOHAN_ARRIVAL_X = 435200;
+	const long PLAYERBOT_SOHAN_ARRIVAL_Y = 230400;
+	const long PLAYERBOT_SOHAN_EXIT_X = 435200;
+	const long PLAYERBOT_SOHAN_EXIT_Y = 230900;
 	const long PLAYERBOT_SPIDER_ARRIVAL_X = 60000;
 	const long PLAYERBOT_SPIDER_ARRIVAL_Y = 496600;
 	const long PLAYERBOT_SPIDER_EXIT_X = 60000;
 	const long PLAYERBOT_SPIDER_EXIT_Y = 494600;
-	const BYTE PLAYERBOT_SOHAN_MIN_LEVEL = 26;
-	const BYTE PLAYERBOT_SOHAN_MAX_LEVEL = 39;
+	const BYTE PLAYERBOT_SOHAN_MIN_LEVEL = 48;
+	const BYTE PLAYERBOT_SOHAN_MAX_LEVEL = 75;
+	// The ice creatures of the north (62-66) are for bots that have outgrown
+	// the Infected.
+	const BYTE PLAYERBOT_SOHAN_ICE_MIN_LEVEL = 58;
 	const BYTE PLAYERBOT_SPIDER_MIN_LEVEL = 48;
 
 	// Where a frontier map is entered and where it is left, by map. Every
@@ -1022,7 +1029,10 @@ namespace
 	// stands nowhere a bot can go.
 	struct TPlayerBotMobHome { DWORD vnum; long map1; long map2; };
 	const TPlayerBotMobHome PLAYERBOT_HUNTING_MOB_HOMES[] = {
-		{ 552, 23, 43 }, { 456, 23, 43 }, { 554, 23, 43 },
+		{ 552, 23, 0 }, { 456, 23, 0 }, { 554, 23, 0 },
+		// Mount Sohan (61): the Infected the rows from 41 ask for.
+		{ 901, 61, 0 }, { 902, 61, 0 }, { 903, 61, 0 }, { 904, 61, 0 }, { 905, 61, 0 }, { 906, 61, 0 },
+		{ 931, 61, 0 }, { 932, 61, 0 }, { 933, 61, 0 }, { 934, 61, 0 }, { 935, 61, 0 }, { 936, 61, 0 },
 		{ 651, 64, 0 }, { 652, 64, 0 }, { 653, 64, 0 },
 		{ 751, 64, 0 }, { 752, 64, 0 }, { 754, 64, 0 }, { 756, 64, 0 }, { 757, 64, 0 },
 		{ 2102, 63, 0 }, { 2051, 63, 0 }, { 2052, 63, 0 }, { 2106, 63, 0 },

@@ -121,7 +121,7 @@ stranded=$(db -e "
       FROM player.player p
       JOIN account.account a ON a.id = p.account_id
      WHERE LEFT(a.login, 10) = 'playerbot_'
-       AND p.map_index NOT IN (21, 23, 24, 25, 63, 64);
+       AND p.map_index NOT IN (21, 23, 24, 25, 61, 63, 64, 104);
 ")
 if [ -n "$stranded" ] && [ "$stranded" -gt 0 ] 2>/dev/null; then
     db -e "
@@ -129,36 +129,17 @@ if [ -n "$stranded" ] && [ "$stranded" -gt 0 ] 2>/dev/null; then
           JOIN account.account a ON a.id = p.account_id
            SET p.map_index = 23, p.x = 145500, p.y = 240000
          WHERE LEFT(a.login, 10) = 'playerbot_'
-           AND p.map_index NOT IN (21, 23, 24, 25, 63, 64);
+           AND p.map_index NOT IN (21, 23, 24, 25, 61, 63, 64, 104);
     "
     echo "[playerbot-migrate] moved $stranded bot(s) back to Bokjung"
 fi
 
-# Orc Valley's entrance used to be the map's Chunjo spawn point, which is walled
-# off from the hunting grounds: a bot that went there could reach 17 of 532 spawn
-# groups and could not walk back to the new exit either. Put anyone still sitting
-# in that corner into the region the map is actually played in, before the game
-# core loads them.
-echo "[playerbot-migrate] checking for bots stranded in the old Orc Valley corner"
-stranded_orc=$(db -e "
-    SELECT COUNT(*)
-      FROM player.player p
-      JOIN account.account a ON a.id = p.account_id
-     WHERE LEFT(a.login, 10) = 'playerbot_'
-       AND p.map_index = 64
-       AND (p.x < 306200 OR p.x > 360050 OR p.y < 721100 OR p.y > 767550);
-")
-if [ -n "$stranded_orc" ] && [ "$stranded_orc" -gt 0 ] 2>/dev/null; then
-    db -e "
-        UPDATE player.player p
-          JOIN account.account a ON a.id = p.account_id
-           SET p.x = 327200, p.y = 742300
-         WHERE LEFT(a.login, 10) = 'playerbot_'
-           AND p.map_index = 64
-           AND (p.x < 306200 OR p.x > 360050 OR p.y < 721100 OR p.y > 767550);
-    "
-    echo "[playerbot-migrate] moved $stranded_orc bot(s) into the Orc Valley hunting grounds"
-fi
+# There used to be a step here that pulled every bot outside Orc Valley's
+# central island back onto it, from the days when the navigation refused
+# water and the island was all a bot could reach. The bridges are crossings
+# now and the hubs span the whole valley - the Fanatic islands in the north,
+# the Black Orc camps in the south - so that step moved 207 bots off their
+# hunting grounds at every start. Gone on purpose.
 
 # The registry's own size is written into the seed, so the wrapper never has to
 # be edited in step with it. Hardcoding 350 here survived the move to a

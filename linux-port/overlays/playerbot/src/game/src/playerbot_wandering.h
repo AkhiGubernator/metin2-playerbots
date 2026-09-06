@@ -521,21 +521,26 @@ namespace
 				{ 264500, 552300, 0, 255, false }, { 327700, 552900, 0, 255, false }, { 253900, 570100, 0, 255, false },
 				{ 327800, 579500, 0, 255, false }, { 321600, 582700, 0, 255, false }, { 273800, 614900, 0, 255, false }
 			};
-			// Mount Sohan's ten densest spawn cells, snapped onto a spawn point, for
-			// the 26-39 band the map is; the Spider Dungeon's eight, for forty-eight
-			// and up - knights of 50 to 58, and the level filter keeps a bot on its
-			// own off the ones it cannot touch.
+			// Mount Sohan (61), from map_n_snowm_01/regen.txt: the Infected of 49-58
+			// in the south for forty-eight and up, the ice creatures of 62-66 in the
+			// north for fifty-eight and up. The Spider Dungeon's eight, for
+			// forty-eight and up - knights of 50 to 58, and the level filter keeps a
+			// bot on its own off the ones it cannot touch.
 			const TPlayerBotHuntingHub sohanHubs[] = {
-				{ 902400, 287700, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 850600, 288700, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 902800, 225600, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 901500, 249200, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 876500, 288900, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 838900, 262200, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 851000, 224100, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 863700, 276300, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 852100, 275000, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 874500, 275600, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false }
+				{ 432000, 272000, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 393600, 265600, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 470400, 291200, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 438400, 272000, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 412800, 278400, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 483200, 208000, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 380800, 220800, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 470400, 284800, PLAYERBOT_SOHAN_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 489600, 284800, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 464000, 240000, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 432000, 176000, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 432000, 220800, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 489600, 227200, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				{ 387200, 240000, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false }
 			};
 			const TPlayerBotHuntingHub spiderHubs[] = {
 				{ 70000, 505300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 80400, 519800, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },

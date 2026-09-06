@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T16:08:00Z",
-  "statusMessage": "Aktualizacja 1.29.6. Panel po przejeciu starszej instalacji odpowiadal Access denied do bazy (stare haslo w jego pliku konfiguracyjnym), choc gra dzialala - przy starcie panel bierze teraz dane bazy z .env. Reszta jak w 1.29.5.",
+  "publishedAt": "2026-09-06T17:16:00Z",
+  "statusMessage": "Aktualizacja 1.29.7. Gora Sohan botow to teraz prawdziwa mapa 61 (Zarazeni 49-58, lod 62-66) dla botow od 48; mapa 43 byla druga wioska Jinno i boty z niej wracaja do Bokjung. Migrator nie sciaga juz botow na srodek Doliny przy kazdym starcie. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.6",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.6/metin2-server-update-1.29.6.zip",
-    "sha256": "845EC0AE789D1340A8FC161818C1060214E6FBC701BEC019D59A353C6BE27288"
+    "version": "1.29.7",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.7/metin2-server-update-1.29.7.zip",
+    "sha256": "C513EA223A77958F199FF7B8E71014162D85D404AFFD2D521D7220BC012DBC6B"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

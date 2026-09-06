@@ -200,27 +200,24 @@ namespace
 
 		const BYTE level = ch->GetLevel();
 		const DWORD draw = PlayerBotNavHash(ch->GetPlayerID() ^ 0x45534f54U);
-		// Forty-eight and up: the Spider Dungeon for half, the valley's camps
-		// for the other half, decided once per character so the answer does not
-		// change under a bot halfway there.
-		if (level >= PLAYERBOT_SPIDER_MIN_LEVEL && (draw & 1U) != 0)
-			return PLAYERBOT_MAP_SPIDER_V1;
-		if (level >= PLAYERBOT_ORC_VALLEY_MIN_LEVEL && level <= PLAYERBOT_ORC_VALLEY_MAX_LEVEL)
-			return PLAYERBOT_MAP_ORC_VALLEY;
-		// Thirty to thirty-five: the Fanatic islands, the desert and Mount Sohan
-		// share the population three ways.
-		if (level >= PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL && level < PLAYERBOT_ORC_VALLEY_MIN_LEVEL)
+		// Forty-eight and up: the Spider Dungeon, Mount Sohan and the valley's
+		// camps share the population three ways, decided once per character so
+		// the answer does not change under a bot halfway there.
+		if (level >= PLAYERBOT_SPIDER_MIN_LEVEL && level >= PLAYERBOT_SOHAN_MIN_LEVEL)
 		{
 			switch (draw % 3U)
 			{
-				case 0: return PLAYERBOT_MAP_ORC_VALLEY;
+				case 0: return PLAYERBOT_MAP_SPIDER_V1;
 				case 1: return PLAYERBOT_MAP_SOHAN;
-				default: return PLAYERBOT_MAP_DESERT;
+				default: break;
 			}
 		}
-		// Twenty-six to twenty-nine: Sohan for half, Bokjung keeps the rest.
-		if (level >= PLAYERBOT_SOHAN_MIN_LEVEL && (draw & 2U) != 0)
-			return PLAYERBOT_MAP_SOHAN;
+		if (level >= PLAYERBOT_ORC_VALLEY_MIN_LEVEL && level <= PLAYERBOT_ORC_VALLEY_MAX_LEVEL)
+			return PLAYERBOT_MAP_ORC_VALLEY;
+		// Thirty to thirty-five: the Fanatic islands and the desert share the
+		// population. Below thirty Bokjung keeps everyone.
+		if (level >= PLAYERBOT_ORC_VALLEY_ESOTERIC_MIN_LEVEL && level < PLAYERBOT_ORC_VALLEY_MIN_LEVEL)
+			return (draw & 1U) != 0 ? PLAYERBOT_MAP_ORC_VALLEY : PLAYERBOT_MAP_DESERT;
 		return 0;
 	}
 

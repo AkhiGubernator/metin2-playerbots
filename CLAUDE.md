@@ -227,12 +227,18 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   nobody got a chest.
 - **The frontier is four maps and one table.** `GetPlayerBotFrontierArrival`,
   `GetPlayerBotFrontierExit` and `GetPlayerBotFrontierName` in
-  `playerbot_types.h` answer for Orc Valley, the desert, Mount Sohan (43,
-  Black Wind and Wild soldiers 26-36, three Metin kinds) and the Spider
-  Dungeon V1 (104, knights 50-58); `GetPlayerBotFrontierMapForLevel` routes
-  by level and pid. Both new maps were moved onto the game1 core in
-  `m2-render-config` - a bot cannot walk onto a map its own core does not
-  host. Adding a fifth map: a row in each helper, a hub table in
+  `playerbot_types.h` answer for Orc Valley, the desert, Mount Sohan (61,
+  `map_n_snowm_01`: the Infected of 49-58 in the south, ice creatures of
+  62-66 in the north) and the Spider Dungeon V1 (104, spiders 50-58);
+  `GetPlayerBotFrontierMapForLevel` routes by level and pid. **Map 43 is not
+  Sohan** - `metin2_map_c3` is the second Jinno village with soldiers of
+  26-36, and 1.29.0 to 1.29.6 sent the 26-39 band there under Sohan's name;
+  the map index says nothing, read `map/index` and the regen before naming
+  a map. 104 was moved onto the game1 core in `m2-render-config` - a bot
+  cannot walk onto a map its own core does not host; 61 was there already.
+  `apply.sh` keeps the list of maps a bot may stand on and sends the rest
+  back to Bokjung at every start - add a map there too, or its bots walk
+  home on the next restart. Adding a fifth map: a row in each helper, a hub table in
   `playerbot_wandering.h`, the navigation whitelist, the panel's bounds,
   names and tiles, and the core's MAP_ALLOW.
 - **A mission is only as good as the map its monster stands on.** The

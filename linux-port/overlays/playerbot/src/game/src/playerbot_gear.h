@@ -338,6 +338,17 @@ namespace
 				 item->GetSubType() == ARMOR_FOOTS || item->GetSubType() == ARMOR_SHIELD))
 		{
 			score += (long long)(item->GetValue(1) + 2 * item->GetValue(5)) * 1000;
+			// A piece the bot has outgrown by twenty levels or more loses ground
+			// for every level past that. By the defence figure alone a Battle
+			// Shield +6 (3 + 2*18) beats a level-41 shield at +3 (5 + 2*16), and
+			// 61 of the bots past forty wore exactly that: the level-1 shield
+			// bought at level 1, refined once and never put down, while the
+			// level-41 shield sat in the bag. Each refine on the higher tier is
+			// worth more than one on the lower, so the bot switches tiers and
+			// refines that - a level-41 shield at +4 beats a level-21 one at +6.
+			if (ch && (int)ch->GetLevel() - item->GetLevelLimit() > PLAYERBOT_ARMOR_OUTGROWN_LEVELS)
+				score -= (long long)((int)ch->GetLevel() - item->GetLevelLimit() -
+						PLAYERBOT_ARMOR_OUTGROWN_LEVELS) * PLAYERBOT_ARMOR_OUTGROWN_PENALTY;
 		}
 
 		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)

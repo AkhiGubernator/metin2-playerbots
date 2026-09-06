@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [ValidateRange(30, 600)]
     [int]$DockerTimeoutSeconds = 180,
@@ -289,6 +289,39 @@ function Initialize-DotEnvFile {
     Write-Host "Zapisz je. Jest tez w pliku linux-port\docker\.env (M2_PANEL_PASSWORD)." -ForegroundColor Yellow
 }
 
+function Get-DockerDesktopCandidates {
+    # The three stock folders, then wherever the CLI on PATH lives (Docker
+    # Desktop keeps docker.exe under <install>\resources\bin), then the
+    # uninstall entry's InstallLocation. Two players had Docker on another
+    # drive: the launcher stopped Docker Desktop for them and then could not
+    # start it again, and the update that happened to come between the two
+    # got the blame.
+    $paths = New-Object System.Collections.Generic.List[string]
+    foreach ($p in @(
+            (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
+            (Join-Path ${env:ProgramFiles(x86)} 'Docker\Docker\Docker Desktop.exe'),
+            (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe'))) {
+        if ($p) { $paths.Add($p) }
+    }
+    try {
+        $cli = (Get-Command docker -ErrorAction Stop).Source
+        if ($cli) {
+            $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $cli))
+            if ($root) { $paths.Add((Join-Path $root 'Docker Desktop.exe')) }
+        }
+    }
+    catch { }
+    foreach ($key in @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop',
+                       'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop')) {
+        try {
+            $loc = (Get-ItemProperty -LiteralPath $key -ErrorAction Stop).InstallLocation
+            if ($loc) { $paths.Add((Join-Path $loc 'Docker Desktop.exe')) }
+        }
+        catch { }
+    }
+    return @($paths | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Unique)
+}
+
 function Initialize-InstallationIdentity {
     $envPath = Join-Path $PSScriptRoot 'linux-port\docker\.env'
     if (-not (Test-Path -LiteralPath $envPath -PathType Leaf)) {
@@ -498,15 +531,9 @@ if (-not (Test-DockerApi)) {
         # Wrap the pipeline result as an array. Without the outer @(), a single
         # matching path becomes a scalar string and [0] means its first letter
         # ("C") instead of the first path.
-        $desktopCandidates = @(
-            @(
-                (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
-                (Join-Path ${env:ProgramFiles(x86)} 'Docker\Docker\Docker Desktop.exe'),
-                (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe')
-            ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
-        )
+        $desktopCandidates = @(Get-DockerDesktopCandidates)
         if ($desktopCandidates.Count -eq 0) {
-            throw 'Docker Desktop executable was not found.'
+            throw 'Nie znaleziono programu Docker Desktop (szukano w Program Files, LOCALAPPDATA, obok docker.exe i w rejestrze). Uruchom Docker Desktop recznie i kliknij GRAJ.'
         }
         Start-Process -FilePath $desktopCandidates[0] -WindowStyle Hidden
     }

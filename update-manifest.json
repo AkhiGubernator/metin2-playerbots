@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T18:37:00Z",
-  "statusMessage": "Aktualizacja 1.29.9. Boty zlomiarze (suwak w panelu, domyslnie wylaczone), lucznik ciagnie 3-4 cele, wypad po drop z Metina, wypady druzyn na Wodza Orkow i Krolowa Pajakow, szkatulki bossow otwierane. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T19:33:00Z",
+  "statusMessage": "Aktualizacja 1.29.10. Docker Desktop znajdowany tez poza standardowym katalogiem (blad Nie znaleziono programu Docker Desktop po STOP). Mniejsze obciazenie procesora: gotowe trasy dla botow idacych ta sama droga. Boty zakladaja tarcze i zbroje ze swojego progu zamiast Bojowej Tarczy+6. Suwaki szkatulek w panelu, szyldy straganow mowia co jest na ladzie. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.9",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.9/metin2-server-update-1.29.9.zip",
-    "sha256": "91BD5D54ED5EBBC3B2FB8D81BFECE4D0875F77502A4838724EF4D5FFC5064CFD"
+    "version": "1.29.10",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.10/metin2-server-update-1.29.10.zip",
+    "sha256": "A9C7476E1BC952BABD6AE95C757230EAB1225B9C9B67C108B5A4E90DC0023DD2"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -17,6 +17,56 @@ every version here.
 
 ---
 
+## 1.29.10 — 2026-09-06
+
+### Naprawione
+
+- **„Nie znaleziono programu Docker Desktop” po STOP albo po aktualizacji.**
+  Launcher szukał `Docker Desktop.exe` tylko w trzech standardowych
+  katalogach; kto miał Dockera na innym dysku, ten po zatrzymaniu serwera
+  (które zatrzymuje też Docker Desktop) nie mógł go już uruchomić z
+  launchera, a aktualizacja, która trafiła w międzyczasie, dostawała winę.
+  Launcher szuka teraz też obok `docker.exe` z PATH i w rejestrze (wpis
+  odinstalowania, `InstallLocation`). Do tego czasu: uruchomić Docker
+  Desktop ręcznie i kliknąć GRAJ.
+- **Dalekie plany w Dolinie liczone raz, nie dla każdego bota z osobna.**
+  Daleki plan trasy (ponad 12 km) kosztował 150–250 ms rdzenia, a w Dolinie
+  szło ich 60–120 na minutę — 10–25 s z każdej minuty — i prawie wszystkie
+  były tą samą drogą: wejście na mapę do huba, hub do wyjścia, hub do huba,
+  proszone przez kolejne boty z tego samego kilkuset metrów. Rdzeń trzyma
+  teraz policzone trasy (start i cel zaokrąglone do 1,2 km, dołączenie tylko
+  przy czystym pierwszym odcinku, ważność 10 minut, do 400 tras na mapę) i
+  bot idący tam, gdzie ktoś już szedł, dostaje gotową trasę bez liczenia.
+  Linia `PLAYERBOT_LOAD` ma `cached=`, a każdy daleki plan ma wpis z celem,
+  wynikiem i kosztem. Pomiar przy 843 botach: 107–176 gotowych tras
+  na minutę, dalekie plany ze 100–170 na 38–93, rdzeń z 45–56% na 35–40%.
+
+- **Boty po 40 nosiły Bojową Tarczę+6 z pierwszego poziomu.** Silnik liczy
+  obronę jako `value1 + 2·value5`, więc Bojowa Tarcza+6 (39) wygrywała z
+  Czarną Okrągłą Tarczą+3 (37) i bot nosił ją „uczciwie” — 61 botów po
+  czterdziestce miało tarczę z 1 poziomu na grzbiecie, a 41-tarczę w
+  plecaku. Element zbroi przerośnięty o ponad 20 poziomów traci punkty za
+  każdy dalszy poziom, więc bot zakłada tarczę, zbroję, hełm i buty z
+  właściwego progu i dopiero je ulepsza (cel ulepszania to nadal +6 i wyżej);
+  41-tarcza od +4 wygrywa z 21-tarczą+6. Zgłoszenie z serwera.
+
+### Nowe
+
+- **Suwaki Szkatułek Księżycowych w panelu.** Zakładka zachowania botów ma
+  dwa suwaki: szansa na szkatułkę z zabitego potwora (‰) i z rozbitego
+  Metina (‰). Rdzeń przepisuje je do silnika w pięć sekund, bez restartu i
+  bez edycji `.env`; dopóki nikt ich nie zapisze, obowiązuje `.env`.
+- **Szyld straganu mówi, co jest na ladzie.** Dotąd szyld to była nazwa
+  konta bota, więc targowisko z czterdziestoma straganami czytało się jak
+  ściana identycznych napisów. Szyld powstaje z zawartości lady: „Bron 30:
+  Miecz Zabojcy”, „Zbroja Smoka+7”, „Futro Wilka, Skora Niedzwiedzia”,
+  „Ksiegi: Aura Miecza i inne”, „Zlom do palenia +0..+3” albo „Zolc
+  Niedzwiedzia i inne”; krótki przedrostek zależny od bota (Tanio, Okazja,
+  Sprzedam) tylko, gdy mieści się w 32 znakach. Szyld jest też w logu
+  otwarcia straganu. Pomysł z Discorda (Renagaruu).
+
+---
+
 ## 1.29.9 — 2026-09-06
 
 ### Nowe

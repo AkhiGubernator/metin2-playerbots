@@ -254,6 +254,39 @@ function Get-M2ExcludedPortHit {
     return $null
 }
 
+function Get-DockerDesktopCandidates {
+    # The three stock folders, then wherever the CLI on PATH lives (Docker
+    # Desktop keeps docker.exe under <install>\resources\bin), then the
+    # uninstall entry's InstallLocation. Two players had Docker on another
+    # drive: the launcher stopped Docker Desktop for them and then could not
+    # start it again, and the update that happened to come between the two
+    # got the blame.
+    $paths = New-Object System.Collections.Generic.List[string]
+    foreach ($p in @(
+            (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
+            (Join-Path ${env:ProgramFiles(x86)} 'Docker\Docker\Docker Desktop.exe'),
+            (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe'))) {
+        if ($p) { $paths.Add($p) }
+    }
+    try {
+        $cli = (Get-Command docker -ErrorAction Stop).Source
+        if ($cli) {
+            $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $cli))
+            if ($root) { $paths.Add((Join-Path $root 'Docker Desktop.exe')) }
+        }
+    }
+    catch { }
+    foreach ($key in @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop',
+                       'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop')) {
+        try {
+            $loc = (Get-ItemProperty -LiteralPath $key -ErrorAction Stop).InstallLocation
+            if ($loc) { $paths.Add((Join-Path $loc 'Docker Desktop.exe')) }
+        }
+        catch { }
+    }
+    return @($paths | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Unique)
+}
+
 function Get-M2DockerPreflight {
     param(
         [Parameter(Mandatory = $true)][string]$ServerRoot,
@@ -289,13 +322,7 @@ function Get-M2DockerPreflight {
         [void]$blocking.Add('Zainstaluj Docker Desktop z oficjalnej strony i uruchom ponownie launcher.')
     }
 
-    $desktopCandidates = @(
-        @(
-            (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
-            (Join-Path ${env:ProgramFiles(x86)} 'Docker\Docker\Docker Desktop.exe'),
-            (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe')
-        ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
-    )
+    $desktopCandidates = @(Get-DockerDesktopCandidates)
     if (-not $dockerEngineReady -and $desktopCandidates.Count -eq 0) {
         [void]$blocking.Add('Nie znaleziono programu Docker Desktop. Zainstaluj go przed uruchomieniem serwera.')
     }

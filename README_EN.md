@@ -7,7 +7,7 @@ A local Metin2 singleplayer world populated by genuine, autonomous player charac
 ## 💬 Community & Project Support
 
 - **[Join our Discord server](https://discord.gg/6v4WkDY6a)** — discuss the project, share playtests and ideas, and follow playerbot development updates.
-- **[Support development on Zrzutka.pl](https://zrzutka.pl/rw4g7p)** — voluntary donations help cover the tools and AI models used to develop the project.
+- **[Support development on buycoffee.to](https://buycoffee.to/metin2-playerbots)** — voluntary donations help cover the tools and AI models used to develop the project.
 
 Every contribution — testing, bug reports, ideas, code, or financial support — helps us build a more autonomous and lively Metin2 world.
 
@@ -22,16 +22,19 @@ Unlike conventional external client-bot scripts, bots in this project are **firs
 
 - ⚔️ **Smart Combat Engine**: Full support for all character classes (Warrior, Sura BM/WP, Ninja Dagger/Archer, Shaman), smooth combo animations, projectile-based bow attacks consuming arrows, active buff maintenance, and skill rotations.
 - 🗺️ **Global 2D NavGrid (A*)**: High-resolution collision grid generated from engine map attributes (`server_attr`) coupled with Global A* and String-Pulling line-of-sight trajectory smoothing.
-- 🚪 **Multi-map Travel**: Autonomous portal traversal across M1 ↔ M2 ↔ M3 and the internal teleports of the Easy Monkey Dungeon. Bots choose zones according to level and equipment readiness.
+- 🚪 **Multi-map Travel**: Autonomous crossings M1 ↔ M2 ↔ M3, the Easy Monkey Dungeon, Orc Valley, the Yongbi Desert, Mount Sohan and the Spider Dungeon V1. Bots pick the map by level and the hub on it by the population's shared memory of where the monsters stand.
+- 🏹 **Hunting missions to level 55 and the Orc Tooth**: the official `levelup` missions taken without a dialog, the option chosen for the map the bot is on; seven Biologist missions including the Orc Tooth and the Soul Stone.
+- 🎁 **Chests and bosses**: Moonlight Treasure Chests and boss caskets are opened and their contents used (bonus scrolls, speed potions, the Blessing Scroll for refines from +6). Parties, guild mates first, raid the Orc Chief and the Spider Queen.
 - 💎 **Metin Stone Hunting**: Dedicated roving Metin hunters patrolling the map, shattering stones, and clearing spawned add waves.
 - 🎒 **Looting & Town Economy**: Post-battle loot collection, automated equipment evaluation including shields, appropriate merchant visits, potion restocking, and gear refinement at the **Blacksmith**.
 - 🐴 **Horse Progression**: Real Horse Medal expeditions into the Monkey Dungeon, delivery to the nearest Stable Boy, and mounted long-distance travel.
-- 👥 **Party & Squad Dynamics**: Dynamic 2–3 player squad formations, cooperative exping, and pulling mobs in dense monster camps.
+- 👥 **Party & Squad Dynamics**: Dynamic 2–3 player squads, and up to 8 in Orc Valley for the Black Orc camps; cooperative exping and pulling mobs in dense monster camps.
 - 🏪 **Stalls and a bot-to-bot market**: Bots open private stalls in Bokjung and **buy from each other** — the refine material someone is short of, or a piece of gear better than what they are wearing. Anything at +7 or above is never sold to an NPC merchant.
 - 🧬 **Biologist missions**: Collecting specimens and handing them in stage by stage, driven without a quest dialog.
 - 🎣 **Fishing**: A full session — bait written into the rod's socket, waiting for the bite, and pulling inside the six-second window.
 - ✨ **Bonus rerolling**: Bots use Change and Add Attribute stones on gear they are not currently wearing.
-- 🧠 **Personality and goals**: Every bot has its own character and ambition (Metin hunter, collector, horse breeder) that decides what it does with a given hour.
+- 🧠 **Personality and goals**: Every bot has its own character and ambition (Metin hunter, collector, horse breeder, a "dropper" of Metins, M3, M2 or medals) that decides what it does with a given hour.
+- 🎛️ **The panel steers behaviour live**: goal weight sliders, a switch for the bots' overhead chat, scrap keepers selling cheap fodder for the blacksmith, and the Moonlight chest chance — all read by the core within five seconds, no restart.
 - 💾 **Native MariaDB Persistence**: Each bot has its own persistent account and character entry in MariaDB, retaining Level, EXP, Yang, items, and quest flags across server restarts.
 
 ---
@@ -41,12 +44,10 @@ Unlike conventional external client-bot scripts, bots in this project are **firs
 The project is under active research and development.
 
 > [!NOTE]
-> **Supported Kingdom:** The autonomous world currently covers **Chunjo**: Joan (M1, map 21), Bokjung (M2, map 23), Waryong/M3 (map 24), the Easy Monkey Dungeon (map 25, levels 18–26), **Orc Valley** (map 64), and the **Yongbi Desert** (map 63). More Chunjo regions and the other kingdoms (*Shinsoo – Reds* and *Jinno – Blues*) remain future work.
->
-> In Orc Valley the bots use the main contiguous landmass. The bridge-linked islands stay out of reach: bridge decks are a client-side object and are absent from the server collision layer the bots route on.
+> **Supported Kingdom:** The autonomous world currently covers **Chunjo**: Joan (M1, map 21), Bokjung (M2, map 23), Waryong/M3 (map 24), the Easy Monkey Dungeon (map 25, levels 18–26), **Orc Valley** (map 64, all 23 islands and their bridges), the **Yongbi Desert** (map 63), **Mount Sohan** (map 61, from level 48) and the **Spider Dungeon V1** (map 104, from level 48). The other kingdoms (*Shinsoo – Reds* and *Jinno – Blues*) remain future work.
 
-### Resource Footprint (measured with 742 bots alive)
-- **Game Engine (`game core`)**: ~1.76 GiB RAM, ~32% of one core
+### Resource Footprint (measured with 843 bots alive)
+- **Game Engine (`game core`)**: ~1.8 GiB RAM, ~25–38% of one core (a route planner on its own grid, with a memory of planned routes)
 - **Database (`MariaDB`)**: ~89 MiB RAM
 - **Web Admin Panel & Live Map**: ~270 MiB RAM
 - Runs smoothly in the background on standard modern developer PCs.
@@ -106,7 +107,8 @@ Manage bots directly via in-game chat (requires GM / Administrator permissions):
 - [ ] **Phase 2B**: Orc Valley ✅ and Yongbi Desert ✅ — full **Demon Tower (DT)** runs still to come.
 - [ ] **Phase 3**: Reading Skill Books (KU) and Soul Stones (KD), advanced skill priority trees.
 - [x] **Phase 4A**: Early Biologist missions and first-stage horse progression backed by real Horse Medal drops.
-- [ ] **Phase 4B** *(up next)*: Orc Tooth and later Biologist missions plus Combat and Military Horse progression. Bots are to keep the same cooldowns a player has and use the potion that shortens the wait, with the same success chance the quests use.
+- [x] **Phase 4B**: the Orc Tooth and the Soul Stone at the Biologist (with the quest's own chance of a spoiled tooth), hunting missions to level 55, the battle horse from the desert trial.
+- [ ] **Phase 4C** *(up next)*: later Biologist missions, three kingdoms and kingdom wars.
 - [ ] **Phase 5**: Fishing ✅ — mining ore veins and alchemy crafting still to come.
 - [x] **Phase 6**: Private bot stalls in town and bot-to-bot trading. Pricing is still fixed-tier rather than demand-driven.
 

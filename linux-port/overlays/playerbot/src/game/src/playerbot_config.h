@@ -23,6 +23,13 @@
 // as often - and anything outside it is clamped rather than rejected, because a
 // slider that silently does nothing is worse than one that stops at its end.
 
+// The Moonlight chest event lives in the engine (patch 0006): thousandths of
+// a chance per kill and per Metin stone, read from CONFIG at start. The panel
+// moves them here through the same file as the weights, so the operator does
+// not edit .env and restart to see more chests.
+extern int g_iMoonlightChestPermille;
+extern int g_iMoonlightChestStonePermille;
+
 namespace
 {
 	enum EPlayerBotWeight
@@ -82,6 +89,11 @@ namespace
 	// Percent of stall keepers that sell scrap gear. Zero is off, and the
 	// default: it is the "hard server" flavour, asked for by name.
 	int s_iPlayerBotScrapPercent = 0;
+	// What CONFIG said before the file ever overrode it, so a file that stops
+	// mentioning the chests hands the numbers back to CONFIG.
+	int s_iPlayerBotChestConfigPermille = -1;
+	int s_iPlayerBotChestStoneConfigPermille = -1;
+	bool s_bPlayerBotChestFromFile = false;
 	bool s_bPlayerBotOverheadChatReported = true;
 	bool s_bPlayerBotWeightsInitialised = false;
 	DWORD s_dwPlayerBotWeightNextCheck = 0;
@@ -102,6 +114,14 @@ namespace
 			s_aiPlayerBotWeights[i] = PLAYERBOT_WEIGHT_NEUTRAL;
 		s_bPlayerBotOverheadChat = true;
 		s_iPlayerBotScrapPercent = 0;
+		if (s_iPlayerBotChestConfigPermille < 0)
+		{
+			s_iPlayerBotChestConfigPermille = g_iMoonlightChestPermille;
+			s_iPlayerBotChestStoneConfigPermille = g_iMoonlightChestStonePermille;
+		}
+		g_iMoonlightChestPermille = s_iPlayerBotChestConfigPermille;
+		g_iMoonlightChestStonePermille = s_iPlayerBotChestStoneConfigPermille;
+		s_bPlayerBotChestFromFile = false;
 		s_bPlayerBotWeightsInitialised = true;
 	}
 
@@ -144,6 +164,18 @@ namespace
 				s_bPlayerBotOverheadChatReported = enabled;
 			}
 			s_bPlayerBotOverheadChat = enabled;
+			return;
+		}
+		if (PlayerBotWeightNameEquals(szKey, "CHEST") || PlayerBotWeightNameEquals(szKey, "CHEST_STONE"))
+		{
+			const int permille = value < 0 ? 0 : (value > 1000 ? 1000 : (int)value);
+			int& target = PlayerBotWeightNameEquals(szKey, "CHEST")
+					? g_iMoonlightChestPermille : g_iMoonlightChestStonePermille;
+			if (target != permille)
+				sys_log(0, "PLAYERBOT_CONFIG: moonlight chest %s %d -> %d permille",
+						PlayerBotWeightNameEquals(szKey, "CHEST") ? "kill" : "stone", target, permille);
+			target = permille;
+			s_bPlayerBotChestFromFile = true;
 			return;
 		}
 		if (PlayerBotWeightNameEquals(szKey, "SCRAP"))

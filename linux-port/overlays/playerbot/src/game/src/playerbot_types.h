@@ -122,6 +122,7 @@ namespace
 	// Deferred is not lost: the bot asks again within two seconds.
 	DWORD s_uPlayerBotLoadPlanDeferred = 0;
 	DWORD s_uPlayerBotLoadPlanResumed = 0;
+	DWORD s_uPlayerBotLoadPlanCached = 0;
 
 	inline DWORD PlayerBotClockUs()
 	{
@@ -740,6 +741,11 @@ namespace
 	// point back. A skill that reached seventeen without turning Master is
 	// left there rather than pushed on - every further point is a point the
 	// bot never gets back - and a scroll from a counter buys another roll.
+	// An armour piece more than this many levels below the bot is outgrown and
+	// loses this much score per level past that, so a tier-appropriate piece
+	// at a low refine displaces the starter piece at +6 and gets refined.
+	const int PLAYERBOT_ARMOR_OUTGROWN_LEVELS = 20;
+	const long long PLAYERBOT_ARMOR_OUTGROWN_PENALTY = 1500;
 	const DWORD PLAYERBOT_SKILL_FORGET_SCROLL_VNUM = 70037;
 	// Scrap keepers: the share of stall keepers (percent, from the panel) that
 	// put their low refines on the counter instead of vendoring them, for the

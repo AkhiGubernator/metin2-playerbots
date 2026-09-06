@@ -1053,6 +1053,17 @@ namespace
 				? PLAYERBOT_SHOP_MERCHANT_ITEMS : PLAYERBOT_SHOP_MAX_ITEMS;
 		BYTE tableCount = 0;
 		int bestScore = 0;
+		// What the sign will say. The counter is sorted best first, so the first
+		// line is the headline; the rest decides the wording.
+		const char* pszBestName = NULL;
+		const char* pszWeapon30 = NULL;
+		const char* pszPrecious = NULL;
+		BYTE bPreciousRefine = 0;
+		const char* apszMaterials[2] = { NULL, NULL };
+		int iMaterials = 0;
+		const char* pszBook = NULL;
+		int iBooks = 0;
+		int iScrap = 0;
 		for (size_t i = 0; i < scored.size() && tableCount < tableLimit; ++i)
 		{
 			const WORD cell = scored[i].second;
@@ -1079,6 +1090,34 @@ namespace
 			if (scored[i].first > bestScore)
 				bestScore = scored[i].first;
 			++tableCount;
+
+			const char* pszName = proto->szLocaleName;
+			if (!pszBestName)
+				pszBestName = pszName;
+			if (IsPlayerBotSpecialLevel30Weapon(item))
+				pszWeapon30 = pszWeapon30 ? pszWeapon30 : pszName;
+			else if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
+			{
+				if (!pszPrecious || item->GetRefineLevel() > bPreciousRefine)
+				{
+					pszPrecious = pszName;
+					bPreciousRefine = item->GetRefineLevel();
+				}
+			}
+			else if (IsPlayerBotTradeableMaterial(item))
+			{
+				if (iMaterials < 2)
+					apszMaterials[iMaterials] = pszName;
+				++iMaterials;
+			}
+			else if (item->GetType() == ITEM_SKILLBOOK)
+			{
+				pszBook = pszBook ? pszBook : pszName;
+				++iBooks;
+			}
+			else if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+					item->GetRefineLevel() < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
+				++iScrap;
 		}
 		// Asked again here rather than trusting the scan above: the inventory
 		// moves between the two - a town errand happens in between - and a stall
@@ -1091,8 +1130,39 @@ namespace
 			return false;
 		}
 
+		// The sign says what is on the counter - a market of forty stalls all
+		// signed with account names read as a wall of nothing, and a themed
+		// phrase drawn at random read as the same wall in fancy dress. The
+		// headline is the best line; the wording says what kind of counter it
+		// is; a short prefix by pid keeps neighbours from matching word for word.
 		char sign[SHOP_SIGN_MAX_LEN + 1];
-		snprintf(sign, sizeof(sign), "%s", ch->GetName());
+		{
+			static const char* const s_apszPrefixes[] = { "", "Tanio: ", "Okazja: ", "Sprzedam " };
+			const char* pszPrefix = s_apszPrefixes[(ch->GetPlayerID() * 2654435761U >> 8) % 4U];
+			char body[SHOP_SIGN_MAX_LEN * 2 + 1];
+			if (pszWeapon30)
+				snprintf(body, sizeof(body), "Bron 30: %s", pszWeapon30);
+			else if (pszPrecious)
+				snprintf(body, sizeof(body), "%s", pszPrecious); // the name carries its +N
+			else if (iMaterials >= 2)
+				snprintf(body, sizeof(body), "%s, %s", apszMaterials[0], apszMaterials[1]);
+			else if (iBooks > 1 && iBooks >= tableCount / 2)
+				snprintf(body, sizeof(body), "Ksiegi: %s i inne", pszBook);
+			else if (iBooks == 1 && tableCount == 1)
+				snprintf(body, sizeof(body), "Ksiega: %s", pszBook);
+			else if (iScrap > 0 && iScrap >= tableCount / 2)
+				snprintf(body, sizeof(body), "Zlom do palenia +0..+3");
+			else if (pszBestName && tableCount > 1)
+				snprintf(body, sizeof(body), "%s i inne", pszBestName);
+			else
+				snprintf(body, sizeof(body), "%s", pszBestName ? pszBestName : ch->GetName());
+			// The prefix goes only where the whole line still fits: the goods are
+			// the point, the flourish is not.
+			if (strlen(pszPrefix) + strlen(body) <= SHOP_SIGN_MAX_LEN)
+				snprintf(sign, sizeof(sign), "%s%s", pszPrefix, body);
+			else
+				snprintf(sign, sizeof(sign), "%s", body);
+		}
 
 		// Opening a stall costs a shop bundle, exactly as it does for a player:
 		// OpenMyShop consumes one 50200 and refuses outright without it. The other
@@ -1151,9 +1221,9 @@ namespace
 		// CShopManager::Buy indexes by. A bot browsing the market reads this
 		// rather than the engine's structure.
 		state.vecShopOffers = offers;
-		sys_log(0, "PLAYERBOT_SHOP: opened pid=%u name=%s items=%u first_vnum=%u first_price=%u pos=(%ld,%ld)",
+		sys_log(0, "PLAYERBOT_SHOP: opened pid=%u name=%s items=%u first_vnum=%u first_price=%u pos=(%ld,%ld) sign=\"%s\"",
 				ch->GetPlayerID(), ch->GetName(), (unsigned int)tableCount,
-				offers[0].dwVnum, offers[0].dwPrice, ch->GetX(), ch->GetY());
+				offers[0].dwVnum, offers[0].dwPrice, ch->GetX(), ch->GetY(), sign);
 		return true;
 	}
 

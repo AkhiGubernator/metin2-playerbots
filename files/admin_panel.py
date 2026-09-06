@@ -859,6 +859,10 @@ def read_ai_weights():
     vals = {k: AI_W_NEUTRAL for k, _ in AI_WEIGHT_KEYS}
     vals["CHAT"] = 1
     vals["SCRAP"] = 0
+    # The chest event's two figures. None until the file says: the panel does
+    # not know what CONFIG holds, and must not write a guess over it.
+    vals["CHEST"] = None
+    vals["CHEST_STONE"] = None
     try:
         with open(AI_WEIGHTS, encoding="utf-8", errors="replace") as fh:
             for line in fh:
@@ -875,6 +879,12 @@ def read_ai_weights():
                 if name == "SCRAP":
                     try:
                         vals["SCRAP"] = max(0, min(100, int(parts[1])))
+                    except ValueError:
+                        pass
+                    continue
+                if name in ("CHEST", "CHEST_STONE"):
+                    try:
+                        vals[name] = max(0, min(1000, int(parts[1])))
                     except ValueError:
                         pass
                     continue
@@ -906,6 +916,11 @@ def write_ai_weights(vals):
     body.append("CHAT\t%d" % (1 if vals.get("CHAT", 1) else 0))
     # Percent of stall keepers that sell scrap gear; 0 is off.
     body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
+    # The Moonlight chest: thousandths per kill and per Metin. Written only once
+    # the operator has set them, so an untouched install keeps its CONFIG.
+    for key in ("CHEST", "CHEST_STONE"):
+        if vals.get(key) is not None:
+            body.append("%s\t%d" % (key, max(0, min(1000, int(vals[key])))))
     tmp = AI_WEIGHTS + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(body) + "\n")
@@ -2641,6 +2656,17 @@ T.update({
                   "tr":"Tezgâhçıların, düşük yükseltmelerini (+0 ile +3) NPC'ye satmak yerine ucuza tezgâha koyan payı - demircide yakmalık, hard sunuculardaki gibi. Varsayılan olarak kapalı."},
  "ai_scrap_off": {"en":"off","pl":"wyłączone","de":"aus","tr":"kapalı"},
  "ai_scrap_all": {"en":"every keeper","pl":"każdy straganiarz","de":"jeder Händler","tr":"her tezgâhçı"},
+ "ai_chest":     {"en":"Moonlight Treasure Chests","pl":"Szkatułki Księżycowe","de":"Mondschein-Schatztruhen","tr":"Ay Işığı Sandıkları"},
+ "ai_chest_help":{"en":"How often a chest drops, in thousandths: per monster kill, and per broken Metin stone. The game default is 10‰ (1%) and 300‰ (30%); more chests mean more bonus scrolls, speed potions and Blessing Scrolls for the bots. Applies within five seconds, to bots and players alike.",
+                  "pl":"Jak często wypada szkatułka, w promilach: z zabitego potwora i z rozbitego Metina. Domyślnie w grze 10‰ (1%) i 300‰ (30%); więcej szkatułek to więcej zwojów bonusów, mikstur szybkości i Zwojów Błogosławieństwa u botów. Działa w pięć sekund, dla botów i graczy tak samo.",
+                  "de":"Wie oft eine Truhe fällt, in Promille: pro getötetem Monster und pro zerstörtem Metin. Spielstandard 10‰ (1%) und 300‰ (30%); mehr Truhen heißt mehr Bonusrollen, Tempotränke und Segensrollen bei den Bots. Gilt binnen fünf Sekunden, für Bots wie Spieler.",
+                  "tr":"Sandığın ne sıklıkla düştüğü, binde olarak: öldürülen canavar başına ve kırılan Metin başına. Oyun varsayılanı 10‰ (%1) ve 300‰ (%30); daha çok sandık, botlarda daha çok bonus parşömeni, hız iksiri ve Kutsama Parşömeni demek. Beş saniye içinde, bot ve oyuncu için aynı şekilde uygulanır."},
+ "ai_chest_kill": {"en":"per monster kill","pl":"z zabitego potwora","de":"pro getötetem Monster","tr":"öldürülen canavar başına"},
+ "ai_chest_stone":{"en":"per broken Metin stone","pl":"z rozbitego Metina","de":"pro zerstörtem Metin","tr":"kırılan Metin başına"},
+ "ai_chest_note": {"en":"Saving writes both values; until then the game keeps what .env says.",
+                   "pl":"Zapis ustawia obie wartości; do tego czasu gra trzyma to, co mówi .env.",
+                   "de":"Speichern setzt beide Werte; bis dahin gilt, was .env sagt.",
+                   "tr":"Kaydetmek iki değeri de yazar; o zamana kadar oyun .env'deki değeri kullanır."},
  "ai_live":      {"en":"Saved. The bots pick this up within five seconds \u2014 no restart, nobody is disconnected.",
                   "pl":"Zapisano. Boty odczytają to w ciągu pięciu sekund \u2014 bez restartu, nikt nie zostaje rozłączony.",
                   "de":"Gespeichert. Die Bots übernehmen das binnen fünf Sekunden \u2014 kein Neustart, niemand fliegt raus.",
@@ -4209,6 +4235,19 @@ TPL_AI = BASE.replace("__BODY__", """
   <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
     <span>0 — {{t('ai_scrap_off')}}</span><span>100 — {{t('ai_scrap_all')}}</span>
   </div>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">🎁 {{t('ai_chest')}}</h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_chest_help')}}</p>
+  {% set chest = cur.get('CHEST') if cur.get('CHEST') is not none else 10 %}
+  {% set stone = cur.get('CHEST_STONE') if cur.get('CHEST_STONE') is not none else 300 %}
+  <div style="margin:6px 0 2px">{{t('ai_chest_kill')}} <span class="badge" id="v_CHEST">{{chest}}‰</span></div>
+  <input type="range" name="CHEST" id="s_CHEST" min="0" max="100" step="1" value="{{chest}}" style="width:100%"
+         oninput="document.getElementById('v_CHEST').textContent=this.value+'‰'">
+  <div style="margin:10px 0 2px">{{t('ai_chest_stone')}} <span class="badge" id="v_CHEST_STONE">{{stone}}‰</span></div>
+  <input type="range" name="CHEST_STONE" id="s_CHEST_STONE" min="0" max="1000" step="10" value="{{stone}}" style="width:100%"
+         oninput="document.getElementById('v_CHEST_STONE').textContent=this.value+'‰'">
+  <div class="muted" style="font-size:12px">{{t('ai_chest_note')}}</div>
 </div>
 {% for name, emoji in keys %}
 <div style="margin-bottom:18px">
@@ -8611,6 +8650,11 @@ def ai_weights():
             vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
         except (TypeError, ValueError):
             vals["SCRAP"] = 0
+        for key in ("CHEST", "CHEST_STONE"):
+            try:
+                vals[key] = max(0, min(1000, int(request.form.get(key))))
+            except (TypeError, ValueError):
+                vals[key] = None
         try:
             write_ai_weights(vals)
         except OSError:

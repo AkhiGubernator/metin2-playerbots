@@ -70,6 +70,24 @@ namespace
 	// the population asks for a tenth in the steady state, so this binds only
 	// in the minute after a start, which is exactly when it should.
 	const DWORD PLAYERBOT_NAV_PLAN_TIME_BUDGET_US = 50000;
+	// The route cache. A far plan on Orc Valley costs 150-250 ms and most of
+	// them are the same trip - the entrance to a hub, a hub to the exit, hub
+	// to hub - asked for by bot after bot from within a few hundred units of
+	// the same spot. Start and goal are quantised to this many cells, a hit
+	// must stand within this reach of the cached start, and a route is kept
+	// this long: the grid it was planned on is static, only the live objects
+	// the walk checks for could have moved.
+	// Keyed by the goal alone, and joined wherever the bot stands nearest to
+	// the line: the goals are a few dozen hubs and exits, the starts are
+	// everywhere, and a route to a hub is as good from its middle as from its
+	// start. Several routes are kept per goal so the join is from a route that
+	// came from this side.
+	const int PLAYERBOT_NAV_CACHE_QUANTUM_CELLS = 24;
+	const int PLAYERBOT_NAV_CACHE_MIN_CELLS = 256;
+	const int PLAYERBOT_NAV_CACHE_JOIN_DISTANCE = 1600;
+	const DWORD PLAYERBOT_NAV_CACHE_TTL = 600000;
+	const size_t PLAYERBOT_NAV_CACHE_PER_GOAL = 6;
+	const size_t PLAYERBOT_NAV_CACHE_LIMIT = 400;
 	DWORD s_dwPlayerBotNavBudgetStamp = 0;
 	int s_iPlayerBotNavHeavyPlansThisTick = 0;
 	DWORD s_uPlayerBotNavPlanUsThisTick = 0;
@@ -413,7 +431,28 @@ namespace
 				return true;
 			}
 
+			// A far plan is the one thing the load line cannot attribute: it costs
+			// a hundred times a near one, and only the destination and the price
+			// say which subsystem asked for it and whether the search failed.
 			EPlayerBotNavPlanResult FindRoute(long startX, long startY, long targetX, long targetY,
+					DWORD seed, DWORD now, int targetSnapRadius, bool flexibleTargetSnap,
+					std::vector<PIXEL_POSITION>& outWaypoints)
+			{
+				const DWORD farUsBefore = s_uPlayerBotLoadPlanBucketUs[3];
+				const DWORD farCountBefore = s_uPlayerBotLoadPlanBucket[3];
+				const EPlayerBotNavPlanResult result = FindRouteInner(startX, startY, targetX, targetY,
+						seed, now, targetSnapRadius, flexibleTargetSnap, outWaypoints);
+				if (s_uPlayerBotLoadPlanBucket[3] != farCountBefore)
+					sys_log(0, "PLAYERBOT_NAV: far plan map=%ld from=(%ld,%ld) to=(%ld,%ld) result=%s cost_ms=%u waypoints=%u",
+							m_mapIndex, startX, startY, targetX, targetY,
+							result == PLAYERBOT_NAV_PLAN_FOUND ? "found" :
+							(result == PLAYERBOT_NAV_PLAN_DEFERRED ? "deferred" : "unreachable"),
+							(unsigned int)((s_uPlayerBotLoadPlanBucketUs[3] - farUsBefore) / 1000),
+							(unsigned int)outWaypoints.size());
+				return result;
+			}
+
+			EPlayerBotNavPlanResult FindRouteInner(long startX, long startY, long targetX, long targetY,
 					DWORD seed, DWORD now, int targetSnapRadius, bool flexibleTargetSnap,
 					std::vector<PIXEL_POSITION>& outWaypoints)
 			{
@@ -421,6 +460,54 @@ namespace
 				if (!m_initialized || !IsInsideWorld(startX, startY) ||
 						!IsInsideWorld(targetX, targetY))
 					return PLAYERBOT_NAV_PLAN_UNREACHABLE;
+
+				// The cache first, before the budget: a hit costs one segment check
+				// and must not wait its turn behind the plans it makes unnecessary.
+				int cacheSx, cacheSy, cacheTx, cacheTy;
+				WorldToCell(startX, startY, cacheSx, cacheSy);
+				WorldToCell(targetX, targetY, cacheTx, cacheTy);
+				const int cacheCells = std::max(std::abs(cacheSx - cacheTx), std::abs(cacheSy - cacheTy));
+				const bool cacheable = cacheCells >= PLAYERBOT_NAV_CACHE_MIN_CELLS;
+				(void)cacheSx;
+				(void)cacheSy;
+				const int cacheKey = (cacheTx / PLAYERBOT_NAV_CACHE_QUANTUM_CELLS) * 4096 +
+						cacheTy / PLAYERBOT_NAV_CACHE_QUANTUM_CELLS;
+				if (cacheable)
+				{
+					std::map<int, std::vector<TCachedRoute> >::iterator hit = m_routeCache.find(cacheKey);
+					if (hit != m_routeCache.end())
+					{
+						std::vector<TCachedRoute>& routes = hit->second;
+						for (size_t r = 0; r < routes.size(); ++r)
+						{
+							const TCachedRoute& cached = routes[r];
+							if (now - cached.dwStamp >= PLAYERBOT_NAV_CACHE_TTL)
+								continue;
+							// The nearest waypoint of this route, and it has to be a
+							// straight step from where the bot stands; the rest of the
+							// line was proven cell by cell when it was planned.
+							size_t bestIndex = cached.waypoints.size();
+							int bestDistance = PLAYERBOT_NAV_CACHE_JOIN_DISTANCE;
+							for (size_t w = 0; w < cached.waypoints.size(); ++w)
+							{
+								const int distance = DISTANCE_APPROX(startX - cached.waypoints[w].x,
+										startY - cached.waypoints[w].y);
+								if (distance < bestDistance)
+								{
+									bestDistance = distance;
+									bestIndex = w;
+								}
+							}
+							if (bestIndex >= cached.waypoints.size() ||
+									!SegmentClearWorld(startX, startY, cached.waypoints[bestIndex].x,
+											cached.waypoints[bestIndex].y))
+								continue;
+							outWaypoints.assign(cached.waypoints.begin() + bestIndex, cached.waypoints.end());
+							++s_uPlayerBotLoadPlanCached;
+							return PLAYERBOT_NAV_PLAN_FOUND;
+						}
+					}
+				}
 
 				if (s_dwPlayerBotNavBudgetStamp != now)
 				{
@@ -444,12 +531,6 @@ namespace
 				const int planCells = std::max(std::abs(sx - tx), std::abs(sy - ty));
 				const int planBucket = planCells < 64 ? 0 : planCells < 256 ? 1 : planCells < 1024 ? 2 : 3;
 				++s_uPlayerBotLoadPlanBucket[planBucket];
-				// A far plan is the one thing the load line cannot attribute: it
-				// costs a hundred times a near one, and only the destination says
-				// which subsystem asked for it.
-				if (planBucket == 3)
-					sys_log(0, "PLAYERBOT_NAV: far plan map=%ld from=(%ld,%ld) to=(%ld,%ld) cells=%d",
-							m_mapIndex, startX, startY, targetX, targetY, planCells);
 				TPlayerBotLoadTimer planTimer(s_uPlayerBotLoadPlanUs);
 				TPlayerBotLoadTimer planBucketTimer(s_uPlayerBotLoadPlanBucketUs[planBucket]);
 				if (!FindNearestWalkableCell(sx, sy, 4, 0, seed))
@@ -727,6 +808,30 @@ namespace
 				{
 					last.x = targetX;
 					last.y = targetY;
+				}
+
+				if (cacheable)
+				{
+					// Full: drop a whole goal's routes, the first in key order - a plain
+					// rule on the plans that already cost two hundred milliseconds.
+					if (m_routeCacheCount >= PLAYERBOT_NAV_CACHE_LIMIT && !m_routeCache.empty())
+					{
+						m_routeCacheCount -= m_routeCache.begin()->second.size();
+						m_routeCache.erase(m_routeCache.begin());
+					}
+					std::vector<TCachedRoute>& routes = m_routeCache[cacheKey];
+					if (routes.size() >= PLAYERBOT_NAV_CACHE_PER_GOAL)
+					{
+						routes.erase(routes.begin());
+						--m_routeCacheCount;
+					}
+					TCachedRoute entry;
+					entry.startX = startX;
+					entry.startY = startY;
+					entry.dwStamp = now;
+					entry.waypoints = outWaypoints;
+					routes.push_back(entry);
+					++m_routeCacheCount;
 				}
 
 				return PLAYERBOT_NAV_PLAN_FOUND;
@@ -1450,6 +1555,15 @@ namespace
 			std::vector<int> m_parent;
 			uint16_t m_searchToken;
 			std::vector<DWORD> m_cellRegion;
+			struct TCachedRoute
+			{
+				long startX;
+				long startY;
+				DWORD dwStamp;
+				std::vector<PIXEL_POSITION> waypoints;
+			};
+			std::map<int, std::vector<TCachedRoute> > m_routeCache;
+			size_t m_routeCacheCount = 0;
 			std::vector<TAbstractRegion> m_regions;
 			std::vector<DWORD> m_regionToken;
 			std::vector<int> m_regionCost;

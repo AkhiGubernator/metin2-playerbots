@@ -456,6 +456,9 @@ namespace
 				refine < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
 			return std::max<DWORD>(1, npcUnit * PLAYERBOT_SCRAP_PRICE_MULT);
 		DWORD unit = npcUnit * PLAYERBOT_SHOP_MATERIAL_MARKUP;
+		// A soul stone has no merchant price: the counter asks by grade.
+		if (item->GetType() == ITEM_METIN)
+			unit = PLAYERBOT_SHOP_PRICE_SOUL_STONE[std::min(4, GetPlayerBotSoulStoneGrade(item->GetVnum()))];
 
 		// What the market has paid outranks what the merchant would. Clamped to
 		// a floor of the merchant's own price - below that the stall is a worse
@@ -562,6 +565,11 @@ namespace
 			return GetPlayerBotStuckSkill(ch) != 0 ? -1 : 800;
 		if (item->GetRefinedVnum() == 0 && item->GetType() == ITEM_MATERIAL)
 			return 200;
+		// A soul stone the bot cannot seat - the wrong school's, no socket open,
+		// the wrong grade for the piece it keeps - is somebody else's set.
+		if (item->GetType() == ITEM_METIN)
+			return WantsPlayerBotSoulStone(ch, item->GetVnum(), (DWORD)item->GetValue(5))
+					? -1 : 700 + GetPlayerBotSoulStoneGrade(item->GetVnum()) * 100;
 		// Skill books. Stock for everyone; the Metin dropper's whole trade, so
 		// on its counter they go up beside the level-30 weapons.
 		if (item->GetType() == ITEM_SKILLBOOK)

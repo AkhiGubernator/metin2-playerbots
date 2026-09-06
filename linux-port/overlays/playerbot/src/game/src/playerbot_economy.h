@@ -322,6 +322,10 @@ namespace
 		if (item->GetType() == ITEM_TREASURE_BOX || item->GetType() == ITEM_TREASURE_KEY ||
 				item->GetType() == ITEM_GIFTBOX || vnum == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
 			return false;
+		// A soul stone is somebody's socket: this bot's, or across a counter
+		// another's. The merchant paid one yang for a Potwora +4.
+		if (item->GetType() == ITEM_METIN)
+			return false;
 
 		// Fishing tackle and the catch worth keeping. Pearls are the entire point
 		// of a fishing trip -- they are what carries equipment to +7/+8/+9 -- and a

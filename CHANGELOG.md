@@ -17,6 +17,42 @@ every version here.
 
 ---
 
+## 1.29.13 — 2026-09-06
+
+### Naprawione
+
+- **Stopień Kamienia Duszy był czytany z niewłaściwej cyfry.** Vnum kamienia
+  to 28[stopień][rodzaj] (28037 Potwora+0, 28437 Potwora+4); kod brał
+  ostatnią cyfrę, więc każdy kamień liczył się jako +0, reguła „+3 i +4
+  tylko na sprzęt +6” nigdy nie działała, a +4 Potwora szedł w byle co.
+- **Kamienie Duszy nie idą już do handlarza.** Reguła śmieci uznawała je za
+  złom — kamień, którego bot nie mógł od razu osadzić, sprzedawał NPC za
+  jednego yanga.
+
+### Nowe
+
+- **Zestawy Kamieni Duszy według stylu walki.** Jedna wspólna ocena
+  rodzaju kamienia dla kowala, lady i rynku: Potwora dla każdego, potem
+  Śmierci; Penetracji dla szkół bijących, Powtórki dla skillowych; kamienie
+  klasowe (Wojownika, Sury, Ninja, Szamana) są warte zero w świecie
+  potworów. Na zbroi: Witalności, potem Uchylenia dla tych, co stoją w
+  hordzie, Przyspieszenia dla dystansowych (łucznik, BM, szaman), potem
+  Obrony i Uniku; Magii tylko dla skillowych. Silnik odmawia drugiego
+  kamienia tego samego rodzaju, więc zestaw układa się sam.
+- **Gniazdo warte czekania.** Osadzenie to 30% szansy, a 70% to pęknięty
+  kamień wspawany w gniazdo na zawsze. Na sprzęcie +6 bot osadza tylko +3 i
+  +4, na +8 tylko +4; +0..+2 idą na sprzęt tymczasowy, +3/+4 nigdy poniżej
+  +6.
+- **Kamienie na targowisku.** Straganiarz wystawia kamienie, których nie
+  osadzi (zły rodzaj, brak gniazda, zły stopień na jego sprzęt), z ceną po
+  stopniu (30–500 tys.) do czasu, aż targowisko wyceni je transakcjami; bot
+  z wolnym gniazdem na sprzęcie +6 idzie na targ i kupuje kamień ze swojego
+  zestawu.
+
+Z audytu wiedzy o grze (sekcja 9).
+
+---
+
 ## 1.29.12 — 2026-09-06
 
 ### Nowe

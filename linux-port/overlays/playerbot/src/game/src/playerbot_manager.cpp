@@ -392,64 +392,18 @@ namespace
 				continue;
 
 			const DWORD kdVnum = item->GetVnum();
-			const int kdPlus = (kdVnum % 10);
-			const int stoneKind = kdVnum % 100;
-			// The proto's own wear flags draw the line: 28030-28037 are WEAR_WEAPON
-			// and 28038-28043 WEAR_BODY. The old split put 37 - Kamien Potwora, the
-			// best PvE weapon stone there is - on the armour side, and SetSocket
-			// used to oblige. The native path refuses it.
-			const bool weaponStone = stoneKind >= 30 && stoneKind <= 37;
-			const bool armorStone = stoneKind >= 38 && stoneKind <= 43;
-			if (!weaponStone && !armorStone)
+			const int kdPlus = GetPlayerBotSoulStoneGrade(kdVnum);
+			const int stoneKind = GetPlayerBotSoulStoneKind(kdVnum);
+			const int worth = GetPlayerBotSoulStoneWorth(ch, stoneKind);
+			if (worth <= 0)
 				continue;
-
-			LPITEM targetGear = weaponStone ? ch->GetWear(WEAR_WEAPON) : ch->GetWear(WEAR_BODY);
-			if (!targetGear)
-				continue;
-
-			const int gearRefine = targetGear->GetRefineLevel();
-			if (kdPlus >= 3 && gearRefine < 6)
-				continue;
-
-			// The engine refuses a second stone of one kind in one item, kind
-			// being value 5 of the stone's proto. Asking here saves the unequip.
-			bool sameKindAlready = false;
+			LPITEM targetGear = NULL;
 			int openSocket = -1;
-			for (int socketIdx = 0; socketIdx < ITEM_SOCKET_MAX_NUM; ++socketIdx)
-			{
-				const DWORD inSocket = (DWORD)targetGear->GetSocket(socketIdx);
-				if (inSocket == 1 && openSocket < 0)
-					openSocket = socketIdx;
-				if (inSocket <= 2 || inSocket == PLAYERBOT_BROKEN_SOUL_STONE_VNUM)
-					continue;
-				const TItemTable* seated = ITEM_MANAGER::instance().GetTable(inSocket);
-				if (seated && seated->alValues[5] == item->GetValue(5))
-					sameKindAlready = true;
-			}
-			if (openSocket < 0 || sameKindAlready)
+			if (!FindPlayerBotSoulStoneSocket(ch, stoneKind, (DWORD)item->GetValue(5), &targetGear, &openSocket))
 				continue;
-
-			int score = kdPlus * 100 + gearRefine * 10;
-			// Which stone, by what the school does with it. In a world of monsters
-			// the class stones (33-36) are last; Potwora is first for everybody;
-			// the blow schools take crit and pierce, the skill schools take the
-			// cooldown stone. On armour: health, then block, then defence.
-			const int style = GetPlayerBotSchoolStyle(ch);
-			switch (stoneKind)
-			{
-				case 37: score += 600; break;                          // Potwora
-				case 31: score += 500; break;                          // Smierci (kryt)
-				case 30: score += style > 0 ? 250 : 450; break;       // Penetracji
-				case 32: score += style > 0 ? 500 : 150; break;       // Powtorki
-				case 33: case 34: case 35: case 36: score += 50; break;
-				case 41: score += 600; break;                          // Witalnosci
-				case 38: score += 500; break;                          // Uchylenia
-				case 42: score += 400; break;                          // Obrony
-				case 39: score += 250; break;                          // Uniku
-				case 43: score += 200; break;                          // Przyspieszenia
-				case 40: score += style > 0 ? 150 : 50; break;        // Magii (PE)
-				default: break;
-			}
+			if (!ShouldPlayerBotSeatSoulStone(targetGear, kdPlus))
+				continue;
+			const int score = kdPlus * 100 + targetGear->GetRefineLevel() * 10 + worth;
 			if (score > bestScore)
 			{
 				bestScore = score;

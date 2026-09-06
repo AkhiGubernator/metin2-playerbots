@@ -1228,6 +1228,119 @@ namespace
 		return (long long)proto->dwGold * count;
 	}
 
+	// Kamien Duszy, the stone for a weapon or armour socket. The vnum is
+	// 28[grade][kind]: 28037 is Potwora +0, 28437 Potwora +4 - the grade is the
+	// hundreds digit, and reading it from the last digit (as this once did)
+	// made every stone a +0 and switched the grade rules off.
+	int GetPlayerBotSoulStoneGrade(DWORD vnum) { return (int)((vnum / 100) % 10); }
+	int GetPlayerBotSoulStoneKind(DWORD vnum) { return (int)(vnum % 100); }
+	bool IsPlayerBotWeaponSoulStoneKind(int kind) { return kind >= 30 && kind <= 37; }
+	bool IsPlayerBotArmorSoulStoneKind(int kind) { return kind >= 38 && kind <= 43; }
+
+	// The set, by what the school does with it. In a world of monsters the
+	// class stones (33-36) are worth nothing to anybody; Potwora is first for
+	// everybody; the blow schools take crit and pierce, the skill schools the
+	// cooldown stone. On armour: health, then block for the ones that stand in
+	// the pack, move for the ones that keep away from it, then defence.
+	int GetPlayerBotSoulStoneWorth(LPCHARACTER ch, int kind)
+	{
+		const int style = GetPlayerBotSchoolStyle(ch);
+		const bool ranged = ch && ((ch->GetJob() == JOB_ASSASSIN && ch->GetSkillGroup() == 2) ||
+				(ch->GetJob() == JOB_SURA && ch->GetSkillGroup() == 2) || ch->GetJob() == JOB_SHAMAN);
+		switch (kind)
+		{
+			case 37: return 600;                          // Potwora
+			case 31: return 500;                          // Smierci (kryt)
+			case 30: return style > 0 ? 250 : 450;       // Penetracji
+			case 32: return style > 0 ? 500 : 150;       // Powtorki
+			case 33: case 34: case 35: case 36: return 0; // klasowe: PvP
+			case 41: return 600;                          // Witalnosci
+			case 38: return ranged ? 250 : 500;          // Uchylenia (blok)
+			case 43: return ranged ? 450 : 200;          // Przyspieszenia
+			case 42: return 400;                          // Obrony
+			case 39: return 250;                          // Uniku
+			case 40: return style > 0 ? 150 : 0;         // Magii (PE)
+			default: return 0;
+		}
+	}
+
+	// Whether the worn piece for this kind of stone has a socket open for it
+	// and does not hold the same kind already (the engine refuses a second).
+	bool FindPlayerBotSoulStoneSocket(LPCHARACTER ch, int kind, DWORD stoneValue5, LPITEM* outGear, int* outSocket)
+	{
+		if (!ch)
+			return false;
+		LPITEM gear = IsPlayerBotWeaponSoulStoneKind(kind) ? ch->GetWear(WEAR_WEAPON)
+				: (IsPlayerBotArmorSoulStoneKind(kind) ? ch->GetWear(WEAR_BODY) : NULL);
+		if (!gear)
+			return false;
+		int openSocket = -1;
+		for (int socketIdx = 0; socketIdx < ITEM_SOCKET_MAX_NUM; ++socketIdx)
+		{
+			const DWORD inSocket = (DWORD)gear->GetSocket(socketIdx);
+			if (inSocket == 1 && openSocket < 0)
+				openSocket = socketIdx;
+			if (inSocket <= 2 || inSocket == PLAYERBOT_BROKEN_SOUL_STONE_VNUM)
+				continue;
+			const TItemTable* seated = ITEM_MANAGER::instance().GetTable(inSocket);
+			if (seated && (DWORD)seated->alValues[5] == stoneValue5)
+				return false;
+		}
+		if (openSocket < 0)
+			return false;
+		if (outGear)
+			*outGear = gear;
+		if (outSocket)
+			*outSocket = openSocket;
+		return true;
+	}
+
+	// A seating is a 30% roll, and the other 70% welds a cracked stone into
+	// the socket for good. On a piece the bot will outgrow that costs nothing;
+	// on the +6 it keeps, a socket is worth waiting for a +3, and on a +8 for
+	// the +4. A +3 or +4 is never spent on a piece below +6.
+	bool ShouldPlayerBotSeatSoulStone(LPITEM gear, int grade)
+	{
+		if (!gear)
+			return false;
+		const int refine = gear->GetRefineLevel();
+		if (refine >= 8)
+			return grade >= 4;
+		if (refine >= 6)
+			return grade >= 3;
+		return grade <= 2;
+	}
+
+	bool WantsPlayerBotSoulStone(LPCHARACTER ch, DWORD vnum, DWORD stoneValue5)
+	{
+		const int kind = GetPlayerBotSoulStoneKind(vnum);
+		if (GetPlayerBotSoulStoneWorth(ch, kind) <= 0)
+			return false;
+		LPITEM gear = NULL;
+		int socket = -1;
+		return FindPlayerBotSoulStoneSocket(ch, kind, stoneValue5, &gear, &socket) &&
+				ShouldPlayerBotSeatSoulStone(gear, GetPlayerBotSoulStoneGrade(vnum));
+	}
+
+	// Does this bot have a socket that a stone worth having could still fill?
+	// The market question, asked before a trip.
+	bool PlayerBotHasOpenSoulStoneSocket(LPCHARACTER ch)
+	{
+		if (!ch)
+			return false;
+		const BYTE slots[2] = { WEAR_WEAPON, WEAR_BODY };
+		for (int s = 0; s < 2; ++s)
+		{
+			LPITEM gear = ch->GetWear(slots[s]);
+			if (!gear || gear->GetRefineLevel() < PLAYERBOT_PRECIOUS_REFINE)
+				continue;
+			for (int socketIdx = 0; socketIdx < ITEM_SOCKET_MAX_NUM; ++socketIdx)
+				if ((DWORD)gear->GetSocket(socketIdx) == 1)
+					return true;
+		}
+		return false;
+	}
+
 	DWORD GetPlayerBotNpcSellUnitPrice(LPITEM item)
 	{
 		if (!item || !item->GetProto() || IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_SELL))

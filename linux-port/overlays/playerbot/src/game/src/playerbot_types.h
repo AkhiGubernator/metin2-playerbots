@@ -248,6 +248,9 @@ namespace
 	// Refine materials go up at a small markup over the merchant price, so a bot
 	// that needs one can buy it from a neighbour instead of farming for it.
 	const DWORD PLAYERBOT_SHOP_MATERIAL_MARKUP = 3;
+	// A soul stone has no shop price in the proto, so a counter asks this by
+	// grade (+0 to +4) until the market has paid something for it.
+	const DWORD PLAYERBOT_SHOP_PRICE_SOUL_STONE[5] = { 30000, 60000, 120000, 250000, 500000 };
 	// Browsing someone else's stall.
 	const DWORD PLAYERBOT_SHOPPING_INTERVAL_MIN = 120000;
 	const DWORD PLAYERBOT_SHOPPING_INTERVAL_MAX = 300000;

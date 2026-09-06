@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T20:13:00Z",
-  "statusMessage": "Aktualizacja 1.29.12. Boty pamietaja, gdzie wypadaly materialy (takze gdzie nie wypadaly), bonus rasowy w ekwipunku liczony z tego, co bot naprawde bije, wojownik mentalny rozdaje statystyki jak tank. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-06T20:32:00Z",
+  "statusMessage": "Aktualizacja 1.29.13. Zestawy Kamieni Duszy wedlug stylu walki, stopien kamienia czytany poprawnie (dotad kazdy liczyl sie jako +0), gniazda na sprzecie +6 czekaja na +3/+4, kamienie na targowisku zamiast u handlarza. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.12",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.12/metin2-server-update-1.29.12.zip",
-    "sha256": "E503EA5983B16897BF984440CD1E8791C4625C181439792BB25D109B2BC467EB"
+    "version": "1.29.13",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.13/metin2-server-update-1.29.13.zip",
+    "sha256": "AF1077AD7C4040B5F7272A77662F96249F48CBE6801A08696C88AD45DF03C484"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

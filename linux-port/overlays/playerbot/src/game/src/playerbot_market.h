@@ -101,6 +101,11 @@ namespace
 		if (offer->GetVnum() == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
 			return GetPlayerBotStuckSkill(ch) != 0;
 
+		// A soul stone of its set, at a grade its piece deserves, for a socket
+		// it has open.
+		if (offer->GetType() == ITEM_METIN)
+			return WantsPlayerBotSoulStone(ch, offer->GetVnum(), (DWORD)offer->GetValue(5));
+
 		// A level-30 weapon of its own class, when it has none. This is the item
 		// bots cross the world to farm; buying one off a counter is the whole
 		// point of there being a market.
@@ -147,6 +152,9 @@ namespace
 			return true;
 		// A Forgetting Scroll for a skill stuck at seventeen.
 		if (GetPlayerBotStuckSkill(ch) != 0)
+			return true;
+		// A socket open on a piece it keeps.
+		if (PlayerBotHasOpenSoulStoneSocket(ch))
 			return true;
 		// And the level-30 weapon it would otherwise cross the world to farm.
 		return ch->GetLevel() >= 30 && !HasPlayerBotSpecialLevel30Weapon(ch, false);

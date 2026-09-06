@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T15:49:00Z",
-  "statusMessage": "Aktualizacja 1.29.5. Naprawa bledu z 1.29.4 przy przejmowaniu starszej instalacji: GRAJ i aktualizacja konczyly sie na Cannot bind argument to parameter Value. Kto ma ten blad: aktualizacja z launchera, potem GRAJ. Reszta jak w 1.29.4.",
+  "publishedAt": "2026-09-06T16:08:00Z",
+  "statusMessage": "Aktualizacja 1.29.6. Panel po przejeciu starszej instalacji odpowiadal Access denied do bazy (stare haslo w jego pliku konfiguracyjnym), choc gra dzialala - przy starcie panel bierze teraz dane bazy z .env. Reszta jak w 1.29.5.",
   "server": {
-    "version": "1.29.5",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.5/metin2-server-update-1.29.5.zip",
-    "sha256": "3C92A80BB86D6A76BAE26A5D428623FA9F587A6BC49BEAD52F09AE8777CBFADB"
+    "version": "1.29.6",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.6/metin2-server-update-1.29.6.zip",
+    "sha256": "845EC0AE789D1340A8FC161818C1060214E6FBC701BEC019D59A353C6BE27288"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

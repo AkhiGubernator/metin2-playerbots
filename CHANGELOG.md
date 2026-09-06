@@ -17,6 +17,22 @@ every version here.
 
 ---
 
+## 1.29.6 — 2026-09-06
+
+### Naprawione
+
+- **Panel odpowiadał „Access denied” do bazy, choć gra działała.** Panel
+  czyta hasło bazy ze swojego pliku `m2panel.conf`, zapisywanego raz przy
+  pierwszym uruchomieniu i trzymanego w wolumenie `panel-conf`. Instalacja
+  przejęta z poprzedniej wersji miała tam stare hasło, a `.env` (i gra)
+  nowe — pulpit panelu i statystyki padały na 1045, migrator i rdzeń
+  działały normalnie. Przy starcie panelu adres, użytkownik i hasło bazy są
+  teraz odświeżane z `.env`; hasło panelu, sól i sekret sesji zostają bez
+  zmian. Plik startowy panelu jedzie w paczce aktualizacji, a aktualizacja
+  przebudowuje obraz panelu.
+
+---
+
 ## 1.29.5 — 2026-09-06
 
 ### Naprawione

@@ -30,6 +30,10 @@ linux-port/docker/mariadb/playerbot/apply.sh
 # Discovers the overlay sources and copies them into the build context.
 linux-port/docker/prepare-context.sh
 linux-port/docker/panel/app/admin_panel.py
+# The panel image entrypoint: it refreshes the database credentials in an
+# existing m2panel.conf, so a panel-conf volume from an older install follows
+# .env instead of answering "Access denied" while the game runs.
+linux-port/docker/panel/bin/entrypoint.sh
 linux-port/overlays/playerbot/serverfiles/mob_drop_item.m3.append.txt
 linux-port/overlays/playerbot/serverfiles/special_item_group.moonlight.txt
 linux-port/overlays/playerbot/sql/playerbots_seed.sql

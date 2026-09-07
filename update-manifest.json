@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T15:17:00Z",
-  "statusMessage": "Aktualizacja 1.30.7. Sredni i trudny Loch Malp dobierane poziomem (boty 40+ zdobywaja medale konne), wyprawy po medal takze z map granicznych, medal-dropper sprzedaje medale, pelne eq chetniej otwiera stragan, lucznicy nie wysypuja strzal na ziemie. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T15:31:00Z",
+  "statusMessage": "Aktualizacja 1.30.8. Tobolki straganow nie laduja juz na ziemi przy pelnym plecaku. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.7",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.7/metin2-server-update-1.30.7.zip",
-    "sha256": "FCC23C9032D22FFB957C5CAFADA9B67A04911864709A01DF71E94A14974DD11C"
+    "version": "1.30.8",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.8/metin2-server-update-1.30.8.zip",
+    "sha256": "272A2F5D3E7E0BDF8180E7D4AF4431E4109874C58395D05F83ADDE84B732D641"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

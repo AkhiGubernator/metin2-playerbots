@@ -17,6 +17,24 @@ every version here.
 
 ---
 
+## 1.30.8 — 2026-09-07
+
+### Naprawione
+
+- **Tobołki straganów leżące na ziemi.** Przed otwarciem straganu bot
+  kupuje tobołek (przedmiot 50200 „Tobół”) przez `AutoGiveItem`, a ten
+  przy pełnym plecaku — a plecak tuż przed sprzedażą bywa właśnie pełny —
+  kładzie go na ziemi. Stragan odmawiał (brak tobołka), następna próba
+  kupowała kolejny i plac zapełniał się tobołkami z etykietą „botjade2's”
+  (okno ochrony dropu), a boty biegały między nimi. Ta sama wada co
+  strzały w 1.30.7: teraz tobołek kupowany jest tylko do wolnej kratki,
+  bez niej stragan czeka na następną wizytę (`PLAYERBOT_SHOP: no room for
+  bundle` w logu).
+
+Zgłoszenie: Renagaruu.
+
+---
+
 ## 1.30.7 — 2026-09-07
 
 ### Nowe

@@ -17,6 +17,37 @@ every version here.
 
 ---
 
+## 1.30.2 — 2026-09-07
+
+### Naprawione
+
+- **Do V1 przez pustynię, jak w grze.** Bot przenosił się z teleportera w
+  Bokjung wprost do Lochu Pająków i wprost z powrotem, czego żaden gracz nie
+  może zrobić. Teraz wejście to dwa etapy: teleporter → Pustynia Yongbi
+  (lewy górny róg) → marsz przez całą pustynię do bramy „Kuahlo Dong” w
+  prawym dolnym rogu (NPC 10016) → V1; powrót: wyjście z V1 na pustynię w
+  prawym dolnym rogu → marsz do bramy Bokjung w lewym górnym rogu → miasto.
+  W drodze bot nie bije mobów (marsz zajmuje tick, wybór celu nie działa), a
+  jedynie Metin w zasięgu 25 metrów, jeśli jest wart jego poziomu (ta sama
+  reguła dropu co przy polowaniu: kamień nie niżej niż 10 i nie wyżej niż 9
+  poziomów od bota); po rozbiciu idzie dalej. Log: `PLAYERBOT_WORLD:
+  transitioned ... reason=desert_crossing_to_v1 / desert_gate_to_v1 /
+  desert_crossing_from_v1 / desert_gate_to_bokjung` oraz `crossing stone`.
+- **Wypady na bossa naprawdę się zdarzają.** Huby Wodza Orków (Dolina) i
+  Królowej Pająków (V1) były oceniane jak każdy obóz — po gęstości potworów
+  z pamięci spotów — a jeden boss co pół godziny to gęstość zero, więc w
+  dobie logów ani jeden bot ich nie wybrał; Królowa nie zginęła ani razu.
+  Teraz hub bossa pyta sektor, czy boss stoi (odpowiedź trzymana 30 s), i
+  gdy stoi, wygrywa z każdym obozem: na Wodza (25 tys. PZ, co 30 minut)
+  rzuca się każdy bot z pasma 45+, także bez drużyny; na Królową (193 tys.
+  PZ, poziom 60, co ok. 4 godziny) idzie tylko lider drużyny co najmniej
+  trzyosobowej, a członkowie za nim. Log: `PLAYERBOT_RAID: boss ...
+  standing/down` i `heading for boss`.
+
+Zgłoszenie: Tieru.
+
+---
+
 ## 1.30.1 — 2026-09-07
 
 ### Nowe

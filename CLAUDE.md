@@ -337,6 +337,14 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   through `SendShout` directly and never come back through the hook. Text
   is CP1250; `FoldPlayerBotChatText` is how names are compared.
 
+- **Hunting stones is a state, not only a role.** `IsPlayerBotMetinHunting`
+  in `playerbot_types.h` is what the planner, the target scoring and the
+  wandering ask; it is true for the hunter role for life and for any other
+  bot during a Metin expedition (`RollPlayerBotMetinExpedition` in
+  `playerbot_planner.h`: an hourly roll, `PLAYERBOT_METIN_EXPEDITION_*`, the
+  METIN weight scales the chance). A rule that tests `bBotRole ==
+  BOT_ROLE_METIN_HUNTER` directly is a rule the expedition does not reach.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

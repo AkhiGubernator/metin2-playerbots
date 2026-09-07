@@ -72,6 +72,38 @@ namespace
 		++count;
 	}
 
+	// Once an hour, whether the next half hour is an evening of stones. The
+	// hunters by role never roll - they are already out there - and a bot too
+	// low for any stone worth the walk does not either.
+	void RollPlayerBotMetinExpedition(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || state.bBotRole == BOT_ROLE_METIN_HUNTER)
+			return;
+		if (state.dwMetinExpeditionUntil != 0 && dwNow >= state.dwMetinExpeditionUntil)
+		{
+			state.dwMetinExpeditionUntil = 0;
+			state.dwHubChosenTime = 0;
+			sys_log(0, "PLAYERBOT_METIN: expedition over pid=%u name=%s level=%u map=%ld",
+					ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), ch->GetMapIndex());
+		}
+		if (state.dwNextMetinExpeditionRoll != 0 && dwNow < state.dwNextMetinExpeditionRoll)
+			return;
+		// Spread by pid, so the hour's rolls do not all land on the same tick.
+		state.dwNextMetinExpeditionRoll = dwNow + PLAYERBOT_METIN_EXPEDITION_ROLL_INTERVAL +
+				PlayerBotNavHash(ch->GetPlayerID() ^ 0x4d455850U) % 600000U;
+		if (state.dwMetinExpeditionUntil != 0 || ch->GetLevel() < PLAYERBOT_METIN_EXPEDITION_MIN_LEVEL)
+			return;
+		const int chance = PLAYERBOT_METIN_EXPEDITION_CHANCE_PERCENT *
+				GetPlayerBotWeight(PLAYERBOT_WEIGHT_METIN) / PLAYERBOT_WEIGHT_NEUTRAL;
+		if (number(1, 100) > chance)
+			return;
+		state.dwMetinExpeditionUntil = dwNow + PLAYERBOT_METIN_EXPEDITION_DURATION;
+		state.dwHubChosenTime = 0;
+		sys_log(0, "PLAYERBOT_METIN: expedition start pid=%u name=%s level=%u map=%ld minutes=%u",
+				ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), ch->GetMapIndex(),
+				PLAYERBOT_METIN_EXPEDITION_DURATION / 60000);
+	}
+
 	void PlanPlayerBotLongTermGoal(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || dwNow < state.dwNextGoalPlanTime)
@@ -129,7 +161,7 @@ namespace
 				BOT_GOAL_BIOLOGIST, PLAYERBOT_WEIGHT_BIOLOG);
 		OfferPlayerBotGoal(candidates, rank, count,
 				state.bAmbition == BOT_AMBITION_METINS &&
-				state.bBotRole == BOT_ROLE_METIN_HUNTER,
+				IsPlayerBotMetinHunting(state, dwNow),
 				BOT_GOAL_HUNT_METIN, PLAYERBOT_WEIGHT_METIN);
 		OfferPlayerBotGoal(candidates, rank, count,
 				state.bBotRole == BOT_ROLE_PARTY_FIGHTER && ch->GetParty() != NULL,
@@ -150,8 +182,10 @@ namespace
 				BOT_GOAL_REFINE, PLAYERBOT_WEIGHT_REFINE);
 		OfferPlayerBotGoal(candidates, rank, count, canReadBook,
 				BOT_GOAL_MASTER_SKILL, PLAYERBOT_WEIGHT_SKILL);
+		// An expedition outranks the errands below it: the point of the half
+		// hour is the stones, and a refine can wait thirty minutes.
 		OfferPlayerBotGoal(candidates, rank, count,
-				state.bBotRole == BOT_ROLE_METIN_HUNTER,
+				IsPlayerBotMetinHunting(state, dwNow),
 				BOT_GOAL_HUNT_METIN, PLAYERBOT_WEIGHT_METIN);
 		// Grinding is always available: it is what a bot does when nothing else
 		// is asking for it, and it must stay in the vote so that its own weight

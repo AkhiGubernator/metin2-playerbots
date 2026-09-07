@@ -1268,6 +1268,7 @@ void CPlayerBotManager::Update()
 		// choose its best helmet, shield, boots, armour and weapon.
 		if (ManagePlayerBotProgressionChests(ch, state, dwNow))
 			continue;
+		RollPlayerBotMetinExpedition(ch, state, dwNow);
 		PlanPlayerBotLongTermGoal(ch, state, dwNow);
 
 		// Trigger Town Visit (Full inventory, out of potions, or missing weapon)

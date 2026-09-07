@@ -794,6 +794,21 @@ namespace
 	// before, eight thousand deferrals, and the tick at 57 s of every 60.
 	const int PLAYERBOT_HUB_HALF_WORTH_DISTANCE = 20000;
 	const DWORD PLAYERBOT_HUB_STICK_TIME = 240000;
+	// The Metin expedition. A quarter of the population are Metin hunters by
+	// role and the rest broke a stone only when one stood in their way, which
+	// is not what a player does: a player decides on an evening of stones and
+	// roams the map for them. So every other bot rolls once an hour for a
+	// stretch of exactly that - half an hour in which it plans, targets and
+	// wanders like a hunter, then goes back to what it was. A quarter of the
+	// rolls succeed, so at any moment about one grinder in eight is out for
+	// stones; the METIN weight in the panel scales the chance. On the hunting
+	// maps the expedition changes hub this often instead of every four
+	// minutes, because a stone is found by covering ground.
+	const DWORD PLAYERBOT_METIN_EXPEDITION_DURATION = 1800000;
+	const DWORD PLAYERBOT_METIN_EXPEDITION_ROLL_INTERVAL = 3600000;
+	const int PLAYERBOT_METIN_EXPEDITION_CHANCE_PERCENT = 25;
+	const BYTE PLAYERBOT_METIN_EXPEDITION_MIN_LEVEL = 15;
+	const DWORD PLAYERBOT_METIN_EXPEDITION_HUB_STICK = 90000;
 	const DWORD PLAYERBOT_SPOT_REPORT_INTERVAL = 600000;
 
 	// The Moonlight Treasure Chest and what comes out of it. A chest in the bag
@@ -1459,6 +1474,8 @@ namespace
 			dwStoneProgressVID(0),
 			dwStoneBrokenTime(0),
 			dwRaceHistogramStamp(0),
+			dwMetinExpeditionUntil(0),
+			dwNextMetinExpeditionRoll(0),
 			dwStoneLastProgressTime(0),
 			dwNextStoneProgressCheckTime(0),
 			dwNextNavPlanTime(0),
@@ -1650,6 +1667,10 @@ namespace
 		// What this bot has fought lately, by race flag; see the world memory.
 		WORD awRaceHistogram[PLAYERBOT_RACE_HISTOGRAM_SLOTS] = { 0, 0, 0, 0, 0 };
 		DWORD dwRaceHistogramStamp;
+		// The Metin expedition: until when this bot hunts stones like a hunter,
+		// and when it next rolls for one. See PLAYERBOT_METIN_EXPEDITION_*.
+		DWORD dwMetinExpeditionUntil;
+		DWORD dwNextMetinExpeditionRoll;
 		// When this bot last read a book of each skill, for the BOOKS switch.
 		std::map<DWORD, DWORD> mapBookReadTime;
 		DWORD dwStoneLastProgressTime;
@@ -1785,6 +1806,14 @@ namespace
 	// rather than in the manager because the subsystems read it too - refining
 	// asks a bot for its personality long before the tick reaches it.
 	TPlayerBotAIStateMap s_mapPlayerBotAIStates;
+
+	// Hunting stones right now: by role for life, or by expedition for half an
+	// hour. Every rule that used to ask for the role asks this instead.
+	bool IsPlayerBotMetinHunting(const TPlayerBotAIState& state, DWORD dwNow)
+	{
+		return state.bBotRole == BOT_ROLE_METIN_HUNTER ||
+				(state.dwMetinExpeditionUntil != 0 && dwNow < state.dwMetinExpeditionUntil);
+	}
 
 	// The personality behind a pid, for the rules that get a character and not
 	// a state - the travel gates, the stall's scoring. Steady adventurer when

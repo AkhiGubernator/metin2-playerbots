@@ -295,7 +295,7 @@ namespace
 			// Four legacy Gemini entries near the southern map edge were manually
 			// shifted from stone rows whose centres lie beyond this map's Y limit;
 			// runtime attr checks confirmed that the shifted points were blocked.
-			if (state.bBotRole == BOT_ROLE_METIN_HUNTER)
+			if (IsPlayerBotMetinHunting(state, dwNow))
 			{
 				LPCHARACTER knownMetin = FindKnownPlayerBotMetin(ch, dwNow);
 				if (knownMetin &&
@@ -588,13 +588,35 @@ namespace
 				hubCount = sizeof(spiderHubs) / sizeof(spiderHubs[0]);
 			}
 			const DWORD pid = ch->GetPlayerID();
+			// A stone anybody has seen on this map comes before any hub while the
+			// bot hunts stones - by role, or on an expedition. Off the town map
+			// this used to be the one thing a hunter did not do.
+			if (IsPlayerBotMetinHunting(state, dwNow))
+			{
+				LPCHARACTER knownMetin = FindKnownPlayerBotMetin(ch, dwNow);
+				if (knownMetin &&
+						DISTANCE_APPROX(ch->GetX() - knownMetin->GetX(), ch->GetY() - knownMetin->GetY()) > 800)
+				{
+					state.dwNextWanderTime = dwNow + 1200;
+					if (!MovePlayerBot(ch, knownMetin->GetX(), knownMetin->GetY(), dwNow, 32, true) &&
+							state.bStuckCounter >= 3)
+					{
+						s_mapKnownPlayerBotMetins.erase(knownMetin->GetVID());
+						ClearPlayerBotRoute(state, true);
+					}
+					return;
+				}
+			}
 			size_t hubIndex = 0;
 			int hubScore = 0;
 			bool bHubReachable = false;
 			// The hub chosen a moment ago is still the hub, unless the bot has
-			// outgrown its band or the choice is old enough to revisit.
+			// outgrown its band or the choice is old enough to revisit - sooner
+			// on a stone hunt, which is done by covering ground.
+			const DWORD hubStick = IsPlayerBotMetinHunting(state, dwNow)
+					? PLAYERBOT_METIN_EXPEDITION_HUB_STICK : PLAYERBOT_HUB_STICK_TIME;
 			if (state.wHuntingHub < hubCount && state.dwHubChosenTime != 0 &&
-					dwNow - state.dwHubChosenTime < PLAYERBOT_HUB_STICK_TIME &&
+					dwNow - state.dwHubChosenTime < hubStick &&
 					ch->GetLevel() >= hubs[state.wHuntingHub].bMinLevel &&
 					ch->GetLevel() <= hubs[state.wHuntingHub].bMaxLevel)
 			{

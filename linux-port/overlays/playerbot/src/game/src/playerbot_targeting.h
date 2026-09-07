@@ -603,7 +603,8 @@ namespace
 
 				int baseScore = 0;
 				TPlayerBotAIStateMap::iterator sit = s_mapPlayerBotAIStates.find(m_owner->GetPlayerID());
-				const bool isMetinHunter = (sit != s_mapPlayerBotAIStates.end() && sit->second.bBotRole == BOT_ROLE_METIN_HUNTER);
+				const bool isMetinHunter = (sit != s_mapPlayerBotAIStates.end() &&
+						IsPlayerBotMetinHunting(sit->second, m_dwNow));
 
 				if (candidate->IsStone())
 				{
@@ -964,7 +965,7 @@ namespace
 		// Bestial objective wins over generic prey, but a far-away objective no longer
 		// makes the bot walk past mobs at its feet. Metin hunters retain their global
 		// stone scoring and reservations below.
-		if (state.bBotRole != BOT_ROLE_METIN_HUNTER)
+		if (!IsPlayerBotMetinHunting(state, dwNow))
 		{
 			// Twice: the first pass will not look at anything too far beneath the
 			// bot to be worth a swing, the second takes whatever is here. A quest

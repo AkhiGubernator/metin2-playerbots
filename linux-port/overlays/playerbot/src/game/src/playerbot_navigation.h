@@ -70,6 +70,19 @@ namespace
 	// the population asks for a tenth in the steady state, so this binds only
 	// in the minute after a start, which is exactly when it should.
 	const DWORD PLAYERBOT_NAV_PLAN_TIME_BUDGET_US = 50000;
+	// The tick budget cannot stop a plan that has already started, and a far
+	// plan on Orc Valley runs 150-700 ms: a hundred and twenty of them a
+	// minute were twenty-five seconds of every sixty at 850 bots, with the
+	// tick at 28 s and the core at 55%. Past this many far plans in a minute
+	// the rest take the deferred path - the bot stands a second or two and
+	// asks again - so the worst minute costs what this many plans cost.
+	const int PLAYERBOT_NAV_MAX_FAR_PLANS_PER_MINUTE = 80;
+	// The corridor search weighs its heuristic double, which is already a
+	// greedy search. A corridor this many regions long - sixteen cells each,
+	// so forty is a walk of six hundred cells - takes triple: the route bends
+	// a little more and the search expands a third as much.
+	const int PLAYERBOT_NAV_GREEDY_CORRIDOR_REGIONS = 40;
+	const int PLAYERBOT_NAV_GREEDY_WEIGHT = 3;
 	// The route cache. A far plan on Orc Valley costs 150-250 ms and most of
 	// them are the same trip - the entrance to a hub, a hub to the exit, hub
 	// to hub - asked for by bot after bot from within a few hundred units of
@@ -84,13 +97,20 @@ namespace
 	// came from this side.
 	const int PLAYERBOT_NAV_CACHE_QUANTUM_CELLS = 24;
 	const int PLAYERBOT_NAV_CACHE_MIN_CELLS = 256;
-	const int PLAYERBOT_NAV_CACHE_JOIN_DISTANCE = 1600;
-	const DWORD PLAYERBOT_NAV_CACHE_TTL = 600000;
-	const size_t PLAYERBOT_NAV_CACHE_PER_GOAL = 6;
-	const size_t PLAYERBOT_NAV_CACHE_LIMIT = 400;
+	// Sixteen routes a goal and half an hour, up from six and ten minutes:
+	// the same four hub goals took half the far plans in a minute, and six
+	// routes cover six approaches to a hub that is walked to from every
+	// island. A route is a few hundred waypoints; fifteen hundred of them are
+	// a couple of megabytes.
+	const int PLAYERBOT_NAV_CACHE_JOIN_DISTANCE = 2400;
+	const DWORD PLAYERBOT_NAV_CACHE_TTL = 1800000;
+	const size_t PLAYERBOT_NAV_CACHE_PER_GOAL = 16;
+	const size_t PLAYERBOT_NAV_CACHE_LIMIT = 1500;
 	DWORD s_dwPlayerBotNavBudgetStamp = 0;
 	int s_iPlayerBotNavHeavyPlansThisTick = 0;
 	DWORD s_uPlayerBotNavPlanUsThisTick = 0;
+	DWORD s_dwPlayerBotNavFarMinuteStamp = 0;
+	int s_iPlayerBotNavFarPlansThisMinute = 0;
 
 	enum EPlayerBotNavPlanResult
 	{
@@ -515,21 +535,30 @@ namespace
 					s_iPlayerBotNavHeavyPlansThisTick = 0;
 					s_uPlayerBotNavPlanUsThisTick = 0;
 				}
-				if (s_iPlayerBotNavHeavyPlansThisTick >= PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK ||
-						s_uPlayerBotNavPlanUsThisTick >= PLAYERBOT_NAV_PLAN_TIME_BUDGET_US)
-				{
-					++s_uPlayerBotLoadPlanDeferred;
-					return PLAYERBOT_NAV_PLAN_DEFERRED;
-				}
-				++s_iPlayerBotNavHeavyPlansThisTick;
-				++s_uPlayerBotLoadPlans;
-				TPlayerBotLoadTimer planTickTimer(s_uPlayerBotNavPlanUsThisTick);
-
 				int sx, sy, tx, ty;
 				WorldToCell(startX, startY, sx, sy);
 				WorldToCell(targetX, targetY, tx, ty);
 				const int planCells = std::max(std::abs(sx - tx), std::abs(sy - ty));
 				const int planBucket = planCells < 64 ? 0 : planCells < 256 ? 1 : planCells < 1024 ? 2 : 3;
+				if (now - s_dwPlayerBotNavFarMinuteStamp >= 60000)
+				{
+					s_dwPlayerBotNavFarMinuteStamp = now;
+					s_iPlayerBotNavFarPlansThisMinute = 0;
+				}
+				if (s_iPlayerBotNavHeavyPlansThisTick >= PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK ||
+						s_uPlayerBotNavPlanUsThisTick >= PLAYERBOT_NAV_PLAN_TIME_BUDGET_US ||
+						(planBucket == 3 &&
+						 s_iPlayerBotNavFarPlansThisMinute >= PLAYERBOT_NAV_MAX_FAR_PLANS_PER_MINUTE))
+				{
+					++s_uPlayerBotLoadPlanDeferred;
+					return PLAYERBOT_NAV_PLAN_DEFERRED;
+				}
+				if (planBucket == 3)
+					++s_iPlayerBotNavFarPlansThisMinute;
+				++s_iPlayerBotNavHeavyPlansThisTick;
+				++s_uPlayerBotLoadPlans;
+				TPlayerBotLoadTimer planTickTimer(s_uPlayerBotNavPlanUsThisTick);
+
 				++s_uPlayerBotLoadPlanBucket[planBucket];
 				TPlayerBotLoadTimer planTimer(s_uPlayerBotLoadPlanUs);
 				TPlayerBotLoadTimer planBucketTimer(s_uPlayerBotLoadPlanBucketUs[planBucket]);
@@ -1323,6 +1352,10 @@ namespace
 					allowed[corridor[i]] = 1;
 				}
 
+				// See PLAYERBOT_NAV_GREEDY_CORRIDOR_REGIONS.
+				const int heuristicWeight =
+						corridor.size() >= (size_t)PLAYERBOT_NAV_GREEDY_CORRIDOR_REGIONS
+						? PLAYERBOT_NAV_GREEDY_WEIGHT : 2;
 				const uint16_t token = NextCellSearchToken();
 				struct TFineOpenNode
 				{
@@ -1351,7 +1384,7 @@ namespace
 				CellFromIndex(startCell, startX, startY);
 				TFineOpenNode first;
 				first.g = 0;
-				first.f = OctileDistance(startX, startY, targetX, targetY) * 2;
+				first.f = OctileDistance(startX, startY, targetX, targetY) * heuristicWeight;
 				first.cell = startCell;
 				first.tie = PlayerBotNavHash(seed ^ (DWORD)startCell);
 				open.push(first);
@@ -1408,7 +1441,7 @@ namespace
 						m_parent[nextCell] = current.cell;
 						TFineOpenNode next;
 						next.g = newCost;
-						next.f = newCost + OctileDistance(nextX, nextY, targetX, targetY) * 2;
+						next.f = newCost + OctileDistance(nextX, nextY, targetX, targetY) * heuristicWeight;
 						next.cell = nextCell;
 						next.tie = PlayerBotNavHash(seed ^ (DWORD)nextCell);
 						open.push(next);

@@ -315,6 +315,23 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   route, and re-planning towards the old destination finds the door it came
   in by; the wander pass runs only on a tick no subsystem took, and a bot
   dropped among aggressive monkeys is fighting, not wandering.
+- **Whether a fight is worth having is one question with one answer.**
+  `playerbot_combat_value_policy.h` decides it and nothing else does:
+  `BuildPlayerBotCombatContext` is the only place a Context is built, and the
+  three callers - the target collector, the multi-pull and
+  `IsPlayerBotHeldTargetStillWorth` on a three-second clock - all go through
+  it. Filtering only new candidates left the hole open: a monster picked up
+  before the errand changed was fought to the end. The exceptions are
+  countable (quest, material, stone, bounded defence) and each is bounded by
+  something the engine can be asked about, not by intent: the material one by
+  `PERCENT_LVDELTA` (a drop obeys the same level curve as experience, so a
+  need is not a reason to farm what cannot drop it), the defence one by
+  **one episode per bot** - keyed per attacker it was renewed for ever by two
+  monsters taking turns, so it now ends only after
+  `PLAYERBOT_DEFENCE_QUIET_TIME` without a combat action, and party defence
+  lives inside the same episode to be bounded in time as well as distance.
+  `PLAYERBOT_M2: census` is how this is measured: a count of level-40 bots in
+  Bokjung says nothing, the reason each one is there says everything.
 - **A bot cannot be warped by a warp NPC, and now it is not asked to be.**
   `WarpSet` tells the client to reconnect to whichever core hosts the target
   map; a bot descriptor has nobody to answer that, so the map change is made

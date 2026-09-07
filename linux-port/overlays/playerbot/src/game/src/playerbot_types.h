@@ -683,6 +683,36 @@ namespace
 	const long PLAYERBOT_DESERT_FROM_V1_X = 346700;
 	const long PLAYERBOT_DESERT_FROM_V1_Y = 632900;
 	const int PLAYERBOT_CROSSING_STONE_RANGE = 2500;
+	// An episode of self-defence, so that "it hit me first" cannot become a
+	// permanent licence to grind. The clock starts when the bot accepts an
+	// attacker as a target and is not renewed by another hit from the same one;
+	// the leash is measured from where the episode started. Both are tuning
+	// values - measure before trusting them.
+	const DWORD PLAYERBOT_DEFENCE_EPISODE_TIME = 10000;
+	const int PLAYERBOT_DEFENCE_LEASH = 1000;
+	// How far away a party member may be and still be worth defending.
+	const int PLAYERBOT_PARTY_DEFENCE_RANGE = 1500;
+	// An episode ends for good only when the fighting has actually stopped.
+	// Without this a second attacker starts a fresh episode the moment the
+	// first one's runs out, and two monsters taking turns are an endless
+	// licence to grind - which is exactly what a bound is supposed to prevent.
+	const DWORD PLAYERBOT_DEFENCE_QUIET_TIME = 15000;
+	// A drop obeys the same level difference as experience: PERCENT_LVDELTA
+	// multiplies both. Fifteen levels above a monster leaves one percent of the
+	// chance, so "I need this material" must not justify farming something that
+	// will effectively never yield it. Lower than the experience floor on
+	// purpose - a material is worth more detours than experience is.
+	const int PLAYERBOT_MATERIAL_MIN_DROP_PERCENT = 10;
+	// The share of a monster's base experience left after the level difference,
+	// below which an ordinary monster is not worth a bot's time. A starting
+	// heuristic from the audit, not a measurement of experience per hour, and
+	// not a rule of the game: quest, material and equipment errands are allowed
+	// through it, and self-defence comes before it.
+	const int PLAYERBOT_COMBAT_MIN_EXP_PERCENT = 20;
+	// How often the monster a bot is already fighting is asked again whether
+	// it is still worth fighting. Not every tick: the answer needs the bot's
+	// material shortages, which cost a walk of the bag.
+	const DWORD PLAYERBOT_COMBAT_RECHECK_INTERVAL = 3000;
 	// How close to a world portal a bot walks before its map change is made
 	// server-side. See MovePlayerBotToWorldPortal and patch 0008: the engine
 	// no longer grabs a bot at the portal, so this only has to cover one
@@ -1687,6 +1717,8 @@ namespace
 			bComboMotion(MOTION_COMBO_ATTACK_1),
 			bStuckCounter(0),
 			lLastX(0),
+			lDefenceAnchorX(0),
+			lDefenceAnchorY(0),
 			lLastY(0),
 			uRouteIndex(0),
 			lRouteDestX(0),
@@ -1727,6 +1759,10 @@ namespace
 			dwPortalWalkSince(0),
 			iPortalWalkBest(0),
 			dwFightProgressVID(0),
+			dwDefenceTargetVID(0),
+			dwDefenceEpisodeStart(0),
+			dwNextCombatRecheckTime(0),
+			dwErrandDoneTime(0),
 			dwFightStartTime(0),
 			dwFightLastProgressTime(0),
 			iLastFightHP(0),
@@ -1899,6 +1935,8 @@ namespace
 		BYTE bComboMotion;
 		BYTE bStuckCounter;
 		long lLastX;
+		long lDefenceAnchorX;
+		long lDefenceAnchorY;
 		long lLastY;
 		std::vector<PIXEL_POSITION> vecRoute;
 		size_t uRouteIndex;
@@ -1977,6 +2015,14 @@ namespace
 		DWORD dwPortalWalkSince;
 		int iPortalWalkBest;
 		DWORD dwFightProgressVID;
+		// The attacker this bot is currently defending itself against, since when,
+		// and from where. See PLAYERBOT_DEFENCE_EPISODE_TIME.
+		DWORD dwDefenceTargetVID;
+		DWORD dwDefenceEpisodeStart;
+		DWORD dwNextCombatRecheckTime;
+		// When this bot last finished a town errand, so the time it then takes
+		// to leave the map can be measured rather than guessed at.
+		DWORD dwErrandDoneTime;
 		DWORD dwFightStartTime;
 		DWORD dwFightLastProgressTime;
 		int iLastFightHP;

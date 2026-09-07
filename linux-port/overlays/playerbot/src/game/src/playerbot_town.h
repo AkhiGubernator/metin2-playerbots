@@ -356,6 +356,8 @@ namespace
 		state.dwTownWaitUntil = 0;
 		state.dwNextShopCheckTime = dwNow +
 			(completed ? number(300000, 600000) : number(60000, 120000));
+		if (completed)
+			state.dwErrandDoneTime = dwNow;
 		// Free, standing in town, errands done: the one moment this bot is the
 		// customer the market needs. The shopping timer is cleared rather than
 		// left where the visit pushed it - every check that ran during the visit

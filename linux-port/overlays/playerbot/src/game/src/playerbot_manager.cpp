@@ -55,6 +55,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_navigation.h"
 #include "playerbot_world_memory.h"
 #include "playerbot_movement.h"
+#include "playerbot_combat_value_policy.h"
 #include "playerbot_battle_horse.h"
 #include "playerbot_gear.h"
 #include "playerbot_consumables.h"
@@ -629,6 +630,47 @@ namespace
 		}
 	}
 
+	// Once a minute, the reasons the level-40 bots in Bokjung are there.
+	const char* PLAYERBOT_M2_STAY_REASONS[] = {
+		"retreat", "defence", "visit", "errand", "market", "fishing", "stall",
+		"quest", "material", "travel", "no_plan", "none"
+	};
+	const int PLAYERBOT_M2_STAY_REASON_COUNT =
+			(int)(sizeof(PLAYERBOT_M2_STAY_REASONS) / sizeof(PLAYERBOT_M2_STAY_REASONS[0]));
+	int s_aiPlayerBotM2Stay[PLAYERBOT_M2_STAY_REASON_COUNT] = { 0 };
+	DWORD s_dwPlayerBotM2CensusTime = 0;
+	bool s_bPlayerBotM2CensusPass = false;
+
+	void NotePlayerBotM2Stay(const char* reason)
+	{
+		for (int i = 0; i < PLAYERBOT_M2_STAY_REASON_COUNT; ++i)
+			if (strcmp(reason, PLAYERBOT_M2_STAY_REASONS[i]) == 0)
+			{
+				++s_aiPlayerBotM2Stay[i];
+				return;
+			}
+	}
+
+	void ReportPlayerBotM2Census()
+	{
+		char line[512];
+		int used = 0;
+		int total = 0;
+		for (int i = 0; i < PLAYERBOT_M2_STAY_REASON_COUNT; ++i)
+		{
+			total += s_aiPlayerBotM2Stay[i];
+			if (s_aiPlayerBotM2Stay[i] == 0)
+				continue;
+			const int written = snprintf(line + used, sizeof(line) - used, " %s=%d",
+					PLAYERBOT_M2_STAY_REASONS[i], s_aiPlayerBotM2Stay[i]);
+			if (written > 0 && used + written < (int)sizeof(line))
+				used += written;
+			s_aiPlayerBotM2Stay[i] = 0;
+		}
+		line[used] = 0;
+		sys_log(0, "PLAYERBOT_M2: census level40plus=%d%s", total, line);
+	}
+
 	bool ResetPlayerBotIfInactive(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || ch->IsDead() || state.bRecoveringAfterDeath)
@@ -1101,6 +1143,10 @@ void CPlayerBotManager::Update()
 		s_dwPlayerBotLoadReportTime = dwNow;
 	}
 	ReportPlayerBotSpotMemory(dwNow);
+	s_bPlayerBotM2CensusPass = s_dwPlayerBotM2CensusTime == 0 ||
+			dwNow - s_dwPlayerBotM2CensusTime >= 60000;
+	if (s_bPlayerBotM2CensusPass)
+		s_dwPlayerBotM2CensusTime = dwNow;
 	RefreshPlayerBotMarketLedger(dwNow);
 
 	for (TPlayerBotMap::iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)
@@ -1253,6 +1299,22 @@ void CPlayerBotManager::Update()
 		// Before anything may claim the tick: which Monkey Dungeon chamber this
 		// bot is in now, since a portal it walked past has already moved it.
 		UpdatePlayerBotMonkeyChamber(ch, state, dwNow);
+
+		// The census, once a minute: why each level-40 bot in Bokjung is there.
+		if (s_bPlayerBotM2CensusPass && ch->GetLevel() >= 40 &&
+				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
+			NotePlayerBotM2Stay(ClassifyPlayerBotTownStay(ch, state, dwNow));
+
+		// And whether the defence episode is over. It ends when the fighting
+		// has actually stopped, not when its timer runs out: otherwise the next
+		// attacker starts a fresh one and the bound means nothing.
+		if (state.dwDefenceEpisodeStart != 0 &&
+				(state.dwLastCombatActionTime == 0 ||
+				 dwNow - state.dwLastCombatActionTime > PLAYERBOT_DEFENCE_QUIET_TIME))
+		{
+			state.dwDefenceEpisodeStart = 0;
+			state.dwDefenceTargetVID = 0;
+		}
 
 		ManagePlayerBotStats(ch, state, dwNow);
 		ManagePlayerBotSkills(ch, state, dwNow);
@@ -1568,6 +1630,9 @@ void CPlayerBotManager::Update()
 
 		if (!target || target->IsDead() || (!bTargetIsMonster && !bTargetIsStone) ||
 			(bTargetIsStone && !IsPlayerBotMetinWorthFighting(ch, target)) ||
+			// And the same question for an ordinary monster, on a clock: the
+			// errand that justified this fight may have finished since it began.
+			(bTargetIsMonster && !IsPlayerBotHeldTargetStillWorth(ch, target, state, dwNow)) ||
 			!bPartyCanContinue ||
 			IsPlayerBotSafeZone(ch->GetMapIndex(), target ? target->GetX() : ch->GetX(),
 					target ? target->GetY() : ch->GetY()) ||
@@ -1581,6 +1646,12 @@ void CPlayerBotManager::Update()
 				TPlayerBotLoadTimer targetTimer(s_uPlayerBotLoadTargetUs);
 				++s_uPlayerBotLoadTargetSearches;
 				target = FindPlayerBotEngagedTarget(ch);
+				// An engaged monster is usually self-defence and passes, but the
+				// finder also returns what is fighting the party from across the
+				// field - so it goes through the same filter as everything else
+				// rather than round it.
+				if (target && !IsPlayerBotTargetWorthNow(ch, target, state, dwNow))
+					target = NULL;
 				if (!target)
 					target = FindDistributedTarget(ch, state, dwNow);
 				if (!target)
@@ -1588,7 +1659,13 @@ void CPlayerBotManager::Update()
 			}
 			state.dwTargetVID = target ? (DWORD)target->GetVID() : 0;
 			if (target && target->IsMonster())
+			{
 				RememberPlayerBotSpotFight(ch->GetMapIndex(), target->GetX(), target->GetY(), dwNow);
+				// If this one is hitting the bot, the defence episode starts here
+				// and nowhere else - a clock that is restarted on every tick, or
+				// on every blow, bounds nothing at all.
+				NotePlayerBotDefenceEpisode(ch, state, target, dwNow);
+			}
 
 			if (target)
 			{
@@ -1714,6 +1791,12 @@ void CPlayerBotManager::Update()
 		NotePlayerBotBattleHorseKill(ch, state, target);
 
 	}
+
+	// The census was taken over the pass that has just finished, so it is
+	// written here rather than at the top: one line, one minute, every bot of
+	// level forty and over standing in Bokjung counted once.
+	if (s_bPlayerBotM2CensusPass)
+		ReportPlayerBotM2Census();
 
 	// Publish one compact, atomic snapshot per game core. The web panel reads
 	// these files from the shared read-only game-var volume, so it sees the real

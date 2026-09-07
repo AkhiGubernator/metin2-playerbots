@@ -17,6 +17,50 @@ every version here.
 
 ---
 
+## 1.30.16 — 2026-09-08
+
+### Naprawione
+
+- **Aura, szał i zaklęcia wchodzą od razu, a nie po kolei co pięć sekund.**
+  Rzucenie buffa zajmuje całą turę bota, a kolejnej próby nie było przez pięć
+  sekund — więc wojownik potrzebował dziesięciu sekund na aurę i szał, a sura
+  broni piętnastu na trzy zaklęcia. Aura Miecza trwa od trzydziestu sekund i ma
+  trzydziestosekundowy cooldown, więc bot spędzał na jej odnawianiu tyle czasu,
+  ile trwała, i przez większość walk stał bez niej. Po rzuceniu jednego buffa
+  bot wraca po następny po 1,2 sekundy; pełny zestaw staje w trzy sekundy
+  zamiast piętnastu, a zwykłe pięć sekund wraca, gdy niczego nie brakuje.
+- **Trująca chmura i trująca strzała nie lecą już w kamień Metin.** Rotacja
+  bierze pierwszą umiejętność, która zeszła z cooldownu, a kamień trwa
+  wystarczająco długo, żeby zdjąć z listy te dobre — więc w kamień szła ta
+  obszarowa, czyli akurat najsłabsza na jeden cel. Trująca Chmura to
+  `-(lv*2 + (atk + str*3 + dex*18)*k)` przy `-(atk + (1,6*atk + …))` Szybkiego
+  Ataku: jedna wartość ataku wobec dwóch i pół, za te same 1,4 sekundy blokady
+  animacji. Kamień nigdy nie jest tłumem, więc bot pomija obszarówki i wraca do
+  zwykłych ciosów, które w tym czasie zadają więcej. Silnik jest pytany o flagę
+  `SPLASH`, więc serwer z inną tablicą umiejętności też dostanie dobrą odpowiedź.
+- **Perła kosztuje jak perła, a nie jak małż.** Ceny na straganach mają podłogę
+  liczoną z zasobności kupujących — i ta podłoga była jedna dla wszystkiego. Przy
+  medianie portfela 2,6 mln wypadała na ~38 tysiącach, więc małż, którego
+  handlarz wycenia na 3 000, i biała perła za 12 000 stały na ladzie w tej samej
+  cenie, a krwawa perła ledwie wyżej. Podłoga jest teraz skalowana tym, ile
+  handlarz płaci za tę konkretną rzecz — i **tylko w górę**, więc nic nie
+  tanieje: biała perła idzie do ok. 150 tys., krwawa do ok. 300 tys., a małż
+  zostaje tam, gdzie był.
+  Do tego niedobór wreszcie coś znaczy: dopłata za brak towaru mogła podnieść
+  cenę najwyżej o jedną trzecią, co przy pięciuset botach szukających materiału,
+  którego nie ma na żadnym straganie, nie jest odpowiedzią rynku. Teraz sięga
+  dwukrotności.
+- **Stragany stają w Joan.** Bot losował miasto dla każdego straganu — dziewięć
+  razy na dziesięć Joan — a potem odmawiał otwarcia, jeśli akurat tam nie stał.
+  Ponieważ boty z towarem stoją w Bokjung, dziewięć losowań na dziesięć szło do
+  kosza i w Joan nie było ani jednego straganu, czyli dokładnie odwrotnie, niż
+  to losowanie miało robić. Kupiec handluje teraz w mieście, w którym stoi.
+  Na mapie 21 jest 399 botów, a przy jej rynku stało pięciu —
+  przeglądanie straganów i tak zawsze czytało pierścień tej mapy, na której jest
+  bot, więc stragan w Joan ma od razu swoich klientów.
+
+---
+
 ## 1.30.15 — 2026-09-08
 
 ### Nowe

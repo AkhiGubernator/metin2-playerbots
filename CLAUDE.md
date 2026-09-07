@@ -315,6 +315,17 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   route, and re-planning towards the old destination finds the door it came
   in by; the wander pass runs only on a tick no subsystem took, and a bot
   dropped among aggressive monkeys is fighting, not wandering.
+- **A bot cannot be warped by a warp NPC, and now it is not asked to be.**
+  `WarpSet` tells the client to reconnect to whichever core hosts the target
+  map; a bot descriptor has nobody to answer that, so the map change is made
+  server-side instead. It used to be made 900 units short of the portal,
+  which is what a player sees as a bot vanishing out of clear ground. Patch
+  0008 makes `warp_npc_event` skip a character whose descriptor `IsBot()` -
+  only in the `m_bUseWarp` branch, because the GOTO branch below it is a
+  local `Show()` and the Monkey Dungeon is walked with it - so the margin
+  only has to cover a tick of running: `PLAYERBOT_PORTAL_SWITCH_DISTANCE`.
+  `char.cpp` had to join `server-update-files.txt` for that, which also
+  delivers patch 0004 to players for the first time.
 - **One box the engine will not open stopped every other.**
   `ManagePlayerBotChests` returned false on a failed `UseItem`, so the first
   giftbox in the bag that cannot be opened - 50192 and 50193, six thousand

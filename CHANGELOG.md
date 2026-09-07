@@ -17,6 +17,55 @@ every version here.
 
 ---
 
+## 1.30.13 — 2026-09-07
+
+### Zmienione
+
+- **Boty dochodzą do portalu, zamiast znikać dziewięć metrów przed nim.**
+  Zmiana mapy nigdy nie mogła iść przez silnikowy portal: `WarpSet` każe
+  klientowi połączyć się z rdzeniem, który obsługuje mapę docelową, a bot nie
+  ma klienta, który by odpowiedział — zostałby po prostu porzucony przy
+  portalu. Dlatego przejście robiliśmy po stronie serwera z bezpiecznym
+  zapasem 900 jednostek, i to ten zapas widać było w grze: postać biegła do
+  wyjścia i znikała w szczerym polu.
+  Nowa łatka silnika **0008** każe `warp_npc_event` pomijać boty, więc zapas
+  nie musi już chronić przed niczym — przejście robi się 200 jednostek od
+  portalu, czyli bot dochodzi pod sam NPC i znika tam, gdzie znika gracz.
+  Portale wewnątrz mapy (te w Lochu Małp) działają jak dotąd: to lokalne
+  przeniesienie, nie zmiana rdzenia, i łatka ich nie dotyka.
+  Sprawdzone na żywo: 398 przejść między mapami w dziewięć minut, w tym
+  dwanaście wejść i dwanaście wyjść z Lochu Pająków, i ani jeden zgubiony bot.
+- **Poprawka prywatnych straganów dociera wreszcie do graczy.** Łatka 0004
+  zamieniła w `OpenMyShop` test `GetPart(PART_MAIN) > 2` na `IsPolymorphed()`
+  — bez tego silnik odmawia otwarcia straganu każdemu, kto ma na sobie zbroję,
+  również żywemu graczowi. Łatki silnika trafiają do gracza wyłącznie jako
+  gotowy plik z listy aktualizacji, a `char.cpp` na tej liście nie było, więc
+  ta poprawka od początku działała tylko na maszynie deweloperskiej. Teraz
+  plik jest wysyłany razem z resztą.
+
+- **Bot z celem „zapasy" nie zaczynał po nie iść.** Planista i wykonawca
+  zadawali dwa różne pytania o mikstury. `NeedsPlayerBotPotions` liczy sztuki i
+  mówi „trzeba" przy czerwonych poniżej 150 albo niebieskich poniżej 100 — i na
+  tym stawia cel RESTOCK. Wyzwalacz wizyty liczył natomiast **stosy**, patrzył
+  wyłącznie na cztery czerwone numery przedmiotów, niebieskich nie widział
+  wcale, i odpalał się dopiero przy zerze mikstur w co najmniej w połowie pełnym
+  plecaku. Bot z jednym stosem 32 czerwonych i 56 niebieskich nosił więc cel
+  „zapasy", którego wizyta nigdy nie zaczynała, i stał w Bokjung bijąc, co
+  akurat przeszło obok — 116 botów poziomu 40 i wyżej siedziało tak na M2.
+  Wyzwalacz pyta teraz o dokładnie to samo, co planista. Pomiar po zmianie, w
+  trzynaście minut: 944 rozpoczęte wizyty u handlarzy (w tym 333 u handlarki
+  różności, gdzie kupuje się mikstury), 311 wyjazdów z M2 na mapy dalsze i
+  spadek populacji 40+ w mieście do 93. Pętli zakupowych to nie tworzy: wizyty
+  nadal bramkuje pięcio-dziesięciominutowy odstęp, a warunek wymaga pieniędzy
+  na wyjazd.
+
+  Ustalenie z audytu przekazanego przez Tieru; sprawdzone w kodzie, który
+  właśnie zmieniałem, a nie w starszej kopii z buildera.
+
+Zgłoszenie: Tieru.
+
+---
+
 ## 1.30.12 — 2026-09-07
 
 ### Naprawione

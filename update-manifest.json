@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T20:06:00Z",
-  "statusMessage": "Aktualizacja 1.30.12. Boty otwieraja nagromadzone Szkatulki Blasku, stragany placa za bonusy na przedmiotach, a diagnostyka launchera nie melduje juz OK, gdy silnik Dockera odmawia. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T20:46:00Z",
+  "statusMessage": "Aktualizacja 1.30.13. Boty z celem zapasy naprawde ida po mikstury zamiast stac w miescie, dochodza do portalu zamiast znikac przed nim, a poprawka prywatnych straganow dociera wreszcie do graczy. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.12",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.12/metin2-server-update-1.30.12.zip",
-    "sha256": "B29D3AE6B996EF06E1C2BB5BC60AD9AF2A67F93D858F020AE736E88FBB944820"
+    "version": "1.30.13",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.13/metin2-server-update-1.30.13.zip",
+    "sha256": "8898C3413972971FC1B56A3245414D00234D063BC73C5FCAB00F7CC9B6960BFE"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

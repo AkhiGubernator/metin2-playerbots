@@ -698,6 +698,11 @@ namespace
 				return 450;
 			return -1;
 		}
+		// Hair dye: the one the bot is wearing is spent, the rest are stock.
+		// Ranked above ordinary spare gear because there is nowhere else in this
+		// world to buy one.
+		if (IsPlayerBotHairDye(item->GetVnum()))
+			return 900;
 		// A Forgetting Scroll sells well; the keeper keeps it only while one of
 		// its own skills is waiting for it.
 		if (item->GetVnum() == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)

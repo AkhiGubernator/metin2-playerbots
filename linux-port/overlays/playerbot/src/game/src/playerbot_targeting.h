@@ -553,17 +553,30 @@ namespace
 		//
 		// Party defence lives inside the same episode, so it is bounded in time
 		// as well as in distance.
-		const bool episodeLive = state.dwDefenceEpisodeStart != 0 &&
-				dwNow - state.dwDefenceEpisodeStart <= PLAYERBOT_DEFENCE_EPISODE_TIME &&
+		const bool onTheLeash = state.dwDefenceEpisodeStart == 0 ||
 				DISTANCE_APPROX(ch->GetX() - state.lDefenceAnchorX,
 						ch->GetY() - state.lDefenceAnchorY) <= PLAYERBOT_DEFENCE_LEASH;
+		const bool episodeLive = state.dwDefenceEpisodeStart != 0 && onTheLeash &&
+				dwNow - state.dwDefenceEpisodeStart <= PLAYERBOT_DEFENCE_EPISODE_TIME;
 		const bool mayDefend = episodeLive || state.dwDefenceEpisodeStart == 0;
 
-		if (mayDefend && candidate->GetVictim() == ch)
+		// Hitting back at whatever is hitting you is not a choice, and it is not
+		// bounded by a clock. The episode's job is to stop "it hit me first"
+		// becoming a licence to work a map: what does that is the leash - the
+		// bot answers where it stands and does not get walked across the world
+		// by a chain of attackers. Ten seconds of it was a different rule
+		// altogether, and it showed: nine strong monsters dropped next to a
+		// group of bots killed all of them, because after ten seconds every one
+		// of those monsters was refused as a target while it was still killing
+		// its bot. Breaking off a fight it cannot win is the survival pass's
+		// decision, and RETREAT still outranks everything here.
+		if (onTheLeash && candidate->GetVictim() == ch)
 			context.boundedSelfDefense = true;
 
 		// A party member actually under attack, near enough to help. Being the
-		// party's focus is not the same thing and does not count.
+		// party's focus is not the same thing and does not count - and helping
+		// is optional in a way defending yourself is not, so this one keeps the
+		// episode's clock.
 		if (mayDefend && !context.boundedSelfDefense && ch->GetParty())
 		{
 			LPCHARACTER victim = candidate->GetVictim();

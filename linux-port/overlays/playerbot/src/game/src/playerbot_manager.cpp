@@ -76,6 +76,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_wandering.h"
 #include "playerbot_status.h"
 #include "playerbot_targeting.h"
+#include "playerbot_lure.h"
 
 namespace
 {
@@ -1334,6 +1335,13 @@ void CPlayerBotManager::Update()
 		// deep, and opened 190 in an hour between them. Their bags were not the
 		// problem: 29 cells of 90 in use on average, none above 84.
 		ManagePlayerBotChests(ch, state, dwNow);
+		// The catch, wherever the bot happens to be standing. It used to be
+		// opened only between casts, so an angler that walked away from the bank
+		// carried its fish around instead - and a live fish does not stack, so a
+		// bag with thirty of them has no room for anything the bot is out there
+		// for. One item a tick, like the chests above.
+		ProcessPlayerBotCatch(ch);
+		ManagePlayerBotHairDye(ch);
 		ManagePlayerBotGuild(ch, state, dwNow);
 		ManagePlayerBotParty(ch, state, dwNow);
 		// The regular levelup.quest opens a selection dialog. A fake descriptor
@@ -1581,6 +1589,13 @@ void CPlayerBotManager::Update()
 			continue;
 		if (HandlePlayerBotMultiPull(ch, state, dwNow))
 			continue;
+		// The Archer's luring course. It owns movement and the shot for as long
+		// as it runs - including the ticks it spends waiting for the bow - so it
+		// goes here, before target acquisition and after everything that keeps a
+		// bot alive. The multi-pull above can never be running at the same time:
+		// it refuses a bot that is in a party, and this one needs five.
+		if (HandlePlayerBotLureCourse(ch, state, dwNow))
+			continue;
 		// Before anything else looks at where this bot is: a half-completed warp
 		// leaves the position and the sector disagreeing, and the next logout
 		// saves coordinates no login can ever load.
@@ -1625,7 +1640,14 @@ void CPlayerBotManager::Update()
 		const bool bTargetIsMonster = (target && target->IsMonster());
 		const bool bTargetNeedsParty = bTargetIsMonster &&
 				target->GetLevel() > ch->GetLevel() + PLAYERBOT_MAX_TARGET_LEVEL_DELTA;
+		// Something ten levels up is not a fight a bot picks - but it is a
+		// fight a bot is in, once that something is hitting it. The level cap
+		// used to drop the target either way, so a bot set upon by anything
+		// strong stood there swinging at nothing and died running. Breaking off
+		// is the survival pass's decision and it still outranks this; what the
+		// cap decides is what a bot walks up to, not what it answers.
 		const bool bPartyCanContinue = !bTargetNeedsParty ||
+				(target && target->GetVictim() == ch) ||
 				CanPlayerBotPartyChallenge(ch, target, dwNow, NULL);
 
 		if (!target || target->IsDead() || (!bTargetIsMonster && !bTargetIsStone) ||
@@ -1775,11 +1797,6 @@ void CPlayerBotManager::Update()
 
 		ch->SetPosition(POS_FIGHTING);
 		ch->SetRotationToXY(target->GetX(), target->GetY());
-
-		// In a compact party of five or more, an Archer periodically tags one
-		// additional nearby pack before returning to the shared focus target.
-		if (ExecutePlayerBotArcherLuring(ch, state, dwNow))
-			continue;
 
 		if (ExecutePlayerBotAttackSkill(ch, target, state, dwNow))
 		{

@@ -328,10 +328,51 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   need is not a reason to farm what cannot drop it), the defence one by
   **one episode per bot** - keyed per attacker it was renewed for ever by two
   monsters taking turns, so it now ends only after
-  `PLAYERBOT_DEFENCE_QUIET_TIME` without a combat action, and party defence
-  lives inside the same episode to be bounded in time as well as distance.
+  `PLAYERBOT_DEFENCE_QUIET_TIME` without a combat action.
+  **Self-defence is bounded by the leash and not by the clock**, and that
+  distinction was learned the hard way: with a ten-second bound on it, nine
+  strong monsters dropped next to a group of bots killed all of them, because
+  after ten seconds each monster was refused as a target while it was still
+  killing its bot. What the episode exists to stop is a bot being walked
+  across a map by a chain of attackers, and `PLAYERBOT_DEFENCE_LEASH` stops
+  exactly that; hitting back at what is hitting you is not a choice to
+  ration. Helping a party member keeps the clock - defending yourself is
+  compulsory in a way that helping is not - and RETREAT outranks both.
+  The level cap has the same shape: `bTargetNeedsParty` decides what a bot
+  walks up to, never what it answers, so a monster whose victim is this bot
+  passes it.
   `PLAYERBOT_M2: census` is how this is measured: a count of level-40 bots in
   Bokjung says nothing, the reason each one is there says everything.
+- **A boss is news, and the news travels through a guild.** A boss hub scored
+  `PLAYERBOT_RAID_WORTH` for everybody, which outran every hunting ground by
+  two orders of magnitude, so a whole level band walked to one monster - 145
+  of them in two minutes - and the ones that arrived late stood about. Worse,
+  the chosen hub was kept for `PLAYERBOT_HUB_STICK_TIME` **without asking
+  again whether the boss was still standing**, so four minutes of a column of
+  bots on empty ground was the normal end of every raid. The stick now
+  re-asks (`boss down, going back to work`), the first bot to find him
+  standing calls its own guild through `CGuild::Chat`, and that guild may
+  fill `PLAYERBOT_RAID_CROWD` places while everyone else gets half of them.
+  Count the bots that have *decided* to go, not the ones standing on the hub:
+  `CountPlayerBotRaiders` keeps a roster per race, because a hundred bots
+  choosing in the same second all see an empty hub and all set off.
+- **A pull is what came back, not what was shot at.** `playerbot_lure.h` is
+  the Archer's party role as a whole errand - PLAN, APPROACH, TAG, CONFIRM,
+  RETURN, HANDOFF, RECOVER - and CONFIRM counts the live monsters actually
+  chasing the bot, so a miss, a one-shot kill and a pack that never woke up
+  all count as nothing. It reuses the ordinary bow shot
+  (`ExecutePlayerBotBasicAttack`, which owns range, arrows and rhythm) rather
+  than growing a second damage path; the old `ExecutePlayerBotArcherLuring`
+  had one, complete with an invented damage number when the real one came out
+  under five. Two things it must not do: hold a character pointer across
+  ticks (the roster is copied out of the party every tick, and the claim on
+  the role is keyed by leader PID), and let the party follow it - the lurer
+  keeps `dwTargetVID` at zero so the shared party focus never sees the pack it
+  is waking up. The multi-pull cannot run at the same time by construction:
+  that one refuses a bot in a party and this one needs five.
+  `FindPlayerBotLurePack` is its own finder for a reason - the multi-pull's
+  looks for what is at a solo bot's feet, and on a map carrying eight hundred
+  bots that describes the ground the party is already standing on.
 - **A bot cannot be warped by a warp NPC, and now it is not asked to be.**
   `WarpSet` tells the client to reconnect to whichever core hosts the target
   map; a bot descriptor has nobody to answer that, so the map change is made

@@ -69,7 +69,10 @@ namespace
 	const DWORD PLAYERBOT_RETREAT_MOVE_INTERVAL = 1800;
 	const DWORD PLAYERBOT_ATTACK_INTERVAL = 1200;
 	const DWORD PLAYERBOT_POTION_INTERVAL = 1000;
-	const DWORD PLAYERBOT_REVIVE_DELAY = 11000;
+	// How long a bot lies where it fell. A player sees a body on the ground and
+	// then sees it get up; eleven seconds was close to that already and ten is
+	// what it is meant to be.
+	const DWORD PLAYERBOT_REVIVE_DELAY = 10000;
 	const DWORD PLAYERBOT_GEAR_RETRY_INTERVAL = 1000;
 	const DWORD PLAYERBOT_EQUIPMENT_CHECK_INTERVAL = 1000;
 	const DWORD PLAYERBOT_EQUIPMENT_COMBAT_DELAY = 1700;
@@ -382,6 +385,73 @@ namespace
 	const int PLAYERBOT_PARTY_DESIRED_MAX = 6;
 	const int PLAYERBOT_PARTY_COHESION_RADIUS = 2800;
 	const int PLAYERBOT_ARCHER_LURE_MIN_PARTY_MEMBERS = 5;
+	// The Archer's luring course, as a party role rather than an extra shot.
+	//
+	// A course is: walk out, tag a pack with one ordinary arrow, read whether it
+	// actually came, and bring what came back to the people who can kill it.
+	// Every number below bounds a real failure - an Archer that gathers for
+	// ever, one that runs further than monsters will follow, one that arrives at
+	// a party which has moved on - and none of them is a measured optimum yet.
+	//
+	// How far a receiver may be from the gathering point and still count as
+	// ready. Wider than this and the party is not standing together at all.
+	const int PLAYERBOT_LURE_ANCHOR_RADIUS = 2200;
+	// Close enough to the receivers to call the monsters delivered.
+	const int PLAYERBOT_LURE_HANDOFF_RANGE = 450;
+	// How far a course may take the Archer from the gathering point. Beyond it
+	// the monsters break off and walk home, which is a sprint for nothing.
+	const int PLAYERBOT_LURE_MAX_COURSE_RANGE = 4500;
+	// A bow's reach is the one the ordinary attack uses, less a margin for the
+	// step the bot takes while the shot is being sent. A second definition of
+	// range is how a lure comes to fire from where a fight could not.
+	const int PLAYERBOT_LURE_SHOT_RANGE = 760;
+	const int PLAYERBOT_LURE_START_HP_PERCENT = 90;
+	const int PLAYERBOT_LURE_BREAK_HP_PERCENT = 70;
+	const int PLAYERBOT_LURE_MAX_HP_LOSS_PERCENT = 12;
+	// Gathering has a deadline, and so has the walk back: a course that stopped
+	// making progress must end as a course, not as a bot standing in a field.
+	const DWORD PLAYERBOT_LURE_GATHER_TIME = 12000;
+	const DWORD PLAYERBOT_LURE_RETURN_TIME = 25000;
+	// After the arrow: long enough for a pack to turn round, short enough that
+	// one that is not coming does not cost the whole course.
+	const DWORD PLAYERBOT_LURE_CONFIRM_DELAY = 1200;
+	const DWORD PLAYERBOT_LURE_CONFIRM_TIMEOUT = 4500;
+	// How long the Archer stands with the party before the handover is judged.
+	const DWORD PLAYERBOT_LURE_HANDOFF_WAIT = 7000;
+	// A session that outlives this is abandoned whatever stage it is in, so no
+	// party is ever held by a lurer that stopped answering.
+	const DWORD PLAYERBOT_LURE_SESSION_TTL = 75000;
+	const DWORD PLAYERBOT_LURE_COOLDOWN_MIN = 20000;
+	const DWORD PLAYERBOT_LURE_COOLDOWN_MAX = 50000;
+	// Groups and monsters per course: what a first course asks for, and the
+	// ceiling a party earns by finishing courses without losing anybody.
+	const int PLAYERBOT_LURE_FIRST_GROUPS = 2;
+	const int PLAYERBOT_LURE_MAX_GROUPS = 4;
+	const int PLAYERBOT_LURE_FIRST_BUDGET = 7;
+	const int PLAYERBOT_LURE_MAX_BUDGET = 14;
+	// Courses in a row without a death or a failed handover before the plan
+	// grows by one group.
+	const int PLAYERBOT_LURE_GROWTH_STREAK = 3;
+	// What still counts as "the party is busy": a new course does not start
+	// while this many delivered monsters are still on the receivers.
+	const int PLAYERBOT_LURE_BUSY_MONSTERS = 3;
+	// How often an Archer that cannot start a course asks again. The busy
+	// count is a sector scan, and one per tick per Archer is a real cost
+	// for an answer that does not change that fast.
+	const DWORD PLAYERBOT_LURE_READY_RECHECK = 2000;
+	// Where a pack worth pulling stands. Not the multi-pull's band, which looks
+	// for whatever is at a solo bot's feet: a lure is for the packs the party
+	// has not reached, so it starts beyond bow range and beyond the ground the
+	// party is already fighting over, and it never takes a monster somebody
+	// else has claimed.
+	const int PLAYERBOT_LURE_MIN_PACK_DISTANCE = 1100;
+	const int PLAYERBOT_LURE_MAX_PACK_DISTANCE = 3000;
+	const int PLAYERBOT_LURE_ANCHOR_CLEARANCE = 900;
+	const int PLAYERBOT_LURE_GROUP_SEPARATION = 700;
+	// Above this over the Archer's own level a pack is not brought home, it is
+	// an escort of things that kill the Archer on the way.
+	const int PLAYERBOT_LURE_MAX_LEVEL_OVER = 3;
+
 	const int PLAYERBOT_PARTY_CHALLENGE_MIN_MEMBERS = 3;
 	const int PLAYERBOT_PARTY_CHALLENGE_RADIUS = 3000;
 	const int PLAYERBOT_PARTY_READY_HP_PERCENT = 55;
@@ -1062,6 +1132,31 @@ namespace
 	// What a shell can hold: Biala / Niebieska / Krwawa Perla.
 	const DWORD PLAYERBOT_PEARL_FIRST_VNUM = 27992;
 	const DWORD PLAYERBOT_PEARL_LAST_VNUM = 27994;
+	// How many shells a bot keeps whole. Prying one open is a bet against the
+	// shell's own worth: twenty-six recipes consume a shellfish as it is, and
+	// that is what it sells for. So the first few are never gambled with and
+	// only the surplus is opened.
+	const int PLAYERBOT_SHELLFISH_KEEP = 4;
+	// Hair dye, the engine's own range: 70201 washes the colour out, 70202 to
+	// 70206 set PART_HAIR to vnum-70201. char_item.cpp takes it straight from
+	// UseItem with no client involved, and the colour is permanent - which is
+	// the point of letting a bot use one.
+	const DWORD PLAYERBOT_HAIR_DYE_FIRST_VNUM = 70201;
+	const DWORD PLAYERBOT_HAIR_DYE_LAST_VNUM = 70206;
+	// The item-shop dyes. The engine's switch does not answer for these, so a
+	// bot never tries to use one: they are goods and nothing else.
+	const DWORD PLAYERBOT_HAIR_DYE_SHOP_FIRST_VNUM = 71075;
+	const DWORD PLAYERBOT_HAIR_DYE_SHOP_LAST_VNUM = 71079;
+
+	// A hair dye of either kind - one a bot could use, or one it can only sell.
+	// Both are worth money to somebody and neither is scrap.
+	bool IsPlayerBotHairDye(DWORD vnum)
+	{
+		return (vnum >= PLAYERBOT_HAIR_DYE_FIRST_VNUM &&
+					vnum <= PLAYERBOT_HAIR_DYE_LAST_VNUM) ||
+				(vnum >= PLAYERBOT_HAIR_DYE_SHOP_FIRST_VNUM &&
+					vnum <= PLAYERBOT_HAIR_DYE_SHOP_LAST_VNUM);
+	}
 	const int PLAYERBOT_FISHING_BAIT_BUNDLE = 20;
 	const int PLAYERBOT_FISHING_BAIT_RESTOCK = 5;
 	// The Rybak (9009) himself, from map_b1 npc.txt cell (675,539) against
@@ -1432,6 +1527,14 @@ namespace
 	const long PLAYERBOT_SOHAN_NINE_TAILS_X = 433300;
 	const long PLAYERBOT_SOHAN_NINE_TAILS_Y = 216500;
 	const int PLAYERBOT_RAID_WORTH = 100000;
+	// How many bots one boss is worth calling out. A boss needs a raid, not a
+	// province: past this many already on him the hub is scored like any other
+	// ground, so the rest of the band goes on hunting instead of queueing.
+	const int PLAYERBOT_RAID_CROWD = 12;
+	// How long a guild's call stands. Long enough to walk across a frontier
+	// map, short enough that a boss killed five minutes ago stops summoning
+	// anybody.
+	const DWORD PLAYERBOT_RAID_CALL_TIME = 180000;
 	// Exact world coordinates of the two rare M2 enemies from
 	// metin2_map_b3/boss.txt (map base 102400,204800). They are the classic
 	// level-30 weapon hunt: Bestial Archer (533) and Specialist (534).
@@ -1520,7 +1623,24 @@ namespace
 		// Walking the stall ring looking for something to buy. Distinct from
 		// BOT_ACTION_SHOP, which is the NPC merchant round, and from
 		// BOT_ACTION_STALL, which is standing behind a counter of one's own.
-		BOT_ACTION_MARKET
+		BOT_ACTION_MARKET,
+		// Bringing monsters to the party. Distinct from BOT_ACTION_FIGHT on
+		// purpose: the Archer is not fighting, it tags and runs.
+		BOT_ACTION_LURE
+	};
+
+	// Where an Archer is in its course. WAIT_READY is the absence of a session
+	// rather than a stage of one, so it is LURE_STAGE_NONE.
+	enum EPlayerBotLureStage
+	{
+		LURE_STAGE_NONE = 0,
+		LURE_STAGE_PLAN,
+		LURE_STAGE_APPROACH,
+		LURE_STAGE_TAG,
+		LURE_STAGE_CONFIRM,
+		LURE_STAGE_RETURN,
+		LURE_STAGE_HANDOFF,
+		LURE_STAGE_RECOVER
 	};
 
 	enum EPlayerBotPersonality
@@ -1771,7 +1891,25 @@ namespace
 			dwCampSince(0),
 			dwRelocateSince(0),
 			wHuntingHub(0xffff),
-			dwHubChosenTime(0)
+			dwHubChosenTime(0),
+			dwLureSessionId(0),
+			dwLureStageTime(0),
+			dwLureCourseTime(0),
+			dwLureShotTime(0),
+			dwLureNextTime(0),
+			dwLureTargetVID(0),
+			dwLureReceiverPID(0),
+			lLureAnchorX(0),
+			lLureAnchorY(0),
+			iLureStartHPPercent(0),
+			iLureDelivered(0),
+			iLureChasing(0),
+			bLureStage(LURE_STAGE_NONE),
+			bLureGroupsPlanned(0),
+			bLureGroupsTagged(0),
+			bLureBudget(0),
+			bLureTagAttempts(0),
+			bLureGoodCourses(0)
 		{
 		}
 
@@ -2034,6 +2172,33 @@ namespace
 		// logged when it changes rather than on every decision.
 		WORD wHuntingHub;
 		DWORD dwHubChosenTime;
+
+		// The luring course. The session id is what a log line is followed by
+		// and what tells one course from the next; the party's own record of who
+		// is luring for it lives in playerbot_lure.h, keyed by leader, because a
+		// party may only have one lurer and a bot cannot see the other bots'
+		// state from here.
+		DWORD dwLureSessionId;
+		DWORD dwLureStageTime;
+		DWORD dwLureCourseTime;
+		DWORD dwLureShotTime;
+		DWORD dwLureNextTime;
+		DWORD dwLureTargetVID;
+		DWORD dwLureReceiverPID;
+		// Where the party was standing when the course began. Everything is
+		// measured from here: how far the Archer may go, and where it comes back
+		// to - not the receiver's position, which moves during the fight.
+		long lLureAnchorX;
+		long lLureAnchorY;
+		int iLureStartHPPercent;
+		int iLureDelivered;
+		int iLureChasing;
+		BYTE bLureStage;
+		BYTE bLureGroupsPlanned;
+		BYTE bLureGroupsTagged;
+		BYTE bLureBudget;
+		BYTE bLureTagAttempts;
+		BYTE bLureGoodCourses;
 	};
 
 	typedef std::map<DWORD, TPlayerBotAIState> TPlayerBotAIStateMap;

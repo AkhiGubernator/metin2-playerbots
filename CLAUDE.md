@@ -286,6 +286,44 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   which is 1 at fifteen levels above the monster - a bot of forty-five in
   the easy dungeon got one medal per 140 trips. 109 was moved onto game1
   in `m2-render-config` like 104; `apply.sh` allows 108 and 109.
+- **That maze is eleven chambers, and only the GOTO NPCs join them.** The nine
+  rooms of `regen.txt` and the two boss rooms are separate connected
+  components of the shared `server_attr`; `warp_npc_event` teleports any
+  player within 300 units of a GOTO NPC, twice a second, so walking up to one
+  is the whole crossing. Room choice used to ask
+  `CPlayerBotNavigation::CanReach`, which only answers for the component the
+  bot stands in, so every bot found one room - its own - and nine tenths of
+  the dungeon was never walked: 130 trips in an hour and no planned crossing,
+  every `PLAYERBOT_SPOT` density cell of all three dungeons in the entrance
+  chamber. `PLAYERBOT_MONKEY_CHAMBERS` in `playerbot_movement.h` holds the
+  eleven rooms as their spawn cells off the dungeon base, and
+  `GetPlayerBotMonkeyChamberExits` gives the doors of one.
+- **The three dungeons share the NPC cells and not the wiring.** The door at
+  cell (80,308) leads to (106,547) on 25 and to (520,352) on 108, and 108/109
+  carry two doors 25 does not have - which is how they reach the eleventh
+  chamber. A table lifted from one map and used for the other two put bots in
+  chambers nothing had planned. `GetPlayerBotMonkeyGeometry` therefore walks
+  the map's sectrees once, takes every `IsGoto()` NPC, and reads its
+  destination out of its own name exactly as `CHARACTER::StartWarpNPCEvent`
+  does. Chamber and door components come off the navigation grid at the same
+  time; `GetPlayerBotMonkeyChamberAt` asks at radius 1, because two chambers
+  can run side by side with one blocked cell between them and a wide search
+  answers with the corridor over the wall.
+- **The crossing is noticed on the tick, not in the wander pass.**
+  `UpdatePlayerBotMonkeyChamber` runs for every bot in a dungeon before
+  anything can claim the tick. A portal moves the bot without touching its
+  route, and re-planning towards the old destination finds the door it came
+  in by; the wander pass runs only on a tick no subsystem took, and a bot
+  dropped among aggressive monkeys is fighting, not wandering.
+- **A snapped goal must stay inside the radius that tests arrival.**
+  `MovePlayerBotTownLeg` asked for a sixteen-cell target snap and then
+  checked arrival at 350 to 850 units. A goal behind a counter snapped
+  further than the check, so the bot walked its route, arrived at nothing,
+  cleared the route and planned the same one - and consuming a waypoint
+  resets `bStuckCounter`, so the six-failure service rescue never fired.
+  One bot stood at the Joan skill trainer for three days, reset by the
+  inactivity watchdog every 90 s without taking a step. The snap is now a
+  tenth of the arrival distance in cells.
 - **Droppers are personalities, not roles.** `IsPlayerBotDropper` names the
   four; `GetPlayerBotPersonalityByPID` is how a rule that only has a
   character asks. The travel gates (`ShouldPlayerBotVisitM3`,

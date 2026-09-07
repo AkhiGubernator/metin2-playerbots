@@ -17,6 +17,54 @@ every version here.
 
 ---
 
+## 1.30.9 — 2026-09-07
+
+### Naprawione
+
+- **Boty tłoczyły się w jednym korytarzu Lochu Małp i nie korzystały z reszty.**
+  Labirynt nie jest jedną przestrzenią. `server_attr` dzieli go na jedenaście
+  osobnych komnat — dziewięć pokoi z regenu i dwie sale bossów — a łączą je
+  wyłącznie NPC-e przenoszące, które teleportują każdego, kto podejdzie na trzy
+  metry (silnik sprawdza to dwa razy na sekundę, nic się nie klika). Wybór
+  pokoju pytał nawigację, czy da się tam dojść po ziemi, a ta odpowiada tylko za
+  komnatę, w której bot stoi — więc każdy bot znajdował jeden pokój z ośmiu w
+  tablicy, ten swój, i szedł na ten sam punkt spawnu co wszyscy, którzy weszli
+  przez wejście. W godzinie logów: 130 wypraw do lochu i ani jedno zaplanowane
+  przejście portalem, a w raporcie gęstości ze wszystkich trzech lochów były
+  wyłącznie komórki komnaty wejściowej. Trzy komnaty — w tym największa, z
+  dziewiętnastoma punktami spawnu, i obie sale bossów — nie miały nawet wpisu.
+  Teraz bot patroluje punkty spawnu komnaty, w której stoi, a po czterech
+  minutach idzie do przejścia prowadzącego do sąsiedniej i nie wraca tym samym,
+  dopóki jest inne. Tablica obejmuje wszystkie jedenaście komnat i 148
+  rzeczywistych punktów spawnu z `regen.txt`.
+- **Przejścia czytane z samych NPC-ów, nie z tablicy.** Trzy Lochy Małp stoją na
+  jednym `server_attr` i mają NPC-e przenoszące w tych samych komórkach, ale
+  **każdy loch jest inaczej okablowany**: przejście przy komórce (80,308)
+  prowadzi w łatwym lochu do (106,547), a w średnim do (520,352); średni i
+  trudny mają dodatkowo dwa przejścia, których łatwy nie ma w ogóle, i przez nie
+  jedenastą komnatę. Cel przejścia jest teraz odczytywany z nazwy NPC-a, tak jak
+  robi to silnik, więc każdy loch chodzi po swoim własnym układzie.
+- **Przekroczenie przejścia rozpoznawane co takt.** Teleport przenosi bota, nie
+  ruszając jego trasy: przy następnym planowaniu nawigacja uznaje stary cel za
+  nieosiągalny, szuka przejścia do niego i znajduje to, którym bot właśnie
+  przyszedł. Bot dropiony między agresywne małpy walczy, a nie wędruje, więc
+  zanim kolejna decyzja wędrówki doszła do słowa, mijał dwa albo trzy przejścia.
+  Teraz komnata jest ustalana raz na takt, zanim cokolwiek zdąży przejąć turę.
+- **Boty stojące bez ruchu w mieście.** Przystanek miejski pozwalał planerowi
+  przyciągnąć cel do najbliższej kratki, na której da się stanąć, nawet o
+  osiemset jednostek — a potem sprawdzał dojście promieniem od 350 do 850. Gdy
+  sprzedawca stoi za ladą albo filarem, bot szedł do przyciągniętej kratki,
+  wciąż był poza promieniem, czyścił trasę i planował tę samą. Zaliczenie punktu
+  trasy zeruje licznik zacięć, więc ratunek serwisowy — ten po sześciu
+  nieudanych próbach — nigdy się nie uruchamiał: jeden bot stał u nauczyciela
+  umiejętności w Joan trzy dni, budzony przez watchdoga co dziewięćdziesiąt
+  sekund i ani razu nie ruszył się z miejsca. Przyciąganie celu mieści się teraz
+  w promieniu dojścia, a cel naprawdę nieosiągalny trafia w istniejący ratunek.
+
+Zgłoszenie: Tieru, Remigiusz.
+
+---
+
 ## 1.30.8 — 2026-09-07
 
 ### Naprawione

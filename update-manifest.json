@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T15:31:00Z",
-  "statusMessage": "Aktualizacja 1.30.8. Tobolki straganow nie laduja juz na ziemi przy pelnym plecaku. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T18:12:00Z",
+  "statusMessage": "Aktualizacja 1.30.9. Boty korzystaja z calego Lochu Malp zamiast tloczyc sie w korytarzu przy wejsciu, a boty stojace bez ruchu w miescie ruszaja dalej. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.8",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.8/metin2-server-update-1.30.8.zip",
-    "sha256": "272A2F5D3E7E0BDF8180E7D4AF4431E4109874C58395D05F83ADDE84B732D641"
+    "version": "1.30.9",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.9/metin2-server-update-1.30.9.zip",
+    "sha256": "5529F457DA6A4867FF2AAB92F2BC4A63DA21A60B25C455F45BCF89E26B58461E"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

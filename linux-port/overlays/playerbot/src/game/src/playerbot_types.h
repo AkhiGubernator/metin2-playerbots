@@ -1084,6 +1084,24 @@ namespace
 	const BYTE PLAYERBOT_MONKEY_HARD_MIN_LEVEL = 46;
 	const DWORD PLAYERBOT_M3_MAX_VISIT_TIME = 1200000;
 	const DWORD PLAYERBOT_MONKEY_REVERSE_PORTAL_BLOCK_TIME = 10000;
+	// The third hand. Worn in a unique slot it makes CHARACTER::RewardGold hand
+	// a kill's yang straight to the killer instead of scattering coin piles on
+	// the ground, which is a bot's whole reason for wanting one: the walk to
+	// each pile costs a route plan and the piles it never reaches rot where
+	// they fell. The engine asks IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT), and
+	// what that group holds on this server is 72016..72018 - not the 71010 the
+	// item shop sells, which belongs to no group at all and would do nothing.
+	//
+	// It is a shop item with a wear clock: ITEM_MANAGER::CreateItem seeds
+	// ITEM_SOCKET_UNIQUE_REMAIN_TIME from VALUE0 and unique_expire_event counts
+	// it down one minute at a time while the item is worn, so 72018 is three
+	// hours of hunting and then nothing. A bot has no item shop to go back to,
+	// so its copy is wound back up instead of re-bought - the same answer
+	// ManagePlayerBotSkillBooks gives to a book's eighteen-hour wait.
+	const DWORD PLAYERBOT_THIRD_HAND_VNUM = 72018;
+	const long PLAYERBOT_THIRD_HAND_MINUTES = 525600;
+	const long PLAYERBOT_THIRD_HAND_REWIND_BELOW = 10080;
+	const DWORD PLAYERBOT_THIRD_HAND_INTERVAL = 300000;
 	// How long a bot works one chamber before walking to the portal that leads
 	// to the next. Four minutes is two respawns of a room's dozen monsters; the
 	// thirty-minute visit therefore covers six or seven of the eleven chambers.
@@ -1541,6 +1559,7 @@ namespace
 			dwNextSkillCheckTime(0),
 			dwNextSkillBookTime(0),
 			dwNextSoulStoneTime(0),
+			dwNextThirdHandTime(0),
 			dwNextProgressionChestCheckTime(0),
 			dwNextBuffCheckTime(0),
 			dwNextSkillCastTime(0),
@@ -1724,6 +1743,7 @@ namespace
 		DWORD dwNextSkillCheckTime;
 		DWORD dwNextSkillBookTime;
 		DWORD dwNextSoulStoneTime;
+		DWORD dwNextThirdHandTime;
 		DWORD dwNextProgressionChestCheckTime;
 		DWORD dwNextBuffCheckTime;
 		DWORD dwNextSkillCastTime;

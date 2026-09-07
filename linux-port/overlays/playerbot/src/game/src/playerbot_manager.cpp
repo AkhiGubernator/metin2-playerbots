@@ -1262,6 +1262,7 @@ void CPlayerBotManager::Update()
 
 		ManagePlayerBotSkillBooks(ch, state, dwNow);
 		ManagePlayerBotSoulStones(ch, state, dwNow);
+		ManagePlayerBotThirdHand(ch, state, dwNow);
 		ManagePlayerBotGuild(ch, state, dwNow);
 		ManagePlayerBotParty(ch, state, dwNow);
 		// The regular levelup.quest opens a selection dialog. A fake descriptor

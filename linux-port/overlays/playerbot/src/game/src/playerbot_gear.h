@@ -2017,6 +2017,67 @@ namespace
 
 		return false;
 	}
+
+	// Every bot wears the third hand, and keeps wearing it.
+	//
+	// Without it a kill's yang lands on the ground as coin piles and the bot has
+	// to walk to each one; with it the engine credits the money on the spot
+	// (CHARACTER::RewardGold, IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT)). The
+	// bot spends its ticks fighting rather than fetching, and the hunting
+	// grounds stop filling with yang nobody collects.
+	//
+	// Nothing here is a purchase: the item is made, worn, and its wear clock
+	// wound back up before it can run out. See PLAYERBOT_THIRD_HAND_VNUM for
+	// why that clock has to be touched at all, and why it is 72018 and not the
+	// 71010 an item shop would sell.
+	void ManagePlayerBotThirdHand(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || !ch->IsItemLoaded() || ch->IsDead())
+			return;
+		if (dwNow < state.dwNextThirdHandTime)
+			return;
+		state.dwNextThirdHandTime = dwNow + PLAYERBOT_THIRD_HAND_INTERVAL;
+
+		// The bot's copy, worn or carried - carried counts, or a bot that could
+		// not put it on this minute would be handed another one every pass.
+		LPITEM hand = ch->GetWear(WEAR_UNIQUE1);
+		if (!hand || hand->GetVnum() != PLAYERBOT_THIRD_HAND_VNUM)
+			hand = ch->GetWear(WEAR_UNIQUE2);
+		if (hand && hand->GetVnum() != PLAYERBOT_THIRD_HAND_VNUM)
+			hand = NULL;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM && !hand; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item && item->GetVnum() == PLAYERBOT_THIRD_HAND_VNUM)
+				hand = item;
+		}
+
+		if (!hand)
+		{
+			// AutoGiveItem hands the item over even when there is nowhere to put
+			// it, and it lands on the ground wearing the bot's name - the arrows
+			// and the stall bundles both learned this the hard way. Wait for a
+			// free cell instead.
+			if (ch->GetEmptyInventory(1) < 0)
+				return;
+			hand = ch->AutoGiveItem(PLAYERBOT_THIRD_HAND_VNUM, 1, -1, false);
+			if (!hand)
+				return;
+			sys_log(0, "PLAYERBOT_GEAR: third hand made pid=%u name=%s",
+					ch->GetPlayerID(), ch->GetName());
+		}
+
+		// CHARACTER::EquipItem refuses within a second and a half of an attack
+		// or a cast, which for a bot is most of its life - the first draft put
+		// the winding below behind a successful equip here and wound eight
+		// clocks out of six hundred. Trying is enough: what this pass does not
+		// manage, ManagePlayerBotEquipment picks out of the bag on its own.
+		if (!hand->IsEquipped())
+			ch->EquipItem(hand);
+
+		if (hand->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) < PLAYERBOT_THIRD_HAND_REWIND_BELOW)
+			hand->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, PLAYERBOT_THIRD_HAND_MINUTES);
+	}
 }
 
 #endif

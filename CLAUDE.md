@@ -315,6 +315,18 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   route, and re-planning towards the old destination finds the door it came
   in by; the wander pass runs only on a tick no subsystem took, and a bot
   dropped among aggressive monkeys is fighting, not wandering.
+- **The third hand is 72018, and the group is what the engine reads.**
+  `CHARACTER::RewardGold` gives a kill's yang straight to the killer when
+  `IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT)`, and what group 10011 holds in
+  these serverfiles is 72016..72018 - not the 71010 an item shop sells, which
+  is in no group at all and would do nothing. It is a timed item:
+  `ITEM_MANAGER::CreateItem` seeds `ITEM_SOCKET_UNIQUE_REMAIN_TIME` from
+  VALUE0 (180 for 72018) and `unique_expire_event` counts it down one minute
+  per minute of wear, so `ManagePlayerBotThirdHand` winds it back up rather
+  than buying another. That pass must not put the winding behind its own
+  `EquipItem`: the engine refuses to equip within 1.5 s of an attack or a
+  cast, which is most of a bot's life - the first draft wound eight clocks
+  out of six hundred, and the ordinary equipment pass had put the rest on.
 - **A snapped goal must stay inside the radius that tests arrival.**
   `MovePlayerBotTownLeg` asked for a sixteen-cell target snap and then
   checked arrival at 350 to 850 units. A goal behind a counter snapped

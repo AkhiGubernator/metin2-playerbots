@@ -17,6 +17,24 @@ every version here.
 
 ---
 
+## 1.30.10 — 2026-09-07
+
+### Nowe
+
+- **Każdy bot nosi Trzecią Rękę.** Z nią silnik dopisuje yang z zabitego
+  potwora prosto do sakiewki zabójcy, zamiast rozsypywać kupki monet po ziemi
+  (`CHARACTER::RewardGold` pyta o `UNIQUE_GROUP_AUTOLOOT`). Dla bota to nie
+  wygoda, tylko czas: dojście do każdej kupki kosztuje wyliczenie trasy, a te,
+  do których nie zdąży, i tak znikają — teraz bot zamiast biegać po monetach
+  bije dalej, a na terenach łowieckich przestaje zalegać yang, którego nikt nie
+  podnosi. Boty nie mają sklepu z przedmiotami, więc przedmiot jest im nadawany,
+  a jego zegar zużycia nakręcany — tak samo jak `ManagePlayerBotSkillBooks`
+  kasuje osiemnastogodzinną przerwę między czytaniem tej samej księgi.
+
+Zgłoszenie: OskarPWA.
+
+---
+
 ## 1.30.9 — 2026-09-07
 
 ### Naprawione

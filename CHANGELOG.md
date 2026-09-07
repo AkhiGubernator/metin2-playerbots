@@ -17,6 +17,33 @@ every version here.
 
 ---
 
+## 1.30.5 — 2026-09-07
+
+### Nowe
+
+- **Dwa nowe bossy do wypadów.** Dziewięć Ogonów na Górze Sohan (1901,
+  poziom 72, 166 tys. PZ, dwa lodowe golemy i yeti u boku, odrodzenie co
+  2 godziny w promieniu 150×200 pól) — wypad drużyny co najmniej
+  trzyosobowej, jak na Królową. Bestialski Kapitan w Bokjung (591, poziom
+  42, 19 tys. PZ, co godzinę) — każdy bot od 35 poziomu skręca do niego,
+  póki stoi, jak Dolina do Wodza.
+- **Drużyny na wszystkich mapach granicznych.** Drużyny tworzyły się tylko
+  na Dolinie Orków, a przejście mapy rozwiązuje drużynę, więc w V1 i na
+  Sohan nie było ani jednej (16 botów w V1, wszystkie solo) i nikt nie mógł
+  ruszyć na Królową ani Dziewięć Ogonów. Teraz drużyna zawiązuje się od 40
+  poziomu na każdej mapie granicznej (Dolina, Pustynia, Sohan, V1), do
+  ośmiu osób.
+- **Koń bojowy = częstsze Metiny, i ciosy w rytmie konia.** Jeździec z
+  koniem bojowym losuje wyprawę na Metiny dwa razy częściej. Kombo w siodle
+  ma trzy ciosy, nie cztery, i własne czasy z danych klienta
+  (`horse_<broń>/combo_NN.msa`); dotąd jeździec bijący kamień używał tabeli
+  pieszej, wysyłał czwarty cios, którego koń nie ma, i kolejny za wcześnie,
+  więc kombo nigdy nie grało do końca.
+
+Zgłoszenie: Tieru.
+
+---
+
 ## 1.30.4 — 2026-09-07
 
 ### Naprawione

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T11:29:00Z",
-  "statusMessage": "Aktualizacja 1.30.4. Tarcza kupowana niezaleznie od broni (w 1.30.3 bot z bronia dwureczna jej nie kupowal). Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T12:06:00Z",
+  "statusMessage": "Aktualizacja 1.30.5. Wypady na Dziewiec Ogonow (Sohan) i Bestialskiego Kapitana (Bokjung), druzyny na wszystkich mapach granicznych, kon bojowy: czestsze Metiny i kombo w rytmie konia. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.4",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.4/metin2-server-update-1.30.4.zip",
-    "sha256": "077F0271C0C46A42DF55584F49618D4275E3E52E937242D96E70FA988E0ABD5C"
+    "version": "1.30.5",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.5/metin2-server-update-1.30.5.zip",
+    "sha256": "5C67475B4A5BB75322FDD0531D16F8264FFC127FB0588CF470CC7D9556B910E7"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

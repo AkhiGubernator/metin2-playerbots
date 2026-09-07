@@ -89,6 +89,11 @@ namespace
 	// Percent of stall keepers that sell scrap gear. Zero is off, and the
 	// default: it is the "hard server" flavour, asked for by name.
 	int s_iPlayerBotScrapPercent = 0;
+	// Whether a bot reads its books without the engine's day between them.
+	// On by default: the day is what makes a book a month's project, and the
+	// books were rotting in the bags of bots that could not read them yet.
+	bool s_bPlayerBotFastBooks = true;
+	bool s_bPlayerBotFastBooksReported = true;
 	// What CONFIG said before the file ever overrode it, so a file that stops
 	// mentioning the chests hands the numbers back to CONFIG.
 	int s_iPlayerBotChestConfigPermille = -1;
@@ -114,6 +119,7 @@ namespace
 			s_aiPlayerBotWeights[i] = PLAYERBOT_WEIGHT_NEUTRAL;
 		s_bPlayerBotOverheadChat = true;
 		s_iPlayerBotScrapPercent = 0;
+		s_bPlayerBotFastBooks = true;
 		if (s_iPlayerBotChestConfigPermille < 0)
 		{
 			s_iPlayerBotChestConfigPermille = g_iMoonlightChestPermille;
@@ -164,6 +170,17 @@ namespace
 				s_bPlayerBotOverheadChatReported = enabled;
 			}
 			s_bPlayerBotOverheadChat = enabled;
+			return;
+		}
+		if (PlayerBotWeightNameEquals(szKey, "BOOKS"))
+		{
+			const bool enabled = value != 0;
+			if (enabled != s_bPlayerBotFastBooksReported)
+			{
+				sys_log(0, "PLAYERBOT_CONFIG: fast books %s", enabled ? "on" : "off");
+				s_bPlayerBotFastBooksReported = enabled;
+			}
+			s_bPlayerBotFastBooks = enabled;
 			return;
 		}
 		if (PlayerBotWeightNameEquals(szKey, "CHEST") || PlayerBotWeightNameEquals(szKey, "CHEST_STONE"))
@@ -301,6 +318,13 @@ namespace
 		if (!s_bPlayerBotWeightsInitialised)
 			ResetPlayerBotWeights();
 		return s_bPlayerBotOverheadChat;
+	}
+
+	bool IsPlayerBotFastBooksEnabled()
+	{
+		if (!s_bPlayerBotWeightsInitialised)
+			ResetPlayerBotWeights();
+		return s_bPlayerBotFastBooks;
 	}
 
 	int GetPlayerBotWeight(BYTE bWeight)

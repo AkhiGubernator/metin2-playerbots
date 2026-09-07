@@ -680,8 +680,16 @@ namespace
 		// Skill books. Stock for everyone; the Metin dropper's whole trade, so
 		// on its counter they go up beside the level-30 weapons.
 		if (item->GetType() == ITEM_SKILLBOOK)
+		{
+			// Its own, within what it keeps to read, stays in the bag: a counter
+			// used to carry the very book its keeper was waiting to read.
+			const DWORD skillVnum = GetPlayerBotSkillBookSkillVnum(item);
+			if (ch->GetSkillGroup() != 0 && IsPlayerBotOwnSkill(ch, skillVnum) &&
+					CountPlayerBotSkillBooksAhead(ch, item, skillVnum) < PLAYERBOT_BOOK_KEEP_PER_SKILL)
+				return -1;
 			return GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER
 					? 1800 : 400;
+		}
 
 		// Ordinary spare gear, and only if somebody could want it. This used to
 		// be "return 1" for absolutely everything else, which is how counters

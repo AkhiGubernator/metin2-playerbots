@@ -314,6 +314,17 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   a second stack. The buyer re-reads the counter on the tick it arrives,
   whatever the browse clock says.
 
+- **A book is read once a day unless the panel says otherwise.** The
+  engine puts SKILLBOOK_DELAY_MIN..MAX (eighteen to thirty hours) between
+  two reads of one skill; `ManagePlayerBotSkillBooks` resets that with
+  `SetSkillNextReadTime` after `PLAYERBOT_BOOK_FAST_DELAY` while the `BOOKS`
+  key in the weights file is on (the default). A bot keeps
+  `PLAYERBOT_BOOK_KEEP_PER_SKILL` books of each own skill and the rest are
+  goods; a keyless treasure chest is junk once the bag is down to
+  `PLAYERBOT_BAG_PRESSURE_FREE_CELLS`. The Moonlight chest opens by itself
+  but only into a free cell, which is what a bag full of books and chests
+  had stopped.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

@@ -147,6 +147,21 @@ namespace
 	const DWORD PLAYERBOT_STAT_CHECK_INTERVAL = 1000;
 	const DWORD PLAYERBOT_SKILL_CHECK_INTERVAL = 1000;
 	const DWORD PLAYERBOT_SKILL_BOOK_CHECK_INTERVAL = 8000;
+	// How many books of one of its own skills a bot keeps. Ten successful
+	// reads take a skill from M1 to G1 and a read succeeds two times in three,
+	// so this is one skill's worth with a spare; the rest go on a counter or
+	// to the merchant. Before this a bot kept every book for a skill it could
+	// not read for weeks, and the bag filled with them.
+	const int PLAYERBOT_BOOK_KEEP_PER_SKILL = 12;
+	// With the panel's BOOKS switch on, the engine's day between two reads of
+	// the same skill (SKILLBOOK_DELAY_MIN to MAX: eighteen to thirty hours) is
+	// cut to this. A bot then reads a skill from M1 to G1 in an evening
+	// instead of a month, which is what a player with Exorcism Scrolls does.
+	const DWORD PLAYERBOT_BOOK_FAST_DELAY = 1800000;
+	// A bag this short of cells is under pressure: what was worth keeping on
+	// the chance of a key or a buyer goes to the merchant, so the chests and
+	// the loot still have somewhere to land.
+	const int PLAYERBOT_BAG_PRESSURE_FREE_CELLS = 8;
 	const DWORD PLAYERBOT_SOUL_STONE_CHECK_INTERVAL = 10000;
 	// What UseItemEx leaves in the socket when the 30% roll fails. Defined as a
 	// file-local const in char_item.cpp, so it is repeated here.
@@ -794,7 +809,11 @@ namespace
 	// loses this much score per level past that, so a tier-appropriate piece
 	// at a low refine displaces the starter piece at +6 and gets refined.
 	const int PLAYERBOT_ARMOR_OUTGROWN_LEVELS = 20;
-	const long long PLAYERBOT_ARMOR_OUTGROWN_PENALTY = 1500;
+	// ...as a share of its defence figure per level past that, up to all of
+	// it. It was a flat fifteen hundred a level, which took the bonus lines
+	// with it: a level-18 plate rolled with fifteen hundred health lost at
+	// fifty to a dragon armour with seven more defence and nothing else.
+	const long long PLAYERBOT_ARMOR_OUTGROWN_PERCENT_PER_LEVEL = 5;
 	const DWORD PLAYERBOT_SKILL_FORGET_SCROLL_VNUM = 70037;
 	// Scrap keepers: the share of stall keepers (percent, from the panel) that
 	// put their low refines on the counter instead of vendoring them, for the
@@ -1631,6 +1650,8 @@ namespace
 		// What this bot has fought lately, by race flag; see the world memory.
 		WORD awRaceHistogram[PLAYERBOT_RACE_HISTOGRAM_SLOTS] = { 0, 0, 0, 0, 0 };
 		DWORD dwRaceHistogramStamp;
+		// When this bot last read a book of each skill, for the BOOKS switch.
+		std::map<DWORD, DWORD> mapBookReadTime;
 		DWORD dwStoneLastProgressTime;
 		DWORD dwNextStoneProgressCheckTime;
 		DWORD dwNextNavPlanTime;

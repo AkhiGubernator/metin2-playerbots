@@ -858,6 +858,7 @@ def read_ai_weights():
     """What the file says now. Anything missing or unreadable is neutral."""
     vals = {k: AI_W_NEUTRAL for k, _ in AI_WEIGHT_KEYS}
     vals["CHAT"] = 1
+    vals["BOOKS"] = 1
     vals["SCRAP"] = 0
     # The chest event's two figures. None until the file says: the panel does
     # not know what CONFIG holds, and must not write a guess over it.
@@ -875,6 +876,9 @@ def read_ai_weights():
                 name = parts[0].upper()
                 if name == "CHAT":
                     vals["CHAT"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                    continue
+                if name == "BOOKS":
+                    vals["BOOKS"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
                     continue
                 if name == "SCRAP":
                     try:
@@ -914,6 +918,9 @@ def write_ai_weights(vals):
         body.append("%s\t%d" % (name, vals[name]))
     # Not a weight: whether bots say what they are doing over their heads.
     body.append("CHAT\t%d" % (1 if vals.get("CHAT", 1) else 0))
+    # Not a weight: whether a bot reads its skill books without the engine's
+    # day between two reads of the same skill.
+    body.append("BOOKS\t%d" % (1 if vals.get("BOOKS", 1) else 0))
     # Percent of stall keepers that sell scrap gear; 0 is off.
     body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
     # The Moonlight chest: thousandths per kill and per Metin. Written only once
@@ -2649,6 +2656,12 @@ T.update({
                   "de":"Die Zeile über dem Kopf eines Bots (jagt, geht zum Schmied, angelt). Aus für Spieler, die es Spam nennen. Der Ruf im Weltkanal über ein +7/+8/+9-Upgrade bleibt so oder so.",
                   "tr":"Botun başının üstündeki satır (avlanıyor, demirciye gidiyor, balık tutuyor). Spam diyen oyuncular için kapatın. Dünya kanalındaki +7/+8/+9 bağırışı her halükârda kalır."},
  "ai_chat_on":   {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
+ "ai_books":     {"en":"Skill books without the day's wait","pl":"Księgi umiejętności bez dobowej przerwy","de":"Fertigkeitsbücher ohne Tageswartezeit","tr":"Günlük bekleme olmadan beceri kitapları"},
+ "ai_books_help":{"en":"The game makes a character wait about a day between two reads of the same skill, so a bot needs a month of books to take a skill from M1 to G1 and the books pile up in its bag meanwhile. On, a bot reads again after half an hour - what a player does with Exorcism Scrolls. Off keeps the game's own pace.",
+                  "pl":"Gra każe czekać około doby między dwoma czytaniami tej samej umiejętności, więc bot potrzebuje miesiąca, by przeczytać skill z M1 na G1, a księgi tymczasem zalegają w plecaku. Włączone: bot czyta ponownie po pół godzinie, jak gracz ze Zwojami Egzorcyzmu. Wyłączone: tempo gry bez zmian.",
+                  "de":"Das Spiel lässt zwischen zwei Lesungen derselben Fertigkeit etwa einen Tag warten, also braucht ein Bot einen Monat, um eine Fertigkeit von M1 auf G1 zu lesen, und die Bücher stapeln sich derweil. An: der Bot liest nach einer halben Stunde erneut, wie ein Spieler mit Exorzismus-Rollen. Aus: das Tempo des Spiels.",
+                  "tr":"Oyun aynı becerinin iki okuması arasında yaklaşık bir gün bekletir; bot bir beceriyi M1'den G1'e çıkarmak için bir ay kitap okur ve kitaplar bu arada çantada birikir. Açık: bot yarım saat sonra tekrar okur, Ayin Parşömeni kullanan bir oyuncu gibi. Kapalı: oyunun kendi temposu."},
+ "ai_books_on":  {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
  "ai_scrap":     {"en":"Scrap keepers","pl":"Boty złomiarze","de":"Schrotthändler-Bots","tr":"Hurdacı botlar"},
  "ai_scrap_help":{"en":"The share of stall keepers that put their low refines (+0 to +3) on the counter, cheaply, instead of vendoring them - fodder for burning at the blacksmith, the way the hard servers play. Off by default.",
                   "pl":"Udział straganiarzy, którzy wystawiają na ladę swoje słabe ulepszenia (+0 do +3) za grosze zamiast sprzedawać je NPC - złom do palenia u kowala, jak na serwerach hard. Domyślnie wyłączone.",
@@ -4225,6 +4238,11 @@ TPL_AI = BASE.replace("__BODY__", """
   <h3 style="margin:0 0 2px">💬 {{t('ai_chat')}}</h3>
   <p class="muted" style="margin:0 0 6px">{{t('ai_chat_help')}}</p>
   <label><input type="checkbox" name="CHAT" value="1" {% if cur.get('CHAT', 1) %}checked{% endif %}> {{t('ai_chat_on')}}</label>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">📚 {{t('ai_books')}}</h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_books_help')}}</p>
+  <label><input type="checkbox" name="BOOKS" value="1" {% if cur.get('BOOKS', 1) %}checked{% endif %}> {{t('ai_books_on')}}</label>
 </div>
 <div style="margin-bottom:18px">
   <h3 style="margin:0 0 2px">♻️ {{t('ai_scrap')}}
@@ -8646,6 +8664,7 @@ def ai_weights():
             # the sane answer is the nearest legal one, not an error page.
             vals[name] = max(AI_W_MIN, min(AI_W_MAX, v))
         vals["CHAT"] = 1 if request.form.get("CHAT") else 0
+        vals["BOOKS"] = 1 if request.form.get("BOOKS") else 0
         try:
             vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
         except (TypeError, ValueError):
@@ -9611,7 +9630,11 @@ def dash():
                         "a.login AS account "
                         "FROM player.player p "
                         "LEFT JOIN account.account a ON a.id = p.account_id "
-                        "ORDER BY p.last_play DESC LIMIT 200")
+                        # People first, then the bots that fit: the list is
+                        # filtered in the browser, and a filter over the two
+                        # hundred most recent characters found nobody's own
+                        # once fifteen hundred bots had played more recently.
+                        "ORDER BY (a.login LIKE 'playerbot_%'), p.last_play DESC LIMIT 200")
             players = cur.fetchall()
         # 'recently in the game' marker: last_play within the last 10 minutes.
         # The game stamps it at login/logout, so this is honest about what it

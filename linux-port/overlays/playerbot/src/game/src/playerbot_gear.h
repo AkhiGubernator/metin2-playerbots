@@ -160,8 +160,12 @@ namespace
 			case APPLY_NONE:
 			case APPLY_SKILL:
 				return 0;
+			// Fifteen a point: fifteen hundred health - half again what a
+			// character of forty has - is worth more than twenty-two points of
+			// defence, and at ten it was worth fifteen, less than the seven
+			// points that separated two armours a bot chose between.
 			case APPLY_MAX_HP:
-				return (long long)lValue * 10;
+				return (long long)lValue * 15;
 			case APPLY_MAX_SP:
 			// The sprint bar, and the reason a bot would otherwise wear the
 			// level-0 bracelet for ever: ten points of it through the catch-all
@@ -346,9 +350,16 @@ namespace
 			// level-41 shield sat in the bag. Each refine on the higher tier is
 			// worth more than one on the lower, so the bot switches tiers and
 			// refines that - a level-41 shield at +4 beats a level-21 one at +6.
+			// The penalty is a share of the defence figure alone: the bonus lines
+			// are added below and are worth what they are worth at any level.
 			if (ch && (int)ch->GetLevel() - item->GetLevelLimit() > PLAYERBOT_ARMOR_OUTGROWN_LEVELS)
-				score -= (long long)((int)ch->GetLevel() - item->GetLevelLimit() -
-						PLAYERBOT_ARMOR_OUTGROWN_LEVELS) * PLAYERBOT_ARMOR_OUTGROWN_PENALTY;
+			{
+				const long long outgrown = (int)ch->GetLevel() - item->GetLevelLimit() -
+						PLAYERBOT_ARMOR_OUTGROWN_LEVELS;
+				const long long percent = std::min<long long>(100,
+						outgrown * PLAYERBOT_ARMOR_OUTGROWN_PERCENT_PER_LEVEL);
+				score -= (score - 1) * percent / 100;
+			}
 		}
 
 		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)

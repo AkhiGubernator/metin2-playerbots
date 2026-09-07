@@ -265,6 +265,34 @@ namespace
 		return free;
 	}
 
+	// Books of one skill in the cells before this one. Cell order decides, so
+	// the same books stay put from one town visit to the next.
+	int CountPlayerBotSkillBooksAhead(LPCHARACTER ch, LPITEM item, DWORD skillVnum)
+	{
+		int ahead = 0;
+		const WORD ownCell = item->GetCell();
+		for (WORD cell = 0; cell < ownCell && cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM other = ch->GetInventoryItem(cell);
+			if (other && other != item && other->GetType() == ITEM_SKILLBOOK &&
+					GetPlayerBotSkillBookSkillVnum(other) == skillVnum)
+				++ahead;
+		}
+		return ahead;
+	}
+
+	// A key whose lock matches this chest, anywhere in the bag.
+	bool PlayerBotHasTreasureKeyFor(LPCHARACTER ch, LPITEM box)
+	{
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM key = ch->GetInventoryItem(cell);
+			if (key && key->GetType() == ITEM_TREASURE_KEY && key->GetValue(0) == box->GetValue(0))
+				return true;
+		}
+		return false;
+	}
+
 	bool IsPlayerBotJunkItem(LPCHARACTER ch, LPITEM item)
 	{
 		if (!ch || !item || item->IsEquipped() || item->isLocked())
@@ -319,7 +347,14 @@ namespace
 		// A treasure chest waits for its key, a key for its chest, and a
 		// Forgetting Scroll for a skill stuck at seventeen - this bot's or, across
 		// a counter, another's.
-		if (item->GetType() == ITEM_TREASURE_BOX || item->GetType() == ITEM_TREASURE_KEY ||
+		// A chest without its key is kept while there is room for it. Keys are
+		// rare and chests are not: a bag under pressure lets the merchant have
+		// the chests, so the loot and the Moonlight chests that open by
+		// themselves still have somewhere to land.
+		if (item->GetType() == ITEM_TREASURE_BOX)
+			return CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS &&
+					!PlayerBotHasTreasureKeyFor(ch, item);
+		if (item->GetType() == ITEM_TREASURE_KEY ||
 				item->GetType() == ITEM_GIFTBOX || vnum == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
 			return false;
 		// A soul stone is somebody's socket: this bot's, or across a counter
@@ -364,8 +399,13 @@ namespace
 			// Keep books for the selected build (also before profession selection).
 			// Books for another class/build may first be handed to a party member;
 			// if nobody needs them they become normal miscellaneous loot.
-			return ch->GetSkillGroup() != 0 &&
-					!IsPlayerBotOwnSkill(ch, GetPlayerBotSkillBookSkillVnum(item));
+			if (ch->GetSkillGroup() == 0)
+				return false;
+			const DWORD skillVnum = GetPlayerBotSkillBookSkillVnum(item);
+			if (!IsPlayerBotOwnSkill(ch, skillVnum))
+				return true;
+			// Its own, and only so many of them - see PLAYERBOT_BOOK_KEEP_PER_SKILL.
+			return CountPlayerBotSkillBooksAhead(ch, item, skillVnum) >= PLAYERBOT_BOOK_KEEP_PER_SKILL;
 		}
 
 		// Preserve health, mana, green and purple speed potions

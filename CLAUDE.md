@@ -343,6 +343,38 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   passes it.
   `PLAYERBOT_M2: census` is how this is measured: a count of level-40 bots in
   Bokjung says nothing, the reason each one is there says everything.
+- **A buff cast claims the tick, so the set has to be gathered quickly.**
+  `ManagePlayerBotCombatBuffs` casts one buff and returns; at five seconds
+  between passes a Warrior needed ten seconds for aura and berserk and a
+  weapon Sura fifteen for three enchantments. Aura of the Sword lasts
+  `30+50*k` seconds on a `30+10*k` cooldown, so a bot was spending as long
+  putting it back up as it stayed up, and was usually seen without it.
+  `PLAYERBOT_BUFF_RECHECK_FAST` brings the bot straight back after a cast;
+  the ordinary five seconds resume on the first pass that finds nothing
+  missing. Mana is the other half and is not solved here: 213 bots of 1300
+  hold less than the 300 SP a mastered aura costs.
+- **A splash skill is the weakest thing in the rotation against one target.**
+  `IsPlayerBotSplashSkill` asks the engine for `SKILL_FLAG_SPLASH` and the
+  rotation skips those against a Metin stone, which is never a crowd. The
+  rotation takes the first skill off cooldown, and a stone lasts long enough
+  to put the good ones there, so what actually landed on stones was Poison
+  Cloud - `-(lv*2 + (atk + str*3 + dex*18)*k)` against Fast Attack's
+  `-(atk + (1.6*atk + ...))`, for the same animation lock.
+- **The wallet floor cannot rank two materials; the merchant's price can.**
+  `GetPlayerBotShopAskingPrice` raises a material to a share of the median
+  wallet, and that share was the same number for everything - ~38 000 at a
+  2.6M median - so a shellfish (merchant 3 000) and a white pearl (12 000)
+  stood on the counters at the same price. It is scaled by `npcUnit` against
+  `PLAYERBOT_MARKET_WALLET_REFERENCE_PRICE`, in hundredths and clamped to
+  [100, 800] percent so nothing gets cheaper and nothing runs away. And
+  `PLAYERBOT_MARKET_REGULATOR_MAX` went from 1.35 to 2.0: a third above the
+  prior is not a market answering five hundred bots short of a thing no
+  counter carries.
+- **A keeper trades in the town it is standing in.** The stall used to roll
+  a town and then refuse to open unless the bot was already there - nine
+  rolls in ten chose Joan while the bots with goods stood in Bokjung, so Joan
+  got no stalls at all. The market browse has always read the ring of its own
+  bot's map, so a stall in Joan has map 21's four hundred bots for customers.
 - **A boss is news, and the news travels through a guild.** A boss hub scored
   `PLAYERBOT_RAID_WORTH` for everybody, which outran every hunting ground by
   two orders of magnitude, so a whole level band walked to one monster - 145

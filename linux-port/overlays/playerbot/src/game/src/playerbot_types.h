@@ -215,6 +215,12 @@ namespace
 	// a string of fights with gaps for walking and looting between them, so the
 	// window has to outlast a gap without outlasting the walk back to town.
 	const DWORD PLAYERBOT_BUFF_COMBAT_WINDOW = 60000;
+	// How soon a bot comes back for the next buff once it has found one
+	// missing. One cast claims the tick, so five seconds between them meant a
+	// Warrior needed ten seconds for aura and berserk and a weapon Sura fifteen
+	// for its three enchantments - longer than most of the fights they were
+	// buffing for, which is why they were usually seen without them.
+	const DWORD PLAYERBOT_BUFF_RECHECK_FAST = 1200;
 	const BYTE PLAYERBOT_PRECIOUS_REFINE = 6;
 	// The lowest refine an ordinary spare may carry and still be worth a counter
 	// slot. Below it nobody wants the thing: the market code buys medals,
@@ -580,6 +586,22 @@ namespace
 	const DWORD PLAYERBOT_MARKET_GEAR_WALLET_PERMILLE_PER_REFINE = 15;
 	const DWORD PLAYERBOT_MARKET_OTHER_WALLET_PERMILLE = 10;
 	const DWORD PLAYERBOT_MARKET_STACK_WALLET_PERCENT = 30;
+	// What the merchant pays for a shellfish, and the yardstick for the wallet
+	// floor below.
+	//
+	// The wallet says what the market can afford in total; on its own it cannot
+	// tell two materials apart, and with a median wallet of 2.6 million every
+	// material landed on the same ~38 000. That is why a shellfish the merchant
+	// values at 3 000 and a white pearl he values at 12 000 stood on the
+	// counters at the same price. The floor is now scaled by what the merchant
+	// pays for this particular thing against this yardstick, in hundredths so a
+	// material worth a fifth of a shellfish is not rounded to nothing, and only
+	// upwards: nothing gets cheaper, and what is genuinely worth more costs
+	// more. The cap keeps one expensive material from pricing itself out of
+	// every buyer's reach.
+	const DWORD PLAYERBOT_MARKET_WALLET_REFERENCE_PRICE = 600;
+	const DWORD PLAYERBOT_MARKET_WALLET_WORTH_MIN_PERCENT = 100;
+	const DWORD PLAYERBOT_MARKET_WALLET_WORTH_MAX_PERCENT = 800;
 	// A piece off a counter has to beat what the bot wears, and any spare in
 	// its bag for the slot, by this much. Two armours of one vnum and refine
 	// differ by their bonus rolls, and "better than worn" bought the second
@@ -610,7 +632,10 @@ namespace
 	const DWORD PLAYERBOT_MARKET_REGULATOR_Q0 = 5;
 	const double PLAYERBOT_MARKET_REGULATOR_EXPONENT = 0.2;
 	const double PLAYERBOT_MARKET_REGULATOR_MIN = 0.75;
-	const double PLAYERBOT_MARKET_REGULATOR_MAX = 1.35;
+	// The ceiling on the shortage premium. At 1.35 a material five hundred bots
+	// were short of and no counter carried could ask a third more than one
+	// nobody wanted, which is not a market answering a shortage.
+	const double PLAYERBOT_MARKET_REGULATOR_MAX = 2.0;
 	// How fast the market's ask for a thing may drift: this much per interval
 	// since it last moved, up to this many intervals at once; and how long an
 	// ask is remembered after the last counter carried the thing.
@@ -1102,10 +1127,6 @@ namespace
 	// spares and no use for the yang; three in ten of those keep a stall
 	// against one in ten of everyone else.
 	const int PLAYERBOT_FULL_GEAR_SHOP_ROLL = 300;
-	// The chance, rolled again for every stall a bot puts up, that it chooses Joan
-	// over Bokjung. Joan is where the players are - three quarters of the live
-	// bots stand on map 21 at any moment - so that is where the stalls belong.
-	const DWORD PLAYERBOT_SHOP_M1_SHARE = 90;
 	// A stall stands for a while and then the bot goes back to playing. An hour
 	// was long enough that a player watching the market never saw one come down,
 	// which read as "the shops never close" even before the tick-ordering bug

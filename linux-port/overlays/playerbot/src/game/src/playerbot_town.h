@@ -495,7 +495,25 @@ namespace
 			else if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) && refine > 2)
 				permille = PLAYERBOT_MARKET_GEAR_WALLET_PERMILLE_PER_REFINE * (refine - 2);
 			const unsigned long long count = std::max<DWORD>(1, item->GetCount());
-			const DWORD walletUnit = (DWORD)((unsigned long long)wallet * permille / 1000);
+			// The wallet says what the market can afford, the merchant's own
+			// price says how two materials rank against each other, and taking
+			// the wallet number flat threw the ranking away - see
+			// PLAYERBOT_MARKET_WALLET_REFERENCE_PRICE.
+			//
+			// Materials only. Gear already has its own scale in this block - a
+			// permille per refine level - and a piece of level-50 armour the
+			// merchant values at twenty thousand would come out eight times
+			// dearer for no reason anybody asked for.
+			DWORD worthPercent = PLAYERBOT_MARKET_WALLET_WORTH_MIN_PERCENT;
+			if (IsPlayerBotTradeableMaterial(item))
+			{
+				worthPercent = (DWORD)((unsigned long long)npcUnit * 100 /
+						PLAYERBOT_MARKET_WALLET_REFERENCE_PRICE);
+				worthPercent = std::max(PLAYERBOT_MARKET_WALLET_WORTH_MIN_PERCENT,
+						std::min(PLAYERBOT_MARKET_WALLET_WORTH_MAX_PERCENT, worthPercent));
+			}
+			const DWORD walletUnit = (DWORD)((unsigned long long)wallet * permille /
+					1000 * worthPercent / 100);
 			const DWORD stackCap = (DWORD)((unsigned long long)wallet *
 					PLAYERBOT_MARKET_STACK_WALLET_PERCENT / 100 / count);
 			unit = std::max(unit, std::max<DWORD>(1, std::min(walletUnit, stackCap)));
@@ -1180,16 +1198,17 @@ namespace
 		// for an idle moment that never arrives.
 		const bool justFinishedInTown = state.dwNextShopCheckTime != 0 &&
 				dwNow < state.dwNextShopCheckTime;
-		// Where to trade is rolled afresh for every stall, not fixed per bot: nine
-		// openings in ten choose Joan. Nothing is remembered - a bot that rolls the
-		// town it is not standing in simply does not open this time and rolls again
-		// on its next attempt, so the choice can never strand a keeper waiting for
-		// a town it rarely visits.
+		// A keeper trades in the town it is standing in.
+		//
+		// This used to roll a town - nine openings in ten choosing Joan - and
+		// then refuse to open unless the bot already happened to be there. The
+		// bots with anything to sell are in Bokjung, so nine rolls in ten were
+		// thrown away and Joan got no stalls at all, which is the opposite of
+		// what the roll was for. The market browse already reads the ring of
+		// whatever map its own bot is on, so a stall in Joan has the four
+		// hundred bots of map 21 for customers.
 		long pitchX = 0, pitchY = 0;
-		const long wantedMap = (number(1, 100) <= (int)PLAYERBOT_SHOP_M1_SHARE)
-				? PLAYERBOT_MAP_CHUNJO_M1 : PLAYERBOT_MAP_CHUNJO_M2;
-		if (ch->GetMapIndex() != wantedMap ||
-				!GetPlayerBotShopCentre(ch->GetMapIndex(), pitchX, pitchY))
+		if (!GetPlayerBotShopCentre(ch->GetMapIndex(), pitchX, pitchY))
 			return false;
 		// A keeper already standing on the ring counts as in town too. A server
 		// restart drops every shop - they live only in memory - and leaves its

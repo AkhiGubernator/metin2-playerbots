@@ -220,6 +220,9 @@ namespace
 				// and therefore only needs its normal skill cooldown.
 				state.mapBuffActiveUntil[buffVnum] = dwNow +
 						(buffVnum == 109 ? 10000 : PLAYERBOT_BUFF_FALLBACK_DURATION);
+				// Straight back for the next one. The ordinary five seconds
+				// resume on the first pass that finds nothing missing.
+				state.dwNextBuffCheckTime = dwNow + PLAYERBOT_BUFF_RECHECK_FAST;
 				sys_log(0, "PLAYERBOT_AI: activated self buff skill pid=%u name=%s vnum=%u",
 						ch->GetPlayerID(), ch->GetName(), buffVnum);
 				return true;
@@ -289,6 +292,24 @@ namespace
 		return false;
 	}
 
+	// A splash skill is for a crowd, and a Metin stone is never a crowd.
+	//
+	// The rotation takes the first skill that is off cooldown, and a stone takes
+	// long enough to put the good ones on cooldown - so what kept coming up
+	// against stones was the splash skill, which is where these builds are
+	// weakest on a single target. Poison Cloud is
+	// -(lv*2 + (atk + str*3 + dex*18)*k) against Fast Attack's
+	// -(atk + (1.6*atk + ...)): one attack rating against two and a half, for
+	// the same 1.4 s of animation lock. Skipping it and letting the ordinary
+	// swing chain through is strictly better on one target. Asked of the engine
+	// rather than kept as a list of VNUMs, so a server whose skill table differs
+	// still gets the right answer.
+	bool IsPlayerBotSplashSkill(DWORD skillVnum)
+	{
+		CSkillProto* proto = CSkillManager::instance().Get(skillVnum);
+		return proto && (proto->dwFlag & SKILL_FLAG_SPLASH) != 0;
+	}
+
 	bool ExecutePlayerBotAttackSkill(LPCHARACTER ch, LPCHARACTER target, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !target || ch->GetSkillGroup() == 0 || dwNow < state.dwNextSkillCastTime)
@@ -307,6 +328,8 @@ namespace
 		{
 			const DWORD skillVnum = build.dwOffensiveSkills[i];
 			if (skillVnum == 0 || ch->GetSkillLevel(skillVnum) == 0)
+				continue;
+			if (target->IsStone() && IsPlayerBotSplashSkill(skillVnum))
 				continue;
 
 			if (ch->UseSkill(skillVnum, target))

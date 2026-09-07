@@ -3,6 +3,7 @@
 #include "playerbot_world_rules.h"
 
 #include "char.h"
+#include "skill.h"
 #include "char_manager.h"
 #include "cmd.h"
 #include "desc.h"

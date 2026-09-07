@@ -79,6 +79,8 @@ Set-Location "$env:USERPROFILE\Metin2Server"
 docker compose up -d
 ```
 
+After the start two web panels are running: the classic admin panel at `http://127.0.0.1:7788` and the **Metin2 Singleplayer Panel** by seban latino at `http://127.0.0.1:7790` — a live map of the bot world, character profiles with inventories and item tooltips, rankings, economy history, host telemetry, live bot controls and bulk item grants. The first visit to `/setup` asks for a name, a theme and an optional password.
+
 ### 4. Join the Game
 Point the client from the same compatible r40250 set to `127.0.0.1` (Auth port `11000`, Game ports `13000–13002`) and jump into the living world in Joan (Chunjo)!
 
@@ -129,5 +131,6 @@ Detailed guides separated into dedicated documentation modules:
 
 - **AzzlackSyndicate** — author of the original Linux port foundation, installers, and panel. The source repository is now private; its Git history and attribution are retained.
 - **OskarPWA** — the bot depot window and the skill icons on the site come from a panel he built and shared for merging back.
+- **seban latino** — author of the Metin2 Singleplayer Panel (`linux-port/docker/seban-panel`), the second panel in this install: live map, profiles, rankings, economy, telemetry and bulk grants.
 - [DadsMmoLab/dads-mmo-lab](https://github.com/DadsMmoLab/dads-mmo-lab) — Research inspiration for autonomous MMO agent design.
 - The Metin2 emulation and research community.

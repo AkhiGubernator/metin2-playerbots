@@ -615,6 +615,7 @@ if ((Test-Path -LiteralPath $overlaySource -PathType Container) -and
     $stagedPairs = @(
         @{ From = 'files\admin_panel.py';       To = 'linux-port\docker\panel\app\admin_panel.py' },
         @{ From = 'VERSION';                    To = 'linux-port\docker\panel\app\VERSION' },
+        @{ From = 'VERSION';                    To = 'linux-port\docker\seban-panel\VERSION' },
         @{ From = 'CHANGELOG.md';               To = 'linux-port\docker\panel\app\CHANGELOG.md' },
         @{ From = 'files\items.json';           To = 'linux-port\docker\panel\app\items.json' },
         @{ From = 'files\favicon.png';          To = 'linux-port\docker\panel\app\favicon.png' },

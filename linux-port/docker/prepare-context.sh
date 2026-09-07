@@ -338,6 +338,7 @@ fi
 # its patch log says the file is not in this build -- it never invents either.
 if [ -f "$REPO_ROOT/VERSION" ]; then
   cp -a "$REPO_ROOT/VERSION" "$HERE/panel/app/VERSION"
+  cp -a "$REPO_ROOT/VERSION" "$HERE/seban-panel/VERSION"
   info "VERSION  $(tr -d ' \r\n' < "$REPO_ROOT/VERSION")"
 else
   info "WARNING: $REPO_ROOT/VERSION not found -- the panel will report its"

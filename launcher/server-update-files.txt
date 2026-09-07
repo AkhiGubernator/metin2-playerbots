@@ -9,6 +9,9 @@ files/items.json
 files/favicon.png
 files/web_admin_schema.sql
 files/web_admin.quest
+# Seban's panel: the whole tree, icons included. It is built on the player's
+# machine like the classic panel, so what ships is the source.
+linux-port/docker/seban-panel/*
 files/high_risk.quest
 files/speed_boost.quest
 # The panel's skill icons. Two copies for the same reason admin_panel.py has

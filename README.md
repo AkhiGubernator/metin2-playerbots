@@ -79,6 +79,8 @@ Set-Location "$env:USERPROFILE\Metin2Server"
 docker compose up -d
 ```
 
+Po starcie działają dwa panele w przeglądarce: klasyczny panel administracyjny pod `http://127.0.0.1:7788` oraz **Metin2 Singleplayer Panel** autorstwa seban latino pod `http://127.0.0.1:7790` — mapa świata botów na żywo, profile postaci z ekwipunkiem i tooltipami przedmiotów, rankingi, historia gospodarki, telemetria hosta, sterowanie botami i masowe nadawanie przedmiotów. Przy pierwszym wejściu na `/setup` wybierasz nazwę, motyw i opcjonalne hasło.
+
 ### 4. Wejście do gry
 Skonfiguruj klienta z tego samego kompatybilnego zestawu r40250 na adres `127.0.0.1` (port Auth `11000`, porty gry `13000–13002`) i ciesz się tętniącym życiem światem w Chunjo!
 
@@ -129,5 +131,6 @@ Szczegółowe informacje podzielone na dedykowane poradniki:
 
 - **AzzlackSyndicate** — autor pierwotnej bazy linuksowego portu, instalatorów i panelu. Repozytorium źródłowe jest obecnie prywatne; zachowujemy historię Git i pełną atrybucję.
 - **OskarPWA** — okno magazynu bota i ikony umiejętności na stronie pochodzą z panelu, który zbudował i udostępnił do przeniesienia.
+- **seban latino** — autor Metin2 Singleplayer Panel (`linux-port/docker/seban-panel`), drugiego panelu w tej instalacji: mapa na żywo, profile, rankingi, gospodarka, telemetria i masowe nadania.
 - [DadsMmoLab/dads-mmo-lab](https://github.com/DadsMmoLab/dads-mmo-lab) — Inspiracja badawcza dla autonomicznych agentów w grach MMO.
 - Społeczność badaczy i entuzjastów platformy Metin2.

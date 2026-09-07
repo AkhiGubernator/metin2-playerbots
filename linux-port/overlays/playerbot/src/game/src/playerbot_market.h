@@ -110,14 +110,6 @@ namespace
 		const int wearCell = offer->FindEquipCell(ch);
 		if (wearCell < 0)
 			return false;
-		// A shield has no slot beside a two-handed weapon, and a Mental warrior
-		// on its battle horse is not putting the spike down for one.
-		if (offer->GetType() == ITEM_ARMOR && offer->GetSubType() == ARMOR_SHIELD)
-		{
-			LPITEM weapon = ch->GetWear(WEAR_WEAPON);
-			if (weapon && weapon->GetSubType() == WEAPON_TWO_HANDED)
-				return false;
-		}
 		// Not when the bag already holds one at least as good for the same
 		// slot. The comparison below is against what is worn, and what is
 		// worn does not change until the gear pass runs - so a bot standing at

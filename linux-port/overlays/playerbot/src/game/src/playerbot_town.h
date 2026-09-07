@@ -384,6 +384,10 @@ namespace
 	// only opens when it happens to be in Bokjung with no errand outstanding,
 	// the share actually standing at any moment is smaller again.
 	// The centre of a town's stall ring, or false for a map that has none.
+	// Defined with the chat trade, which comes after the market: the keeper
+	// says on the world channel what it has just put up.
+	void AnnouncePlayerBotStall(LPCHARACTER ch, const char* pszItemName);
+
 	bool GetPlayerBotShopCentre(long mapIndex, long& pitchX, long& pitchY)
 	{
 		if (mapIndex == PLAYERBOT_MAP_CHUNJO_M1)
@@ -1395,6 +1399,10 @@ namespace
 		sys_log(0, "PLAYERBOT_SHOP: opened pid=%u name=%s items=%u first_vnum=%u first_price=%u pos=(%ld,%ld) sign=\"%s\"",
 				ch->GetPlayerID(), ch->GetName(), (unsigned int)tableCount,
 				offers[0].dwVnum, offers[0].dwPrice, ch->GetX(), ch->GetY(), sign);
+		// Worth crossing town for is worth a line on the world channel - the
+		// same bar the sign uses for a stall that carries one thing.
+		if (bestScore >= PLAYERBOT_SHOP_PRIZE_SCORE && pszBestName)
+			AnnouncePlayerBotStall(ch, pszBestName);
 		return true;
 	}
 

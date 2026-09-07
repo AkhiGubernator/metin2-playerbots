@@ -100,6 +100,7 @@ dependency order at the top of `playerbot_manager.cpp`:
 | `playerbot_guild.h` | Founding and recruiting a guild, and who a bot has got on with. |
 | `playerbot_town.h` | A town visit end to end, as a state machine that survives being interrupted. |
 | `playerbot_market.h` | Buying from another bot's counter: what is worth having, the walk to the stall, and the purchase. |
+| `playerbot_chat_trade.h` | Trading over the chat: what a bot shouts about its counter and its wants, and the whisper it answers a player's "Kupie"/"Sprzedam" with. Fed by patch 0007. |
 | `playerbot_loot.h` | Picking things up, in and out of a fight, without sweeping the floor. |
 | `playerbot_survival.h` | Saving progress, breaking off a losing fight, and the walk back after dying. |
 | `playerbot_wandering.h` | What a bot does on a hunting map when nothing is asking for its attention. |
@@ -324,6 +325,17 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `PLAYERBOT_BAG_PRESSURE_FREE_CELLS`. The Moonlight chest opens by itself
   but only into a free cell, which is what a bag full of books and chests
   had stopped.
+- **The chat reaches the bots through patch 0007, and only there.**
+  `CInputMain::Chat` hands a player's shout to
+  `CPlayerBotManager::OnPlayerShout` after `SendShout`, and
+  `CInputMain::Whisper` hands a whisper addressed to a bot to
+  `OnPlayerWhisper` instead of a descriptor with no client; `shop.h` gets
+  `GetItemVector()` so a bot can read a player's counter and buy from it
+  (capped at `PLAYERBOT_MARKET_STACK_WALLET_PERCENT` of the median wallet
+  per line). The staged `input_main.cpp` and `shop.h` ship in
+  `server-update-files.txt` like 0006's files. A bot's own shouts go out
+  through `SendShout` directly and never come back through the hook. Text
+  is CP1250; `FoldPlayerBotChatText` is how names are compared.
 
 ## Engine facts worth not re-deriving
 

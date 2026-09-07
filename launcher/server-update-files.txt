@@ -55,6 +55,8 @@ linux-port/docker/game/src/server/game/src/playerbot_*
 # patched file does - the same way the playerbot sources do.
 linux-port/docker/game/src/server/game/src/item_manager.cpp
 linux-port/docker/game/src/server/game/src/config.cpp
+linux-port/docker/game/src/server/game/src/input_main.cpp
+linux-port/docker/game/src/server/game/src/shop.h
 # The engine patches, by pattern for the same reason as the sources above: a
 # new one must not need an edit here to reach the people running the server.
 # The launcher applies whatever it finds in that directory and decides for

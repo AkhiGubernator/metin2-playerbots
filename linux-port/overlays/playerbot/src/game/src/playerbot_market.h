@@ -35,6 +35,10 @@
 
 namespace
 {
+	// Defined with the chat trade, after this file: the bot that found the
+	// market empty of what it came for asks the world channel.
+	void AnnouncePlayerBotNeed(LPCHARACTER ch);
+
 	class CCollectPlayerBotStalls
 	{
 		public:
@@ -181,7 +185,37 @@ namespace
 				continue;
 			TPlayerBotAIStateMap::const_iterator it =
 					s_mapPlayerBotAIStates.find(keeper->GetPlayerID());
-			if (it == s_mapPlayerBotAIStates.end() || it->second.vecShopOffers.empty())
+			// A player's counter is read from the engine's own shop through the
+			// accessor patch 0007 adds - the offer list only exists for bots. A
+			// line a player asks more than a share of the median wallet for is
+			// passed over: the bots are customers, not a way to print yang.
+			std::vector<TPlayerBotShopOffer> playerOffers;
+			if (it == s_mapPlayerBotAIStates.end())
+			{
+				if (keeper->GetDesc() && keeper->GetDesc()->IsBot())
+					continue;
+				const std::vector<CShop::SHOP_ITEM>& lines = keeper->GetMyShop()->GetItemVector();
+				const DWORD cap = (DWORD)((unsigned long long)GetPlayerBotMarketMedianWallet() *
+						PLAYERBOT_MARKET_STACK_WALLET_PERCENT / 100);
+				for (size_t k = 0; k < lines.size(); ++k)
+				{
+					const CShop::SHOP_ITEM& line = lines[k];
+					if (!line.pkItem || line.vnum == 0 || line.price <= 0 ||
+							(cap != 0 && (DWORD)line.price > cap))
+						continue;
+					TPlayerBotShopOffer offer;
+					offer.dwVnum = line.vnum;
+					offer.dwPrice = (DWORD)line.price;
+					offer.bRefine = line.pkItem->GetRefineLevel();
+					offer.wCount = line.count;
+					offer.dwItemID = (DWORD)line.itemid;
+					offer.bSlot = (BYTE)k;
+					playerOffers.push_back(offer);
+				}
+			}
+			const std::vector<TPlayerBotShopOffer>& offers =
+					it != s_mapPlayerBotAIStates.end() ? it->second.vecShopOffers : playerOffers;
+			if (offers.empty())
 				continue;
 
 			const int distance = DISTANCE_APPROX(ch->GetX() - keeper->GetX(),
@@ -191,9 +225,9 @@ namespace
 
 			// A counter holds several things. Walk it and take the first line the
 			// buyer actually wants; the offer carries the engine's slot for it.
-			for (size_t k = 0; k < it->second.vecShopOffers.size(); ++k)
+			for (size_t k = 0; k < offers.size(); ++k)
 			{
-				const TPlayerBotShopOffer& candidate = it->second.vecShopOffers[k];
+				const TPlayerBotShopOffer& candidate = offers[k];
 				// Never spend down to nothing: potions and the next weapon first.
 				if (candidate.dwPrice == 0 ||
 						ch->GetGold() - (int)candidate.dwPrice <
@@ -318,8 +352,10 @@ namespace
 						PLAYERBOT_SHOP_RING_RADIUS)
 			{
 				// Standing in the ring with nothing on it worth buying. The trip
-				// is over rather than a bot loitering for another minute.
+				// is over rather than a bot loitering for another minute - and
+				// the world channel hears what it came for.
 				EndPlayerBotMarketTrip(ch, state, "nothing_on_offer");
+				AnnouncePlayerBotNeed(ch);
 				return false;
 			}
 		}

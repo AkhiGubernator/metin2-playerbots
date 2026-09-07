@@ -69,6 +69,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_guild.h"
 #include "playerbot_town.h"
 #include "playerbot_market.h"
+#include "playerbot_chat_trade.h"
 #include "playerbot_loot.h"
 #include "playerbot_survival.h"
 #include "playerbot_wandering.h"
@@ -1760,4 +1761,14 @@ bool CPlayerBotManager::IsManaged(DWORD dwPlayerID) const
 size_t CPlayerBotManager::GetCount() const
 {
 	return m_mapBots.size();
+}
+
+void CPlayerBotManager::OnPlayerShout(LPCHARACTER ch, const char* szText)
+{
+	HandlePlayerShoutForTrade(ch, szText);
+}
+
+void CPlayerBotManager::OnPlayerWhisper(LPCHARACTER from, LPCHARACTER bot, const char* szText)
+{
+	HandlePlayerWhisperToBot(from, bot, szText);
 }

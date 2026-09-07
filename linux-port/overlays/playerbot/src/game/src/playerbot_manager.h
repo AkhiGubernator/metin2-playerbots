@@ -16,6 +16,11 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		void	OnLoadFailed(DWORD dwHandle);
 		void	OnDescriptorDestroyed(LPDESC d);
 		void	Update();
+		// A player's shout, after the channel has it, and a whisper addressed to
+		// a bot. Both from patch 0007 in input_main.cpp; playerbot_chat_trade.h
+		// decides whether and which bot answers.
+		void	OnPlayerShout(LPCHARACTER ch, const char* szText);
+		void	OnPlayerWhisper(LPCHARACTER from, LPCHARACTER bot, const char* szText);
 
 		bool	IsManaged(DWORD dwPlayerID) const;
 		bool	IsRegistered(DWORD dwPlayerID);

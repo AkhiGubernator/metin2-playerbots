@@ -153,11 +153,6 @@ namespace
 	// to the merchant. Before this a bot kept every book for a skill it could
 	// not read for weeks, and the bag filled with them.
 	const int PLAYERBOT_BOOK_KEEP_PER_SKILL = 12;
-	// With the panel's BOOKS switch on, the engine's day between two reads of
-	// the same skill (SKILLBOOK_DELAY_MIN to MAX: eighteen to thirty hours) is
-	// cut to this. A bot then reads a skill from M1 to G1 in an evening
-	// instead of a month, which is what a player with Exorcism Scrolls does.
-	const DWORD PLAYERBOT_BOOK_FAST_DELAY = 1800000;
 	// A bag this short of cells is under pressure: what was worth keeping on
 	// the chance of a key or a buyer goes to the merchant, so the chests and
 	// the loot still have somewhere to land.
@@ -1838,7 +1833,6 @@ namespace
 		long lDesertCrossingY;
 		DWORD dwNextCrossingStoneCheck;
 		// When this bot last read a book of each skill, for the BOOKS switch.
-		std::map<DWORD, DWORD> mapBookReadTime;
 		DWORD dwStoneLastProgressTime;
 		DWORD dwNextStoneProgressCheckTime;
 		DWORD dwNextNavPlanTime;

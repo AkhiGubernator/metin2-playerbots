@@ -597,17 +597,20 @@ namespace
 			}
 		}
 
-		// The day's wait the engine puts between two reads of one skill, cut to
-		// PLAYERBOT_BOOK_FAST_DELAY while the panel's BOOKS switch is on. The
-		// engine's own way round the wait is an Exorcism Scroll, which a bot
-		// rarely has; this is the scroll without the item.
+		// The day's wait the engine puts between two reads of one skill
+		// (SKILLBOOK_DELAY_MIN..MAX, eighteen to thirty hours) is waved away
+		// entirely while the panel's BOOKS switch is on. The engine's own way
+		// round it is an Exorcism Scroll, which a bot rarely has; this is the
+		// scroll without the item, and without a wait of its own - what a bot
+		// reads is limited by how many books it is holding, not by a clock.
+		//
+		// The two rules that decide how far a skill actually gets are the
+		// engine's and are not touched here: how many successful reads take it
+		// to G, and the roll on each read. A bot with a bagful still fails a
+		// third of them and still needs ten that land.
 		if (IsPlayerBotFastBooksEnabled() &&
 				get_global_time() < ch->GetSkillNextReadTime(bestSkillVnum))
-		{
-			const DWORD dwLastRead = state.mapBookReadTime[bestSkillVnum];
-			if (dwLastRead == 0 || dwNow - dwLastRead >= PLAYERBOT_BOOK_FAST_DELAY)
-				ch->SetSkillNextReadTime(bestSkillVnum, get_global_time());
-		}
+			ch->SetSkillNextReadTime(bestSkillVnum, get_global_time());
 		// Still waiting, and no scroll to wave the wait away: asking the engine
 		// anyway cost a refusal every eight seconds and a "read" line that read
 		// nothing - a hundred and ninety of them in eight minutes.
@@ -618,7 +621,6 @@ namespace
 		const BYTE oldLevel = ch->GetSkillLevel(bestSkillVnum);
 		if (ch->UseItem(TItemPos(INVENTORY, bestCell)))
 		{
-			state.mapBookReadTime[bestSkillVnum] = dwNow;
 			SetPlayerBotAction(state, BOT_ACTION_READ_BOOK, dwNow);
 			sys_log(0, "PLAYERBOT_AI: read skill book pid=%u name=%s skill=%u old_level=%u new_level=%u success=%d",
 					ch->GetPlayerID(), ch->GetName(), bestSkillVnum, oldLevel,

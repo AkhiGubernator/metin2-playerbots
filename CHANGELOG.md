@@ -17,6 +17,57 @@ every version here.
 
 ---
 
+## 1.30.7 — 2026-09-07
+
+### Nowe
+
+- **Średni i trudny Loch Małp.** Medal Konny to grupa dropu „kill”
+  (jeden na 550 żołnierzy, 500 wojowników, 200 generałów), a silnik skaluje
+  każdy taki rzut różnicą poziomów: piętnaście poziomów nad potworem
+  zostaje 1 % szansy. Bot 45 poziomu w łatwym lochu (małpy 22–29)
+  potrzebował więc ok. 50 tysięcy zabójstw na medal — 140 wypraw na godzinę
+  przynosiło jeden. Teraz loch dobiera poziom: łatwy (25) do 32, średni
+  (108, małpy 35–42) 33–45, trudny (109, małpy 45–54) od 46. Trzy lochy to
+  ten sam labirynt (jeden `server_attr`, te same portale), więc nawigacja,
+  pokoje i wyjście działają wszędzie; mapa 109 przeniesiona na rdzeń
+  game1. Bot, który przerośnie swój loch, wychodzi i wraca do właściwego.
+- **Po medal także z map granicznych.** Losowanie wyprawy po medal
+  czytano tylko w mieście, a bot po czterdziestce mieszka na Dolinie,
+  Pustyni, Sohan i w V1 — stąd 439 botów 40+ bez konia i 435 na koniu
+  poniżej dziesiątki. Teraz wylosowany bot bez drużyny schodzi z mapy
+  granicznej do Bokjung, idzie do swojego lochu i wraca; drużyn nie
+  rozbija. Zniesiony też podział „po 26 poziomie tylko trzecia część
+  szansy” i blokada dla konia ≥ 10: koń bojowy (11–19) dalej potrzebuje
+  medali do dwudziestki.
+- **Medal-dropper jest sklepikarzem medalowym.** Zbiera medale w lochu
+  swojego poziomu (dotąd tylko do 32) i zawsze wystawia je na straganie —
+  wcześniej trzymał je, dopóki jego własny koń mógł ich użyć, a dropper na
+  koniu 10 (kandydat do bojowego, nie wolno mu wydać medalu) nie mógł ich
+  ani użyć, ani sprzedać.
+- **Pełne eq chętniej otwiera stragan.** Bot z każdym slotem zajętym i bez
+  niczego do kupienia na drabince postępu trzyma stragan w trzech
+  przypadkach na dziesięć zamiast jednego (ten sam rzut, więc dotychczasowi
+  handlarze zostają).
+
+### Naprawione
+
+- **Łucznicy wysypywali strzały na ziemię.** `AutoGiveItem` oddaje przedmiot
+  także wtedy, gdy nie miał go gdzie położyć — przy pełnym plecaku paczka
+  strzał lądowała na ziemi, bot płacił, wciąż „potrzebował strzał” i
+  kupował znowu (dwadzieścia razy na godzinę). Teraz przed zakupem sprawdza
+  wolną kratkę, a bez niej czeka na następną wizytę.
+- **Panel seban (port 7790): „Internal Server Error” zaraz po starcie.**
+  Pulpit czyta tabelę zrzutów, którą kolektor zakłada przy pierwszym
+  zrzucie — a kolektor startuje razem z bazą, która na świeżej lub właśnie
+  zaktualizowanej instalacji jeszcze nie odpowiada; po nieudanej próbie
+  czekał pięć minut i przez ten czas każdy, kto otworzył panel, widział
+  błąd 500. Teraz do pierwszego udanego zrzutu kolektor ponawia co 15 s,
+  a pulpit bez tabeli pokazuje pustą sekcję obciążenia zamiast błędu.
+
+Zgłoszenie: OskarPWA, ŁOŚTEK, Remigiusz, stylowy26.
+
+---
+
 ## 1.30.6 — 2026-09-07
 
 ### Naprawione

@@ -1355,6 +1355,17 @@ namespace
 			return false;
 		if (ch->CountSpecifyItem(50200) == 0)
 		{
+			// AutoGiveItem puts the bundle on the ground when the bag has no free
+			// cell - and a bag about to be sold from is often exactly that full.
+			// The shop then refused for want of a bundle, the next attempt bought
+			// another, and the market square filled with "botjade2's Tobol" lying
+			// in the drop-protection window while the bots ran about between them.
+			if (ch->GetEmptyInventory(1) < 0)
+			{
+				sys_log(0, "PLAYERBOT_SHOP: no room for bundle pid=%u name=%s lines=%u",
+						ch->GetPlayerID(), ch->GetName(), (unsigned int)tableCount);
+				return false;
+			}
 			// The bot buys its stall like anything else it carries.
 			if (ch->GetGold() >= PLAYERBOT_SHOP_BUNDLE_PRICE)
 				ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_SHOP_BUNDLE_PRICE);

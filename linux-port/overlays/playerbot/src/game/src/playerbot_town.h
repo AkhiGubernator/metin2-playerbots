@@ -444,23 +444,38 @@ namespace
 	// tables - the merchant value is that of the unrefined base - so above +6
 	// the number is ours. Deliberately modest: the point is that another bot can
 	// actually buy it after an hour of hunting.
+	DWORD ApplyPlayerBotBonusPremium(DWORD price, int bonusPercent)
+	{
+		if (bonusPercent <= 0)
+			return price;
+		return std::max<DWORD>(1, (DWORD)((unsigned long long)price *
+				(unsigned long long)(100 + bonusPercent) / 100ULL));
+	}
+
 	DWORD GetPlayerBotShopAskingPrice(LPITEM item)
 	{
 		if (!item)
 			return 1;
+		// What is rolled on this particular piece, worked out once and applied to
+		// every way out of this function. The three refine prices below are flat
+		// by design - a +7 has no merchant price to scale - and returning them
+		// unscaled is what left boots +7 with five bonus lines on a counter at
+		// the same 150 000 as boots +7 with none.
+		const int bonusPercent = GetPlayerBotBonusPricePercent(item);
 		const BYTE refine = item->GetRefineLevel();
 		if (refine >= 9)
-			return PLAYERBOT_SHOP_PRICE_PLUS9;
+			return ApplyPlayerBotBonusPremium(PLAYERBOT_SHOP_PRICE_PLUS9, bonusPercent);
 		if (refine == 8)
-			return PLAYERBOT_SHOP_PRICE_PLUS8;
+			return ApplyPlayerBotBonusPremium(PLAYERBOT_SHOP_PRICE_PLUS8, bonusPercent);
 		if (refine == 7)
-			return PLAYERBOT_SHOP_PRICE_PLUS7;
+			return ApplyPlayerBotBonusPremium(PLAYERBOT_SHOP_PRICE_PLUS7, bonusPercent);
 		const DWORD npcUnit = GetPlayerBotNpcSellUnitPrice(item);
 		// Scrap gear is priced as scrap: twice what the merchant pays, so the
 		// player burning it at the blacksmith is not paying market money for it.
 		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
 				refine < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
-			return std::max<DWORD>(1, npcUnit * PLAYERBOT_SCRAP_PRICE_MULT);
+			return ApplyPlayerBotBonusPremium(
+					std::max<DWORD>(1, npcUnit * PLAYERBOT_SCRAP_PRICE_MULT), bonusPercent);
 		DWORD unit = npcUnit * PLAYERBOT_SHOP_MATERIAL_MARKUP;
 		// A soul stone has no merchant price: the counter asks by grade.
 		if (item->GetType() == ITEM_METIN)
@@ -542,6 +557,11 @@ namespace
 		// And a bounded step from wherever the last counter had it, so the
 		// market's price of a thing drifts rather than jumps.
 		unit = LimitPlayerBotAskStep(item->GetVnum(), refine, std::max<DWORD>(1, unit), dwNow);
+		// And last, the lines rolled on it - on top of the step limiter rather
+		// than under it, because the limiter and the sale memory are both keyed
+		// by vnum and refine, the one pair that cannot tell two otherwise
+		// identical pieces apart.
+		unit = ApplyPlayerBotBonusPremium(unit, bonusPercent);
 		const DWORD price = unit * (DWORD)item->GetCount();
 		return price == 0 ? 1U : price;
 	}

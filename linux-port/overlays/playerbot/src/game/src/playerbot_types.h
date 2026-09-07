@@ -348,6 +348,22 @@ namespace
 	// an item has to know it, and reading it from the engine header would tie a
 	// tuning constant to a build detail.
 	const int PLAYERBOT_BONUS_MAX_LINES = 5;
+	// What the lines rolled on a piece add to what a stall asks for it.
+	//
+	// A counter wanted the same 150 000 for boots +7 carrying five bonus lines
+	// as for boots +7 carrying none, which is not a market: everything that set
+	// the price - the merchant's table, the sale memory, the step limiter - is
+	// keyed by vnum and refine, and that pair cannot tell the two apart.
+	//
+	// Two things carry it. How many lines there are, with a step at four
+	// because that is where a piece stops being a drop and starts being
+	// somebody's work; and whether any of them is a roll a player stops on -
+	// two thousand health, ten percent critical, immunity to stun. The cap is
+	// there because the buyers are bots with an hour's hunting in their pocket.
+	const int PLAYERBOT_SHOP_BONUS_PER_LINE = 25;
+	const int PLAYERBOT_SHOP_BONUS_FOUR_PLUS = 100;
+	const int PLAYERBOT_SHOP_BONUS_TOP_LINE = 80;
+	const int PLAYERBOT_SHOP_BONUS_MAX_PERCENT = 600;
 	// The rolls that finish an item for its slot. Thirty percent average damage
 	// on a level-30 weapon, fifteen hundred health on armour or jewellery, five
 	// percent critical on jewellery - the numbers a player stops rerolling at.
@@ -862,6 +878,9 @@ namespace
 	const int PLAYERBOT_MULTI_PULL_ARCHER_MAX_AGGRESSORS = 4;
 	const BYTE PLAYERBOT_SKILL_MASTER_TRY_LEVEL = 17;
 	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
+	// How long a box the engine has refused is left alone. A refusal can be
+	// a bag that happened to be full, so it is a wait rather than a verdict.
+	const DWORD PLAYERBOT_CHEST_REFUSED_RETRY = 600000;
 	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
 	// The chest's two boosters, and the two grilled fish that work the same
 	// way: a Carp for twenty movement speed, a Rudd for ten dexterity, ten

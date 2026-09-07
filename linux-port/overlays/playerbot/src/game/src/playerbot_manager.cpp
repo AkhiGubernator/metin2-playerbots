@@ -1265,6 +1265,13 @@ void CPlayerBotManager::Update()
 		ManagePlayerBotSkillBooks(ch, state, dwNow);
 		ManagePlayerBotSoulStones(ch, state, dwNow);
 		ManagePlayerBotThirdHand(ch, state, dwNow);
+		// Opening a chest belongs with the other upkeep, not after it. Down at
+		// the bottom of the tick - past combat, loot, travel, the town and the
+		// wandering, each of which claims the tick - it was reached so rarely
+		// that 589 bots sat on 9624 Moonlight chests, the largest stack 106
+		// deep, and opened 190 in an hour between them. Their bags were not the
+		// problem: 29 cells of 90 in use on average, none above 84.
+		ManagePlayerBotChests(ch, state, dwNow);
 		ManagePlayerBotGuild(ch, state, dwNow);
 		ManagePlayerBotParty(ch, state, dwNow);
 		// The regular levelup.quest opens a selection dialog. A fake descriptor
@@ -1450,7 +1457,6 @@ void CPlayerBotManager::Update()
 		UseHealthPotion(ch, state, dwNow);
 		UseManaPotion(ch, state, dwNow);
 		UseUtilityPotions(ch, state, dwNow);
-		ManagePlayerBotChests(ch, state, dwNow);
 		UsePlayerBotBoosters(ch, state, dwNow);
 		ManagePlayerBotScrollRefine(ch, state, dwNow);
 		// This also catches a bot loaded from the database at critically low HP

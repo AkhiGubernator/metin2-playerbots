@@ -17,6 +17,30 @@ every version here.
 
 ---
 
+## 1.30.1 — 2026-09-07
+
+### Nowe
+
+- **Wyprawa na Metiny.** Dotąd kamienie biła tylko rola łowcy Metinów
+  (co czwarty bot), a reszta rozbijała Metin wyłącznie wtedy, gdy stanął
+  jej na drodze — nie tak gra człowiek, który umawia się na wieczór
+  Metinów i przeczesuje mapę. Teraz każdy pozostały bot od 15 poziomu raz
+  na godzinę losuje (25 % szansy, skalowane suwakiem „Metiny” w panelu)
+  półgodzinną wyprawę: przez ten czas planuje, celuje i wędruje jak łowca —
+  Metin znany z rejestru (widziany przez dowolnego bota na mapie) idzie
+  przed hubem, kamień jest celem ważniejszym niż moby, a na mapach polowań
+  bot zmienia hub co półtorej minuty zamiast co cztery, bo kamień znajduje
+  się pokrywając teren. W każdej chwili około jeden bot na osiem spoza roli
+  łowcy jest na wyprawie. Log: `PLAYERBOT_METIN: expedition start/over`.
+- **Łowcy Metinów poza Joan szukają znanych kamieni.** Na Dolinie Orków,
+  Pustyni, Sohan i w V1 łowca szedł do hubów jak każdy inny i bił kamień
+  tylko z zasięgu skanu; teraz Metin z rejestru mapy jest jego celem
+  wędrówki tak samo, jak na mapie startowej.
+
+Zgłoszenie: OskarPWA.
+
+---
+
 ## 1.30.0 — 2026-09-07
 
 ### Nowe

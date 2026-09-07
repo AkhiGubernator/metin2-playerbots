@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T06:29:00Z",
-  "statusMessage": "Aktualizacja 1.30.0. Drugi panel w instalacji: Metin2 Singleplayer Panel autorstwa seban latino pod http://127.0.0.1:7790 - mapa na zywo, profile z ekwipunkiem, rankingi, gospodarka, telemetria, masowe nadania. Pierwszy start po aktualizacji buduje nowy obraz panelu i gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T06:54:00Z",
+  "statusMessage": "Aktualizacja 1.30.1. Wyprawa na Metiny: kazdy bot raz na godzine losuje pol godziny polowania na kamienie (znane Metiny z rejestru, kamien wazniejszy niz moby, szybsza zmiana hubow), lowcy szukaja znanych kamieni takze poza Joan. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.0/metin2-server-update-1.30.0.zip",
-    "sha256": "725DE3BCA5FD2FC4AB5112596C4CC9816CE39F27DEBCAF57C28D7D182A7F4A96"
+    "version": "1.30.1",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.1/metin2-server-update-1.30.1.zip",
+    "sha256": "E893FC0050E73A154F9035BBC4D45939DEDFBE34556F82D9F544A5DAC68284A1"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

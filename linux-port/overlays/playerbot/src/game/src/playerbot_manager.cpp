@@ -1381,7 +1381,6 @@ void CPlayerBotManager::Update()
 		{
 			size_t occupiedItems = 0;
 			size_t occupiedGridCells = 0;
-			size_t hpPots = 0;
 			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 			{
 				LPITEM it = ch->GetInventoryItem(cell);
@@ -1389,9 +1388,6 @@ void CPlayerBotManager::Update()
 				{
 					++occupiedItems;
 					occupiedGridCells += std::max(1, (int)it->GetSize());
-					const DWORD v = it->GetVnum();
-					if (v == 27001 || v == 27002 || v == 27003 || v == 27051)
-						++hpPots;
 				}
 			}
 
@@ -1402,13 +1398,25 @@ void CPlayerBotManager::Update()
 			const bool bInventoryFull =
 					occupiedGridCells * 100 >= INVENTORY_MAX_NUM * 45 ||
 					ch->GetEmptyInventory(3) < 0;
-			const bool bOutPotions = (hpPots == 0 && occupiedItems >= 15);
+			// The same question the planner asked. It used to be a different one:
+			// this counted stacks rather than potions, looked at four red vnums
+			// and no blue ones at all, and only fired on an empty belt in a
+			// half-full bag - while NeedsPlayerBotPotions, which decides the
+			// goal, counts individual potions and answers for red under 150 or
+			// blue under 100. So a bot with one stack of 32 reds and 56 blues
+			// carried BOT_GOAL_RESTOCK and never began the visit that would end
+			// it, and stood in Bokjung fighting whatever walked past instead:
+			// 116 bots of level 40 and over were on that map when this was
+			// found. The 5-10 minute shop cooldown above still paces the retry,
+			// and NeedsPlayerBotPotions wants the money for the trip, so a bot
+			// that cannot afford potions does not loop between merchants.
+			const bool bNeedsPotions = NeedsPlayerBotPotions(ch);
 			const bool bNeedsRefine = HasPlayerBotRefineOpportunity(ch);
 			const bool bNeedsGearUpgrade = bNeedsCoreGear || NeedsPlayerBotArrows(ch);
 			const bool bNeedsSellRun = CountPlayerBotJunkItems(ch) >= 12;
 			const bool bNeedsPotionCleanup = HasPlayerBotExcessPotions(ch);
 
-			if (bNeedsProfession || bInventoryFull || bOutPotions || bWeaponMissing ||
+			if (bNeedsProfession || bInventoryFull || bNeedsPotions || bWeaponMissing ||
 					bNeedsRefine || bNeedsGearUpgrade || bNeedsSellRun ||
 					bNeedsPotionCleanup)
 				StartPlayerBotTownVisit(ch, state, dwNow);

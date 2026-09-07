@@ -683,6 +683,11 @@ namespace
 	const long PLAYERBOT_DESERT_FROM_V1_X = 346700;
 	const long PLAYERBOT_DESERT_FROM_V1_Y = 632900;
 	const int PLAYERBOT_CROSSING_STONE_RANGE = 2500;
+	// How close to a world portal a bot walks before its map change is made
+	// server-side. See MovePlayerBotToWorldPortal and patch 0008: the engine
+	// no longer grabs a bot at the portal, so this only has to cover one
+	// tick of running rather than the nine metres it used to.
+	const int PLAYERBOT_PORTAL_SWITCH_DISTANCE = 200;
 	const DWORD PLAYERBOT_CROSSING_STONE_CHECK_INTERVAL = 3000;
 	// map_n_snowm_01, base (358400,153600), 153600 square; the town spawn from
 	// its Town.txt (cell 768,768). 43 was the second Jinno village and carried

@@ -534,11 +534,16 @@ namespace
 		state.dwTargetVID = 0;
 		ch->SetVictim(NULL);
 
-		// Warp NPCs trigger at 300 units and expect a real client reconnect. Switch
-		// server-side at 900 units so a bot descriptor never enters that code path,
-		// while the character still visibly walks all the way to the portal area.
+		// Warp NPCs trigger at 300 units and hand the client to whichever core
+		// hosts the target map, which is not a conversation a bot descriptor can
+		// have - so the switch is made here, server-side, before the bot gets
+		// that close. It used to happen at 900 units, nine metres short of the
+		// portal, and a player watching one leave saw it vanish out of clear
+		// ground. Patch 0008 makes warp_npc_event ignore bots outright, so the
+		// margin only has to cover one tick of running now: the character walks
+		// up to the portal and goes from there, the way a player does.
 		const int distance = DISTANCE_APPROX(ch->GetX() - portalX, ch->GetY() - portalY);
-		if (distance <= 900)
+		if (distance <= PLAYERBOT_PORTAL_SWITCH_DISTANCE)
 		{
 			state.dwPortalWalkSince = 0;
 			state.iPortalWalkBest = 0;

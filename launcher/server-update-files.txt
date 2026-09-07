@@ -56,6 +56,7 @@ linux-port/docker/game/src/server/game/src/playerbot_*
 # built. prepare-context.sh never runs on a player's machine, so a patch that
 # only lives under overlays/playerbot/patches reaches nobody; the staged,
 # patched file does - the same way the playerbot sources do.
+linux-port/docker/game/src/server/game/src/char.cpp
 linux-port/docker/game/src/server/game/src/item_manager.cpp
 linux-port/docker/game/src/server/game/src/config.cpp
 linux-port/docker/game/src/server/game/src/input_main.cpp

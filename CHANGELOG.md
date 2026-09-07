@@ -17,6 +17,45 @@ every version here.
 
 ---
 
+## 1.30.12 — 2026-09-07
+
+### Naprawione
+
+- **Boty siedziały na tysiącach nieotwartych Szkatułek Blasku.** Przebieg
+  otwierania kończył się na pierwszej skrzynce, której silnik nie otwiera —
+  Skrzynia Eksperta III (50192) i Skrzynia Mistrza I (50193), razem blisko
+  sześć tysięcy odmów na minutę — i przez to nigdy nie docierał do szkatułek
+  leżących za nimi w plecaku. Do tego stał na samym końcu taktu, za walką,
+  łupem, podróżą, miastem i wędrówką, z których każde przejmuje turę.
+  Zmierzone przed zmianą: **9723 szkatułki u 587 botów**, największy stos 106,
+  a otwieranych 190 na godzinę; plecaki miały średnio 29 zajętych kratek z 90,
+  więc miejsce nie było przeszkodą. Po zmianie zaległość zeszła do **887 sztuk
+  u 44 botów w osiem minut**, w szczycie 380 otwarć na minutę. Odmowa pomija
+  teraz jedną skrzynkę zamiast kończyć przebieg i jest zapamiętywana na
+  dziesięć minut, żeby bot nie pytał o to samo co osiem sekund.
+- **Stragany wyceniały bonusy na zero.** Wszystko, co ustalało cenę — tabela
+  sprzedawcy, pamięć sprzedaży, ogranicznik kroku — jest kluczowane numerem
+  przedmiotu i poziomem ulepszenia, czyli dokładnie tą parą, która nie
+  odróżnia butów +7 z pięcioma liniami bonusów od butów +7 bez żadnej. Obie
+  szły po 150 000. Teraz do ceny dochodzi 25% za każdą linię, dodatkowe 100%
+  od czwartej linii wzwyż i 80% za każdą rolkę, na której gracz się zatrzymuje
+  (2000 PŻ, 10% krytyku, 10% przebicia, odporność na ogłuszenie), przy suficie
+  600%. Premia obejmuje także ceny płaskie za +7, +8 i +9 oraz złom — one
+  wychodziły z wyceny wcześniej i to je właśnie widać było na straganach.
+- **Diagnostyka launchera meldowała „OK", gdy silnik Dockera odmawiał.**
+  `docker info` kończy się kodem 0, choć zamiast wersji wypisuje odmowę demona,
+  więc w logu gracza stało „OK: Docker Engine odpowiada (wersja Error response
+  from daemon: Docker Desktop is unable to start)" i werdykt „można uruchomić
+  serwer" — sześć razy z rzędu. Ostrzeżenie o zepsutym WSL, jedyne, które mówi
+  co naprawić, podnosimy tylko gdy silnik jest znany jako wyłączony, więc przy
+  fałszywym „OK" nie pojawiało się wcale. Za wersję uznajemy teraz wyłącznie to,
+  co wygląda jak wersja; przy każdej innej odpowiedzi diagnostyka pokazuje
+  dosłowną treść odmowy demona.
+
+Zgłoszenie: Tieru, OskarPWA, BibiSiu.
+
+---
+
 ## 1.30.11 — 2026-09-07
 
 ### Zmienione

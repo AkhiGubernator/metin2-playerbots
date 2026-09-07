@@ -315,6 +315,31 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   route, and re-planning towards the old destination finds the door it came
   in by; the wander pass runs only on a tick no subsystem took, and a bot
   dropped among aggressive monkeys is fighting, not wandering.
+- **One box the engine will not open stopped every other.**
+  `ManagePlayerBotChests` returned false on a failed `UseItem`, so the first
+  giftbox in the bag that cannot be opened - 50192 and 50193, six thousand
+  refusals a minute between them - hid every Moonlight chest behind it: 587
+  bots holding 9723 of them, stacks of 106, 190 opened in an hour, and bags
+  only 29 cells of 90 full. A refusal now skips that box, is remembered by
+  vnum for `PLAYERBOT_CHEST_REFUSED_RETRY`, and says so in the log; the pass
+  also moved up into the upkeep group, because at the bottom of the tick it
+  sat behind five subsystems that each claim the tick. The backlog cleared to
+  887 in eight minutes.
+- **A price keyed by vnum and refine cannot tell two pieces apart.**
+  `GetPlayerBotShopAskingPrice` ran on the merchant table, the sale memory and
+  `LimitPlayerBotAskStep` - all three keyed by that pair - so boots +7 with
+  five bonus lines and boots +7 with none both asked 150 000.
+  `GetPlayerBotBonusPricePercent` in `playerbot_bonus.h` adds a percentage for
+  the lines and for the rolls a player stops on, and it has to be applied to
+  every way out of that function: the flat +7/+8/+9 prices return early, and
+  those are exactly the items people look at.
+- **A launcher check must read the answer, not the exit code.** `docker info
+  --format "{{.ServerVersion}}"` exits 0 while printing "Error response from
+  daemon: Docker Desktop is unable to start" where the version belongs, and
+  `Invoke-M2DiagnosticProcess` concatenates stderr into Output. The check
+  reported that as "OK: Docker Engine odpowiada (wersja Error response...)",
+  which also suppressed the WSL remedy - it is only raised when the engine is
+  known to be down. A version is digits and dots.
 - **The third hand is 72018, and the group is what the engine reads.**
   `CHARACTER::RewardGold` gives a kill's yang straight to the killer when
   `IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT)`, and what group 10011 holds in

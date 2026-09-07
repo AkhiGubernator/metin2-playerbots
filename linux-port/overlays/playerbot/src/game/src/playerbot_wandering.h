@@ -63,6 +63,69 @@ namespace
 	// on one camp instead of fleeing each other. Unknown ground is scored as an
 	// average spot, which is optimistic on purpose: it has to be looked at to
 	// be known. A small hash keeps equal scores from all resolving the same way.
+	struct FPlayerBotFindBoss
+	{
+		WORD m_wRace;
+		LPCHARACTER m_found;
+		FPlayerBotFindBoss(WORD wRace) : m_wRace(wRace), m_found(NULL) {}
+		void operator()(LPENTITY entity)
+		{
+			if (m_found || !entity || !entity->IsType(ENTITY_CHARACTER))
+				return;
+			LPCHARACTER mob = static_cast<LPCHARACTER>(entity);
+			if (mob->IsMonster() && mob->GetRaceNum() == m_wRace && !mob->IsDead())
+				m_found = mob;
+		}
+	};
+
+	// Is the boss standing near its hub right now, and where? The Orc Chief's
+	// group (621) is placed anywhere within a hundred and fifty cells of its
+	// point - fifteen thousand units - so one sector's neighbourhood missed
+	// him: "down" was logged while he was casting a mile away. Nine sectors
+	// are asked, a sector apart, each with its own neighbours, and the answer
+	// with his position is kept for PLAYERBOT_RAID_BOSS_CHECK_INTERVAL: a
+	// hundred bots choosing hubs in the same minute ask once.
+	bool IsPlayerBotBossAlive(long mapIndex, long x, long y, WORD wRace, DWORD dwNow,
+			long* pBossX, long* pBossY)
+	{
+		struct TBossAnswer { DWORD dwStamp; bool bAlive; long lX; long lY; };
+		static std::map<WORD, TBossAnswer> s_mapAnswers;
+		std::map<WORD, TBossAnswer>::iterator it = s_mapAnswers.find(wRace);
+		if (it != s_mapAnswers.end() && dwNow - it->second.dwStamp < PLAYERBOT_RAID_BOSS_CHECK_INTERVAL)
+		{
+			if (pBossX) *pBossX = it->second.lX;
+			if (pBossY) *pBossY = it->second.lY;
+			return it->second.bAlive;
+		}
+		LPCHARACTER boss = NULL;
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(mapIndex);
+		for (int dy = -1; dy <= 1 && pMap && !boss; ++dy)
+			for (int dx = -1; dx <= 1 && !boss; ++dx)
+			{
+				const long px = x + dx * (long)SECTREE_SIZE, py = y + dy * (long)SECTREE_SIZE;
+				if (px < 0 || py < 0)
+					continue;
+				LPSECTREE pTree = pMap->Find((DWORD)px, (DWORD)py);
+				if (!pTree)
+					continue;
+				FPlayerBotFindBoss finder(wRace);
+				pTree->ForEachAround(finder);
+				boss = finder.m_found;
+			}
+		TBossAnswer& answer = s_mapAnswers[wRace];
+		const bool bAlive = boss != NULL;
+		if (it == s_mapAnswers.end() || answer.bAlive != bAlive)
+			sys_log(0, "PLAYERBOT_RAID: boss race=%u map=%ld %s pos=(%ld,%ld)", (unsigned int)wRace, mapIndex,
+					bAlive ? "standing" : "down", boss ? boss->GetX() : 0L, boss ? boss->GetY() : 0L);
+		answer.dwStamp = dwNow;
+		answer.bAlive = bAlive;
+		answer.lX = boss ? boss->GetX() : x;
+		answer.lY = boss ? boss->GetY() : y;
+		if (pBossX) *pBossX = answer.lX;
+		if (pBossY) *pBossY = answer.lY;
+		return bAlive;
+	}
+
 	bool ChoosePlayerBotHuntingHub(LPCHARACTER ch, const TPlayerBotHuntingHub* hubs,
 			size_t hubCount, DWORD dwNow, size_t excludeIndex, size_t& indexOut, int& scoreOut)
 	{
@@ -99,7 +162,27 @@ namespace
 				continue;
 			if (hub.bNeedsParty && !bLeadsParty)
 				continue;
-			if (!navigation.CanReach(ch->GetX(), ch->GetY(), hub.x, hub.y))
+			// A boss hub is worth going to while the boss stands, and nothing when
+			// he is down; the crowd already on him is not a reason to stay away.
+			if (hub.wBossRace != 0)
+			{
+				long bossX = hub.x, bossY = hub.y;
+				if (!IsPlayerBotBossAlive(ch->GetMapIndex(), hub.x, hub.y, hub.wBossRace, dwNow, &bossX, &bossY))
+					continue;
+				// Where the boss actually stands is walkable by definition; the
+				// question is whether it is this bot's terrain.
+				const DWORD bossGround = navigation.GetComponentAtWorld(bossX, bossY, 12);
+				const DWORD ownGround = navigation.GetComponentAtWorld(ch->GetX(), ch->GetY());
+				if (bossGround == 0 || bossGround != ownGround)
+				{
+					PlayerBotLogThrottled("raid_unreachable", dwNow,
+							"PLAYERBOT_RAID: boss hub unreachable race=%u pid=%u name=%s pos=(%ld,%ld) boss_ground=%u own_ground=%u",
+							(unsigned int)hub.wBossRace, ch->GetPlayerID(), ch->GetName(),
+							ch->GetX(), ch->GetY(), (unsigned int)bossGround, (unsigned int)ownGround);
+					continue;
+				}
+			}
+			else if (!navigation.CanReach(ch->GetX(), ch->GetY(), hub.x, hub.y))
 				continue;
 			DWORD samples = 0;
 			int averageLevel = 0;
@@ -127,7 +210,7 @@ namespace
 				worth += worth * PLAYERBOT_SPOT_MATERIAL_BONUS_PERCENT / 100;
 			// The bot's share of what is there: the monsters in reach divided among
 			// the bots already in reach of them, plus this one.
-			int score = worth / (1 + others);
+			int score = hub.wBossRace != 0 ? PLAYERBOT_RAID_WORTH : worth / (1 + others);
 			// Nearer is better, all else equal: a camp across the delta costs a
 			// route of two hundred milliseconds to plan and three minutes to walk.
 			const int distance = DISTANCE_APPROX(ch->GetX() - hub.x, ch->GetY() - hub.y);
@@ -531,7 +614,10 @@ namespace
 				{ 332900, 747200, PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL, 255, true },
 				// The Orc Chief (691, level 50, boss) from boss.txt, cell (770,757),
 				// back every thirty minutes: a raid for a party, guild mates first.
-				{ 333000, 741300, PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL, 255, true }
+				// Anybody of the band, not only a party: the Chief has twenty-five
+				// thousand health and comes back every half hour, and a valley
+				// full of bots piling onto him is how a valley full of players does it.
+				{ 333000, 741300, PLAYERBOT_ORC_VALLEY_CENTRE_MIN_LEVEL, 255, false, 691 }
 			};
 			const TPlayerBotHuntingHub desertHubs[] = {
 				{ 291300, 515700, 0, 255, false }, { 237500, 525900, 0, 255, false }, { 264600, 526100, 0, 255, false },
@@ -567,7 +653,9 @@ namespace
 				{ 58600, 504300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 59800, 527600, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },
 				// The Spider Queen (2091, level 60, boss) at the end of the dungeon,
 				// boss.txt cell (385,387), back every four hours: a party's raid.
-				{ 89700, 525100, PLAYERBOT_SPIDER_MIN_LEVEL, 255, true }
+				// A party's work and nobody else's: two hundred thousand health at
+				// level sixty.
+				{ 89700, 525100, PLAYERBOT_SPIDER_MIN_LEVEL, 255, true, 2091 }
 			};
 			const bool inDesert = ch->GetMapIndex() == PLAYERBOT_MAP_DESERT;
 			const TPlayerBotHuntingHub* hubs = orcValleyHubs;
@@ -634,6 +722,17 @@ namespace
 						150, 700, offsetX, offsetY);
 				targetX = hubs[hubIndex].x + offsetX;
 				targetY = hubs[hubIndex].y + offsetY;
+				// A boss hub is wherever the boss is, not the point on the table.
+				if (hubs[hubIndex].wBossRace != 0)
+				{
+					long bossX = 0, bossY = 0;
+					if (IsPlayerBotBossAlive(ch->GetMapIndex(), hubs[hubIndex].x, hubs[hubIndex].y,
+							hubs[hubIndex].wBossRace, dwNow, &bossX, &bossY))
+					{
+						targetX = bossX + offsetX / 2;
+						targetY = bossY + offsetY / 2;
+					}
+				}
 				if (DISTANCE_APPROX(ch->GetX() - targetX, ch->GetY() - targetY) < 1400)
 				{
 					// Standing on the hub with nothing left to fight here. Choose
@@ -669,6 +768,12 @@ namespace
 			{
 				state.wHuntingHub = (WORD)hubIndex;
 				state.dwHubChosenTime = dwNow;
+				if (hubs[hubIndex].wBossRace != 0)
+					sys_log(0, "PLAYERBOT_RAID: heading for boss race=%u pid=%u name=%s level=%u map=%ld party=%u guild=%u",
+							(unsigned int)hubs[hubIndex].wBossRace, ch->GetPlayerID(), ch->GetName(),
+							ch->GetLevel(), ch->GetMapIndex(),
+							ch->GetParty() ? (unsigned int)ch->GetParty()->GetMemberCount() : 0U,
+							ch->GetGuild() ? (unsigned int)ch->GetGuild()->GetID() : 0U);
 				sys_log(0, "PLAYERBOT_SPOT: hub chosen pid=%u name=%s level=%u map=%ld hub=%u pos=(%ld,%ld) band=%u-%u party_hub=%d party=%u guild=%u score=%d",
 						pid, ch->GetName(), ch->GetLevel(), ch->GetMapIndex(), (unsigned int)hubIndex,
 						hubs[hubIndex].x, hubs[hubIndex].y, hubs[hubIndex].bMinLevel, hubs[hubIndex].bMaxLevel,

@@ -440,6 +440,30 @@ namespace
 	{
 		if (!ch)
 			return false;
+		// V1 lies across the desert - see PLAYERBOT_DESERT_V1_GATE_X. A warp into
+		// it from anywhere but the desert becomes a warp onto the desert with the
+		// real destination remembered, and ManagePlayerBotWorldTravel walks the
+		// bot to the gate; a warp out of it becomes the desert's far corner and
+		// the walk back to the Bokjung gate. Both call back in here with the
+		// desert as the target, which neither rule touches.
+		if (targetMap == PLAYERBOT_MAP_SPIDER_V1 && ch->GetMapIndex() != PLAYERBOT_MAP_DESERT)
+		{
+			state.lDesertCrossingTo = targetMap;
+			state.lDesertCrossingX = targetX;
+			state.lDesertCrossingY = targetY;
+			state.dwNextCrossingStoneCheck = 0;
+			return TransitionPlayerBotMap(ch, state, PLAYERBOT_MAP_DESERT,
+					PLAYERBOT_DESERT_ARRIVAL_X, PLAYERBOT_DESERT_ARRIVAL_Y, dwNow, "desert_crossing_to_v1");
+		}
+		if (ch->GetMapIndex() == PLAYERBOT_MAP_SPIDER_V1 && targetMap != PLAYERBOT_MAP_DESERT)
+		{
+			state.lDesertCrossingTo = targetMap;
+			state.lDesertCrossingX = targetX;
+			state.lDesertCrossingY = targetY;
+			state.dwNextCrossingStoneCheck = 0;
+			return TransitionPlayerBotMap(ch, state, PLAYERBOT_MAP_DESERT,
+					PLAYERBOT_DESERT_FROM_V1_X, PLAYERBOT_DESERT_FROM_V1_Y, dwNow, "desert_crossing_from_v1");
+		}
 		CPlayerBotNavigation& navigation = CPlayerBotNavigation::instance(targetMap);
 		if (!navigation.Init(targetMap))
 		{
@@ -496,6 +520,9 @@ namespace
 		state.dwDungeonEnteredTime = targetMap == PLAYERBOT_MAP_MONKEY_EASY ? dwNow : 0;
 		state.dwM3EnteredTime = targetMap == PLAYERBOT_MAP_CHUNJO_M3 ? dwNow : 0;
 		state.dwFrontierEnteredTime = IsPlayerBotFrontierMap(targetMap) ? dwNow : 0;
+		// Landed anywhere but the desert: whatever crossing was under way is over.
+		if (targetMap != PLAYERBOT_MAP_DESERT)
+			state.lDesertCrossingTo = 0;
 		// Everybody enters Orc Valley at the same point, so without this the
 		// whole population lands on the doorstep and stays there - the rotation
 		// that would move it on runs only on a tick with nothing to fight, and
@@ -602,6 +629,43 @@ namespace
 			return true;
 		return DISTANCE_APPROX(ch->GetX() - victim->GetX(),
 				ch->GetY() - victim->GetY()) <= PLAYERBOT_TRAVEL_ENGAGED_RANGE;
+	}
+
+	// The nearest stone within reach that is worth this bot's level. The
+	// crossing fights nothing else, and this is looked for by hand because the
+	// target scan does not run while a walk owns the tick.
+	struct FPlayerBotFindStoneNearby
+	{
+		LPCHARACTER m_owner;
+		LPCHARACTER m_found;
+		int m_bestDistance;
+		FPlayerBotFindStoneNearby(LPCHARACTER owner, int range)
+			: m_owner(owner), m_found(NULL), m_bestDistance(range) {}
+		void operator()(LPENTITY entity)
+		{
+			if (!entity || !entity->IsType(ENTITY_CHARACTER))
+				return;
+			LPCHARACTER stone = static_cast<LPCHARACTER>(entity);
+			if (!stone->IsStone() || stone->IsDead() ||
+					!IsPlayerBotMetinWorthFighting(m_owner, stone))
+				return;
+			const int distance = DISTANCE_APPROX(stone->GetX() - m_owner->GetX(),
+					stone->GetY() - m_owner->GetY());
+			if (distance < m_bestDistance)
+			{
+				m_bestDistance = distance;
+				m_found = stone;
+			}
+		}
+	};
+
+	LPCHARACTER FindPlayerBotStoneNearby(LPCHARACTER ch, int range)
+	{
+		if (!ch || !ch->GetSectree())
+			return NULL;
+		FPlayerBotFindStoneNearby finder(ch, range);
+		ch->GetSectree()->ForEachAround(finder);
+		return finder.m_found;
 	}
 
 	bool ManagePlayerBotWorldTravel(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
@@ -715,6 +779,39 @@ namespace
 			if (victim->IsStone() ||
 					(graceLeft && IsPlayerBotEngagedWith(ch, victim, state, dwNow)))
 				return false;
+		}
+
+		// Crossing the desert between its two gates: a walk that owns the tick,
+		// so nothing on the way is fought - the target scan never runs - except
+		// a stone worth the level, taken when one stands within reach, finished
+		// (the victim rule above holds the walk for a stone) and then the walk
+		// goes on. A player heading for V1 does exactly this.
+		if (mapIndex == PLAYERBOT_MAP_DESERT && state.lDesertCrossingTo != 0)
+		{
+			if (dwNow >= state.dwNextCrossingStoneCheck)
+			{
+				state.dwNextCrossingStoneCheck = dwNow + PLAYERBOT_CROSSING_STONE_CHECK_INTERVAL;
+				LPCHARACTER stone = FindPlayerBotStoneNearby(ch, PLAYERBOT_CROSSING_STONE_RANGE);
+				if (stone)
+				{
+					RememberPlayerBotMetin(stone, dwNow);
+					ReservePlayerBotMetin(ch, stone, dwNow);
+					state.dwTargetVID = stone->GetVID();
+					ch->SetVictim(stone);
+					ClearPlayerBotRoute(state, true);
+					sys_log(0, "PLAYERBOT_WORLD: crossing stone pid=%u name=%s stone_vid=%u level=%u pos=(%ld,%ld)",
+							ch->GetPlayerID(), ch->GetName(), (unsigned int)stone->GetVID(),
+							stone->GetLevel(), stone->GetX(), stone->GetY());
+					return false;
+				}
+			}
+			const bool toV1 = state.lDesertCrossingTo == PLAYERBOT_MAP_SPIDER_V1;
+			SetPlayerBotGoal(ch, state, BOT_GOAL_LEVEL_UP, dwNow);
+			return MovePlayerBotToWorldPortal(ch, state,
+					toV1 ? PLAYERBOT_DESERT_V1_GATE_X : PLAYERBOT_DESERT_EXIT_X,
+					toV1 ? PLAYERBOT_DESERT_V1_GATE_Y : PLAYERBOT_DESERT_EXIT_Y,
+					state.lDesertCrossingTo, state.lDesertCrossingX, state.lDesertCrossingY,
+					dwNow, toV1 ? "desert_gate_to_v1" : "desert_gate_to_bokjung");
 		}
 
 		if (mapIndex == PLAYERBOT_MAP_CHUNJO_M1)

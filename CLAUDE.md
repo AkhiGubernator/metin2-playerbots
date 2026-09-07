@@ -191,7 +191,11 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   36+, the three Black Orc camps 40+ with a party, the Curse Book island 45+
   with a party. `PLAYERBOT_SPOT:` logs each choice and, every ten minutes, the
   richest cells per map; a cell that keeps coming top with no hub on it is a
-  hub the table is missing.
+  hub the table is missing. A boss hub is the exception:
+  `TPlayerBotHuntingHub::wBossRace` names the boss and
+  `IsPlayerBotBossAlive` asks the sector whether he stands, because one
+  monster every half hour is a density of nothing and the boss hubs were
+  never chosen in a day of logs.
 - **A hub is chosen by share, distance and time, in that order.** The score
   is the monsters in reach divided among the bots already there, halved at
   20 km, and a choice is kept for four minutes. The first version scored by
@@ -231,7 +235,13 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `playerbot_types.h` answer for Orc Valley, the desert, Mount Sohan (61,
   `map_n_snowm_01`: the Infected of 49-58 in the south, ice creatures of
   62-66 in the north) and the Spider Dungeon V1 (104, spiders 50-58);
-  `GetPlayerBotFrontierMapForLevel` routes by level and pid. **Map 43 is not
+  `GetPlayerBotFrontierMapForLevel` routes by level and pid. V1 is reached
+  across the desert: `TransitionPlayerBotMap` turns any warp into or out of
+  104 into a warp onto 63 with the real destination kept in
+  `lDesertCrossingTo`, and `ManagePlayerBotWorldTravel` walks the bot
+  between the two gates (`PLAYERBOT_DESERT_V1_GATE_*`, the Bokjung gate)
+  fighting nothing but a stone within `PLAYERBOT_CROSSING_STONE_RANGE`.
+  **Map 43 is not
   Sohan** - `metin2_map_c3` is the second Jinno village with soldiers of
   26-36, and 1.29.0 to 1.29.6 sent the 26-39 band there under Sohan's name;
   the map index says nothing, read `map/index` and the regen before naming

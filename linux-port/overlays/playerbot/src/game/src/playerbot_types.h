@@ -652,6 +652,20 @@ namespace
 	// (10015) at (88,82) - so a bot never crosses the map to leave.
 	const long PLAYERBOT_MAP_SOHAN = 61;
 	const long PLAYERBOT_MAP_SPIDER_V1 = 104;
+	// The Spider Dungeon is entered from the desert, the way the game has it:
+	// NPC 10016 "Kuahlo Dong" in the desert's bottom-right corner (cell 1425,
+	// 1477 of metin2_map_n_desert_01) sends a character to (600, 4960) in V1,
+	// and V1's exit NPC 10015 puts it back on the desert at (3467, 6329). A
+	// bot used to warp from Bokjung's teleporter straight into V1 and straight
+	// back, which no player can do. Now the trip is two legs with the desert
+	// crossed on foot between them - and crossed, not farmed: the bot fights
+	// nothing on the way except a stone worth its level, within this reach.
+	const long PLAYERBOT_DESERT_V1_GATE_X = 347300;
+	const long PLAYERBOT_DESERT_V1_GATE_Y = 634100;
+	const long PLAYERBOT_DESERT_FROM_V1_X = 346700;
+	const long PLAYERBOT_DESERT_FROM_V1_Y = 632900;
+	const int PLAYERBOT_CROSSING_STONE_RANGE = 2500;
+	const DWORD PLAYERBOT_CROSSING_STONE_CHECK_INTERVAL = 3000;
 	// map_n_snowm_01, base (358400,153600), 153600 square; the town spawn from
 	// its Town.txt (cell 768,768). 43 was the second Jinno village and carried
 	// soldiers of 26-36; Sohan proper is the Infected of 49-58 in the south and
@@ -1234,7 +1248,17 @@ namespace
 	// A hunting hub with the level band it is for and whether it is a party's
 	// work. A solo bot never picks a party hub; a leader with a party of the
 	// challenge size may.
-	struct TPlayerBotHuntingHub { long x; long y; BYTE bMinLevel; BYTE bMaxLevel; bool bNeedsParty; };
+	// wBossRace names the boss a hub exists for, or 0. A boss hub is not
+	// scored by what the population has seen there - one monster every half
+	// hour is a density of nothing, which is why the Orc Chief's and the Spider
+	// Queen's hubs were never chosen in a day of logs - but by whether the boss
+	// is standing there now, asked of the sector itself.
+	struct TPlayerBotHuntingHub { long x; long y; BYTE bMinLevel; BYTE bMaxLevel; bool bNeedsParty; WORD wBossRace; };
+	// How long a "boss alive" answer is trusted, and what a hub with a living
+	// boss scores: above any camp, so the crowd (the Orc Chief) or the party
+	// (the Spider Queen) goes.
+	const DWORD PLAYERBOT_RAID_BOSS_CHECK_INTERVAL = 30000;
+	const int PLAYERBOT_RAID_WORTH = 100000;
 	// Exact world coordinates of the two rare M2 enemies from
 	// metin2_map_b3/boss.txt (map base 102400,204800). They are the classic
 	// level-30 weapon hunt: Bestial Archer (533) and Specialist (534).
@@ -1476,6 +1500,10 @@ namespace
 			dwRaceHistogramStamp(0),
 			dwMetinExpeditionUntil(0),
 			dwNextMetinExpeditionRoll(0),
+			lDesertCrossingTo(0),
+			lDesertCrossingX(0),
+			lDesertCrossingY(0),
+			dwNextCrossingStoneCheck(0),
 			dwStoneLastProgressTime(0),
 			dwNextStoneProgressCheckTime(0),
 			dwNextNavPlanTime(0),
@@ -1671,6 +1699,12 @@ namespace
 		// and when it next rolls for one. See PLAYERBOT_METIN_EXPEDITION_*.
 		DWORD dwMetinExpeditionUntil;
 		DWORD dwNextMetinExpeditionRoll;
+		// The desert crossing: the map and point the bot is really going to,
+		// while it walks the desert between two gates. Zero when not crossing.
+		long lDesertCrossingTo;
+		long lDesertCrossingX;
+		long lDesertCrossingY;
+		DWORD dwNextCrossingStoneCheck;
 		// When this bot last read a book of each skill, for the BOOKS switch.
 		std::map<DWORD, DWORD> mapBookReadTime;
 		DWORD dwStoneLastProgressTime;

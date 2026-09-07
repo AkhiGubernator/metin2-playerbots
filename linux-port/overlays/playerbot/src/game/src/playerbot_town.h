@@ -1446,7 +1446,22 @@ namespace
 		// on the other side of a counter, pillar or another dynamic object.  Town
 		// legs may finish at the nearest point of the bot's own walkable component;
 		// the larger arrival radii below represent the normal interaction area.
-		const bool moveAccepted = MovePlayerBot(ch, goalX, goalY, dwNow, 16, true, true);
+		//
+		// But the snap has to stay inside the radius this leg then tests, or
+		// arriving is not arriving. At a fixed sixteen cells the planner could
+		// place the goal eight hundred units from where it was asked for - past
+		// the 350 to 850 the phases accept - and the bot would walk its route,
+		// reach the snapped cell, find itself still outside the radius, clear the
+		// route and plan the identical one again. Nothing counts that as a
+		// failure: consuming a waypoint resets the stuck counter, so the service
+		// rescue below never fired. One bot stood at the skill trainer in Joan
+		// for three days that way, reset by the inactivity watchdog every ninety
+		// seconds without ever taking a step. A ring of n cells reaches
+		// n * 50 * sqrt(2) at the corners, so a tenth of the arrival distance in
+		// cells keeps the snapped goal comfortably inside it.
+		const int snapCells = std::max(2, std::min(16, arrivalDistance / 100));
+		const bool moveAccepted = MovePlayerBot(ch, goalX, goalY, dwNow,
+				snapCells, true, true);
 		if (!moveAccepted && state.bStuckCounter >= 6)
 		{
 			sys_err("PLAYERBOT_TOWN: route failed pid=%u name=%s phase=%u from=(%ld,%ld) to=(%ld,%ld)",

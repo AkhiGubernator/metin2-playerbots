@@ -14,47 +14,6 @@
 
 namespace
 {
-	// A hub is only worth walking to if the navigation can actually get there.
-	//
-	// Orc Valley taught this. Its entrance opens onto one island of a river
-	// delta, and while the navigation refused water - which is to say, refused
-	// the bridges - all twelve of its hand-picked hubs sat on the far side of a
-	// crossing. A bot planned an impossible route, gave up after three tries,
-	// advanced to the next hub and planned another impossible route, twelve
-	// times, then round again: twelve bots on that one map produced 7812 of the
-	// 8259 "unreachable" lines in a session and never reached a hunting ground.
-	//
-	// That map is whole again, but the check stays, and not only as a memorial:
-	// the Monkey Dungeon really is chambered, with 7.5% of its walkable ground
-	// reachable from where a bot comes in, and any map may be built that way.
-	//
-	// Asking first costs a component lookup; the alternative costs a full A*
-	// that is guaranteed to fail.
-	size_t PickReachablePlayerBotHub(LPCHARACTER ch, const TPlayerBotMapPoint* hubs,
-			size_t hubCount, size_t firstIndex, bool& bFoundOut)
-	{
-		bFoundOut = false;
-		if (!ch || !hubs || hubCount == 0)
-			return firstIndex;
-
-		CPlayerBotNavigation& navigation =
-				CPlayerBotNavigation::instance(ch->GetMapIndex());
-		if (!navigation.Init(ch->GetMapIndex()))
-			return firstIndex;
-
-		for (size_t step = 0; step < hubCount; ++step)
-		{
-			const size_t index = (firstIndex + step) % hubCount;
-			if (navigation.CanReach(ch->GetX(), ch->GetY(),
-					hubs[index].x, hubs[index].y))
-			{
-				bFoundOut = true;
-				return index;
-			}
-		}
-		return firstIndex;
-	}
-
 	// The hub for this bot, from a banded table, by what the population has
 	// seen there. Level rules the band; a party hub needs a party of the
 	// challenge size with this bot leading it; among what is left the richest
@@ -182,6 +141,22 @@ namespace
 					continue;
 				}
 			}
+			// A hub is only worth walking to if the navigation can get there.
+			// Orc Valley taught this: its entrance opens onto one island of a
+			// river delta, and while the navigation refused water - which is to
+			// say, refused the bridges - all twelve of its hand-picked hubs sat
+			// on the far side of a crossing. A bot planned an impossible route,
+			// gave up after three tries, advanced to the next hub and planned
+			// another impossible route, twelve times, then round again: twelve
+			// bots on that one map produced 7812 of the 8259 "unreachable" lines
+			// in a session and never reached a hunting ground. Asking costs a
+			// component lookup; the alternative costs an A* guaranteed to fail.
+			//
+			// It is not the answer everywhere. A map may be built in chambers
+			// the terrain does not join at all - the Monkey Dungeon is ten of
+			// them - and there this question has only ever one answer, "the room
+			// you are already in". That map is walked by its own portal graph
+			// instead; see the chamber table in playerbot_movement.h.
 			else if (!navigation.CanReach(ch->GetX(), ch->GetY(), hub.x, hub.y))
 				continue;
 			DWORD samples = 0;
@@ -811,41 +786,78 @@ namespace
 		}
 		else if (IsPlayerBotMonkeyMap(ch->GetMapIndex()))
 		{
-			// Rooms from metin2_map_monkey_dungeon_12/regen.txt, as offsets from
-			// the dungeon's base - the three dungeons are the same maze. The
-			// navigation grid, not straight-line Goto, connects them through the
-			// corridors.
+			// Chambers joined only by the GOTO doors - the table and the
+			// reasoning are in playerbot_movement.h. A bot patrols the spawn
+			// points of the chamber it is standing in, and once it has worked
+			// that chamber over it walks to the portal for the next one. Every
+			// route it plans therefore lies inside one chamber, which is the
+			// only kind of route this maze has: asking for a room across a
+			// portal is what left the whole population in the entrance corridor.
+			const long mapIndex = ch->GetMapIndex();
 			long baseX = 0, baseY = 0;
-			GetPlayerBotMonkeyBase(ch->GetMapIndex(), baseX, baseY);
-			const TPlayerBotMapPoint rooms[8] = {
-				{ baseX + 7500, baseY + 19700 }, { baseX + 27800, baseY + 15600 },
-				{ baseX + 45000, baseY + 16300 }, { baseX + 16400, baseY + 43400 },
-				{ baseX + 28300, baseY + 36200 }, { baseX + 46000, baseY + 35200 },
-				{ baseX + 16000, baseY + 61400 }, { baseX + 53800, baseY + 7900 }
-			};
+			GetPlayerBotMonkeyBase(mapIndex, baseX, baseY);
 			const DWORD pid = ch->GetPlayerID();
-			bool bRoomReachable = false;
-			const size_t roomIndex = PickReachablePlayerBotHub(ch, rooms, 8,
-					(pid + state.uMetinHotspotIndex) % 8, bRoomReachable);
-			if (!bRoomReachable)
+			// UpdatePlayerBotMonkeyChamber answered this at the top of the tick.
+			const int chamber = state.bMonkeyChamber == 255
+					? -1 : (int)state.bMonkeyChamber;
+			if (chamber < 0)
 			{
-				// A closed door or a corridor the grid does not join. Same answer
-				// as on the frontier: hunt where you are.
+				// Between the rooms is not a place. Work the ground here rather
+				// than plan a route to somewhere that cannot be walked to.
 				targetX = ch->GetX() + number(-450, 450);
 				targetY = ch->GetY() + number(-450, 450);
 			}
 			else
 			{
-				long offsetX = 0, offsetY = 0;
-				GetPlayerBotStableOffset(pid, 0x4d4f4e4bU + (DWORD)roomIndex,
-						50, 250, offsetX, offsetY);
-				targetX = rooms[roomIndex].x + offsetX;
-				targetY = rooms[roomIndex].y + offsetY;
-				if (DISTANCE_APPROX(ch->GetX() - targetX, ch->GetY() - targetY) < 900)
+				const TPlayerBotMonkeyChamber& room = PLAYERBOT_MONKEY_CHAMBERS[chamber];
+				int exitChambers[8];
+				int exitDoors[8];
+				const int exits =
+						dwNow - state.dwMonkeyChamberTime >= PLAYERBOT_MONKEY_CHAMBER_DWELL
+						? GetPlayerBotMonkeyChamberExits(mapIndex, chamber,
+								exitChambers, exitDoors, 8)
+						: 0;
+				int chosenExit = -1;
+				for (int step = 0; step < exits && chosenExit < 0; ++step)
 				{
-					++state.uMetinHotspotIndex;
-					targetX = ch->GetX() + number(-450, 450);
-					targetY = ch->GetY() + number(-450, 450);
+					// Its own order over the doors, and never straight back the
+					// way it came unless that is the only one: a population that
+					// walks through the dungeon instead of bouncing off its
+					// first wall. uMetinHotspotIndex is in the hash because the
+					// stuck handling below advances it, so a door that cannot be
+					// reached is not chosen twice.
+					const int candidate = (int)((PlayerBotNavHash(pid ^
+							(0x4d4b4559U + (DWORD)chamber * 31U +
+							(DWORD)state.uMetinHotspotIndex)) + (DWORD)step) % (DWORD)exits);
+					if (exits > 1 && exitChambers[candidate] == (int)state.bMonkeyPrevChamber)
+						continue;
+					chosenExit = candidate;
+				}
+
+				long doorX = 0, doorY = 0;
+				if (chosenExit >= 0 && GetPlayerBotMonkeyDoorPosition(mapIndex,
+						exitDoors[chosenExit], doorX, doorY))
+				{
+					// The crossing is the walk: warp_npc_event teleports anyone
+					// within 300 units of the GOTO NPC, so the door's own cell is
+					// the destination and arriving at it is the whole move.
+					targetX = doorX;
+					targetY = doorY;
+				}
+				else
+				{
+					const int spot = state.bMonkeySpot % room.bSpotCount;
+					long offsetX = 0, offsetY = 0;
+					GetPlayerBotStableOffset(pid, 0x4d4f4e4bU + (DWORD)spot,
+							50, 250, offsetX, offsetY);
+					targetX = baseX + room.spots[spot].x * 100L + offsetX;
+					targetY = baseY + room.spots[spot].y * 100L + offsetY;
+					if (DISTANCE_APPROX(ch->GetX() - targetX, ch->GetY() - targetY) < 900)
+					{
+						++state.bMonkeySpot;
+						targetX = ch->GetX() + number(-450, 450);
+						targetY = ch->GetY() + number(-450, 450);
+					}
 				}
 			}
 		}

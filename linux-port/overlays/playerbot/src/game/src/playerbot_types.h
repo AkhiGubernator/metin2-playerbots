@@ -1084,6 +1084,10 @@ namespace
 	const BYTE PLAYERBOT_MONKEY_HARD_MIN_LEVEL = 46;
 	const DWORD PLAYERBOT_M3_MAX_VISIT_TIME = 1200000;
 	const DWORD PLAYERBOT_MONKEY_REVERSE_PORTAL_BLOCK_TIME = 10000;
+	// How long a bot works one chamber before walking to the portal that leads
+	// to the next. Four minutes is two respawns of a room's dozen monsters; the
+	// thirty-minute visit therefore covers six or seven of the eleven chambers.
+	const DWORD PLAYERBOT_MONKEY_CHAMBER_DWELL = 240000;
 	const long PLAYERBOT_MONKEY_EASY_BASE_X = 844800;
 	const long PLAYERBOT_MONKEY_EASY_BASE_Y = 435200;
 	// The three dungeons are one maze: metin2_map_monkey_dungeon2 and _3 carry
@@ -1579,6 +1583,7 @@ namespace
 			dwMarketStallVID(0),
 			dwNextShopDebugTime(0),
 			dwMonkeyReversePortalBlockUntil(0),
+			dwMonkeyChamberTime(0),
 			dwNextLootPickupTime(0),
 			dwNextLootSearchTime(0),
 			dwNextLootThreatCheckTime(0),
@@ -1665,6 +1670,9 @@ namespace
 			bPersonality(BOT_PERSONALITY_STEADY_ADVENTURER),
 			bAmbition(BOT_AMBITION_LEVEL),
 			uMetinHotspotIndex(0),
+			bMonkeyChamber(255),
+			bMonkeyPrevChamber(255),
+			bMonkeySpot(0),
 			bLongTermGoal(BOT_GOAL_LEVEL_UP),
 			bCurrentAction(BOT_ACTION_IDLE),
 			bLastStatusAction(255),
@@ -1774,6 +1782,8 @@ namespace
 		std::vector<TPlayerBotShopOffer> vecShopOffers;
 		DWORD dwNextShopDebugTime;
 		DWORD dwMonkeyReversePortalBlockUntil;
+		// Since when this bot has been working its current Monkey Dungeon chamber.
+		DWORD dwMonkeyChamberTime;
 		DWORD dwNextLootPickupTime;
 		DWORD dwNextLootSearchTime;
 		DWORD dwNextLootThreatCheckTime;
@@ -1878,6 +1888,13 @@ namespace
 		BYTE bPersonality;
 		BYTE bAmbition;
 		BYTE uMetinHotspotIndex;
+		// The Monkey Dungeon chamber this bot is working, the one it came from
+		// (so it walks on rather than back through the portal it arrived by), and
+		// which of that chamber's spawn points it is walking to. 255 is "none":
+		// a bot outside the dungeon has no chamber.
+		BYTE bMonkeyChamber;
+		BYTE bMonkeyPrevChamber;
+		BYTE bMonkeySpot;
 		BYTE bLongTermGoal;
 		BYTE bCurrentAction;
 		BYTE bLastStatusAction;

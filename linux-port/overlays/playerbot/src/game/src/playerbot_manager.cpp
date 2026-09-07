@@ -1248,6 +1248,10 @@ void CPlayerBotManager::Update()
 			}
 		}
 
+		// Before anything may claim the tick: which Monkey Dungeon chamber this
+		// bot is in now, since a portal it walked past has already moved it.
+		UpdatePlayerBotMonkeyChamber(ch, state, dwNow);
+
 		ManagePlayerBotStats(ch, state, dwNow);
 		ManagePlayerBotSkills(ch, state, dwNow);
 		if (RescuePlayerBotWithoutSectree(ch, state, dwNow))

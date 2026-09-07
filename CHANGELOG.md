@@ -17,6 +17,65 @@ every version here.
 
 ---
 
+## 1.30.14 — 2026-09-07
+
+### Zmienione
+
+- **Bot bije to, z czego cokolwiek ma.** Wysokopoziomowe boty koczowały w
+  Bokjung i tłukły potwory dwadzieścia poziomów niżej. Silnik mnoży przez
+  `aiPercentByDeltaLev` zarówno doświadczenie, jak i drop: piętnaście poziomów
+  nad potworem to jeden procent jednego i drugiego, więc z takiego grindu nie
+  było nic poza zajętą mapą i zatrzymanym rozwojem postaci.
+  Decyzję „czy ta walka ma sens" podejmuje teraz jeden wspólny moduł i
+  podejmuje ją tak samo w każdym miejscu, które pyta: przy wyborze nowego
+  celu, przy podciąganiu grup i — co trzy sekundy — dla potwora, którego bot
+  już bije. Wcześniej filtr działał tylko przy wyborze, więc przeciwnik wzięty
+  chwilę przed zmianą zadania był bity do końca.
+  Powody, dla których wolno walczyć, są policzalne: realne doświadczenie,
+  potwór z aktualnego zadania, brakujący materiał do ulepszenia, kamień Metin
+  i ograniczona obrona. Nic więcej.
+- **Obrona ma koniec, także kiedy zmienia się napastnik.** Wyjątek „ono
+  zaatakowało pierwsze" musi być ograniczony, bo inaczej jest pozwoleniem na
+  dowolny grind. W pierwszej wersji epizod obrony był liczony osobno dla
+  każdego napastnika — dwa potwory na zmianę utrzymywały go więc bez końca.
+  Teraz epizod należy do bota: dopóki trwa, odpiera każdego napastnika w
+  swoim czasie i w swoim promieniu, a nowy zaczyna się dopiero wtedy, gdy
+  walka faktycznie ustała na kilkanaście sekund. Obrona towarzysza z drużyny
+  mieści się w tym samym epizodzie, więc jest ograniczona nie tylko
+  odległością, ale i czasem.
+- **Potrzeba materiału nie usprawiedliwia polowania na coś, co go nie da.**
+  Wyjątek materiałowy sprawdzał, czy botowi rzeczywiście brakuje surowca do
+  receptury — i tylko to. Drop podlega jednak temu samemu przelicznikowi
+  poziomów co doświadczenie, więc „potrzebuję" potrafiło wysłać postać na
+  potwora, z którego ten materiał praktycznie nie wypada. Teraz wyjątek
+  wymaga jeszcze realnej szansy dropu.
+- **Panel seban latino w wersji 1.37.1, tym razem w całości.** Poprzednie
+  wdrożenie było zlepkiem starszej wersji z naszymi poprawkami: brakowało
+  grafik, styli i oryginalnego layoutu. Teraz jest pełny pakiet autora —
+  szablony, style i 1599 plików statycznych — z zachowanymi dwiema naszymi
+  poprawkami: pierwsza migawka kolektora robi się od razu zamiast po pięciu
+  minutach, a pulpit nie wywraca się na świeżej bazie, w której nie ma
+  jeszcze tabeli migawek. Panel zna też wreszcie wersję serwera, na który
+  patrzy, zamiast pokazywać „nieustawiona".
+- **„OTWÓRZ PANEL WWW" pyta, który panel.** Panele są dwa, działają
+  jednocześnie i żaden nie zastępuje drugiego, więc przycisk nie decyduje za
+  nikogo: pokazuje wybór między **oryginalnym panelem** (mapa i sterowanie) a
+  **zaawansowanym panelem seban latino** (profile, rankingi, gospodarka,
+  obciążenie). Porty odczytuje z `.env` tej instalacji, więc świat, który je
+  przesunął, otwiera się pod właściwym adresem.
+
+### Dla ciekawych
+
+- Rdzeń pisze teraz raz na minutę linię `PLAYERBOT_M2: census` — ilu botów od
+  czterdziestego poziomu stoi w Bokjung i z jakiego powodu (zadanie,
+  materiały, wizyta, podróż, obrona, brak planu) — oraz `PLAYERBOT_M2: left
+  after errand` z czasem, jaki bot potrzebował na opuszczenie mapy po
+  załatwieniu swojej sprawy. Sama liczba postaci w mieście nigdy nie
+  odpowiadała na pytanie, czy coś jest zepsute; te dwie linie odpowiadają.
+  Zmierzone na żywo: przez dziesięć minut w Bokjung stało od 45 do 60 botów od czterdziestego poziomu wzwyż i każdy z konkretnego powodu — 297 razy zadanie, 197 razy wizyta u handlarza, 11 razy obrona, ani razu „brak planu"; 222 wyjścia z mapy po załatwionej sprawie, mediana 21 sekund, 182 z nich poniżej pół minuty; 1872 odmowy walki, wszystkie z powodu zerowego doświadczenia.
+
+---
+
 ## 1.30.13 — 2026-09-07
 
 ### Zmienione

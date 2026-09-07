@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T20:46:00Z",
-  "statusMessage": "Aktualizacja 1.30.13. Boty z celem zapasy naprawde ida po mikstury zamiast stac w miescie, dochodza do portalu zamiast znikac przed nim, a poprawka prywatnych straganow dociera wreszcie do graczy. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T21:35:00Z",
+  "statusMessage": "Aktualizacja 1.30.14. Boty wysokiego poziomu przestaja tluc potwory, z ktorych nic nie maja, obrona ma wreszcie koniec, a panel seban latino jest w pelnej wersji 1.37.1 - przycisk w launcherze pyta teraz, ktory panel otworzyc. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.13",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.13/metin2-server-update-1.30.13.zip",
-    "sha256": "8898C3413972971FC1B56A3245414D00234D063BC73C5FCAB00F7CC9B6960BFE"
+    "version": "1.30.14",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.14/metin2-server-update-1.30.14.zip",
+    "sha256": "3A33BF34CFCD3675921E4290F0706423D44757E77F2B51B5FACE4B5A906F0BD8"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

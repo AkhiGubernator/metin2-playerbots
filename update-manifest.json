@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T08:34:00Z",
-  "statusMessage": "Aktualizacja 1.30.2. Do Lochu Pajakow V1 boty ida jak w grze: przez cala Pustynie Yongbi do bramy w prawym dolnym rogu i z powrotem, po drodze nie bijac mobow (najwyzej Metin wart poziomu). Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T10:58:00Z",
+  "statusMessage": "Aktualizacja 1.30.3. Boty nie kupuja juz duplikatow sprzetu na straganach (ani tarcz przy broni dwurecznej) i zakladaja kupione od razu; naprawiona petla Bokjung-M3 droppera. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.2",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.2/metin2-server-update-1.30.2.zip",
-    "sha256": "0372056948B5911C0B09F2DB8A44FBDD6AD943F087731B064A6EE5FF17B74336"
+    "version": "1.30.3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.3/metin2-server-update-1.30.3.zip",
+    "sha256": "C638E8809D691BA7D8EE561224AB5A467AA6227E14172E84DECCB3711EBE9AD6"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

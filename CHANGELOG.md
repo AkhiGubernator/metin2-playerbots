@@ -17,6 +17,30 @@ every version here.
 
 ---
 
+## 1.30.3 — 2026-09-07
+
+### Naprawione
+
+- **Boty kupowały po trzy te same zbroje i tarcze, których nie noszą.**
+  Ocena „czy chcę ten przedmiot ze straganu” porównywała go tylko z tym, co
+  bot ma na sobie, a założenie kupionej rzeczy czekało na przegląd
+  ekwipunku — więc bot stojący przy ladzie kupował tę samą zbroję +6 trzy
+  razy co dwie sekundy, każda lepsza od noszonej i żadna jeszcze nie
+  założona. Teraz bot nie kupuje, gdy w plecaku leży co najmniej równie
+  dobry zamiennik na ten sam slot, a rzecz ze straganu musi być o 15 %
+  lepsza od noszonej i od zapasu (dwie zbroje +6 różnią się tylko rzutem
+  bonusów), nie kupuje tarczy przy broni dwuręcznej, a po zakupie przegląd
+  ekwipunku rusza natychmiast.
+- **Pętla Bokjung ↔ M3 M3-droppera.** Dropper z M3 ma tam zostać do 32
+  poziomu, ale reguła „powyżej 24 opuść M3” wyrzucała go natychmiast, a w
+  Bokjung ta sama logika słała go z powrotem: 148 przejść w kwartę u jednego
+  bota, kolejka do teleportera w Bokjung i boty 25+ „expiące w M2” między
+  skokami. Dropper zostaje na M3, dopóki chce tam być.
+
+Zgłoszenie: OskarPWA.
+
+---
+
 ## 1.30.2 — 2026-09-07
 
 ### Naprawione

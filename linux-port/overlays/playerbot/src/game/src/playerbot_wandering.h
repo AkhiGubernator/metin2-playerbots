@@ -809,14 +809,19 @@ namespace
 						ch->GetGuild() ? ch->GetGuild()->GetID() : 0U, hubScore);
 			}
 		}
-		else if (ch->GetMapIndex() == PLAYERBOT_MAP_MONKEY_EASY)
+		else if (IsPlayerBotMonkeyMap(ch->GetMapIndex()))
 		{
-			// Rooms from metin2_map_monkey_dungeon_12/regen.txt. The navigation
-			// grid, not straight-line Goto, connects them through the maze corridors.
+			// Rooms from metin2_map_monkey_dungeon_12/regen.txt, as offsets from
+			// the dungeon's base - the three dungeons are the same maze. The
+			// navigation grid, not straight-line Goto, connects them through the
+			// corridors.
+			long baseX = 0, baseY = 0;
+			GetPlayerBotMonkeyBase(ch->GetMapIndex(), baseX, baseY);
 			const TPlayerBotMapPoint rooms[8] = {
-				{ 852300, 454900 }, { 872600, 450800 }, { 889800, 451500 },
-				{ 861200, 478600 }, { 873100, 471400 }, { 890800, 470400 },
-				{ 860800, 496600 }, { 898600, 443100 }
+				{ baseX + 7500, baseY + 19700 }, { baseX + 27800, baseY + 15600 },
+				{ baseX + 45000, baseY + 16300 }, { baseX + 16400, baseY + 43400 },
+				{ baseX + 28300, baseY + 36200 }, { baseX + 46000, baseY + 35200 },
+				{ baseX + 16000, baseY + 61400 }, { baseX + 53800, baseY + 7900 }
 			};
 			const DWORD pid = ch->GetPlayerID();
 			bool bRoomReachable = false;

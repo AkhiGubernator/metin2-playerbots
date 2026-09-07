@@ -275,6 +275,17 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   row has a second half, `key_item`, that waits for the Soul Stone; the
   state index of a compiled quest is a hash, not a position (see
   `quest/object/state/`), so never compare it with a small integer.
+- **The three Monkey Dungeons are one maze, and a medal is a kill-group
+  roll.** `metin2_map_monkey_dungeon_12`, `_2` and `_3` share one
+  `server_attr`, the same regen cells and the same GOTO portals, so every
+  place the easy dungeon was hard-coded is now a local offset from
+  `GetPlayerBotMonkeyBase` and `IsPlayerBotMonkeyMap` names the three;
+  `GetPlayerBotMonkeyMapForLevel` picks by band (18/33/46). The band is not
+  taste: the medal is a `Type kill` group in `mob_drop_item.txt` and
+  `CreateDropItem` multiplies every kill-group roll by `aiPercentByDeltaLev`,
+  which is 1 at fifteen levels above the monster - a bot of forty-five in
+  the easy dungeon got one medal per 140 trips. 109 was moved onto game1
+  in `m2-render-config` like 104; `apply.sh` allows 108 and 109.
 - **Droppers are personalities, not roles.** `IsPlayerBotDropper` names the
   four; `GetPlayerBotPersonalityByPID` is how a rule that only has a
   character asks. The travel gates (`ShouldPlayerBotVisitM3`,

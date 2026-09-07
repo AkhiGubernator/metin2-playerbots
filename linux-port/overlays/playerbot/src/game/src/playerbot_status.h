@@ -272,7 +272,7 @@ namespace
 					snprintf(status, statusSize, "%sIde do Lochu Malp po Medal Konny", prefix);
 				else if (ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) > 0)
 					snprintf(status, statusSize, "%sIde do najblizszego Stajennego z Medalem", prefix);
-				else if (ch->GetMapIndex() == PLAYERBOT_MAP_MONKEY_EASY)
+				else if (IsPlayerBotMonkeyMap(ch->GetMapIndex()))
 					snprintf(status, statusSize, "%sWychodze z Lochu Malp", prefix);
 				else
 					snprintf(status, statusSize, "%sSzukam miejsca do expa (cel: %s)", prefix, goal);

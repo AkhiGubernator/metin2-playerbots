@@ -45,10 +45,12 @@ namespace
 		int toLocalY;
 	};
 
-	// The easy Monkey Dungeon is not one continuous walkable maze. Its rooms are
-	// joined by native GOTO NPCs (10501..10524), which teleport a nearby character
-	// locally without a loading screen. Mirror that directed graph in the planner;
-	// the actual teleport is still performed by the normal server NPC event.
+	// A Monkey Dungeon is not one continuous walkable maze. Its rooms are
+	// joined by native GOTO NPCs (10501..10524 in the easy one, 106xx and 107xx
+	// in the other two, at the same cells), which teleport a nearby character
+	// locally without a loading screen. Mirror that directed graph in the
+	// planner, as cells off the dungeon's base; the actual teleport is still
+	// performed by the normal server NPC event.
 	const TPlayerBotMonkeyPortal PLAYERBOT_MONKEY_PORTALS[] = {
 		{145, 315, 345, 361}, {80, 308, 106, 547}, {206, 109, 75, 368},
 		{320, 238, 89, 746},  {421, 272, 520, 352}, {487, 279, 541, 45},
@@ -81,6 +83,7 @@ namespace
 	}
 
 	bool FindPlayerBotMonkeyPortalStep(CPlayerBotNavigation& navigation,
+			long baseX, long baseY,
 			long startX, long startY, long targetX, long targetY,
 			int blockedReverseOfPortal, long& portalX, long& portalY,
 			int& selectedPortalIndex)
@@ -106,14 +109,14 @@ namespace
 				const TPlayerBotMonkeyPortal& portal = PLAYERBOT_MONKEY_PORTALS[i];
 				if (IsPlayerBotMonkeyReversePortal((int)i, blockedReverseOfPortal))
 					continue;
-				const long fromX = PLAYERBOT_MONKEY_EASY_BASE_X + portal.fromLocalX * 100L;
-				const long fromY = PLAYERBOT_MONKEY_EASY_BASE_Y + portal.fromLocalY * 100L;
+				const long fromX = baseX + portal.fromLocalX * 100L;
+				const long fromY = baseY + portal.fromLocalY * 100L;
 				const DWORD fromComponent = navigation.GetComponentAtWorld(fromX, fromY, 12);
 				if (fromComponent != current)
 					continue;
 
-				const long toX = PLAYERBOT_MONKEY_EASY_BASE_X + portal.toLocalX * 100L;
-				const long toY = PLAYERBOT_MONKEY_EASY_BASE_Y + portal.toLocalY * 100L;
+				const long toX = baseX + portal.toLocalX * 100L;
+				const long toY = baseY + portal.toLocalY * 100L;
 				const DWORD toComponent = navigation.GetComponentAtWorld(toX, toY, 12);
 				if (toComponent == 0 || parentComponent.find(toComponent) != parentComponent.end())
 					continue;
@@ -141,10 +144,8 @@ namespace
 		if (firstPortal < 0)
 			return false;
 
-		portalX = PLAYERBOT_MONKEY_EASY_BASE_X +
-				PLAYERBOT_MONKEY_PORTALS[firstPortal].fromLocalX * 100L;
-		portalY = PLAYERBOT_MONKEY_EASY_BASE_Y +
-				PLAYERBOT_MONKEY_PORTALS[firstPortal].fromLocalY * 100L;
+		portalX = baseX + PLAYERBOT_MONKEY_PORTALS[firstPortal].fromLocalX * 100L;
+		portalY = baseY + PLAYERBOT_MONKEY_PORTALS[firstPortal].fromLocalY * 100L;
 		selectedPortalIndex = firstPortal;
 		return true;
 	}
@@ -558,7 +559,8 @@ namespace
 		navigation.ClampWorld(destX, destY);
 
 		bool redirectedToMonkeyPortal = false;
-		if (mapIndex == PLAYERBOT_MAP_MONKEY_EASY &&
+		long monkeyBaseX = 0, monkeyBaseY = 0;
+		if (GetPlayerBotMonkeyBase(mapIndex, monkeyBaseX, monkeyBaseY) &&
 				!navigation.CanReach(ch->GetX(), ch->GetY(), destX, destY))
 		{
 			long portalX = 0, portalY = 0;
@@ -566,7 +568,8 @@ namespace
 			const int blockedReverseOfPortal =
 					dwNow < state.dwMonkeyReversePortalBlockUntil
 					? state.iLastMonkeyPortalIndex : -1;
-			if (FindPlayerBotMonkeyPortalStep(navigation, ch->GetX(), ch->GetY(),
+			if (FindPlayerBotMonkeyPortalStep(navigation, monkeyBaseX, monkeyBaseY,
+					ch->GetX(), ch->GetY(),
 					destX, destY, blockedReverseOfPortal, portalX, portalY, portalIndex))
 			{
 				destX = portalX;

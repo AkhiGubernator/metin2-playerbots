@@ -1017,6 +1017,29 @@ namespace
 				ch, GetPlayerBotProgressionBootsVnum(ch), WEAR_FOOTS);
 	}
 
+	// "Full eq" as a player says it: every slot filled and nothing on the
+	// progression ladder left to buy.
+	bool IsPlayerBotFullyEquipped(LPCHARACTER ch)
+	{
+		if (!ch || !ch->IsItemLoaded())
+			return false;
+		static const BYTE slots[] = {
+			WEAR_WEAPON, WEAR_BODY, WEAR_HEAD, WEAR_SHIELD,
+			WEAR_WRIST, WEAR_FOOTS, WEAR_NECK, WEAR_EAR
+		};
+		for (size_t i = 0; i < sizeof(slots) / sizeof(slots[0]); ++i)
+			if (!ch->GetWear(slots[i]))
+				return false;
+		return !NeedsPlayerBotProgressionWeapon(ch) &&
+				!NeedsPlayerBotProgressionArmor(ch) &&
+				!NeedsPlayerBotProgressionShield(ch) &&
+				!NeedsPlayerBotProgressionHelmet(ch) &&
+				!NeedsPlayerBotProgressionBoots(ch) &&
+				!NeedsPlayerBotProgressionWrist(ch) &&
+				!NeedsPlayerBotProgressionNecklace(ch) &&
+				!NeedsPlayerBotProgressionEarring(ch);
+	}
+
 	bool IsPlayerBotSpecialLevel30Weapon(LPITEM item)
 	{
 		if (!item || item->GetType() != ITEM_WEAPON)
@@ -1613,6 +1636,18 @@ namespace
 		}
 		if (bundle == 0)
 			return false;
+		// AutoGiveItem hands the item back even when it had nowhere to put it:
+		// with no free cell the bundle goes on the ground at the bot's feet, the
+		// bot pays, still "needs arrows", and buys again on the next pass - a
+		// market square carpeted in Wooden Arrows, twenty purchases an hour per
+		// archer. The junk sale has already run by now; a bag still full holds
+		// things worth keeping, and the arrows wait for the next visit.
+		if (ch->GetEmptyInventory(1) < 0)
+		{
+			sys_log(0, "PLAYERBOT_GEAR: no room for arrows pid=%u name=%s arrows=%d",
+					ch->GetPlayerID(), ch->GetName(), CountPlayerBotArrows(ch));
+			return false;
+		}
 
 		LPITEM arrows = ch->AutoGiveItem(
 				PLAYERBOT_WOODEN_ARROW_VNUM, bundle, -1, false);

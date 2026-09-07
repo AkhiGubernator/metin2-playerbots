@@ -441,6 +441,8 @@ namespace
 	const long PLAYERBOT_MAP_CHUNJO_M2 = 23;
 	const long PLAYERBOT_MAP_CHUNJO_M3 = 24;
 	const long PLAYERBOT_MAP_MONKEY_EASY = 25;
+	const long PLAYERBOT_MAP_MONKEY_MEDIUM = 108;
+	const long PLAYERBOT_MAP_MONKEY_HARD = 109;
 	const long PLAYERBOT_M1_TO_M2_PORTAL_X = 87600;
 	const long PLAYERBOT_M1_TO_M2_PORTAL_Y = 215100;
 	const long PLAYERBOT_M2_ARRIVAL_X = 111800;
@@ -977,6 +979,10 @@ namespace
 	// ten for an adventurer and every visit for a merchant: it hunts for a
 	// living and sells what the hunt brought, not the other way round.
 	const int PLAYERBOT_DROPPER_SHOP_ROLL = 333;
+	// A bot with every slot filled and nothing on its ladder left to buy has
+	// spares and no use for the yang; three in ten of those keep a stall
+	// against one in ten of everyone else.
+	const int PLAYERBOT_FULL_GEAR_SHOP_ROLL = 300;
 	// The chance, rolled again for every stall a bot puts up, that it chooses Joan
 	// over Bokjung. Joan is where the players are - three quarters of the live
 	// bots stand on map 21 at any moment - so that is where the stalls belong.
@@ -1065,16 +1071,97 @@ namespace
 	const DWORD PLAYERBOT_REMOTE_REFINE_RETURN_MIN_DELAY = 720000;
 	const DWORD PLAYERBOT_REMOTE_REFINE_RETURN_MAX_DELAY = 1500000;
 	const DWORD PLAYERBOT_MONKEY_MAX_VISIT_TIME = 1800000;
-	// Who the Easy Monkey Dungeon is worth a trip for. Below this a bot dies to
-	// the rooms it has to cross; above it the medals are pocket change against
-	// what the same half hour buys on the frontier, and the dungeon was filling
-	// up with characters that had nothing left to gain there.
+	// Which Monkey Dungeon a level is sent to. The medal is a "kill" drop group
+	// (mob_drop_item.txt: one medal per 550 soldiers, 500 fighters, 200 generals)
+	// and CreateDropItem scales every kill-group roll by aiPercentByDeltaLev -
+	// 1% of the rate once the killer stands fifteen levels above the monster.
+	// So a level-45 bot in the easy dungeon (monkeys of 22-29) needed fifty
+	// thousand kills for a medal: 140 trips an hour brought back one. The
+	// medium dungeon holds monkeys of 35-42 and the hard one 45-54; the bands
+	// keep a bot within ten levels of the room it fights in.
 	const BYTE PLAYERBOT_MONKEY_MIN_LEVEL = 18;
-	const BYTE PLAYERBOT_MONKEY_MAX_LEVEL = 26;
+	const BYTE PLAYERBOT_MONKEY_MEDIUM_MIN_LEVEL = 33;
+	const BYTE PLAYERBOT_MONKEY_HARD_MIN_LEVEL = 46;
 	const DWORD PLAYERBOT_M3_MAX_VISIT_TIME = 1200000;
 	const DWORD PLAYERBOT_MONKEY_REVERSE_PORTAL_BLOCK_TIME = 10000;
 	const long PLAYERBOT_MONKEY_EASY_BASE_X = 844800;
 	const long PLAYERBOT_MONKEY_EASY_BASE_Y = 435200;
+	// The three dungeons are one maze: metin2_map_monkey_dungeon2 and _3 carry
+	// the same server_attr, the same regen cells and the same GOTO portals as
+	// _12, at another base position. Everything placed in the easy dungeon is
+	// therefore a local offset, and a dungeon is its base.
+	const long PLAYERBOT_MONKEY_MEDIUM_BASE_X = 128000;
+	const long PLAYERBOT_MONKEY_MEDIUM_BASE_Y = 640000;
+	const long PLAYERBOT_MONKEY_HARD_BASE_X = 128000;
+	const long PLAYERBOT_MONKEY_HARD_BASE_Y = 716800;
+	// Six cells south of the exit NPC (10070/10073/10075, cell 72,119 and
+	// 72,114 - the arrival is where the easy one always was, the portal is
+	// the NPC itself).
+	const long PLAYERBOT_MONKEY_ARRIVAL_LOCAL_X = 7200;
+	const long PLAYERBOT_MONKEY_ARRIVAL_LOCAL_Y = 12500;
+	const long PLAYERBOT_MONKEY_RETURN_LOCAL_X = 7200;
+	const long PLAYERBOT_MONKEY_RETURN_LOCAL_Y = 11900;
+
+	bool IsPlayerBotMonkeyMap(long mapIndex)
+	{
+		return mapIndex == PLAYERBOT_MAP_MONKEY_EASY ||
+				mapIndex == PLAYERBOT_MAP_MONKEY_MEDIUM ||
+				mapIndex == PLAYERBOT_MAP_MONKEY_HARD;
+	}
+
+	bool GetPlayerBotMonkeyBase(long mapIndex, long& outX, long& outY)
+	{
+		switch (mapIndex)
+		{
+			case PLAYERBOT_MAP_MONKEY_EASY: outX = PLAYERBOT_MONKEY_EASY_BASE_X; outY = PLAYERBOT_MONKEY_EASY_BASE_Y; return true;
+			case PLAYERBOT_MAP_MONKEY_MEDIUM: outX = PLAYERBOT_MONKEY_MEDIUM_BASE_X; outY = PLAYERBOT_MONKEY_MEDIUM_BASE_Y; return true;
+			case PLAYERBOT_MAP_MONKEY_HARD: outX = PLAYERBOT_MONKEY_HARD_BASE_X; outY = PLAYERBOT_MONKEY_HARD_BASE_Y; return true;
+			default: return false;
+		}
+	}
+
+	bool GetPlayerBotMonkeyArrival(long mapIndex, long& outX, long& outY)
+	{
+		long baseX = 0, baseY = 0;
+		if (!GetPlayerBotMonkeyBase(mapIndex, baseX, baseY))
+			return false;
+		outX = baseX + PLAYERBOT_MONKEY_ARRIVAL_LOCAL_X;
+		outY = baseY + PLAYERBOT_MONKEY_ARRIVAL_LOCAL_Y;
+		return true;
+	}
+
+	bool GetPlayerBotMonkeyReturnPortal(long mapIndex, long& outX, long& outY)
+	{
+		long baseX = 0, baseY = 0;
+		if (!GetPlayerBotMonkeyBase(mapIndex, baseX, baseY))
+			return false;
+		outX = baseX + PLAYERBOT_MONKEY_RETURN_LOCAL_X;
+		outY = baseY + PLAYERBOT_MONKEY_RETURN_LOCAL_Y;
+		return true;
+	}
+
+	// The dungeon a bot of this level earns medals in, or 0 below the band.
+	long GetPlayerBotMonkeyMapForLevel(BYTE level)
+	{
+		if (level < PLAYERBOT_MONKEY_MIN_LEVEL)
+			return 0;
+		if (level < PLAYERBOT_MONKEY_MEDIUM_MIN_LEVEL)
+			return PLAYERBOT_MAP_MONKEY_EASY;
+		if (level < PLAYERBOT_MONKEY_HARD_MIN_LEVEL)
+			return PLAYERBOT_MAP_MONKEY_MEDIUM;
+		return PLAYERBOT_MAP_MONKEY_HARD;
+	}
+
+	const char* GetPlayerBotMonkeyName(long mapIndex)
+	{
+		switch (mapIndex)
+		{
+			case PLAYERBOT_MAP_MONKEY_EASY: return "easy";
+			case PLAYERBOT_MAP_MONKEY_MEDIUM: return "medium";
+			case PLAYERBOT_MAP_MONKEY_HARD: return "hard";
+			default: return "monkey";
+		}
+	}
 	const long MAP21_BASE_X = 921600;
 	const long MAP21_BASE_Y = 204800;
 

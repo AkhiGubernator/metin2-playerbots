@@ -4300,7 +4300,7 @@ MAP_I18N = {
  "pl": {
   "title":"Mapa świata na żywo — Chunjo","live":"NA ŻYWO (1,5 s)","subtitle":"Interaktywny podgląd pozycji i rozwoju botów w czasie rzeczywistym",
   "player_panel":"Panel graczy","play_browser":"Graj w przeglądarce","show_bots":"Pokaż boty","names_levels":"Nicki i poziomy","pt_only":"Tylko w grupie (PT)",
-  "level":"Poziom","all":"Wszystkie","map":"Mapa","m1":"M1 — Joan","m2":"M2 — Bokjung","m3":"M3 — Waryong","monkey":"Łatwy Loch Małp","orc":"Dolina Orków","desert":"Pustynia Yongbi","sohan":"Góra Sohan","spider":"Loch Pająków V1","heat":"Mapa cieplna","heat_deaths":"Zgony botów","heat_metins":"Rozbite metiny","heat_skills":"Awanse umiejętności","search":"🔍 Szukaj bota (np. botarek)...",
+  "level":"Poziom","all":"Wszystkie","map":"Mapa","m1":"M1 — Joan","m2":"M2 — Bokjung","m3":"M3 — Waryong","monkey":"Łatwy Loch Małp","monkey_medium":"Średni Loch Małp","monkey_hard":"Trudny Loch Małp","orc":"Dolina Orków","desert":"Pustynia Yongbi","sohan":"Góra Sohan","spider":"Loch Pająków V1","heat":"Mapa cieplna","heat_deaths":"Zgony botów","heat_metins":"Rozbite metiny","heat_skills":"Awanse umiejętności","search":"🔍 Szukaj bota (np. botarek)...",
   "solo_bot":"Bot solo","party_bot":"W grupie (PT)","metin_fight":"Walka z Metinem","loading":"Ładowanie...","world_stats":"Statystyki świata","active_bots":"Aktywne boty",
   "in_parties":"W grupach (PT)","avg_level":"Średni poziom","max_level":"Maks. poziom","rankings":"Rankingi botów","rank_level":"Poziom","rank_weapon":"Broń","rank_armor":"Zbroja",
   "rank_weapon30":"Bronie 30 Lv","rank_items":"Przedmioty","rank_horse":"Koń","rank_biologist":"Biolog","rank_hunting":"Polowanie","rank_shops":"Otwarte sklepy","rank_skills":"Umiejętności","rank_plus9":"Przedmiot +9","rank_stall_open":"Stragan otwarty","rank_empty":"Brak danych rankingu.","rank_show":"Pokaż","rank_search":"Szukaj w rankingu...","none":"Brak","items_short":"przedm.",
@@ -4319,7 +4319,7 @@ MAP_I18N = {
  "en": {
   "title":"Live world map — Chunjo","live":"LIVE (1.5 s)","subtitle":"Interactive real-time view of bot positions and progression",
   "player_panel":"Player panel","play_browser":"Play in browser","show_bots":"Show bots","names_levels":"Names and levels","pt_only":"Party only (PT)",
-  "level":"Level","all":"All","map":"Map","m1":"M1 — Joan","m2":"M2 — Bokjung","m3":"M3 — Waryong","monkey":"Easy Monkey Dungeon","orc":"Orc Valley","desert":"Yongbi Desert","sohan":"Mount Sohan","spider":"Spider Dungeon V1","heat":"Heatmap","heat_deaths":"Bot deaths","heat_metins":"Metins broken","heat_skills":"Skill-ups","search":"🔍 Find a bot (e.g. botarek)...",
+  "level":"Level","all":"All","map":"Map","m1":"M1 — Joan","m2":"M2 — Bokjung","m3":"M3 — Waryong","monkey":"Easy Monkey Dungeon","monkey_medium":"Medium Monkey Dungeon","monkey_hard":"Hard Monkey Dungeon","orc":"Orc Valley","desert":"Yongbi Desert","sohan":"Mount Sohan","spider":"Spider Dungeon V1","heat":"Heatmap","heat_deaths":"Bot deaths","heat_metins":"Metins broken","heat_skills":"Skill-ups","search":"🔍 Find a bot (e.g. botarek)...",
   "solo_bot":"Solo bot","party_bot":"In party (PT)","metin_fight":"Fighting a Metin","loading":"Loading...","world_stats":"World statistics","active_bots":"Active bots",
   "in_parties":"In parties (PT)","avg_level":"Average level","max_level":"Max level","rankings":"Bot rankings","rank_level":"Level","rank_weapon":"Weapon","rank_armor":"Armour",
   "rank_weapon30":"Lv 30 Weapons","rank_items":"Items","rank_horse":"Horse","rank_biologist":"Biologist","rank_hunting":"Hunting","rank_shops":"Open shops","rank_skills":"Skills","rank_plus9":"Item +9","rank_stall_open":"Stall open","rank_empty":"No ranking data.","rank_show":"Show","rank_search":"Search ranking...","none":"None","items_short":"items",
@@ -4413,7 +4413,7 @@ TPL_LIVE_MAP = BASE.replace("__BODY__", """
         <span class="muted" style="font-size:13px">{{m.map}}:</span>
         <select id="mapFilter" onchange="setMapFilter(this.value)" style="width:auto;padding:6px 9px;font-size:12px;margin:0">
           <option value="21">{{m.m1}}</option><option value="23">{{m.m2}}</option>
-          <option value="24">{{m.m3}}</option><option value="25">{{m.monkey}}</option>
+          <option value="24">{{m.m3}}</option><option value="25">{{m.monkey}}</option><option value="108">{{m.monkey_medium}}</option><option value="109">{{m.monkey_hard}}</option>
           <option value="64">{{m.orc}}</option><option value="63">{{m.desert}}</option><option value="61">{{m.sohan}}</option><option value="104">{{m.spider}}</option>
         </select>
       </div>
@@ -6269,6 +6269,8 @@ PLAYERBOT_MAP_BOUNDS = {
     23: (102400, 204800, 102400, 102400),   # Bokjung (Chunjo M2)
     24: (179200, 0, 51200, 51200),          # Waryong (Chunjo M3)
     25: (844800, 435200, 76800, 76800),     # Easy Monkey Dungeon
+    108: (128000, 640000, 76800, 76800),    # Medium Monkey Dungeon
+    109: (128000, 716800, 76800, 76800),    # Hard Monkey Dungeon
     64: (256000, 665600, 153600, 153600),   # Orc Valley
     63: (204800, 486400, 153600, 153600),   # Yongbi Desert
     61: (358400, 153600, 153600, 153600),   # Mount Sohan (map_n_snowm_01)
@@ -7937,6 +7939,10 @@ PLAYERBOT_MAP_TILES = {
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgOvzB5F0ULG3k0HcAAAAAElFTkSuQmCC"
     ),
 }
+
+# The three Monkey Dungeons share one server_attr, so one tile.
+PLAYERBOT_MAP_TILES[108] = PLAYERBOT_MAP_TILES[25]
+PLAYERBOT_MAP_TILES[109] = PLAYERBOT_MAP_TILES[25]
 
 # Part of the tile URL, so a browser that cached last week's tile fetches the
 # new one the moment the panel is redeployed. The tile itself is cached for a

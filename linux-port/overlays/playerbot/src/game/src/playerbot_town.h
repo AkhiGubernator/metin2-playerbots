@@ -432,10 +432,12 @@ namespace
 		// One bot in ten, stretched or shrunk by the TRADE weight. Drawn against a
 		// thousand rather than ten so that the weight has somewhere to move: the
 		// odds at the neutral 100 are the same one in ten as before, over a
-		// different tenth of the population.
+		// different tenth of the population. Three in ten once the bot has
+		// nothing left to buy - the same draw, so the one in ten are among them.
 		return PlayerBotWeightedRoll(
 				PlayerBotNavHash(ch->GetPlayerID() ^ 0x53484f50U) % 1000U,
-				100, PLAYERBOT_WEIGHT_TRADE);
+				IsPlayerBotFullyEquipped(ch) ? PLAYERBOT_FULL_GEAR_SHOP_ROLL : 100,
+				PLAYERBOT_WEIGHT_TRADE);
 	}
 
 	// What a bot asks for what it puts up. A refined item has no price in the
@@ -595,6 +597,12 @@ namespace
 	bool CanPlayerBotSellHorseMedals(LPCHARACTER ch, bool merchant)
 	{
 		if (merchant)
+			return true;
+		// The medal dropper is the medal shop: it farms them to put them up. It
+		// used to hold them while its own horse could use one, and a dropper of
+		// forty on a horse of ten - a battle horse candidate, forbidden to spend
+		// one - could neither use nor sell what it had.
+		if (ch && GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_MEDAL_DROPPER)
 			return true;
 		return ch && ch->GetHorseLevel() >= 10 &&
 				ch->GetLevel() < GetPlayerBotNextHorseRequiredLevel(ch->GetHorseLevel());
@@ -898,7 +906,11 @@ namespace
 			case PLAYERBOT_MAP_CHUNJO_M3:
 				outMap = mapIndex; outX = PLAYERBOT_M3_ARRIVAL_X; outY = PLAYERBOT_M3_ARRIVAL_Y; break;
 			case PLAYERBOT_MAP_MONKEY_EASY:
-				outMap = mapIndex; outX = PLAYERBOT_MONKEY_EASY_ARRIVAL_X; outY = PLAYERBOT_MONKEY_EASY_ARRIVAL_Y; break;
+			case PLAYERBOT_MAP_MONKEY_MEDIUM:
+			case PLAYERBOT_MAP_MONKEY_HARD:
+				if (GetPlayerBotMonkeyArrival(mapIndex, outX, outY))
+					outMap = mapIndex;
+				break;
 			default:
 				if (GetPlayerBotFrontierArrival(mapIndex, outX, outY))
 					outMap = mapIndex;

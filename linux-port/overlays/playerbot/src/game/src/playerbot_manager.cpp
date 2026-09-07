@@ -1184,7 +1184,7 @@ void CPlayerBotManager::Update()
 		if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 ||
 				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 ||
 				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M3 ||
-				ch->GetMapIndex() == PLAYERBOT_MAP_MONKEY_EASY ||
+				IsPlayerBotMonkeyMap(ch->GetMapIndex()) ||
 				IsPlayerBotFrontierMap(ch->GetMapIndex()))
 		{
 			const long currentMap = ch->GetMapIndex();
@@ -1222,11 +1222,8 @@ void CPlayerBotManager::Update()
 						fallbackX = PLAYERBOT_M3_ARRIVAL_X;
 						fallbackY = PLAYERBOT_M3_ARRIVAL_Y;
 					}
-					else if (currentMap == PLAYERBOT_MAP_MONKEY_EASY)
-					{
-						fallbackX = PLAYERBOT_MONKEY_EASY_ARRIVAL_X;
-						fallbackY = PLAYERBOT_MONKEY_EASY_ARRIVAL_Y;
-					}
+					else if (IsPlayerBotMonkeyMap(currentMap))
+						GetPlayerBotMonkeyArrival(currentMap, fallbackX, fallbackY);
 					else
 						GetPlayerBotFrontierArrival(currentMap, fallbackX, fallbackY);
 					foundSafe = navigation.FindNearestWalkableWorld(

@@ -316,32 +316,19 @@ namespace
 		if (!ch)
 			return false;
 		// The medal dropper goes for the medals themselves, whatever its own horse
-		// needs, for as long as the dungeon's band lasts and a little beyond it.
+		// needs, in whichever dungeon its level earns them.
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_MEDAL_DROPPER)
-			return ch->GetLevel() >= PLAYERBOT_MONKEY_MIN_LEVEL &&
-					ch->GetLevel() <= PLAYERBOT_MONKEY_MAX_LEVEL + 6;
+			return GetPlayerBotMonkeyMapForLevel(ch->GetLevel()) != 0;
 		if (!CanPlayerBotAdvanceHorse(ch))
 			return false;
 
-		// The dungeon is only worth a trip inside its own level band. This gate
-		// also empties it: a bot already inside re-evaluates the same call every
-		// tick, so the one that levels past the band finishes what it is doing
-		// and walks out rather than waiting for the thirty-minute timeout.
-		if (ch->GetLevel() < PLAYERBOT_MONKEY_MIN_LEVEL)
-			return false;
-
-		// Past the band it was a door that shut for good, and on a world with a
-		// raised experience rate almost everybody went through it before the roll
-		// had ever picked them: 446 bots above level 26, and 435 of those still
-		// on a horse below ten - locked out of the only source of medals there
-		// is, and with it out of the battle horse, permanently.
-		//
-		// So the band ends the *stay*, not the errand. Above it a bot still comes
-		// for a medal while it has a horse left to raise, at a third of the
-		// chance so the dungeon fills with a trickle of older bots rather than a
-		// crowd, and the ordinary exit rule walks it home as soon as it has one.
-		const bool bPastMonkeyBand = ch->GetLevel() > PLAYERBOT_MONKEY_MAX_LEVEL;
-		if (bPastMonkeyBand && ch->GetHorseLevel() >= 10)
+		// There is a dungeon for every level from eighteen up - see
+		// GetPlayerBotMonkeyMapForLevel for why the easy one alone gave a bot of
+		// forty nothing - so the band no longer ends the errand: 439 bots past
+		// forty stood on no horse at all, and 435 more on one below ten. This
+		// gate also empties a dungeon: a bot inside re-evaluates the same call
+		// every tick and walks out as soon as it is no longer chosen.
+		if (GetPlayerBotMonkeyMapForLevel(ch->GetLevel()) == 0)
 			return false;
 
 		// A combat horse matters most to Warriors and weapon Suras, but it must be
@@ -376,9 +363,6 @@ namespace
 		if (stateIt != s_mapPlayerBotAIStates.end() &&
 				stateIt->second.bAmbition == BOT_AMBITION_HORSE && !hasCombatHorse)
 			chance = std::min<BYTE>(55, chance + 15);
-
-		if (bPastMonkeyBand)
-			chance = (BYTE)std::max(1, (int)chance / 3);
 
 		const DWORD window = dwNow / (30U * 60U * 1000U);
 		const DWORD seed = ch->GetPlayerID() ^ (window * 0x9e3779b9U) ^
@@ -517,7 +501,7 @@ namespace
 		ch->Save();
 		state.dwNextWanderTime = dwNow + number(1500, 4500);
 		state.dwNextHorseRideCheckTime = dwNow + 1000;
-		state.dwDungeonEnteredTime = targetMap == PLAYERBOT_MAP_MONKEY_EASY ? dwNow : 0;
+		state.dwDungeonEnteredTime = IsPlayerBotMonkeyMap(targetMap) ? dwNow : 0;
 		state.dwM3EnteredTime = targetMap == PLAYERBOT_MAP_CHUNJO_M3 ? dwNow : 0;
 		state.dwFrontierEnteredTime = IsPlayerBotFrontierMap(targetMap) ? dwNow : 0;
 		// Landed anywhere but the desert: whatever crossing was under way is over.
@@ -702,7 +686,7 @@ namespace
 		// Leaving the Monkey Dungeon is a decision, not a pathfinding exercise.
 		// Evaluate it before yielding to an existing victim: a monster near the
 		// portal must not keep a finished, timed-out or unequipped bot here forever.
-		if (mapIndex == PLAYERBOT_MAP_MONKEY_EASY)
+		if (IsPlayerBotMonkeyMap(mapIndex))
 		{
 			if (state.dwDungeonEnteredTime == 0)
 				state.dwDungeonEnteredTime = dwNow;
@@ -717,9 +701,14 @@ namespace
 			context.visitExpired = visitExpired;
 			// Re-evaluate the rotating cohort even inside the dungeon. Bots which are
 			// no longer selected finish their current medal (if any) and leave instead
-			// of occupying the dungeon until its absolute 30-minute timeout.
-			context.canAdvanceHorse = CanPlayerBotAdvanceHorse(ch) &&
-					pursuesHorseExpedition;
+			// of occupying the dungeon until its absolute 30-minute timeout. A bot
+			// that has levelled into the next dungeon's band leaves for the same
+			// reason - the rooms here have stopped paying. The medal dropper farms
+			// medals to sell, so its own horse does not gate it.
+			const bool bMedalDropper = state.bPersonality == BOT_PERSONALITY_MEDAL_DROPPER;
+			context.canAdvanceHorse = pursuesHorseExpedition &&
+					(bMedalDropper || CanPlayerBotAdvanceHorse(ch)) &&
+					GetPlayerBotMonkeyMapForLevel(ch->GetLevel()) == mapIndex;
 			const playerbot_world_rules::EMonkeyExitDecision exitDecision =
 					playerbot_world_rules::DecideMonkeyExit(context);
 			if (exitDecision != playerbot_world_rules::MONKEY_STAY)
@@ -941,11 +930,15 @@ namespace
 				if (playerbot_world_rules::IsTravelCooldownActive(
 						dwNow, state.dwNextWorldTravelTime))
 					return false;
+				const long monkeyMap = GetPlayerBotMonkeyMapForLevel(ch->GetLevel());
+				long monkeyX = 0, monkeyY = 0;
+				GetPlayerBotMonkeyArrival(monkeyMap, monkeyX, monkeyY);
+				char reason[48];
+				snprintf(reason, sizeof(reason), "horse_to_monkey_%s", GetPlayerBotMonkeyName(monkeyMap));
 				SetPlayerBotGoal(ch, state, BOT_GOAL_HORSE, dwNow);
 				return MovePlayerBotToWorldPortal(ch, state,
 						PLAYERBOT_M2_MONKEY_PORTAL_X, PLAYERBOT_M2_MONKEY_PORTAL_Y,
-						PLAYERBOT_MAP_MONKEY_EASY, PLAYERBOT_MONKEY_EASY_ARRIVAL_X,
-						PLAYERBOT_MONKEY_EASY_ARRIVAL_Y, dwNow, "horse_to_monkey");
+						monkeyMap, monkeyX, monkeyY, dwNow, reason);
 			}
 
 			if (wantsM3 && !needsCriticalTownServices)
@@ -1055,15 +1048,25 @@ namespace
 			const bool blocked = BlocksPlayerBotTravel(ch);
 			const bool needsTown = blocked ||
 					(settledIn && (needsM1OnlyServices || needsEssentialWeaponSupply));
-			if (!visitExpired && !outOfBand && !needsTown)
+			// The Monkey Dungeons are reached from Bokjung, and nothing here ever
+			// went back for one: the roll that sends a bot for a medal was only
+			// read in town, and a bot past forty lives out here - which is how
+			// 439 of them came to have no horse. A party is not broken up for it;
+			// the trip is taken alone, the party re-forms on the way back.
+			const bool wantsMedal = settledIn && needsHorseExpedition &&
+					ch->GetParty() == NULL;
+			if (!visitExpired && !outOfBand && !needsTown && !wantsMedal)
 				return false;
 
-			SetPlayerBotGoal(ch, state, needsTown ? BOT_GOAL_RESTOCK : BOT_GOAL_LEVEL_UP, dwNow);
+			SetPlayerBotGoal(ch, state, needsTown ? BOT_GOAL_RESTOCK :
+					(wantsMedal ? BOT_GOAL_HORSE : BOT_GOAL_LEVEL_UP), dwNow);
 			const char* reason = "frontier_visit_complete";
 			if (needsTown)
 				reason = "frontier_services_to_m2";
 			else if (outOfBand)
 				reason = "frontier_level_graduated";
+			else if (wantsMedal)
+				reason = "frontier_horse_to_m2";
 			long exitX = 0, exitY = 0;
 			GetPlayerBotFrontierExit(mapIndex, exitX, exitY);
 			return MovePlayerBotToWorldPortal(ch, state, exitX, exitY,
@@ -1071,7 +1074,7 @@ namespace
 					dwNow, reason);
 		}
 
-		if (mapIndex == PLAYERBOT_MAP_MONKEY_EASY)
+		if (IsPlayerBotMonkeyMap(mapIndex))
 			return false; // stay and fight; departure was handled before victim yielding
 
 		// Anything else means the bot was moved somewhere no branch above owns:

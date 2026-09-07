@@ -225,7 +225,7 @@ namespace
 				if (mapIndex != PLAYERBOT_MAP_CHUNJO_M1 &&
 						mapIndex != PLAYERBOT_MAP_CHUNJO_M2 &&
 						mapIndex != PLAYERBOT_MAP_CHUNJO_M3 &&
-						mapIndex != PLAYERBOT_MAP_MONKEY_EASY &&
+						!IsPlayerBotMonkeyMap(mapIndex) &&
 						mapIndex != PLAYERBOT_MAP_ORC_VALLEY &&
 						mapIndex != PLAYERBOT_MAP_DESERT &&
 						mapIndex != PLAYERBOT_MAP_SOHAN &&

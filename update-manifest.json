@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T12:06:00Z",
-  "statusMessage": "Aktualizacja 1.30.5. Wypady na Dziewiec Ogonow (Sohan) i Bestialskiego Kapitana (Bokjung), druzyny na wszystkich mapach granicznych, kon bojowy: czestsze Metiny i kombo w rytmie konia. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T14:46:00Z",
+  "statusMessage": "Aktualizacja 1.30.6. Naprawa swiezej instalacji z archiwum repozytorium: launcher tworzy brakujacy katalog panel/schema, bez ktorego budowa panelu padala na COPY schema/. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.5",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.5/metin2-server-update-1.30.5.zip",
-    "sha256": "5C67475B4A5BB75322FDD0531D16F8264FFC127FB0588CF470CC7D9556B910E7"
+    "version": "1.30.6",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.6/metin2-server-update-1.30.6.zip",
+    "sha256": "B4654623892E42D9D781879E472513F11235689CD6691C02B0F3B29E0276326F"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

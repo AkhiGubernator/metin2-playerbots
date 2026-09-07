@@ -17,6 +17,21 @@ every version here.
 
 ---
 
+## 1.30.6 — 2026-09-07
+
+### Naprawione
+
+- **Świeża instalacja z archiwum repozytorium nie budowała panelu.** Launcher
+  kopiuje przy starcie `files/web_admin_schema.sql` do
+  `linux-port/docker/panel/schema/`, ale gdy tego katalogu nie było (Git go
+  ignoruje, więc archiwum „metin2-playerbots-main” go nie zawiera), pomijał
+  kopię — i budowa panelu padała na `COPY schema/` przy każdym Starcie, po
+  aktualizacji też. Launcher tworzy teraz brakujący katalog. Obejście dla
+  zainstalowanych: utworzyć ręcznie folder `linux-port\docker\panel\schema`
+  i kliknąć Start.
+
+---
+
 ## 1.30.5 — 2026-09-07
 
 ### Nowe

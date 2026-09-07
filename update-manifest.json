@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T10:58:00Z",
-  "statusMessage": "Aktualizacja 1.30.3. Boty nie kupuja juz duplikatow sprzetu na straganach (ani tarcz przy broni dwurecznej) i zakladaja kupione od razu; naprawiona petla Bokjung-M3 droppera. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T11:29:00Z",
+  "statusMessage": "Aktualizacja 1.30.4. Tarcza kupowana niezaleznie od broni (w 1.30.3 bot z bronia dwureczna jej nie kupowal). Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.3",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.3/metin2-server-update-1.30.3.zip",
-    "sha256": "C638E8809D691BA7D8EE561224AB5A467AA6227E14172E84DECCB3711EBE9AD6"
+    "version": "1.30.4",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.4/metin2-server-update-1.30.4.zip",
+    "sha256": "077F0271C0C46A42DF55584F49618D4275E3E52E937242D96E70FA988E0ABD5C"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

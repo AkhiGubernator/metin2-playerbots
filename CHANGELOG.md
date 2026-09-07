@@ -17,6 +17,20 @@ every version here.
 
 ---
 
+## 1.30.4 — 2026-09-07
+
+### Naprawione
+
+- **Tarcza przy broni dwuręcznej.** W 1.30.3 bot odmawiał kupna tarczy,
+  gdy nosił broń dwuręczną — a w Metin2 tarcza ma własny slot niezależny od
+  broni (nosi ją każda postać, także z łukiem). Reguła usunięta; zostają
+  te właściwe: nie kupuj, gdy w plecaku leży co najmniej równie dobry
+  zamiennik, i wymagaj 15 % przewagi nad noszonym.
+
+Zgłoszenie: Tieru.
+
+---
+
 ## 1.30.3 — 2026-09-07
 
 ### Naprawione

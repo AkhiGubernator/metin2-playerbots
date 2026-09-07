@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T06:15:00Z",
-  "statusMessage": "Aktualizacja 1.29.17. Handel na czacie: boty wolaja o tym, co sprzedaja i czego szukaja, odpowiadaja szeptem na Kupie/Sprzedam gracza i kupuja tez na straganach graczy; szybsze dalekie plany tras (tick o polowe krotszy). Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T06:29:00Z",
+  "statusMessage": "Aktualizacja 1.30.0. Drugi panel w instalacji: Metin2 Singleplayer Panel autorstwa seban latino pod http://127.0.0.1:7790 - mapa na zywo, profile z ekwipunkiem, rankingi, gospodarka, telemetria, masowe nadania. Pierwszy start po aktualizacji buduje nowy obraz panelu i gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.17",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.17/metin2-server-update-1.29.17.zip",
-    "sha256": "DF5A57420AD48E8BD85EBB64E0205AF0532BED4F20AEB6FDE30E67C0A2216654"
+    "version": "1.30.0",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.0/metin2-server-update-1.30.0.zip",
+    "sha256": "725DE3BCA5FD2FC4AB5112596C4CC9816CE39F27DEBCAF57C28D7D182A7F4A96"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -17,6 +17,37 @@ every version here.
 
 ---
 
+## 1.30.0 — 2026-09-07
+
+### Nowe
+
+- **Metin2 Singleplayer Panel autorstwa seban latino — drugi panel w
+  instalacji.** Startuje razem z serwerem pod `http://127.0.0.1:7790`
+  (klasyczny panel zostaje pod 7788; 7789 należy do mostu przeglądarkowego).
+  Mapa świata botów odświeżana na żywo z pozycjami, poziomami, grupami i
+  botami przy Metinach; profile postaci z ekwipunkiem, magazynem, Yangami i
+  tooltipami przedmiotów w stylu klienta (bonusy, kamienie duszy); rankingi
+  poziomu, Yangów, broni 30 lv, konia, gildii; historia gospodarki (stan
+  przedmiotów, obieg Yangów, wykresy per przedmiot); telemetria CPU, RAM i
+  dysku; sterowanie zachowaniem botów, mnożnikami i bezpiecznym restartem;
+  masowe nadawanie przedmiotów według poziomu, klasy, konia i czasu gry;
+  przybornik GM, trzy motywy, opcjonalne hasło. Przy pierwszym wejściu
+  kreator `/setup`.
+- **Jak to jest wpięte.** Trzy kontenery z jednego obrazu w naszym compose
+  (`seban-panel`, `seban-collector`, `seban-item-grants`) na tej samej bazie,
+  plikach statusu i spoolu co klasyczny panel; hasła z naszego `.env`,
+  wersja z pliku `VERSION`. Nowe, opcjonalne klucze `.env`:
+  `M2_SEBAN_PANEL_PORT` (7790), `M2_SEBAN_SESSION_SECRET` (pusty = sekret
+  strony admina), `M2_SEBAN_TIERU_PANEL_URL`. Quest `web_admin.quest`
+  rozszerzony o polecenia nadań (`BULK_ITEM`, `BULK_MISSING`, `RIDER_ITEM`).
+  Paczka aktualizacji rośnie o ikony przedmiotów (ok. 20 MB); pierwszy start
+  po aktualizacji buduje nowy obraz panelu i grę z nowym questem.
+
+Źródło: seban latino, Metin2 Singleplayer Panel 1.30.1, przygotowany pod
+Playerbots 1.29.10 i tu dostosowany (wersja z pliku, jeden `COPY` kontekstu).
+
+---
+
 ## 1.29.17 — 2026-09-07
 
 ### Nowe

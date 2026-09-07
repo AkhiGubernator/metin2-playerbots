@@ -17,6 +17,31 @@ every version here.
 
 ---
 
+## 1.30.11 — 2026-09-07
+
+### Zmienione
+
+- **Bot nie czeka już między księgami umiejętności.** Silnik trzyma od
+  osiemnastu do trzydziestu godzin przerwy między dwoma czytaniami tej samej
+  umiejętności; przełącznik KSIĘGI w panelu i tak ją zdejmował, ale bot
+  narzucał sobie w zamian własne pół godziny. Tego półgodzinnego oczekiwania
+  już nie ma: bot czyta wtedy, kiedy ma co czytać.
+  Nie zmieniło się nic z tego, co decyduje, jak daleko umiejętność zajdzie, bo
+  to reguły silnika: 20 000 punktów doświadczenia pobieranych za każde
+  czytanie, losowanie o powodzenie i liczba udanych czytań potrzebnych na
+  kolejny poziom mistrzowski, aż do G.
+
+  Pomiar na 638 botach pokazał przy okazji, gdzie naprawdę jest wąskie gardło:
+  480 botów ma umiejętność na Mistrzu, 326 z nich nosi jakieś księgi, ale tylko
+  **44 mają księgę tej właśnie umiejętności**. Czytań przybyło (z jednego na
+  dziewięć minut do jednego na dwie i pół minuty na całą populację), lecz
+  tempo rozwoju umiejętności ogranicza teraz podaż właściwych ksiąg, a nie
+  żaden zegar.
+
+Zgłoszenie: Tieru.
+
+---
+
 ## 1.30.10 — 2026-09-07
 
 ### Nowe

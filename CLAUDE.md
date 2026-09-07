@@ -389,11 +389,17 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   a second stack. The buyer re-reads the counter on the tick it arrives,
   whatever the browse clock says.
 
-- **A book is read once a day unless the panel says otherwise.** The
-  engine puts SKILLBOOK_DELAY_MIN..MAX (eighteen to thirty hours) between
-  two reads of one skill; `ManagePlayerBotSkillBooks` resets that with
-  `SetSkillNextReadTime` after `PLAYERBOT_BOOK_FAST_DELAY` while the `BOOKS`
-  key in the weights file is on (the default). A bot keeps
+- **A book is read whenever there is one, unless the panel says otherwise.**
+  The engine puts SKILLBOOK_DELAY_MIN..MAX (eighteen to thirty hours)
+  between two reads of one skill; `ManagePlayerBotSkillBooks` waves that
+  away with `SetSkillNextReadTime` while the `BOOKS` key in the weights file
+  is on (the default), and imposes no wait of its own.
+  What still paces a skill is `CHARACTER::LearnSkillByBook` and is not ours:
+  20 000 experience taken per read, a roll on each one, and a number of
+  successful reads per master level. Nor is the wait what limits it in
+  practice - of 480 bots with a skill at Master, 326 carry books and 44
+  carry a book of that skill, so the supply of the right book is the
+  bottleneck and always was. A bot keeps
   `PLAYERBOT_BOOK_KEEP_PER_SKILL` books of each own skill and the rest are
   goods; a keyless treasure chest is junk once the bag is down to
   `PLAYERBOT_BAG_PRESSURE_FREE_CELLS`. The Moonlight chest opens by itself

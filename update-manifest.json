@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T18:39:00Z",
-  "statusMessage": "Aktualizacja 1.30.10. Kazdy bot nosi Trzecia Reke: yang z zabitego potwora idzie prosto do sakiewki zamiast lezec na ziemi. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T19:07:00Z",
+  "statusMessage": "Aktualizacja 1.30.11. Boty nie czekaja juz miedzy ksiegami umiejetnosci; liczba ksiag na kolejny poziom i losowanie o powodzenie bez zmian. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.10",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.10/metin2-server-update-1.30.10.zip",
-    "sha256": "35DB7F52714F3E25E09EEEB57746E21593C85F484FF36EFC88A0A2A94F805374"
+    "version": "1.30.11",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.11/metin2-server-update-1.30.11.zip",
+    "sha256": "A4738B7D2CEB2FDF2B5710828D185AD5B0060BE340464D8F30E5DBB8A85F57D9"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -17,6 +17,42 @@ every version here.
 
 ---
 
+## 1.29.17 — 2026-09-07
+
+### Nowe
+
+- **Handel na czacie.** Bot, który otwiera stragan z czymś wartym przejścia
+  przez miasto (broń 30 lv, +7 i wyżej, dobry bonus), woła raz na świecie:
+  „Sprzedam Kozik Czar. Liś.+0 - stragan w Joan”; bot, który przyszedł na
+  targ po materiał i nic nie zastał, woła „Kupie Amulet Orka - kto ma, niech
+  wystawi w Joan”. Najwyżej jedno takie wołanie na 90 s na całym świecie i
+  jedno na bota na 20 minut. Wołanie gracza „Kupię X” / „Szukam X” dostaje
+  szept od najbliższego straganiarza, który ma X (z ceną i miastem);
+  „Sprzedam X” — szept od bota, któremu X brakuje. „KU Aura” rozumiane
+  (nazwy umiejętności z protos ksiąg). Szept do bota zwraca jego stan
+  (co ma na straganie, albo że poluje). Dopasowanie nazw nie zważa na
+  polskie znaki ani wielkość liter.
+- **Boty kupują też na straganach graczy.** Prywatny sklep gracza jest
+  czytany przez boty tak jak stragan bota; linia droższa niż 30 % mediany
+  portfela botów jest pomijana, żeby nikt nie drukował yangów na botach.
+  Gracz może więc odpowiedzieć na „Kupie X” bota, wystawić X w Joan lub
+  Bokjung i sprzedać.
+- **Łatka silnika 0007** (`input_main.cpp`, `shop.h`): wołanie i szept gracza
+  trafiają do botów, a lada sklepu jest czytelna. Pliki są w paczce jak przy
+  0006; pierwszy start po aktualizacji kompiluje grę na nowo.
+
+### Wydajność
+
+- **Dalekie plany tras.** Cache tras: 16 tras na cel zamiast 6, pół godziny
+  zamiast dziesięciu minut, dołączenie z 2400 zamiast 1600 jednostek;
+  długi korytarz szukany zachłanniej (waga 3); najwyżej 80 dalekich planów
+  na minutę, reszta odroczona o sekundę-dwie. Pomiar na 837 botach: tick
+  21–31 s → 8–17 s, planowanie 17–28 s z każdych 60 → 4–14 s, dalekie
+  plany 100–120/min po 221 ms → 30–82/min po 120 ms, trafienia cache
+  143–180 → 196–264/min.
+
+---
+
 ## 1.29.16 — 2026-09-07
 
 ### Nowe

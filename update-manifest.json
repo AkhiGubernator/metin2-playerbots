@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T05:50:00Z",
-  "statusMessage": "Aktualizacja 1.29.16. Ksiegi umiejetnosci bez dobowej przerwy (przelacznik w panelu, domyslnie wlaczony), limit ksiag wlasnych, szkatulki bez klucza ida do handlarza przy pelnym plecaku, zbroja z bonusem PZ wygrywa z obrona, lista graczy w panelu znow pokazuje ludzi. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T06:15:00Z",
+  "statusMessage": "Aktualizacja 1.29.17. Handel na czacie: boty wolaja o tym, co sprzedaja i czego szukaja, odpowiadaja szeptem na Kupie/Sprzedam gracza i kupuja tez na straganach graczy; szybsze dalekie plany tras (tick o polowe krotszy). Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.16",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.16/metin2-server-update-1.29.16.zip",
-    "sha256": "AF66400A192B3C3F6592A159E28B32A2BC535DB30B15BCBEFA36739DECE37ABB"
+    "version": "1.29.17",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.17/metin2-server-update-1.29.17.zip",
+    "sha256": "DF5A57420AD48E8BD85EBB64E0205AF0532BED4F20AEB6FDE30E67C0A2216654"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

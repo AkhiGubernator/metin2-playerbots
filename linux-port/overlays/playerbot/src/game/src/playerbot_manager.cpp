@@ -155,13 +155,17 @@ namespace
 	{
 		if (state.bBotRole == BOT_ROLE_PARTY_FIGHTER)
 			return true;
-		return ch && ch->GetMapIndex() == PLAYERBOT_MAP_ORC_VALLEY &&
+		// Every frontier map, not the valley alone: a map change dissolves a
+		// party, so one made in the valley never reached V1 or Sohan, and the
+		// Spider Queen and Nine Tails - a party's work - had nobody to fight
+		// them. Sixteen bots in V1 and not one in a party.
+		return ch && IsPlayerBotFrontierMapIndex(ch->GetMapIndex()) &&
 				ch->GetLevel() >= PLAYERBOT_ORC_VALLEY_PARTY_MIN_LEVEL;
 	}
 
 	int GetPlayerBotPartyDesiredMax(LPCHARACTER ch)
 	{
-		return (ch && ch->GetMapIndex() == PLAYERBOT_MAP_ORC_VALLEY)
+		return (ch && IsPlayerBotFrontierMapIndex(ch->GetMapIndex()))
 				? PLAYERBOT_ORC_VALLEY_PARTY_MAX : PLAYERBOT_PARTY_DESIRED_MAX;
 	}
 

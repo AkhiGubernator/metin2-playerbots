@@ -1263,6 +1263,16 @@ namespace
 	// boss scores: above any camp, so the crowd (the Orc Chief) or the party
 	// (the Spider Queen) goes.
 	const DWORD PLAYERBOT_RAID_BOSS_CHECK_INTERVAL = 30000;
+	// The Bestial Captain (591, level 42, boss) of Bokjung: metin2_map_b3's
+	// boss.txt cell (787,688) on base (102400,204800), every hour, ten cells
+	// of spread. Bokjung's wandering has no hub table - it rotates spawn
+	// clusters - so the Captain is a detour taken while he stands, by anybody
+	// of the band. Nine Tails (1901, level 72, boss) is a Sohan hub row.
+	const long PLAYERBOT_M2_CAPTAIN_X = 181100;
+	const long PLAYERBOT_M2_CAPTAIN_Y = 273600;
+	const BYTE PLAYERBOT_M2_CAPTAIN_MIN_LEVEL = 35;
+	const long PLAYERBOT_SOHAN_NINE_TAILS_X = 433300;
+	const long PLAYERBOT_SOHAN_NINE_TAILS_Y = 216500;
 	const int PLAYERBOT_RAID_WORTH = 100000;
 	// Exact world coordinates of the two rare M2 enemies from
 	// metin2_map_b3/boss.txt (map base 102400,204800). They are the classic

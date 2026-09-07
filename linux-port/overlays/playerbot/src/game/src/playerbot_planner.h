@@ -93,8 +93,11 @@ namespace
 				PlayerBotNavHash(ch->GetPlayerID() ^ 0x4d455850U) % 600000U;
 		if (state.dwMetinExpeditionUntil != 0 || ch->GetLevel() < PLAYERBOT_METIN_EXPEDITION_MIN_LEVEL)
 			return;
+		// A battle horse is what a player raises for the stones, so its rider
+		// goes out for them twice as often.
 		const int chance = PLAYERBOT_METIN_EXPEDITION_CHANCE_PERCENT *
-				GetPlayerBotWeight(PLAYERBOT_WEIGHT_METIN) / PLAYERBOT_WEIGHT_NEUTRAL;
+				GetPlayerBotWeight(PLAYERBOT_WEIGHT_METIN) / PLAYERBOT_WEIGHT_NEUTRAL *
+				(CanPlayerBotEverFightOnHorse(ch) ? 2 : 1);
 		if (number(1, 100) > chance)
 			return;
 		state.dwMetinExpeditionUntil = dwNow + PLAYERBOT_METIN_EXPEDITION_DURATION;

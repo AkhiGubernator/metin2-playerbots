@@ -514,6 +514,28 @@ namespace
 		else if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
 		{
 			const DWORD pid = ch->GetPlayerID();
+			// The Bestial Captain, while he stands: anybody of the band goes,
+			// the way the valley goes for the Orc Chief. Nine sectors round his
+			// point are asked, once every thirty seconds for everybody.
+			if (ch->GetLevel() >= PLAYERBOT_M2_CAPTAIN_MIN_LEVEL)
+			{
+				long bossX = 0, bossY = 0;
+				if (IsPlayerBotBossAlive(ch->GetMapIndex(), PLAYERBOT_M2_CAPTAIN_X, PLAYERBOT_M2_CAPTAIN_Y,
+						591, dwNow, &bossX, &bossY) &&
+						DISTANCE_APPROX(ch->GetX() - bossX, ch->GetY() - bossY) > 600)
+				{
+					PlayerBotLogThrottled("raid_captain", dwNow,
+							"PLAYERBOT_RAID: heading for boss race=591 pid=%u name=%s level=%u map=%ld party=%u guild=%u",
+							ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), ch->GetMapIndex(),
+							ch->GetParty() ? (unsigned int)ch->GetParty()->GetMemberCount() : 0U,
+							ch->GetGuild() ? (unsigned int)ch->GetGuild()->GetID() : 0U);
+					long offsetX = 0, offsetY = 0;
+					GetPlayerBotStableOffset(pid, 0x43415054U, 100, 350, offsetX, offsetY);
+					state.dwNextWanderTime = dwNow + 1500;
+					MovePlayerBot(ch, bossX + offsetX, bossY + offsetY, dwNow, 32, true);
+					return;
+				}
+			}
 			if (ShouldPlayerBotHuntM2Bestials(ch))
 			{
 				SetPlayerBotGoal(ch, state, BOT_GOAL_GET_EQUIPMENT, dwNow);
@@ -644,7 +666,12 @@ namespace
 				{ 432000, 176000, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
 				{ 432000, 220800, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
 				{ 489600, 227200, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
-				{ 387200, 240000, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false }
+				{ 387200, 240000, PLAYERBOT_SOHAN_ICE_MIN_LEVEL, PLAYERBOT_SOHAN_MAX_LEVEL, false },
+				// Nine Tails (1901, level 72, a hundred and sixty-six thousand
+				// health, two ice golems and a yeti beside him) from boss.txt cell
+				// (749,629) with a spread of 150x200 cells, back every two hours:
+				// a party's raid, like the Queen's.
+				{ PLAYERBOT_SOHAN_NINE_TAILS_X, PLAYERBOT_SOHAN_NINE_TAILS_Y, PLAYERBOT_SOHAN_MIN_LEVEL, 255, true, 1901 }
 			};
 			const TPlayerBotHuntingHub spiderHubs[] = {
 				{ 70000, 505300, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false }, { 80400, 519800, PLAYERBOT_SPIDER_MIN_LEVEL, 255, false },

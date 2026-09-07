@@ -1148,6 +1148,47 @@ namespace
 		return hitCount;
 	}
 
+	// The same from the saddle: share/data/pc/<class>/horse_<weapon>/combo_NN.msa,
+	// three steps, not four, and each its own DirectInputTime. The on-foot table
+	// was used for a rider too, so a warrior on its battle horse hacking a stone
+	// sent the fourth swing the horse set has no motion for, and the next one
+	// early: the rider's combo never played through. Zero falls back to the
+	// on-foot figure; the bow has no saddle set and never fights from one.
+	const DWORD PLAYERBOT_HORSE_SWING_MS[4][6][3] = {
+		{ // warrior
+			{ 777, 530, 511 },    // onehand_sword
+			{ 701, 514, 534 },    // dualhand: no set, the two-handed one
+			{   0,   0,   0 },    // bow
+			{ 701, 514, 534 },    // twohand_sword
+			{   0,   0,   0 },    // bell
+			{   0,   0,   0 },    // fan
+		},
+		{ // assassin
+			{ 792, 400, 499 },    // onehand_sword
+			{ 676, 557, 524 },    // dualhand_sword
+			{   0,   0,   0 },    // bow
+			{ 676, 557, 524 },    // twohand: no set, the dagger one
+			{   0,   0,   0 },    // bell
+			{   0,   0,   0 },    // fan
+		},
+		{ // sura
+			{ 792, 479, 491 },    // onehand_sword
+			{ 792, 479, 491 },    // dualhand: no set
+			{   0,   0,   0 },    // bow
+			{ 792, 479, 491 },    // twohand: no set
+			{   0,   0,   0 },    // bell
+			{   0,   0,   0 },    // fan
+		},
+		{ // shaman
+			{   0,   0,   0 },    // onehand_sword
+			{   0,   0,   0 },    // dualhand_sword
+			{   0,   0,   0 },    // bow
+			{   0,   0,   0 },    // twohand_sword
+			{ 730, 431, 440 },    // bell
+			{ 982, 679, 775 },    // fan
+		},
+	};
+
 	// The pause a swing needs before the next one, in milliseconds. The table is
 	// measured at attack speed 100; the client plays the motion faster as that
 	// rises, so the window moves with it.
@@ -1166,7 +1207,9 @@ namespace
 			const BYTE step = (comboMotion >= MOTION_COMBO_ATTACK_1 &&
 					comboMotion <= MOTION_COMBO_ATTACK_4)
 					? (BYTE)(comboMotion - MOTION_COMBO_ATTACK_1) : (BYTE)0;
-			const DWORD found = PLAYERBOT_SWING_MS[job][subType][step];
+			DWORD found = PLAYERBOT_SWING_MS[job][subType][step];
+			if (ch->IsRiding() && step < 3 && PLAYERBOT_HORSE_SWING_MS[job][subType][step] > 0)
+				found = PLAYERBOT_HORSE_SWING_MS[job][subType][step];
 			if (found > 0)
 				base = found;
 		}
@@ -1233,7 +1276,9 @@ namespace
 		else
 		{
 			++state.bComboMotion;
-			if (state.bComboMotion > MOTION_COMBO_ATTACK_4)
+			// Three swings in the saddle, four on foot: the horse sets stop at
+			// combo_03, and a fourth is a motion the client does not have.
+			if (state.bComboMotion > (ch->IsRiding() ? MOTION_COMBO_ATTACK_3 : MOTION_COMBO_ATTACK_4))
 				state.bComboMotion = MOTION_COMBO_ATTACK_1;
 		}
 		return true;

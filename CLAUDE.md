@@ -195,7 +195,10 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `TPlayerBotHuntingHub::wBossRace` names the boss and
   `IsPlayerBotBossAlive` asks the sector whether he stands, because one
   monster every half hour is a density of nothing and the boss hubs were
-  never chosen in a day of logs.
+  never chosen in a day of logs. Bokjung has no hub table, so its Bestial
+  Captain is a detour in the M2 wander branch instead. Parties form on
+  every frontier map (`IsPlayerBotPartyEligible`) because a map change
+  dissolves one - a party made in the valley never reached V1.
 - **A hub is chosen by share, distance and time, in that order.** The score
   is the monsters in reach divided among the bots already there, halved at
   20 km, and a choice is kept for four minutes. The first version scored by

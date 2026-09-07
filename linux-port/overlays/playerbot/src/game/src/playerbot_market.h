@@ -110,6 +110,29 @@ namespace
 		const int wearCell = offer->FindEquipCell(ch);
 		if (wearCell < 0)
 			return false;
+		// A shield has no slot beside a two-handed weapon, and a Mental warrior
+		// on its battle horse is not putting the spike down for one.
+		if (offer->GetType() == ITEM_ARMOR && offer->GetSubType() == ARMOR_SHIELD)
+		{
+			LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+			if (weapon && weapon->GetSubType() == WEAPON_TWO_HANDED)
+				return false;
+		}
+		// Not when the bag already holds one at least as good for the same
+		// slot. The comparison below is against what is worn, and what is
+		// worn does not change until the gear pass runs - so a bot standing at
+		// the ring bought the same +6 armour three times over, two seconds
+		// apart, each one better than what it had on and none of them on yet.
+		const long long offerScore = GetPlayerBotEquipmentScore(offer, ch);
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM spare = ch->GetInventoryItem(cell);
+			if (!spare || spare->IsEquipped() || !IsPlayerBotEquipmentCandidate(ch, spare) ||
+					spare->FindEquipCell(ch) != wearCell)
+				continue;
+			if (GetPlayerBotEquipmentScore(spare, ch) * (100 + PLAYERBOT_MARKET_GEAR_MARGIN_PERCENT) / 100 >= offerScore)
+				return false;
+		}
 		LPITEM worn = ch->GetWear((BYTE)wearCell);
 		if (!worn)
 			return true;
@@ -118,8 +141,8 @@ namespace
 		// score, and it is exactly what a player would buy the piece for.
 		if (HasPlayerBotValuableBonus(offer) && !HasPlayerBotValuableBonus(worn))
 			return true;
-		return GetPlayerBotEquipmentScore(offer, ch) >
-				GetPlayerBotEquipmentScore(worn, ch);
+		return offerScore >
+				GetPlayerBotEquipmentScore(worn, ch) * (100 + PLAYERBOT_MARKET_GEAR_MARGIN_PERCENT) / 100;
 	}
 
 	// Is there anything at all a market could sell this bot? Asked before the
@@ -403,7 +426,9 @@ namespace
 			}
 			// Bought. A bot that came for two things gets the second without
 			// walking off, but through the ordinary browse interval rather than
-			// on this same tick.
+			// on this same tick - and the gear pass runs first, so a bought piece
+			// is worn before the next counter is read.
+			state.dwNextEquipmentCheckTime = dwNow;
 			state.dwMarketStallVID = 0;
 			state.dwMarketBrowseTime = dwNow + PLAYERBOT_MARKET_BROWSE_INTERVAL;
 		}

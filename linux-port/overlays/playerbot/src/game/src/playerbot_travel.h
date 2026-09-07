@@ -746,7 +746,11 @@ namespace
 		// M3 is a focused level-30 weapon farm, not a levelling map. A bot which
 		// reaches level 25 graduates immediately, even if an old victim is still
 		// alive, and resumes normal progression in M2.
-		if (mapIndex == PLAYERBOT_MAP_CHUNJO_M3 && ch->GetLevel() > 24)
+		// ...unless it is there on purpose: the M3 dropper stays to 32, and
+		// graduating it at 25 sent it back to Bokjung, where the same rule sent
+		// it to M3 again - a hundred and fifty warps an hour per bot.
+		if (mapIndex == PLAYERBOT_MAP_CHUNJO_M3 && ch->GetLevel() > 24 &&
+				!ShouldPlayerBotVisitM3(ch))
 		{
 			SetPlayerBotGoal(ch, state, BOT_GOAL_LEVEL_UP, dwNow);
 			return MovePlayerBotToWorldPortal(ch, state,

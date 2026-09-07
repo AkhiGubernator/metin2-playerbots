@@ -497,6 +497,11 @@ namespace
 	const DWORD PLAYERBOT_MARKET_GEAR_WALLET_PERMILLE_PER_REFINE = 15;
 	const DWORD PLAYERBOT_MARKET_OTHER_WALLET_PERMILLE = 10;
 	const DWORD PLAYERBOT_MARKET_STACK_WALLET_PERCENT = 30;
+	// A piece off a counter has to beat what the bot wears, and any spare in
+	// its bag for the slot, by this much. Two armours of one vnum and refine
+	// differ by their bonus rolls, and "better than worn" bought the second
+	// four seconds after the first; a sideways step is not worth the yang.
+	const long long PLAYERBOT_MARKET_GEAR_MARGIN_PERCENT = 15;
 	const DWORD PLAYERBOT_SALE_RECENT = 600000;
 	const DWORD PLAYERBOT_SALE_STALE = 3600000;
 

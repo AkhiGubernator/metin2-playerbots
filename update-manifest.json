@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T21:35:00Z",
-  "statusMessage": "Aktualizacja 1.30.14. Boty wysokiego poziomu przestaja tluc potwory, z ktorych nic nie maja, obrona ma wreszcie koniec, a panel seban latino jest w pelnej wersji 1.37.1 - przycisk w launcherze pyta teraz, ktory panel otworzyc. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T22:30:00Z",
+  "statusMessage": "Aktualizacja 1.30.15. Ninja lucznik podciaga potwory dla druzyny, bot broni sie tak dlugo jak jest bity, a gildia jedzie na bossa dopiero gdy ktos go naprawde widzi. Wrocila tez ramka okna ekwipunku w panelu. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.14",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.14/metin2-server-update-1.30.14.zip",
-    "sha256": "3A33BF34CFCD3675921E4290F0706423D44757E77F2B51B5FACE4B5A906F0BD8"
+    "version": "1.30.15",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.15/metin2-server-update-1.30.15.zip",
+    "sha256": "A23A0F868A2B7A20BB5588BC9CC66681F118A5BA44CC344D660F8FF731A912FC"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -17,6 +17,91 @@ every version here.
 
 ---
 
+## 1.30.15 — 2026-09-08
+
+### Nowe
+
+- **Ninja łucznik podciąga potwory dla drużyny.** W drużynie pięciu i więcej
+  jeden łucznik dostaje rolę lurera: wybiega, budzi paczkę jednym zwykłym
+  strzałem, sprawdza, czy faktycznie za nim ruszyła, i prowadzi ją z powrotem
+  do towarzyszy, którzy ją przejmują normalną walką.
+  Zastępuje to dawne okazjonalne strzelanie w bok, które nie było
+  podciąganiem: łucznik pukał w jednego potwora, dopisywał sobie obrażenia,
+  gdy prawdziwe wyszły za niskie, i wracał do swojego celu — nikt na to nie
+  czekał i nic z tego nie wynikało.
+  Kurs ma swoje granice i każda z nich broni przed konkretną wpadką: dwanaście
+  sekund na zbieranie, smycz 4500 jednostek od miejsca zbiórki, przerwanie
+  przy spadku HP, jeden lurer na drużynę i limit potworów, który drużyna
+  podnosi dopiero po kilku udanych kursach. Odbiorca musi żyć i stać na
+  miejscu — a to, że sam ninja się oddala, nie unieważnia jego własnej misji.
+  Liczy się to, co wróciło, nie to, ile razy strzelono: potwór zabity strzałem
+  albo taki, który nie zareagował, nie jest dostarczony. Nad głową widać etap:
+  „Luruje dla PT", „Wracam do druzyny: prowadze 9 mobow", „Przekazuje moby".
+  Agresja potworów nie jest przy tym nigdzie podmieniana — drużyna przejmuje
+  je tak, jak przejmuje wszystko inne, i przejęcie bywa częściowe.
+
+### Naprawione
+
+- **Bot broni się tak długo, jak jest bity.** W 1.30.14 ograniczyliśmy epizod
+  obrony do dziesięciu sekund, żeby „ono zaatakowało pierwsze" nie było
+  wymówką do grindu. Skutek uboczny był dotkliwy: po dziesięciu sekundach
+  potwór, który wciąż zabijał bota, przestawał być dopuszczalnym celem —
+  postać stała bezczynnie albo uciekała i ginęła. Przy silnym potworze
+  dochodziło do tego drugie zabezpieczenie, które porzucało cel dziesięć
+  poziomów wyżej nawet wtedy, gdy ten cel właśnie bił.
+  Obronę własną ogranicza teraz **smycz, nie zegar**: bot odpowiada temu, co
+  go bije, tak długo, jak go bije, ale nie daje się przy tym wywlec z miejsca,
+  w którym walka się zaczęła. Od zrywania przegranej walki jest ucieczka i ona
+  dalej ma pierwszeństwo. Pomoc towarzyszowi z drużyny zostaje ograniczona
+  także czasem — bronić siebie trzeba, pomagać można.
+- **Gildia jedzie na bossa dopiero wtedy, gdy ktoś go widzi.** Raz wybrany
+  punkt polowania trzymał się cztery minuty **bez ponownego pytania, czy boss
+  jeszcze stoi**. Boss padał, a boty dalej szły na współrzędne z tabeli i tam
+  stały — stąd te kolumny postaci w szczerym polu. Teraz punkt bossa jest
+  sprawdzany na bieżąco i gdy bossa nie ma, boty wracają do swojej roboty.
+  Do tego boss przestał być wart tyle, że opłacał się każdemu: **kto go
+  zobaczy, woła swoją gildię**, i to ta gildia ma pierwszeństwo do dwunastu
+  miejsc, a reszta świata do sześciu. Na żywo: sto czterdzieści pięć postaci
+  ruszających na jednego potwora spadło do trzynastu, a w logu pojawiły się
+  wołania w rodzaju „Wodz Orkow stoi! Zbieramy sie na niego."
+- **Śmierć wygląda jak śmierć gracza.** Ciało leży dziesięć sekund i dopiero
+  potem postać wstaje — ale wstawała niewidzialna na dziesięć sekund, dwa razy
+  dłużej niż człowiek po `restart_here`. Teraz to te same pięć sekund, które
+  silnik daje graczowi.
+- **Wędkarz nie tonie we własnym połowie.** Ryby otwierały się tylko między
+  zarzuceniami, więc bot, który odszedł od brzegu, nosił je ze sobą — a żywa
+  ryba się nie stackuje, więc trzydzieści ryb to trzydzieści pól i plecak bez
+  miejsca na cokolwiek innego. Połów jest teraz opracowywany wszędzie, przy
+  okazji zwykłego utrzymania. W plecakach świata nie została ani jedna
+  nieotwarta ryba.
+- **Panel: wróciła ramka okna ekwipunku.** Style panelu odwołują się do
+  `inventory-background.png`, którego nie ma w żadnej paczce autora — ani w
+  1.37.1, ani w 1.30.1 — więc u wszystkich poza nim okno ekwipunku było płaskim
+  tłem z ikonami. Grafika z klienta nie jest nasza do rozprowadzania, więc
+  narysowaliśmy własną ramkę w dokładnie tej geometrii, której oczekują style:
+  wnęki na dwanaście gniazd ekwipunku, siatka pięć na dziewięć i pasek na yang.
+- **Launcher mówi, który plik zablokował antywirus.** Gdy Windows przerywa
+  aktualizację komunikatem „plik zawiera wirusa lub potencjalnie niechciane
+  oprogramowanie", w logu zostawało samo to zdanie — bez nazwy pliku, czyli bez
+  niczego, co dałoby się sprawdzić. Teraz launcher rozpoznaje ten błąd przy
+  pobieraniu, przy rozpakowywaniu każdego pliku z osobna i przy wgrywaniu na
+  miejsce, podaje ścieżkę, przypomina, że nic nie zostało zainstalowane i że
+  poprzednia wersja działa dalej, oraz podpowiada wykluczenie w Zabezpieczeniach
+  Windows.
+
+### Zmienione
+
+- **Małże są towarem, nie losem na loterii.** Pierwsze cztery bot trzyma
+  zawsze — dwadzieścia sześć receptur zużywa małża takiego, jaki jest, i tyle
+  właśnie za niego płacą. Otwiera dopiero nadmiar, i tylko wtedy, gdy
+  oczekiwana wartość perły bije cenę całej sztuki.
+- **Farba do włosów trafia na stragany, a raz w życiu na głowę bota.** Silnik
+  przyjmuje ją wprost, kolor jest trwały, więc bot, który ją znajdzie, farbuje
+  się raz — a reszta idzie do sprzedaży zamiast do handlarza jako złom. Osiemset
+  postaci przestaje wyglądać jak jedna skopiowana osiemset razy.
+
+---
+
 ## 1.30.14 — 2026-09-07
 
 ### Zmienione

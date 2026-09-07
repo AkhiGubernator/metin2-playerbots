@@ -644,7 +644,13 @@ def dashboard():
           (SELECT COALESCE(SUM(gold),0) FROM player.player WHERE name NOT IN ('[SA]Admin','Test')) AS yang
     """)
     bots = one("SELECT COUNT(*) AS count FROM player.player WHERE account_id BETWEEN 4 AND 1003")
-    system = one("SELECT * FROM player.web_seban_system_snapshot ORDER BY captured_at DESC LIMIT 1")
+    # The collector creates this table with its first snapshot; before that -
+    # the first minutes of a fresh installation - the dashboard has no host
+    # metrics to show, not an error to raise.
+    try:
+        system = one("SELECT * FROM player.web_seban_system_snapshot ORDER BY captured_at DESC LIMIT 1")
+    except pymysql.MySQLError:
+        system = {}
     map_rows = live_map_counts()
     for row in map_rows:
         row["name"] = map_name(row["map_index"])

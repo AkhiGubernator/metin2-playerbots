@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-06T21:31:00Z",
-  "statusMessage": "Aktualizacja 1.29.15. Kupujacy sprawdza linie straganu po dojsciu (po id przedmiotu), koniec falszywych odmow zakupu; ceny na ladach skalowane do mediany portfela kupujacych zamiast groszy od handlarza. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-07T05:50:00Z",
+  "statusMessage": "Aktualizacja 1.29.16. Ksiegi umiejetnosci bez dobowej przerwy (przelacznik w panelu, domyslnie wlaczony), limit ksiag wlasnych, szkatulki bez klucza ida do handlarza przy pelnym plecaku, zbroja z bonusem PZ wygrywa z obrona, lista graczy w panelu znow pokazuje ludzi. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.29.15",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.15/metin2-server-update-1.29.15.zip",
-    "sha256": "1916F6AFAAE15BF3681DE6AE359E8F59099121CCD08824DFA35A823BC51802B6"
+    "version": "1.29.16",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.29.16/metin2-server-update-1.29.16.zip",
+    "sha256": "AF66400A192B3C3F6592A159E28B32A2BC535DB30B15BCBEFA36739DECE37ABB"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

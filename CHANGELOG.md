@@ -17,6 +17,44 @@ every version here.
 
 ---
 
+## 1.29.16 — 2026-09-07
+
+### Nowe
+
+- **Księgi bez dobowej przerwy (przełącznik w panelu, zakładka AI).** Gra każe
+  czekać 18–30 godzin między dwoma czytaniami tej samej umiejętności, więc
+  bot potrzebował miesiąca ksiąg, by przejść z M1 na G1, a księgi zalegały w
+  plecaku. Domyślnie włączone: bot czyta ponownie po pół godzinie — to, co
+  gracz robi Zwojami Egzorcyzmu. Wyłączenie przywraca tempo gry. Klucz
+  `BOOKS` w pliku wag, jak `CHAT` i `SCRAP`.
+- **Limit ksiąg własnych.** Bot trzyma najwyżej 12 ksiąg jednej swojej
+  umiejętności (dziesięć udanych czytań to M1→G1 z zapasem); nadmiar idzie na
+  ladę lub do handlarza. Stragan nie wystawia już księgi, na którą jej
+  właściciel czeka.
+- **Skrzynki bez klucza pod presją plecaka.** Srebrne i złote szkatułki bez
+  pasującego klucza są trzymane, dopóki jest miejsce; gdy w plecaku zostaje
+  8 lub mniej wolnych pól, idą do handlarza, żeby loot i Szkatułki Blasku
+  (które otwierają się same, ale tylko do wolnego pola) miały gdzie
+  wylądować.
+
+### Naprawione
+
+- **Bot wolał smoczą zbroję +3 od zbroi z +1500 PZ.** Kara za przerośnięty
+  o 20 poziomów pancerz była płaskimi 1500 punktami za poziom i zjadała
+  linie bonusów: zbroja płytowa na 18 lv z 1500 PZ przegrywała na 50 lv ze
+  zbroją o 7 punktów obrony więcej. Kara jest teraz procentem samej obrony
+  (5 % za poziom), a punkt maksymalnego PZ liczy się 15 zamiast 10.
+- **Panel: wyszukiwarka postaci na liście graczy.** Lista brała 200
+  ostatnio grających postaci, a przy 1500 botach nie mieściła w niej żadnej
+  postaci gracza — filtr w przeglądarce nic nie znajdował. Ludzie są teraz
+  na liście zawsze, boty dopełniają ją do 200.
+
+Łuk: log potwierdza, że łucznicy ciągną po 3–4 cele i strzelają obszarowymi
+Strzałą Ognia i Strzałą Trucizny (do 12 trafień w promieniu 300); zwykły
+strzał z łuku jest jednocelowy z natury silnika — bez zmian.
+
+---
+
 ## 1.29.15 — 2026-09-06
 
 ### Naprawione

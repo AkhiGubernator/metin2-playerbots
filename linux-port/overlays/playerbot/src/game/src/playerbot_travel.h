@@ -332,10 +332,25 @@ namespace
 		// changes nothing, and it stays as long as the map can still be hunted.
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_M3_DROPPER)
 			return ch->GetLevel() <= 32;
-		if (ch->GetLevel() > 24 || HasPlayerBotSpecialLevel30Weapon(ch, true))
+		if (HasPlayerBotSpecialLevel30Weapon(ch, true))
 			return false;
-		// A stable third of the eligible population farms infected animals for
-		// class-specific level-30 weapons. Other bots remain in M2 for Bestials.
+		// Twenty-four was the cap, and it made the weapon a thing a bot either
+		// got young or never got: past it the only route left was a counter it
+		// never walked to. Measured: 205 of the 393 bots of thirty-six and up
+		// holding over a million yang owned no level-30 weapon anywhere -
+		// "bots flying round the valley at thirty-seven with six million in the
+		// bag and a +6 cone sword", as the Discord put it. The farm stays worth
+		// working to forty: the infected animals are around thirty, and the
+		// kill-drop curve (aiPercentByDeltaLev) is still at seventy percent ten
+		// levels above them and falls off a cliff only after that.
+		if (ch->GetLevel() > PLAYERBOT_LEVEL30_WEAPON_HUNT_MAX_LEVEL)
+			return false;
+		// A stable third of the young population farms infected animals for
+		// class-specific level-30 weapons; the rest stay in M2 for Bestials.
+		// Past thirty-five nobody is left in M2 to share the work with, so the
+		// third becomes everyone.
+		if (ch->GetLevel() > 35)
+			return true;
 		return (PlayerBotNavHash(ch->GetPlayerID() ^ 0x4d335850U) % 3U) == 0;
 	}
 
@@ -347,7 +362,7 @@ namespace
 		// owned weapon or not, for as long as they are worth its level.
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_M2_DROPPER)
 			return ch->GetLevel() >= 25 && ch->GetLevel() <= 40;
-		if (ch->GetLevel() < 25 || ch->GetLevel() > 35 ||
+		if (ch->GetLevel() < 25 || ch->GetLevel() > PLAYERBOT_LEVEL30_WEAPON_HUNT_MAX_LEVEL ||
 				HasPlayerBotSpecialLevel30Weapon(ch, true) ||
 				ShouldPlayerBotVisitM3(ch))
 			return false;
@@ -1210,11 +1225,18 @@ namespace
 			// the trip is taken alone, the party re-forms on the way back.
 			const bool wantsMedal = settledIn && needsHorseExpedition &&
 					ch->GetParty() == NULL;
-			if (!visitExpired && !outOfBand && !needsTown && !wantsMedal)
+			// And the level-30 weapon, for the same reason as the medal: the
+			// decision to farm it was only ever read in town, and a bot that
+			// reached the frontier without one had no way back to the farm.
+			// Handed to M2, where the ordinary M3 branch takes over.
+			const bool wantsWeapon = settledIn && !wantsMedal &&
+					ShouldPlayerBotVisitM3(ch) && ch->GetParty() == NULL;
+			if (!visitExpired && !outOfBand && !needsTown && !wantsMedal && !wantsWeapon)
 				return false;
 
 			SetPlayerBotGoal(ch, state, needsTown ? BOT_GOAL_RESTOCK :
-					(wantsMedal ? BOT_GOAL_HORSE : BOT_GOAL_LEVEL_UP), dwNow);
+					(wantsMedal ? BOT_GOAL_HORSE :
+					 (wantsWeapon ? BOT_GOAL_GET_EQUIPMENT : BOT_GOAL_LEVEL_UP)), dwNow);
 			const char* reason = "frontier_visit_complete";
 			if (needsTown)
 				reason = "frontier_services_to_m2";
@@ -1222,6 +1244,8 @@ namespace
 				reason = "frontier_level_graduated";
 			else if (wantsMedal)
 				reason = "frontier_horse_to_m2";
+			else if (wantsWeapon)
+				reason = "frontier_weapon_to_m2";
 			long exitX = 0, exitY = 0;
 			GetPlayerBotFrontierExit(mapIndex, exitX, exitY);
 			return MovePlayerBotToWorldPortal(ch, state, exitX, exitY,

@@ -761,6 +761,41 @@ function Install-Or-Prepare {
         return
     }
 
+    # This button prepares a package whose game sources are already on disk;
+    # it never fetches them, because they are the operator's own r40250 files
+    # and only installer\install.ps1 knows how to take them from that package.
+    # Until now it said "Paczka jest gotowa" regardless - and a player whose
+    # sources were missing pressed it, was told the package was ready, pressed
+    # GRAJ and got fifteen Docker errors. Reported from the Discord: "re-running
+    # the installer through Install in GUI did not restore the sources" - it
+    # could not have, this is not the installer. Say which it is.
+    $gameContext = Join-Path $root 'linux-port\docker\game\src'
+    $requiredContext = @(
+        'build-deps-40250.sh', 'extern',
+        'server\common', 'server\db', 'server\game', 'server\libgame',
+        'server\liblua', 'server\libpoly', 'server\libserverkey',
+        'server\libsql', 'server\libthecore',
+        'serverfiles\share\conf', 'serverfiles\share\data',
+        'serverfiles\share\locale', 'serverfiles\share\package',
+        'serverfiles\mark-default'
+    )
+    $missingContext = @($requiredContext | Where-Object { -not (Test-Path -LiteralPath (Join-Path $gameContext $_)) })
+    if ($missingContext.Count -gt 0) {
+        $installerPath = Join-Path $root 'installer\install.ps1'
+        Write-LocalLog ("Brak zrodel gry w " + $gameContext + ": " + ($missingContext -join ', '))
+        [Windows.Forms.MessageBox]::Show(
+            ("Ten przycisk przygotowuje paczke, ktora ma juz na dysku zrodla gry - a tu ich nie ma." + [Environment]::NewLine +
+             "Brakuje: " + ($missingContext -join ', ') + [Environment]::NewLine + [Environment]::NewLine +
+             "Zrodla pochodza z Twojej wlasnej paczki serwera r40250 i zaden przycisk launchera ani zadna aktualizacja ich nie pobiera - " +
+             "robi to wylacznie instalator, ktory wyciaga z tej paczki to, czego trzeba." + [Environment]::NewLine + [Environment]::NewLine +
+             "Uruchom w PowerShell jako administrator:" + [Environment]::NewLine +
+             "  `$env:M2_SRC_ARCHIVE = 'C:\sciezka\do\paczki-r40250.zip'" + [Environment]::NewLine +
+             "  & '" + $installerPath + "'" + [Environment]::NewLine + [Environment]::NewLine +
+             "Baza, postacie i ustawienia zostaja nietkniete."),
+            'Brak zrodel gry - potrzebny instalator', 'OK', 'Warning') | Out-Null
+        return
+    }
+
     if (-not (Find-ClientExecutable)) { [void](Select-ClientExecutable) }
     try {
         $desktop = [Environment]::GetFolderPath('Desktop')

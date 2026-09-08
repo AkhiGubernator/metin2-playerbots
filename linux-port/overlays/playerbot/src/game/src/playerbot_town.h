@@ -513,11 +513,16 @@ namespace
 		const DWORD npcUnit = GetPlayerBotNpcSellUnitPrice(item);
 		// Scrap gear is priced as scrap: twice what the merchant pays, so the
 		// player burning it at the blacksmith is not paying market money for it.
-		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+		// Never scrap, whatever the refine: see PLAYERBOT_PRIOR_LEVEL30_WEAPON.
+		const bool bLevel30 = IsPlayerBotSpecialLevel30Weapon(item);
+		if (!bLevel30 &&
+				(item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
 				refine < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
 			return ApplyPlayerBotBonusPremium(
 					std::max<DWORD>(1, npcUnit * PLAYERBOT_SCRAP_PRICE_MULT), bonusPercent);
 		DWORD unit = npcUnit * PLAYERBOT_SHOP_MATERIAL_MARKUP;
+		if (bLevel30)
+			unit = std::max(unit, PLAYERBOT_PRIOR_LEVEL30_WEAPON);
 		// The opening prices. Blended away by the sale memory below as real
 		// transactions accumulate - a prior is where a price starts, not where
 		// it stays.

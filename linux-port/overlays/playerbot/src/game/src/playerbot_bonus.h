@@ -191,6 +191,8 @@ namespace
 			return 0;
 		int lines = 0;
 		int top = 0;
+		int prize = 0;
+		const bool bLevel30 = IsPlayerBotSpecialLevel30Weapon(item);
 		const int count = item->GetAttributeCount();
 		for (int i = 0; i < count && i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 		{
@@ -201,12 +203,21 @@ namespace
 			++lines;
 			if (IsPlayerBotTopBonusLine(type, value))
 				++top;
+			// The roll a level-30 weapon is bought for. A top line is worth its
+			// eighty percent on anything; on this set, a damage line in the
+			// upper half of what can roll is the whole reason the piece changes
+			// hands, and the price says so. See PLAYERBOT_PRIZE_AVERAGE_DAMAGE.
+			if (bLevel30 &&
+					((type == APPLY_NORMAL_HIT_DAMAGE_BONUS && value >= PLAYERBOT_PRIZE_AVERAGE_DAMAGE) ||
+					 (type == APPLY_SKILL_DAMAGE_BONUS && value >= PLAYERBOT_PRIZE_SKILL_DAMAGE)))
+				++prize;
 		}
 		if (lines == 0)
 			return 0;
 		const int percent = lines * PLAYERBOT_SHOP_BONUS_PER_LINE +
 				(lines >= 4 ? PLAYERBOT_SHOP_BONUS_FOUR_PLUS : 0) +
-				top * PLAYERBOT_SHOP_BONUS_TOP_LINE;
+				top * PLAYERBOT_SHOP_BONUS_TOP_LINE +
+				prize * PLAYERBOT_SHOP_BONUS_PRIZE_LINE;
 		return std::min(percent, PLAYERBOT_SHOP_BONUS_MAX_PERCENT);
 	}
 

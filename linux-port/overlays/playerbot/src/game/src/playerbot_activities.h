@@ -706,15 +706,27 @@ namespace
 					price, ch->GetGold());
 			return false;
 		}
-		if (!ch->AutoGiveItem(vnum, count, -1, false))
+		// The bag has to have room BEFORE the purchase, because AutoGiveItem
+		// does not refuse a full bag: char_item.cpp puts the item on the ground
+		// at the character's feet (AddToGround + StartDestroyEvent) and hands
+		// it back as a success. So the old "if (!AutoGiveItem)" below never
+		// fired, the bot paid, the rod lay on the grass, the bot still had no
+		// rod and bought another on the next pass - which is the photograph
+		// from the Discord: a herd of summoned horses round the Rybak standing
+		// in a carpet of "Wedka+1". The arrow purchase learned this first
+		// (playerbot_gear.h) and says so in the same words; the tackle purchase
+		// was written a day later without it. A stackable that already has a
+		// stack merges into it and needs no cell - that is the bait case.
+		const bool bMergesIntoStack = count > 1 && ch->CountSpecifyItem(vnum) > 0;
+		if (!bMergesIntoStack && ch->GetEmptyInventory(1) < 0)
 		{
-			// Not poverty - the bag. Reported from the Discord as bots standing
-			// under the Rybak with money and no bait.
 			PlayerBotLogThrottled("tackle_no_room", dwNow,
 					"PLAYERBOT_FISHING: no bag room for %s pid=%u name=%s vnum=%u count=%d gold=%d",
 					what, ch->GetPlayerID(), ch->GetName(), vnum, count, ch->GetGold());
 			return false;
 		}
+		if (!ch->AutoGiveItem(vnum, count, -1, false))
+			return false;
 		ch->PointChange(POINT_GOLD, -price);
 		sys_log(0, "PLAYERBOT_FISHING: bought %s pid=%u name=%s vnum=%u count=%d price=%lld",
 				what, ch->GetPlayerID(), ch->GetName(), vnum, count, price);
@@ -754,7 +766,9 @@ namespace
 			if (proto)
 			{
 				const long long price = GetPlayerBotNpcPurchasePrice(proto, 1);
+				// Same trap as the rod: no cell means the wood lands on the grass.
 				if (price > 0 && ch->GetGold() >= price &&
+						ch->GetEmptyInventory(1) >= 0 &&
 						ch->AutoGiveItem(PLAYERBOT_CAMPFIRE_VNUM, 1, -1, false))
 				{
 					ch->PointChange(POINT_GOLD, -price);

@@ -451,6 +451,16 @@ namespace
 	const int PLAYERBOT_SHOP_BONUS_FOUR_PLUS = 100;
 	const int PLAYERBOT_SHOP_BONUS_TOP_LINE = 80;
 	const int PLAYERBOT_SHOP_BONUS_MAX_PERCENT = 600;
+	// The two lines that make a level-30 weapon the one everybody is looking
+	// for, and the step they add on top of the ordinary line premium. Proposed
+	// from the Discord in exactly these numbers - "average damage at least 24%,
+	// or skill damage 15%+" - and they match what this world actually rolls:
+	// average damage goes to 46 and skill damage to 18, so 24 and 15 are the
+	// upper half of each. Only on the level-30 set; on other gear a good line
+	// is still just a top line.
+	const int PLAYERBOT_PRIZE_AVERAGE_DAMAGE = 24;
+	const int PLAYERBOT_PRIZE_SKILL_DAMAGE = 15;
+	const int PLAYERBOT_SHOP_BONUS_PRIZE_LINE = 300;
 	// The rolls that finish an item for its slot. Thirty percent average damage
 	// on a level-30 weapon, fifteen hundred health on armour or jewellery, five
 	// percent critical on jewellery - the numbers a player stops rerolling at.
@@ -686,6 +696,17 @@ namespace
 	// transactions accumulate.
 	const DWORD PLAYERBOT_PRIOR_BOOK_AURA = 250000;        // Aura Miecza (4)
 	const DWORD PLAYERBOT_PRIOR_BOOK_ENCHANTED_BLADE = 220000; // Czarowane Ostrze (63)
+	// A weapon from the level-30 set, whatever its refine. It is the prize the
+	// whole market exists for - ScorePlayerBotShopStock puts it above every
+	// other line - and it was being priced as scrap: an unrefined one fell into
+	// the "under +4" branch and asked the merchant's price times two, fifteen
+	// thousand, while a Tiger Fur beside it asked sixty because materials get
+	// a share of the median wallet. Reported from the Discord with a proposal
+	// of fifteen to twenty times that, and the proposal is right about the
+	// order of magnitude: between a +7 (150 000) and a +8 (400 000) of
+	// ordinary gear, because a bot of thirty-seven holding six million will
+	// pay it and a bot of twenty-two will not, which is as it should be.
+	const DWORD PLAYERBOT_PRIOR_LEVEL30_WEAPON = 250000;
 	const DWORD PLAYERBOT_PRIOR_BOOK_STRONG_BODY = 180000; // Silne Cialo (19)
 	const DWORD PLAYERBOT_PRIOR_BOOK_KEY = 140000;         // inne kluczowe dla buildu
 	const DWORD PLAYERBOT_PRIOR_BOOK_ORDINARY = 45000;
@@ -1210,6 +1231,9 @@ namespace
 	// An archer pulls too, but a bow is not a shield: one group, four attackers.
 	const int PLAYERBOT_MULTI_PULL_ARCHER_MAX_AGGRESSORS = 4;
 	const BYTE PLAYERBOT_SKILL_MASTER_TRY_LEVEL = 17;
+	// How long a bot keeps farming its class's level-30 weapon before giving
+	// the map up for good. See ShouldPlayerBotVisitM3.
+	const BYTE PLAYERBOT_LEVEL30_WEAPON_HUNT_MAX_LEVEL = 40;
 	// The old woman south of Joan, and what she does.
 	//
 	// skill_reset2.quest, NPC 9006: refuses under level five and over thirty,

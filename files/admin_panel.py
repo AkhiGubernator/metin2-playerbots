@@ -31,6 +31,18 @@ BIOLOGIST_MISSIONS = (
     ("make_herb_lv25", 25, "Grzyb Tue", 10),
     ("collect_quest_lv30", 30, "Ząb Orka", 10),
 )
+# The specimen each row wants, and how far past a row the game stops hunting
+# it. Both mirror playerbot_missions.h: a row the bot has outgrown by
+# BIOLOGIST_OUTGROWN_LEVELS is stepped over unless the bag already holds the
+# whole hand-in - so the label here says what the bot is actually doing,
+# instead of naming the first unfinished row and calling a level-41 archer a
+# Gango Root collector for the rest of its life.
+BIOLOGIST_ITEM_VNUMS = {
+    "make_herb_lv4": 50701, "make_herb_lv7": 50702, "make_herb_lv10": 50703,
+    "make_herb_lv15": 50704, "make_herb_lv20": 50705, "make_herb_lv25": 50706,
+    "collect_quest_lv30": 30006,
+}
+BIOLOGIST_OUTGROWN_LEVELS = 10
 
 # The official ``special.levelup_quest`` choices for the M1/M2 stage.  The
 # game server writes progress to quest ``levelup``; the panel only interprets
@@ -8318,23 +8330,46 @@ def api_bot_inventory(pid):
                 (row["szName"], row["szState"]): int(row.get("lValue") or 0)
                 for row in quest_rows
             }
+            # What the bot carries of each specimen: the one thing that lets an
+            # outgrown row still be the right answer.
+            vnum_list = tuple(BIOLOGIST_ITEM_VNUMS.values())
+            cur.execute(
+                "SELECT vnum, COALESCE(SUM(count),0) AS n FROM player.item "
+                "WHERE owner_id = %s AND vnum IN ({}) GROUP BY vnum".format(
+                    ",".join(["%s"] * len(vnum_list))),
+                (pid,) + vnum_list)
+            held = {int(r["vnum"]): int(r.get("n") or 0) for r in cur.fetchall()}
+            bot_level = int(player.get("level") or 1)
             completed = 0
             biologist_label = messages["bio_not_started"]
+            chosen = None
+            fallback = None
             for quest_name, required_level, item_name, required_count in BIOLOGIST_MISSIONS:
                 item_name = localized_biologist_name(quest_name, item_name, language)
                 if quest_flags.get((quest_name, "__status")) == BIOLOGIST_COMPLETE_STATE:
                     completed += 1
                     biologist_label = messages["bio_completed"].format(name=item_name)
                     continue
-                if int(player.get("level") or 1) >= required_level:
-                    accepted = quest_flags.get((quest_name, "collect_count"), 0)
-                    biologist_label = "%s: %d/%d" % (item_name, accepted, required_count)
-                else:
-                    biologist_label = messages["bio_next"].format(
-                        level=required_level, name=item_name)
-                break
-            else:
+                if bot_level < required_level:
+                    if chosen is None and fallback is None:
+                        chosen = ("next", quest_name, required_level, item_name, required_count)
+                    break
+                outgrown = bot_level > required_level + BIOLOGIST_OUTGROWN_LEVELS
+                carries_all = held.get(BIOLOGIST_ITEM_VNUMS.get(quest_name, 0), 0) >= required_count
+                # The highest row left is what the game falls back to when
+                # every row still open has been outgrown.
+                fallback = ("row", quest_name, required_level, item_name, required_count)
+                if chosen is None and (not outgrown or carries_all):
+                    chosen = fallback
+            if chosen is None:
+                chosen = fallback
+            if chosen is None:
                 biologist_label = messages["bio_all"]
+            elif chosen[0] == "next":
+                biologist_label = messages["bio_next"].format(level=chosen[2], name=chosen[3])
+            else:
+                accepted = quest_flags.get((chosen[1], "collect_count"), 0)
+                biologist_label = "%s: %d/%d" % (chosen[3], accepted, chosen[4])
             player["biologist_completed"] = completed
             player["biologist_label"] = biologist_label
 

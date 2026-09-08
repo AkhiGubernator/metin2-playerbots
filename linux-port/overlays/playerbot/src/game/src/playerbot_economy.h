@@ -925,6 +925,15 @@ namespace
 			const DWORD BLUE_TARGET = 600;
 			const DWORD RED_UNIT = 20;
 			const DWORD BLUE_UNIT = 32;
+			// And never more than the bag can hold, because AutoGiveItem does not
+			// refuse a full one - it fills whatever stack has room and puts the
+			// rest on the ground at the bot's feet, paid for. A stack is 200. The
+			// estimate below counts the headroom of one partial stack plus every
+			// free cell, which is at most what the engine will find, never more.
+			const int freeCells = std::max(0, ch->GetEmptyInventory(1) < 0 ? 0 :
+					CountPlayerBotFreeInventoryCells(ch));
+			const DWORD redRoom = (DWORD)freeCells * 200 + (200 - redCount % 200) % 200;
+			const DWORD blueRoom = (DWORD)freeCells * 200 + (200 - blueCount % 200) % 200;
 			// Standing at the merchant already: fill the belt right up whatever the
 			// level, because this costs nothing extra. The decision to make the
 			// trip at all lives in NeedsPlayerBotPotions and is far stricter.
@@ -934,7 +943,9 @@ namespace
 			{
 				const DWORD want = (DWORD)(RED_TARGET - redCount);
 				const DWORD affordable = (DWORD)(ch->GetGold() / 2 / RED_UNIT);
-				const DWORD buy = want < affordable ? want : affordable;
+				DWORD buy = want < affordable ? want : affordable;
+				if (buy > redRoom)
+					buy = redRoom;
 				if (buy > 0)
 				{
 					ch->PointChange(POINT_GOLD, -(int)(buy * RED_UNIT));
@@ -948,7 +959,9 @@ namespace
 			{
 				const DWORD want = (DWORD)(BLUE_TARGET - blueCount);
 				const DWORD affordable = (DWORD)(ch->GetGold() / 2 / BLUE_UNIT);
-				const DWORD buy = want < affordable ? want : affordable;
+				DWORD buy = want < affordable ? want : affordable;
+				if (buy > blueRoom)
+					buy = blueRoom;
 				if (buy > 0)
 				{
 					ch->PointChange(POINT_GOLD, -(int)(buy * BLUE_UNIT));

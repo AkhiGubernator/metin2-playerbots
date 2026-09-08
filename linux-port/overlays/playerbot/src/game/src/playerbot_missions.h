@@ -117,7 +117,19 @@ namespace
 				first = (int)i;
 			int required = 0;
 			const DWORD wanted = GetPlayerBotBiologistWantedItem(ch, i, &required);
-			if (carrying < 0 && ch->CountSpecifyItem(wanted) > 0)
+			// "Carrying" outranks everything, so it has to mean carrying enough.
+			// It used to mean one: a single Gango Root picked up on a fishing
+			// trip to Joan pinned a bot of forty to the level-fifteen row for
+			// good - the row is outgrown, so it never hunts the monster, so it
+			// never reaches the five it needs, so the panel read "Korzen Gango
+			// 0/5" beside a bot hitting Orcs. Measured: thirty-eight bots of
+			// twenty-six and up held the root, thirty-six of them with one to
+			// four, and that is the "wszystkie maja 4/7 Korzen Gango" from the
+			// Discord. An outgrown row is taken only when the bag already holds
+			// the whole hand-in; a row the bot has not outgrown keeps the old
+			// rule, because there it will hunt the rest.
+			const int held = ch->CountSpecifyItem(wanted);
+			if (carrying < 0 && held > 0 && (!outgrown || held >= required))
 				carrying = (int)i;
 			if (here < 0 && !outgrown &&
 					IsPlayerBotHuntingMobHosted(mission.mobVnum, ch->GetMapIndex()))

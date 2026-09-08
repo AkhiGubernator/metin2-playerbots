@@ -419,6 +419,33 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   refusal found the cause on our own server in two minutes. Any stack bought
   from an NPC wants the same shape: take what the purse reaches, re-price the
   smaller count and re-check it, and let a single item stay all-or-nothing.
+- **A guard belongs on the path that does the thing, not beside it.**
+  The build-context check went into `start-server.ps1` and the report came back
+  unchanged, because `Metin2-Launcher.ps1` calls that script with
+  `-IdentityOnly` - which returns at line 557 having written the .env, while the
+  check sat at 713 - and then runs `docker compose up --build` itself. Two code
+  paths reach a build; only one had the guard. Before adding a precondition,
+  find every caller that performs the operation, not every caller that looks
+  like it should.
+- **A status line that is a plain `else` will lie.** "Wychodze z Lochu Malp"
+  was the fallback for BOT_ACTION_TRAVEL on a monkey map, so every bot crossing
+  the maze - which is what travel means in an eleven-chamber dungeon joined
+  only by GOTO NPCs - announced an exit. Gating it on the goal was not enough
+  either: BOT_GOAL_HORSE is what a medal expedition carries for its whole
+  visit, and twenty-one of thirty bots still claimed it. The exit is a direct
+  map change on the tick it is decided, so a bot anybody can still see in the
+  dungeon is by definition not leaving, and the word does not belong there at
+  all. Same shape as the angler who announced baiting a rod it was not holding.
+- **Weigh a bonus line against what it can actually roll.**
+  `ScorePlayerBotBonusLine` gave skill damage 12 and average damage 10 for
+  every character. Measured across every attribute on every item in this world,
+  average damage rolls to 46 and skill damage to 18 - so a maximum average roll
+  scored 460 against a maximum skill roll's 216, and a Shaman, whose damage is
+  nearly all skills, rerolled away the best line its build can have. The
+  weights are per build now and derived from those two ceilings. Worth knowing
+  before tuning further: `APPLY_ATTBONUS_MONSTER` - the one line that raises
+  damage against monsters *and* Metin stones, which is all a bot ever fights -
+  does not roll here at all, so no reroll can ever produce one.
 - **Never delete a build context before proving it can be rebuilt.**
   `prepare-context.sh` did `rm -rf game/src` and discovered a missing engine
   module a hundred lines later, so a truncated porting tree turned a working

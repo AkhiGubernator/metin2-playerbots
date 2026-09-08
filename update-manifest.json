@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T17:44:00Z",
-  "statusMessage": "Aktualizacja 1.30.27. Instalacja, ktorej brakuje zrodel gry, mowi o tym jednym zdaniem zamiast pietnastoma bledami Dockera - i nie niszczy juz dzialajacego kontekstu budowy. Boty jezdza konno na dlugich trasach zamiast isc pieszo, dobijaja metina zamiast odchodzic przy resztce jego zycia, a te ponizej 30 poziomu resetuja umiejetnosci u staruszki, gdy utkna na 17 punktach. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T18:11:00Z",
+  "statusMessage": "Aktualizacja 1.30.28. Instalacja bez zrodel gry mowi o tym jednym zdaniem takze wtedy, gdy klikasz GRAJ - poprzednia poprawka trafila w polowe kodu, ktorej ten przycisk nie uruchamia. Boty w Lochu Malp nie ogłaszaja juz wyjscia, ktorego nie ma, a bonusy sa wazone wedlug klasy: mag nie wyrzuca najlepszej linii dla swojego buildu. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.27",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.27/metin2-server-update-1.30.27.zip",
-    "sha256": "F0818DD1CCA9EA79FC08FBEB0D5892BBFB379641CBA1D86EB543A184A4028689"
+    "version": "1.30.28",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.28/metin2-server-update-1.30.28.zip",
+    "sha256": "1430CA18703512E3646FABED856DD8A6364A74E14BC3CA79CFDC425E27BBC8C6"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

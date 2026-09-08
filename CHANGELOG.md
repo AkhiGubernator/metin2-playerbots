@@ -17,6 +17,74 @@ every version here.
 
 ---
 
+## 1.30.28 — 2026-09-08
+
+### Naprawione
+
+- **Ostrzeżenie o brakujących źródłach było w połowie kodu, której „GRAJ" nie
+  uruchamia.** Zgłoszone z Discorda **drugi raz**, przeciwko wersji, która miała
+  to naprawić — i było to słuszne zgłoszenie. 1.30.27 dodała sprawdzenie
+  kompletności kontekstu budowy do `start-server.ps1`. Tyle że launcher woła ten
+  skrypt z przełącznikiem `-IdentityOnly`, który kończy się zaraz po zapisaniu
+  `.env` — **w linii 557, a sprawdzenie stało w 713** — po czym launcher buduje
+  sam, wywołując `docker compose up --build` bezpośrednio. Gracz klikający GRAJ
+  nigdy tego sprawdzenia nie widział i dostawał piętnaście linii
+  `failed to calculate checksum ... not found`, tak samo jak przedtem.
+
+  Sprawdzenie stoi teraz tam, gdzie budowa naprawdę zachodzi. Zamiast piętnastu
+  błędów Dockera pada jedno zdanie: czego brakuje, że to **nie jest** błąd
+  Dockera, WSL ani aktualizacji, że te pliki pochodzą z własnej paczki serwera
+  r40250 i żadna aktualizacja ich nie przywróci — oraz że ratunkiem jest ponowne
+  uruchomienie instalatora, przy nietkniętej bazie, postaciach i ustawieniach.
+
+- **Boty w Lochu Małp ogłaszały wyjście, którego nie było.** Zgłoszone z Discorda:
+  „mimo chmurki, że wychodzą z lochu, one nie wychodzą". Napis „Wychodzę z Lochu
+  Małp" był zwykłym „w przeciwnym razie" — mówił go **każdy** bot, który na mapie
+  lochu się przemieszczał. A w lochu przemieszczanie się to stan normalny:
+  jedenaście komnat połączonych wyłącznie NPC-ami GOTO, więc przejście do
+  następnej to zwykły marsz. Złapany bot z tą chmurką miał cel **polowanie na
+  metiny**.
+
+  Rzecz, która czyniła to szczególnie mylącym: **wyjście z lochu jest
+  natychmiastowe** — to bezpośrednia zmiana mapy w tym samym ticku, nie marsz do
+  portalu. Bot, którego widać w lochu, z definicji nie wychodzi. Napis brzmi teraz
+  „Szukam drogi przez Loch Małp" i słowo „wychodzę" nie pada tam w ogóle.
+
+  Trzeba dodać, czego pomiar **nie** potwierdził: zarzutu o zepsute poruszanie się
+  i teleporty. Przez półtorej minuty obserwacji **jeden bot na trzydzieści** nie
+  drgnął, i ten najpewniej walczył. Geometria wczytuje się kompletna na wszystkich
+  trzech mapach, przejścia między komnatami zachodzą, wejść i wyjść jest tyle
+  samo. Problemem była sama chmurka.
+
+### Zmienione
+
+- **Bonusy ważone według klasy, a nie jednakowo dla wszystkich.** Mechanika
+  działała od dawna — zmierzone **2155 użyć** zwojów, a bot nie dokupuje zwoju,
+  gdy jakiś ma. Zły był wybór tego, co warto zatrzymać.
+
+  Zmierzone na każdym atrybucie każdego przedmiotu w tym świecie: **średnie
+  obrażenia losują się do 46, a obrażenia umiejętności tylko do 18**. Przy wagach
+  dwanaście i dziesięć — tych samych dla wszystkich — najlepsze możliwe średnie
+  obrażenia dawały 460 punktów, a najlepsze obrażenia umiejętności 216. Czyli
+  **szaman, który wylosował najlepszą linię w grze dla swojego buildu, wyrzucał ją
+  na następnym przebiegu**, choć jego obrażenia to niemal wyłącznie umiejętności.
+  Wagi są teraz dobrane wprost do tych dwóch sufitów: dla maga najlepszy skill
+  bije najlepsze średnie, dla reszty kolejność zostaje bez zmian.
+
+  I rzecz, którą trzeba powiedzieć wprost, bo zmienia oczekiwania: **„Silny
+  przeciwko Potworom" w tym świecie nie występuje ani razu.** Poradniki słusznie
+  stawiają go bardzo wysoko — podnosi obrażenia wobec wszystkich potworów i
+  kamieni metinu, czyli wobec wszystkiego, z czym bot kiedykolwiek walczy — ale
+  żadna zmianka go tu nie wylosuje. Jego waga została podniesiona dla przedmiotów,
+  które mają go wbudowanego, i to wszystko, co da się z nim zrobić.
+
+  Uczciwie o stanie pomiaru: nowe wagi są policzone z realnych zakresów i
+  wdrożone, ale w oknie obserwacji zdążyły zajść dopiero dwa przebiegi — za mało,
+  by pokazać zmianę w liczbach. Sama zmiana dotyczy wyłącznie tego, którą linię
+  bot uznaje za lepszą.
+
+---
+
 ## 1.30.27 — 2026-09-08
 
 ### Naprawione

@@ -953,6 +953,15 @@ namespace
 					{
 						baseScore += 1200000 + mobLevel * 1000;
 					}
+					// A boss the raid has already set out for outranks the trash
+					// round her. Within the level delta she scored as any other
+					// far-off monster - delta twelve is the ten-thousand bucket -
+					// so the raiders who reached the Spider Queen fought her
+					// soldiers beside her. See PLAYERBOT_RAID_SWARM_MIN.
+					if (candidate->GetMobRank() >= MOB_RANK_BOSS &&
+							CountPlayerBotRaiders(candidate->GetRaceNum(), m_dwNow) >=
+								PLAYERBOT_RAID_SWARM_MIN)
+						baseScore += PLAYERBOT_RAID_SWARM_TARGET_BONUS;
 
 					// For dedicated Metin breakers, normal mobs get low score unless attacking
 					if (isMetinHunter && candidate->GetVictim() != m_owner)
@@ -1776,6 +1785,10 @@ namespace
 
 	bool HandlePlayerBotMultiPull(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
+		// A rider on a transport horse is on its way somewhere; the pack it
+		// would gather is the target section's to notice, which dismounts.
+		if (ch && ch->IsRiding() && !CanPlayerBotEverFightOnHorse(ch))
+			return false;
 		bool naturalTank = false;
 		const bool buildEligible = IsPlayerBotMultiPullBuild(ch, &naturalTank);
 		const bool goalEligible = state.bBotRole == BOT_ROLE_MOB_GRINDER &&

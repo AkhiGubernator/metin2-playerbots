@@ -8199,6 +8199,14 @@ def api_bot_positions():
     messages = map_i18n(language)
     live_status = read_playerbot_live_status()
     map_bounds = PLAYERBOT_MAP_BOUNDS
+    # Every map the panel can draw, not a list written when there were six.
+    # This filter is on the SAVED map - where a bot last wrote itself to the
+    # database - and it dropped a bot whose saved map was a dungeon before the
+    # live status was consulted at all. The Spider Dungeon was showing "0
+    # visible" over forty live bots because of it. The live entry still decides
+    # where a bot is drawn; this only stops the roster query throwing away rows
+    # for maps that were added after the list was.
+    map_list = ", ".join(str(m) for m in sorted(map_bounds))
     try:
         with db() as c, c.cursor() as cur:
             # A bot is defined by its canonical account (playerbot_NNN), not by
@@ -8210,9 +8218,9 @@ def api_bot_positions():
                 FROM player.player p
                 LEFT JOIN account.account a ON a.id = p.account_id
                 WHERE (LEFT(a.login, 10) = 'playerbot_' OR <<BOT_P_1>>)
-                  AND p.map_index IN (21, 23, 24, 25, 63, 64)
+                  AND p.map_index IN ({map_list})
                 ORDER BY p.level DESC, p.id ASC
-            """))
+            """.replace("{map_list}", map_list)))
             rows = cur.fetchall()
             bots = []
             # The map is the live world, not the roster. Only a fraction of the

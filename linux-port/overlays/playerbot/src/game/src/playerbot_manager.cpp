@@ -969,7 +969,21 @@ bool CPlayerBotManager::LoadRegisteredBots()
 			"LPAD(l.pid-3,GREATEST(3,LENGTH(l.pid-3)),'0')) "
 			"AND BINARY a.social_id=BINARY CONCAT('9',LPAD(l.pid-3,12,'0')) "
 			"AND pi.pid1=l.pid AND pi.pid2=0 AND pi.pid3=0 AND pi.pid4=0 "
-			"AND pi.empire=2 ORDER BY l.pid";
+			// Who comes first when the slider asks for more than are playing.
+			//
+			// By PID alone, "add a hundred and twenty bots" added the hundred and
+			// twenty benched veterans with the lowest PIDs - measured: PIDs 4 to
+			// 301, fifty-two of them between 5 and 30 and sixty-eight past 31 -
+			// while the hundred and sixty-two characters that had never played
+			// (level 1 to 4, PIDs 1342 to 1503) sat at the end of the queue and
+			// could not be reached by any slider. Three tiers instead: the cohort
+			// that has played within the week keeps its place, so a restart
+			// brings back the same world; newcomers come next, so growing the
+			// slider is how fresh characters enter it; the benched veterans
+			// last. A fresh install is one tier and unchanged.
+			"AND pi.empire=2 ORDER BY "
+			"CASE WHEN p.level>4 AND p.last_play>NOW()-INTERVAL 7 DAY THEN 0 "
+			"WHEN p.level<=4 THEN 1 ELSE 2 END, l.pid";
 
 	std::unique_ptr<SQLMsg> msg(AccountDB::instance().DirectQuery(query));
 	if (!msg.get() || msg->uiSQLErrno != 0 || !msg->Get() ||
@@ -1361,6 +1375,16 @@ void CPlayerBotManager::Update()
 		s_dwPlayerBotM2CensusTime = dwNow;
 	RefreshPlayerBotMarketLedger(dwNow);
 
+	// The per-map census the raid cap reads (GetPlayerBotsOnMap), one pass
+	// over the descriptors before the tick proper; nothing else counts them.
+	s_mapPlayerBotsOnMap.clear();
+	for (TPlayerBotMap::iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)
+	{
+		LPCHARACTER c = it->second ? it->second->GetCharacter() : NULL;
+		if (c && !c->IsDead())
+			++s_mapPlayerBotsOnMap[c->GetMapIndex()];
+	}
+
 	for (TPlayerBotMap::iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)
 	{
 		LPDESC d = it->second;
@@ -1578,6 +1602,7 @@ void CPlayerBotManager::Update()
 		// deep, and opened 190 in an hour between them. Their bags were not the
 		// problem: 29 cells of 90 in use on average, none above 84.
 		ManagePlayerBotChests(ch, state, dwNow);
+		ManagePlayerBotStackMerge(ch, state, dwNow);
 		// The catch, wherever the bot happens to be standing. It used to be
 		// opened only between casts, so an angler that walked away from the bank
 		// carried its fish around instead - and a live fish does not stack, so a
@@ -1751,14 +1776,27 @@ void CPlayerBotManager::Update()
 		if (HandlePlayerBotTownVisit(ch, state, dwNow))
 			continue;
 
-		// A normal horse is for transport only, so it goes before target
-		// selection, buffs and combat: a level-1 horse must never produce a
-		// mounted attack. A battle horse is a different animal and stays - this
-		// line used to dismount it too, which is why a rider was seen hacking a
-		// metin on foot with its horse standing beside it. Whether it actually
-		// fights from the saddle is then the target's business, decided where
-		// the target is known.
+		// A normal horse is for transport only, so it comes off before buffs
+		// and combat: a level-1 horse must never produce a mounted attack. A
+		// battle horse is a different animal and stays - this line used to
+		// dismount it too, which is why a rider was seen hacking a metin on
+		// foot with its horse standing beside it. Whether it actually fights
+		// from the saddle is then the target's business, decided where the
+		// target is known.
+		//
+		// Only when there is a fight to get off for. The wander pass at the
+		// bottom of the tick mounts for a long leg, and taking the horse away
+		// here at the top of the next one, unconditionally, ran every hunting
+		// map through a loop: mounted, dismounted, mounted - each of them
+		// clearing the route - 133 000 times in twenty-eight minutes across
+		// 261 bots, and not one step of the leg walked. That is how 1.30.28
+		// came to strand its raiders among the trash ("heading for boss" every
+		// few minutes, nobody within three kilometres of the Spider Queen).
+		// A rider with no target keeps the saddle; the target section below
+		// climbs down the moment it picks one, and the buff and multi-pull
+		// passes stay out of the saddle themselves.
 		if (ch->IsRiding() && !CanPlayerBotEverFightOnHorse(ch) &&
+				(state.dwTargetVID != 0 || ch->GetVictim() != NULL) &&
 				SetPlayerBotRidingForTravel(ch, state, false, dwNow, "combat_ready"))
 			continue;
 
@@ -2007,6 +2045,12 @@ void CPlayerBotManager::Update()
 				SetPlayerBotRidingForTravel(ch, state, wantsSaddle, dwNow,
 						wantsSaddle ? "mounted_combat" : "dismount_for_target");
 		}
+		// A transport horse is left here, on the tick the target is chosen,
+		// and the swing waits for the next one - the way the old top-of-tick
+		// dismount spaced them. Never a mounted attack from a level-1 horse.
+		else if (ch->IsRiding() &&
+				SetPlayerBotRidingForTravel(ch, state, false, dwNow, "dismount_for_target"))
+			continue;
 
 		ch->SetVictim(target);
 		SetPlayerBotAction(state, BOT_ACTION_FIGHT, dwNow);

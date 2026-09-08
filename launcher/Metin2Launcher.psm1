@@ -1067,10 +1067,18 @@ function Repair-M2GameDbUser {
     # For installs that swapped the world (import) before the graceful-shutdown
     # fix and were left with a MariaDB the migrator could not authenticate to.
     # Only mysql.* (the technical DB account) is touched; player data is not.
+    #
+    # root@'%' is put back on the .env password too when one is given. That
+    # account is what a database client on the host (Navicat, HeidiSQL) logs
+    # in with over the published port, and "Access denied for user
+    # 'root'@'172.18.0.1'" - the compose gateway - is the report when the
+    # volume was initialised under one password and .env carries another.
+    # root@'localhost' is left alone: nothing of ours uses it.
     param(
         [Parameter(Mandatory = $true)][string]$Volume,
         [Parameter(Mandatory = $true)][string]$DbUser,
-        [Parameter(Mandatory = $true)][string]$DbPassword
+        [Parameter(Mandatory = $true)][string]$DbPassword,
+        [string]$RootPassword = ''
     )
     $previous = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $work = Join-Path ([IO.Path]::GetTempPath()) ('m2repair-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -1087,6 +1095,12 @@ function Repair-M2GameDbUser {
         [void]$gb.AppendLine("ALTER USER '$safeUser'@'%' IDENTIFIED BY '$pwEsc';")
         foreach ($db in $script:M2_DB_LIST) {
             [void]$gb.AppendLine("GRANT ALL PRIVILEGES ON $db.* TO '$safeUser'@'%';")
+        }
+        if ($RootPassword) {
+            $rootEsc = $RootPassword.Replace('\', '\\').Replace("'", "''")
+            [void]$gb.AppendLine("CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '$rootEsc';")
+            [void]$gb.AppendLine("ALTER USER 'root'@'%' IDENTIFIED BY '$rootEsc';")
+            [void]$gb.AppendLine("GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;")
         }
         [void]$gb.AppendLine('FLUSH PRIVILEGES;')
         $repairFile = Join-Path $work 'repair.sql'

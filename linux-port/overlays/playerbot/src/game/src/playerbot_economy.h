@@ -65,6 +65,90 @@ namespace
 		return false;
 	}
 
+	// How many books of one of its own skills a bot keeps in the bag: the
+	// working stock while the skill is readable, a few before that, none once
+	// a book can do nothing more for it. Every rule that keeps, lists or buys
+	// a book asks this, so the bag, the counter and the market agree.
+	int GetPlayerBotBookKeepLimit(LPCHARACTER ch, DWORD skillVnum)
+	{
+		if (!ch || skillVnum == 0)
+			return 0;
+		if (ch->GetSkillMasterType(skillVnum) >= SKILL_GRAND_MASTER)
+			return 0;
+		const BYTE level = ch->GetSkillLevel(skillVnum);
+		if (ch->GetSkillMasterType(skillVnum) == SKILL_MASTER && level >= 20 && level < 30)
+			return PLAYERBOT_BOOK_KEEP_PER_SKILL;
+		return PLAYERBOT_BOOK_KEEP_UNREADABLE;
+	}
+
+	// The engine's stacking rule, asked of two bag items: MoveItem pours one
+	// into the other only for the same vnum with every socket equal.
+	bool PlayerBotStacksTogether(LPITEM item, LPITEM other)
+	{
+		if (!item || !other || item == other || item->GetVnum() != other->GetVnum())
+			return false;
+		if (!item->IsStackable() || IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+			return false;
+		for (int s = 0; s < ITEM_SOCKET_MAX_NUM; ++s)
+			if (item->GetSocket(s) != other->GetSocket(s))
+				return false;
+		return true;
+	}
+
+	// Pour split stacks together, a few at a time. MoveItem with a count of
+	// zero moves as much of the source as the destination has room for and
+	// removes the source when it is emptied - the same thing a player's drag
+	// does, packets and item log included.
+	int MergePlayerBotStacks(LPCHARACTER ch, int maxMerges)
+	{
+		int merged = 0;
+		for (WORD i = 0; i < INVENTORY_MAX_NUM && merged < maxMerges; ++i)
+		{
+			LPITEM item = ch->GetInventoryItem(i);
+			if (!item || item->IsEquipped() || item->isLocked() ||
+					item->GetCount() >= PLAYERBOT_STACK_MAX)
+				continue;
+			for (WORD j = i + 1; j < INVENTORY_MAX_NUM && merged < maxMerges; ++j)
+			{
+				LPITEM other = ch->GetInventoryItem(j);
+				if (!other || other->IsEquipped() || other->isLocked() ||
+						!PlayerBotStacksTogether(item, other))
+					continue;
+				if (ch->MoveItem(TItemPos(INVENTORY, j), TItemPos(INVENTORY, i), 0))
+					++merged;
+				if (item->GetCount() >= PLAYERBOT_STACK_MAX)
+					break;
+			}
+		}
+		return merged;
+	}
+
+	void ManagePlayerBotStackMerge(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || dwNow < state.dwNextStackMergeTime)
+			return;
+		state.dwNextStackMergeTime = dwNow + PLAYERBOT_STACK_MERGE_INTERVAL +
+				PlayerBotNavHash(ch->GetPlayerID() ^ 0x53544b4dU) % 60000U;
+		// Not behind a counter: the singles there were split on purpose, and
+		// the shop table points at the cells they are in.
+		if (!ch->IsItemLoaded() || ch->GetMyShop())
+			return;
+		const int merged = MergePlayerBotStacks(ch, PLAYERBOT_STACK_MERGES_PER_PASS);
+		if (merged > 0)
+			sys_log(0, "PLAYERBOT_BAG: merged stacks pid=%u name=%s merges=%d",
+					ch->GetPlayerID(), ch->GetName(), merged);
+	}
+
+	// Goods a player buys one at a time. A private shop sells a line whole,
+	// so a stack of twenty scrolls on one line is twenty scrolls or nothing;
+	// materials stay stacked because the bots that buy them buy the stack.
+	bool IsPlayerBotSinglyTradedGoods(LPITEM item)
+	{
+		return item && item->IsStackable() &&
+				!IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK) &&
+				(item->GetType() == ITEM_USE || item->GetType() == ITEM_METIN);
+	}
+
 	// Everything this bot wears or carries that is still below its refine target,
 	// against what those refines actually consume. A materialVnum of zero asks
 	// the looser question - short of anything at all - which is what decides
@@ -413,8 +497,14 @@ namespace
 			// only a book nobody in the world could want is loot.
 			if (!IsPlayerBotOwnSkill(ch, skillVnum))
 				return skillVnum == 0;
-			// Its own, and only so many of them - see PLAYERBOT_BOOK_KEEP_PER_SKILL.
-			return CountPlayerBotSkillBooksAhead(ch, item, skillVnum) >= PLAYERBOT_BOOK_KEEP_PER_SKILL;
+			// Its own, and only so many of them - GetPlayerBotBookKeepLimit. The
+			// surplus is goods for the counter like anybody else's book, and
+			// scrap for the merchant only once the bag is under pressure: a
+			// warrior's spare Aura is worth more three stalls away than at
+			// the merchant, but not more than the loot it would block.
+			return CountPlayerBotSkillBooksAhead(ch, item, skillVnum) >=
+						GetPlayerBotBookKeepLimit(ch, skillVnum) &&
+					CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS;
 		}
 
 		// Preserve health, mana, green and purple speed potions
@@ -923,8 +1013,17 @@ namespace
 			// a Red Potion (M), 32 for a Blue Potion (M).
 			const DWORD RED_TARGET = 800;
 			const DWORD BLUE_TARGET = 600;
-			const DWORD RED_UNIT = 20;
-			const DWORD BLUE_UNIT = 32;
+			// From forty the bot buys the big (D) potions, not the medium (S).
+			// A level-47 bot heals in the hundreds per hit and a medium potion
+			// is a sip; "na tych poziomach to juz duze potki u handlarki", as
+			// the Discord put it. The unit prices follow the same rule as the
+			// medium ones - what the old fixed purchases implied - scaled by the
+			// proto's sell-price ratio (160/96, 480/288) and rounded up.
+			const bool bBig = botLvl >= PLAYERBOT_BIG_POTION_MIN_LEVEL;
+			const DWORD RED_VNUM = bBig ? 27003 : 27002;
+			const DWORD BLUE_VNUM = bBig ? 27006 : 27005;
+			const DWORD RED_UNIT = bBig ? 40 : 20;
+			const DWORD BLUE_UNIT = bBig ? 64 : 32;
 			// And never more than the bag can hold, because AutoGiveItem does not
 			// refuse a full one - it fills whatever stack has room and puts the
 			// rest on the ground at the bot's feet, paid for. A stack is 200. The
@@ -949,7 +1048,7 @@ namespace
 				if (buy > 0)
 				{
 					ch->PointChange(POINT_GOLD, -(int)(buy * RED_UNIT));
-					ch->AutoGiveItem(27002, buy);
+					ch->AutoGiveItem(RED_VNUM, buy);
 					boughtRed += buy;
 				}
 			}
@@ -965,7 +1064,7 @@ namespace
 				if (buy > 0)
 				{
 					ch->PointChange(POINT_GOLD, -(int)(buy * BLUE_UNIT));
-					ch->AutoGiveItem(27005, buy);
+					ch->AutoGiveItem(BLUE_VNUM, buy);
 					boughtBlue += buy;
 				}
 			}

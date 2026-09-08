@@ -37,13 +37,18 @@ namespace
 		}
 	};
 
-	// Is the boss standing near its hub right now, and where? The Orc Chief's
+	// Is the boss standing on this map right now, and where? The Orc Chief's
 	// group (621) is placed anywhere within a hundred and fifty cells of its
 	// point - fifteen thousand units - so one sector's neighbourhood missed
 	// him: "down" was logged while he was casting a mile away. Nine sectors
-	// are asked, a sector apart, each with its own neighbours, and the answer
-	// with his position is kept for PLAYERBOT_RAID_BOSS_CHECK_INTERVAL: a
-	// hundred bots choosing hubs in the same minute ask once.
+	// a sector apart were the next answer, and the Spider Queen walked out of
+	// those too: logged standing five kilometres from her hub, "down" three
+	// minutes later with no BOSS_KILL in the log, standing again eleven
+	// kilometres from it - she chases what attacks her, and every raid was
+	// sent home while she was still on her feet. The whole map is asked now;
+	// the map's entities are one snapshot copy, and the answer is kept for
+	// PLAYERBOT_RAID_BOSS_CHECK_INTERVAL, so a hundred bots choosing hubs in
+	// the same half minute cost one pass over the Spider Dungeon's monsters.
 	bool IsPlayerBotBossAlive(long mapIndex, long x, long y, WORD wRace, DWORD dwNow,
 			long* pBossX, long* pBossY, char* pName = NULL, size_t nameSize = 0)
 	{
@@ -60,19 +65,12 @@ namespace
 		}
 		LPCHARACTER boss = NULL;
 		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(mapIndex);
-		for (int dy = -1; dy <= 1 && pMap && !boss; ++dy)
-			for (int dx = -1; dx <= 1 && !boss; ++dx)
-			{
-				const long px = x + dx * (long)SECTREE_SIZE, py = y + dy * (long)SECTREE_SIZE;
-				if (px < 0 || py < 0)
-					continue;
-				LPSECTREE pTree = pMap->Find((DWORD)px, (DWORD)py);
-				if (!pTree)
-					continue;
-				FPlayerBotFindBoss finder(wRace);
-				pTree->ForEachAround(finder);
-				boss = finder.m_found;
-			}
+		if (pMap)
+		{
+			FPlayerBotFindBoss finder(wRace);
+			pMap->for_each(finder);
+			boss = finder.m_found;
+		}
 		TBossAnswer& answer = s_mapAnswers[wRace];
 		const bool bAlive = boss != NULL;
 		if (it == s_mapAnswers.end() || answer.bAlive != bAlive)
@@ -274,8 +272,15 @@ namespace
 				// boss nobody called still gets killed and the rest of the band
 				// carries on hunting instead of queueing on a snowfield.
 				const int raiders = CountPlayerBotRaiders(hub.wBossRace, dwNow);
-				const int room = IsPlayerBotRaidCalled(ch, hub.wBossRace, dwNow)
-						? PLAYERBOT_RAID_CROWD : PLAYERBOT_RAID_CROWD / 2;
+				const bool called = IsPlayerBotRaidCalled(ch, hub.wBossRace, dwNow);
+				// Twelve, or a share of everyone on the map - see
+				// PLAYERBOT_RAID_MAP_SHARE_CALLED_PERCENT for the forty bots that
+				// hunted soldiers within sight of the Spider Queen.
+				const int onMap = GetPlayerBotsOnMap(ch->GetMapIndex());
+				const int room = std::max(
+						called ? PLAYERBOT_RAID_CROWD : PLAYERBOT_RAID_CROWD / 2,
+						onMap * (called ? PLAYERBOT_RAID_MAP_SHARE_CALLED_PERCENT
+								: PLAYERBOT_RAID_MAP_SHARE_UNCALLED_PERCENT) / 100);
 				if (raiders >= room)
 					continue;
 				score = PLAYERBOT_RAID_WORTH;

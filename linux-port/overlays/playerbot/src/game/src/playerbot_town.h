@@ -543,6 +543,8 @@ namespace
 			unit = PLAYERBOT_PRIOR_PEARL_BLUE;
 		else if (item->GetVnum() == PLAYERBOT_PEARL_LAST_VNUM)
 			unit = PLAYERBOT_PRIOR_PEARL_RED;
+		else if (item->GetVnum() == PLAYERBOT_SHELLFISH_VNUM)
+			unit = PLAYERBOT_PRIOR_SHELLFISH;
 		else if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM)
 			unit = PLAYERBOT_PRIOR_HORSE_MEDAL;
 		// A soul stone has no merchant price: the counter asks by grade.
@@ -817,7 +819,8 @@ namespace
 			// used to carry the very book its keeper was waiting to read.
 			const DWORD skillVnum = GetPlayerBotSkillBookSkillVnum(item);
 			if (ch->GetSkillGroup() != 0 && IsPlayerBotOwnSkill(ch, skillVnum) &&
-					CountPlayerBotSkillBooksAhead(ch, item, skillVnum) < PLAYERBOT_BOOK_KEEP_PER_SKILL)
+					CountPlayerBotSkillBooksAhead(ch, item, skillVnum) <
+						GetPlayerBotBookKeepLimit(ch, skillVnum))
 				return -1;
 			return GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER
 					? 1800 : 400;
@@ -1198,6 +1201,49 @@ namespace
 	// searched the way CGrid::FindBlank does - row by row, left to right - or
 	// -1 when the counter is full. See TPlayerBotShopOffer::bSlot for why the
 	// line's index in the table is not its slot.
+	// Split a few single units off each stack of singly traded goods that is
+	// going on the counter, into free cells, so that each unit is a line of
+	// its own. Returns true when the bag changed and the scan has to run again.
+	bool SplitPlayerBotStallSingles(LPCHARACTER ch,
+			const std::vector<std::pair<int, WORD> >& scored, DWORD dwNow)
+	{
+		bool changed = false;
+		for (size_t i = 0; i < scored.size(); ++i)
+		{
+			LPITEM item = ch->GetInventoryItem(scored[i].second);
+			if (!item || item->GetCount() <= 1 || item->isLocked() ||
+					!IsPlayerBotSinglyTradedGoods(item))
+				continue;
+			int singles = 0;
+			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			{
+				LPITEM other = ch->GetInventoryItem(cell);
+				if (other && other != item && other->GetCount() == 1 &&
+						PlayerBotStacksTogether(item, other))
+					++singles;
+			}
+			int split = 0;
+			while (singles < PLAYERBOT_SHOP_SINGLE_UNITS && item->GetCount() > 1 &&
+					CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS)
+			{
+				const int to = ch->GetEmptyInventory(item->GetSize());
+				if (to < 0 || !ch->MoveItem(TItemPos(INVENTORY, item->GetCell()),
+						TItemPos(INVENTORY, (WORD)to), 1))
+					break;
+				++singles;
+				++split;
+			}
+			if (split > 0)
+			{
+				changed = true;
+				sys_log(0, "PLAYERBOT_SHOP: split for the counter pid=%u name=%s vnum=%u singles=%d left=%u",
+						ch->GetPlayerID(), ch->GetName(), item->GetVnum(), singles,
+						(unsigned int)item->GetCount());
+			}
+		}
+		return changed;
+	}
+
 	int FindPlayerBotShopSlot(const bool* grid, int height)
 	{
 		for (int row = 0; row + height <= PLAYERBOT_SHOP_GRID_ROWS; ++row)
@@ -1406,6 +1452,15 @@ namespace
 		// Sorted best first, so the head of the list is the best score there is.
 		std::vector<std::pair<int, WORD> > scored;
 		CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state));
+		// Single units of the goods a player buys singly, split off before the
+		// lines are chosen. Idempotent - the scan runs again on every tick of
+		// the walk to the pitch - and bounded by the cells the shop bundle and
+		// the loot still need.
+		if (SplitPlayerBotStallSingles(ch, scored, dwNow))
+		{
+			scored.clear();
+			CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state));
+		}
 		if (!IsPlayerBotStallWorthOpening(scored.size(),
 				scored.empty() ? 0 : scored[0].first))
 		{

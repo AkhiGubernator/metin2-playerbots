@@ -93,11 +93,11 @@ namespace
 					!IsPlayerBotOwnSkill(ch, skillVnum))
 				return false;
 			// Already at the grade a book stops helping, or already holding the
-			// working stock: somebody else needs it more.
-			if (ch->GetSkillMasterType(skillVnum) >= SKILL_GRAND_MASTER)
-				return false;
+			// working stock: somebody else needs it more. The limit is the
+			// bag's own (GetPlayerBotBookKeepLimit) - a few for a skill not yet
+			// readable, the full stock once it is.
 			return CountPlayerBotSkillBooksAhead(ch, offer, skillVnum) <
-					PLAYERBOT_BOOK_KEEP_PER_SKILL;
+					GetPlayerBotBookKeepLimit(ch, skillVnum);
 		}
 
 		// A horse medal, if this bot still has a horse to raise. Buying one is

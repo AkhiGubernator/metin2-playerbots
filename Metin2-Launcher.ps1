@@ -1,6 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [ValidateSet('Menu', 'Start', 'Stop', 'StartDocker', 'StopAll', 'Check', 'UpdateServer', 'UpdateClient', 'UpdateAll', 'Diagnose', 'Logs', 'SendLogs', 'Configure', 'SetBots', 'ImportDb', 'RepairDb')]
+    [ValidateSet('Menu', 'Start', 'Stop', 'StartDocker', 'StopAll', 'Check', 'UpdateServer', 'UpdateClient', 'UpdateAll', 'Diagnose', 'Logs', 'SendLogs', 'Configure', 'SetBots', 'ImportDb', 'RepairDb', 'DbAccess')]
     [string]$Action = 'Menu',
     [string]$Manifest = '',
     [int]$BotCount = -1,
@@ -579,16 +579,53 @@ function Import-DatabaseAction {
 }
 
 function Get-InstallDbCredentials {
-    $result = [pscustomobject]@{ User = 'metin2'; Password = '' }
+    # Everything a database client needs, straight from .env: the port the
+    # compose file publishes on 127.0.0.1, the game account and root. The root
+    # password is what MariaDB was initialised with, and what Repair-DatabaseAction
+    # puts back on root@'%' when the two have drifted apart.
+    $result = [pscustomobject]@{ User = 'metin2'; Password = ''; RootPassword = ''; Port = '3306'; EnvPath = '' }
     $envPath = Join-Path $serverRoot 'linux-port\docker\.env'
     if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+        $result.EnvPath = $envPath
         $text = [IO.File]::ReadAllText($envPath)
         $userMatch = [Regex]::Match($text, '(?m)^M2_DB_USER=(.+?)\s*$')
         if ($userMatch.Success) { $result.User = $userMatch.Groups[1].Value }
         $passMatch = [Regex]::Match($text, '(?m)^M2_DB_PASSWORD=(.+?)\s*$')
         if ($passMatch.Success) { $result.Password = $passMatch.Groups[1].Value }
+        $rootMatch = [Regex]::Match($text, '(?m)^M2_DB_ROOT_PASSWORD=(.+?)\s*$')
+        if ($rootMatch.Success) { $result.RootPassword = $rootMatch.Groups[1].Value }
+        $portMatch = [Regex]::Match($text, '(?m)^M2_DB_PUBLISH_PORT=(\d+)\s*$')
+        if ($portMatch.Success) { $result.Port = $portMatch.Groups[1].Value }
     }
     return $result
+}
+
+function Show-DatabaseAccessAction {
+    # Where a database client (Navicat, HeidiSQL, DBeaver) connects, and with
+    # which accounts. The passwords are not printed: this output lands in the
+    # launcher log, and the launcher log lands in support bundles that get
+    # posted on the Discord. The GUI shows them in a dialog of its own; here
+    # the .env is opened in Notepad instead.
+    $creds = Get-InstallDbCredentials
+    if (-not $creds.EnvPath) {
+        Write-Host 'Brak pliku linux-port\docker\.env — uruchom najpierw serwer (GRAJ), launcher go utworzy.' -ForegroundColor Yellow
+        return
+    }
+    Write-Host 'Dane do połączenia z bazą (Navicat, HeidiSQL, DBeaver — typ MySQL/MariaDB):' -ForegroundColor Cyan
+    Write-Host '  Host:      127.0.0.1'
+    Write-Host "  Port:      $($creds.Port)"
+    Write-Host '  Konto 1:   root        — pełny dostęp; hasło: M2_DB_ROOT_PASSWORD w pliku .env'
+    Write-Host "  Konto 2:   $($creds.User)      — tylko bazy gry; hasło: M2_DB_PASSWORD w pliku .env"
+    Write-Host "  Plik .env: $($creds.EnvPath)"
+    Write-Host ''
+    Write-Host 'Baza słucha tylko na tym komputerze (127.0.0.1), więc klient musi działać na nim.' -ForegroundColor Gray
+    Write-Host 'Jeśli baza odrzuca hasło z .env („Access denied"), użyj akcji RepairDb (przycisk' -ForegroundColor Gray
+    Write-Host '„NAPRAW DOSTĘP DO BAZY"): ustawia konta root i metin2 na hasła z tego pliku.' -ForegroundColor Gray
+    Write-Host 'Nie wklejaj haseł z .env na Discordzie ani do paczki z logami.' -ForegroundColor Yellow
+    if (-not $Yes) {
+        $answer = Read-Host 'Otworzyć plik .env w Notatniku, żeby skopiować hasła? [t/N]'
+        if ($answer -match '^[tTyY]') { Start-Process notepad.exe -ArgumentList ('"' + $creds.EnvPath + '"') }
+    }
 }
 
 function Repair-DatabaseAction {
@@ -608,12 +645,16 @@ function Repair-DatabaseAction {
         Write-Host 'Brak M2_DB_PASSWORD w linux-port\docker\.env — nie mam czego przywrócić.' -ForegroundColor Red
         return
     }
-    Write-Host "Naprawiam konto techniczne bazy dla instalacji: $target" -ForegroundColor Cyan
-    Write-Host 'To odtwarza wyłącznie użytkownika i uprawnienia bazy. Postacie, przedmioty i boty pozostają bez zmian.' -ForegroundColor Gray
+    Write-Host "Naprawiam konta bazy dla instalacji: $target" -ForegroundColor Cyan
+    Write-Host 'To odtwarza wyłącznie użytkowników i uprawnienia bazy — konto gry i root — z hasłami z pliku .env. Postacie, przedmioty i boty pozostają bez zmian.' -ForegroundColor Gray
+    if (-not $creds.RootPassword) {
+        Write-Host 'Brak M2_DB_ROOT_PASSWORD w .env — konto root zostanie pominięte.' -ForegroundColor Yellow
+    }
     Write-Host 'Zatrzymuję serwer, aby zwolnić bazę...' -ForegroundColor Cyan
     Stop-Server
-    if (Repair-M2GameDbUser -Volume $target -DbUser $creds.User -DbPassword $creds.Password) {
-        Write-Host 'Gotowe. Konto i uprawnienia bazy odtworzone. Kliknij GRAJ, aby uruchomić serwer.' -ForegroundColor Green
+    if (Repair-M2GameDbUser -Volume $target -DbUser $creds.User -DbPassword $creds.Password -RootPassword $creds.RootPassword) {
+        Write-Host 'Gotowe. Konta i uprawnienia bazy odtworzone. Kliknij GRAJ, aby uruchomić serwer.' -ForegroundColor Green
+        Write-Host "Do Navicat: host 127.0.0.1, port $($creds.Port), root albo $($creds.User) — hasła z .env (akcja DbAccess pokaże szczegóły)." -ForegroundColor Gray
     }
     else {
         Write-Host 'Naprawa nie powiodła się. Zbierz logi (ZIP) i zgłoś problem.' -ForegroundColor Red
@@ -686,6 +727,7 @@ function Invoke-Action {
         'SetBots' { Set-BotCountAction }
         'ImportDb' { Import-DatabaseAction }
         'RepairDb' { Repair-DatabaseAction }
+        'DbAccess' { Show-DatabaseAccessAction }
         default { throw "Nieznana akcja: $SelectedAction" }
     }
 }
@@ -707,7 +749,8 @@ function Show-Menu {
         Write-Host ' 12. Konfiguracja launchera'
         Write-Host ' 13. Ustaw liczbę grających botów (0-1500)'
         Write-Host ' 14. Importuj bazę z innej instalacji (wyższe postacie)'
-        Write-Host ' 15. Napraw dostęp do bazy (gdy migrate/serwer nie startuje)'
+        Write-Host ' 15. Napraw dostęp do bazy (gdy migrate/serwer nie startuje albo Navicat odrzuca hasło)'
+        Write-Host ' 16. Dane do połączenia z bazą (Navicat, HeidiSQL)'
         Write-Host '  0. Wyjście'
         Write-Host ''
         $choice = Read-Host 'Wybierz opcję'
@@ -718,6 +761,7 @@ function Show-Menu {
             '13' { 'SetBots' }
             '14' { 'ImportDb' }
             '15' { 'RepairDb' }
+            '16' { 'DbAccess' }
             '0' { return }
             default { '' }
         }

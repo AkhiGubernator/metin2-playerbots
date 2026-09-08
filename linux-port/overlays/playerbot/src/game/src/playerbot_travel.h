@@ -53,8 +53,8 @@ namespace
 		// Only a belt that is nearly out is worth crossing a map for. A bot with
 		// half its potions left has no business walking away from a good spot -
 		// it will fill up anyway the next time something else brings it to town.
-		return (redCount < 150 && ch->GetGold() >= 1200) ||
-				(blueCount < 100 && ch->GetGold() >= 1200);
+		return (redCount < PLAYERBOT_POTION_TRIP_RED && ch->GetGold() >= 1200) ||
+				(blueCount < PLAYERBOT_POTION_TRIP_BLUE && ch->GetGold() >= 1200);
 	}
 
 	bool NeedsPlayerBotEmergencyPotions(LPCHARACTER ch)
@@ -235,17 +235,26 @@ namespace
 		// Dungeon - it is the only hosted map that drops the Frog Tongue, the
 		// Leaf, the Unknown Talisman+ and the Curse Book+, which eighteen refine
 		// recipes want and no counter in this world has ever carried.
+		// A Metin hunter by role never draws the Spider Dungeon: it has no
+		// stones (PlayerBotMapHasMetinStones), and the draw is for life, so
+		// that hunter would have spent its whole career looking for stones on
+		// the one frontier map that spawns none. Sohan takes its share; the
+		// expedition roll in playerbot_planner.h makes the same check for the
+		// half-hour hunters, whose draw stands.
+		TPlayerBotAIStateMap::const_iterator role = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
+		const bool stoneHunter = role != s_mapPlayerBotAIStates.end() &&
+				role->second.bBotRole == BOT_ROLE_METIN_HUNTER;
 		if (level >= PLAYERBOT_HWANG_MIN_LEVEL)
 		{
 			switch (draw % 3U)
 			{
-				case 0: return PLAYERBOT_MAP_SPIDER_V1;
+				case 0: return stoneHunter ? PLAYERBOT_MAP_SOHAN : PLAYERBOT_MAP_SPIDER_V1;
 				case 1: return PLAYERBOT_MAP_SOHAN;
 				default: return PLAYERBOT_MAP_HWANG;
 			}
 		}
 		if (level >= PLAYERBOT_SPIDER_MIN_LEVEL && level >= PLAYERBOT_SOHAN_MIN_LEVEL)
-			return (draw & 1U) != 0 ? PLAYERBOT_MAP_SPIDER_V1 : PLAYERBOT_MAP_SOHAN;
+			return (draw & 1U) != 0 && !stoneHunter ? PLAYERBOT_MAP_SPIDER_V1 : PLAYERBOT_MAP_SOHAN;
 		// Thirty-six to forty-seven: the valley and the desert share them, the
 		// same way thirty to thirty-five already do. See
 		// PLAYERBOT_DESERT_MAX_LEVEL for what was sitting unused.

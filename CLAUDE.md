@@ -840,6 +840,70 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   resets. CPU alone said "A*" once and the fix put every bot's map scan in the
   same second; the line says which plans, and how many milliseconds each.
 
+- **A transport horse comes off for a fight, not for the tick.** The wander
+  pass mounts for a long leg at the bottom of the tick; the manager's
+  "a normal horse is for transport only" dismount sat at the top of the next
+  one and fired for any rider, and both halves clear the route. 1.30.28
+  allowed the horse on wander legs and shipped that loop to everyone:
+  133 000 mount/dismount pairs in twenty-eight minutes across 261 bots, six
+  seconds of every sixty, and not one long leg walked - which is why the
+  crowd raid never reached the Spider Queen. The dismount now needs a target
+  or a victim, the target section climbs down on the tick it picks one
+  (`dismount_for_target`), and the buff and multi-pull passes stay out of a
+  transport saddle themselves (`CHARACTER::UseSkill` refuses every non-horse
+  skill while riding).
+- **A boss is looked for on the whole map.** `IsPlayerBotBossAlive` asked nine
+  sectors round the hub point; the Spider Queen chases what hits her and was
+  found five kilometres from her hub, "down" three minutes later with no
+  BOSS_KILL in the log, standing again eleven kilometres away - and every
+  raid was sent home while she stood. `SECTREE_MAP::for_each` over one
+  snapshot of the map's entities, cached per race for
+  `PLAYERBOT_RAID_BOSS_CHECK_INTERVAL`.
+- **A book is kept for a skill that can read it.** `PLAYERBOT_BOOK_KEEP_PER_SKILL`
+  (twelve) applied to every own skill, readable or not, and the bots at forty
+  still had their skills in the teens: 2636 books in 929 bags, five read in
+  three hours, four sold. `GetPlayerBotBookKeepLimit` gives the twelve only
+  while the skill is at Master, `PLAYERBOT_BOOK_KEEP_UNREADABLE` before that,
+  none at Grand Master; the surplus is counter goods, and merchant scrap only
+  under bag pressure. The junk rule, the stall and the market all ask it.
+- **A stone hunter is never sent where there are no stones.**
+  `PlayerBotMapHasMetinStones` is false for the Spider Dungeon and the three
+  Monkey Dungeons (no `stone.txt`); the frontier draw gives a Metin hunter by
+  role Sohan instead of the Spider Dungeon, and an expedition is not rolled
+  from or towards such a map. "Ide do Lochu Pajakow (cel: Metiny)" was a
+  real status line.
+- **The advanced panel's restart works without Seban's game-side helper.**
+  1.38 of his panel gates every order of its restart console on a
+  `server-settings.ready` heartbeat that only his `integration/` scripts
+  write, and this image does not ship them. `queue_server_settings` lets a
+  plain restart and a rates-only apply through `queue_rate_restart` (the
+  path the game container has always watched) and refuses only a respawn
+  change; an untouched respawn field arrives as `reset` for every map, so
+  "no respawn change" means "nothing but resets". Its update button needs
+  the `update-spool` volume mounted (compose) and the `updater` profile
+  running; the request format (`id`, `version`) is our `m2-updater`'s own.
+
+- **The fast build stages only the files it is told about.**
+  `tools/fast-game-build/build.sh` docker-cps each argument into the builder
+  and nothing else, so `build.sh playerbot_manager.cpp` after editing
+  `playerbot_economy.h` compiles the new manager against the old header - it
+  either fails ("not declared in this scope") or, worse, links cleanly with
+  the header change missing. Three test deploys in one evening measured a
+  horse fix that was only half there. Pass every changed fragment, or all of
+  them: `build.sh $(cd linux-port/docker/game/src/server/game/src && ls playerbot_*)`.
+- **A bot's stacks merge on a clock and split for the counter.** The engine
+  merges two stacks only when a hand drags one onto the other (`MoveItem`:
+  same vnum, every socket equal, two hundred to a stack), and a bot has no
+  hand - partial purchases, partial sales and pick-ups into a full stack all
+  leave a second stack behind. `ManagePlayerBotStackMerge` pours them
+  together every `PLAYERBOT_STACK_MERGE_INTERVAL`, never behind an open
+  counter; `SplitPlayerBotStallSingles` does the opposite for scrolls and
+  soul stones before the lines are chosen, because a private shop sells a
+  line whole. The split is idempotent - the stall scan re-runs on every tick
+  of the walk to the pitch - and keeps `PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS`
+  free for the bundle and the loot. Two stacks that differ in a socket will
+  never merge for a player either; that is the engine, not the bots.
+
 - **The market is a ledger, not a shelf.** `RefreshPlayerBotMarketLedger`
   (`playerbot_market.h`, once a minute from the tick) counts the units on
   every open counter and the bots short of each material with money to buy

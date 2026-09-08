@@ -60,6 +60,22 @@ namespace
 	const DWORD PLAYERBOT_INVENTORY_MAINTENANCE_MIN = 30000;
 	const DWORD PLAYERBOT_INVENTORY_MAINTENANCE_MAX = 60000;
 	const int PLAYERBOT_POTION_HP_PERCENT = 65;
+	// Below this many the belt is worth a trip, wherever the bot is.
+	//
+	// It was 150 red and 100 blue, on the argument that a bot with half its
+	// potions has no business leaving a good spot - true, and also the reason
+	// the population looked like this, measured over every bot of forty and up:
+	// red potions at a MEDIAN of 32, 502 of 812 under the trigger, 473 under
+	// fifty, against 254 holding the six hundred they set out with. A bot on
+	// the frontier is a portal and a map from the merchant, and the travel
+	// pass yields to fights on the way; a trigger of 150 fired with the belt
+	// already at seven by the time it arrived - "potki 7/0" over a level 47
+	// walking to the weapon merchant, photographed. Twice the distance, then,
+	// so the walk starts while there is still something to fight with.
+	const size_t PLAYERBOT_POTION_TRIP_RED = 300;
+	const size_t PLAYERBOT_POTION_TRIP_BLUE = 200;
+	// And the big potions from here on. See ManagePlayerBotMiscMerchant.
+	const BYTE PLAYERBOT_BIG_POTION_MIN_LEVEL = 40;
 	const int PLAYERBOT_POTION_SP_PERCENT = 30;
 	const int PLAYERBOT_RECOVERY_HP_PERCENT = 75;
 	const int PLAYERBOT_RECOVERY_INITIAL_HP_PERCENT = 20;
@@ -173,10 +189,30 @@ namespace
 	// to the merchant. Before this a bot kept every book for a skill it could
 	// not read for weeks, and the bag filled with them.
 	const int PLAYERBOT_BOOK_KEEP_PER_SKILL = 12;
+	// And for a skill it cannot read yet - not at Master - only a few against
+	// the day it gets there. Twelve of every own skill, readable or not, was
+	// 2636 books in 929 bags on a world where the bots at forty still had
+	// their skills in the teens: the books sat for weeks and the counters
+	// carried four of them in two hours. A skill already at Grand Master
+	// keeps none; a book cannot take it further.
+	const int PLAYERBOT_BOOK_KEEP_UNREADABLE = 3;
 	// A bag this short of cells is under pressure: what was worth keeping on
 	// the chance of a key or a buyer goes to the merchant, so the chests and
 	// the loot still have somewhere to land.
 	const int PLAYERBOT_BAG_PRESSURE_FREE_CELLS = 8;
+	// Two stacks of one thing in two cells is what a partial purchase, a
+	// partial sale and a pick-up into a full stack all leave behind, and the
+	// engine only merges when a hand drags one onto the other - which a bot
+	// has none of. Every five minutes a bot pours its split stacks together
+	// (the engine's own rule: same vnum, same sockets, two hundred to a
+	// stack); at a counter it does the opposite, and puts a few single units
+	// of the goods a player buys one at a time - scrolls, soul stones - on
+	// lines of their own, because a private shop sells a line whole.
+	const DWORD PLAYERBOT_STACK_MERGE_INTERVAL = 300000;
+	const int PLAYERBOT_STACK_MERGES_PER_PASS = 4;
+	const int PLAYERBOT_STACK_MAX = 200;
+	const int PLAYERBOT_SHOP_SINGLE_UNITS = 4;
+	const int PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS = 3;
 	const DWORD PLAYERBOT_SOUL_STONE_CHECK_INTERVAL = 10000;
 	// What UseItemEx leaves in the socket when the 30% roll fails. Defined as a
 	// file-local const in char_item.cpp, so it is repeated here.
@@ -713,6 +749,15 @@ namespace
 	const DWORD PLAYERBOT_PRIOR_PEARL_WHITE = 2000000;
 	const DWORD PLAYERBOT_PRIOR_PEARL_BLUE = 3000000;
 	const DWORD PLAYERBOT_PRIOR_PEARL_RED = 6000000;
+	// And the shell the pearls come out of. It had no prior at all, so it
+	// asked the merchant's three thousand times three - "malze wystawione po
+	// 7k" - beside pearls asking millions, when what a shell is is a bet on
+	// those pearls: half a Stone Piece, a twentieth a white pearl, a twentieth
+	// a blue, a hundredth a blood one (char_item.cpp, English locale table).
+	// Reported with "should be a hundred thousand at least"; a hundred
+	// thousand is about a tenth of the expected pearl value inside and leaves
+	// the buyer the better side of the bet, which is what makes it sell.
+	const DWORD PLAYERBOT_PRIOR_SHELLFISH = 100000;
 	// A horse medal, and everything else the merchant will not buy.
 	//
 	// item_proto gives 50050 a shop price of zero, so GetPlayerBotNpcSellUnitPrice
@@ -2000,6 +2045,22 @@ namespace
 	// province: past this many already on him the hub is scored like any other
 	// ground, so the rest of the band goes on hunting instead of queueing.
 	const int PLAYERBOT_RAID_CROWD = 12;
+	// A raid of twelve was a ceiling, not a floor. On a map carrying forty
+	// bots it left the Spider Queen - level 60, 193 408 hit points - with six
+	// of them (a raid nobody called takes half the crowd), while the other
+	// thirty-four hunted soldiers within sight of her. "If there are that many
+	// of them, all of them should go for her; weak alone, together they can
+	// take her." So the room on a boss hub scales with the map: at least the
+	// old twelve, or this share of every bot on the map, whichever is more.
+	const int PLAYERBOT_RAID_MAP_SHARE_CALLED_PERCENT = 60;
+	const int PLAYERBOT_RAID_MAP_SHARE_UNCALLED_PERCENT = 35;
+	// And once that many have set out, a bot in reach of the boss puts her
+	// above the trash round her. A level-60 boss against a level-48 bot sits
+	// at delta twelve, the lowest scoring bucket there is - ten thousand
+	// against a soldier's three hundred thousand - so a raider that arrived
+	// fought soldiers beside her until she killed it. See the target scorer.
+	const int PLAYERBOT_RAID_SWARM_MIN = 3;
+	const int PLAYERBOT_RAID_SWARM_TARGET_BONUS = 1500000;
 	// How long a guild's call stands. Long enough to walk across a frontier
 	// map, short enough that a boss killed five minutes ago stops summoning
 	// anybody.
@@ -2267,6 +2328,7 @@ namespace
 			dwMultiPullTargetVID(0),
 			dwNextShopCheckTime(0),
 			dwNextSkillResetTime(0),
+			dwNextStackMergeTime(0),
 			dwEmergencyScavengeUntil(0),
 			dwTownWaitUntil(0),
 			dwStoneFightStartTime(0),
@@ -2512,6 +2574,7 @@ namespace
 		DWORD dwNextShopCheckTime;
 		// When this bot may next pay the old woman to forget its skills.
 		DWORD dwNextSkillResetTime;
+		DWORD dwNextStackMergeTime;
 		DWORD dwEmergencyScavengeUntil;
 		DWORD dwTownWaitUntil;
 		DWORD dwStoneFightStartTime;
@@ -2755,6 +2818,25 @@ namespace
 	// rather than in the manager because the subsystems read it too - refining
 	// asks a bot for its personality long before the tick reaches it.
 	TPlayerBotAIStateMap s_mapPlayerBotAIStates;
+	// How many bots stand on each map, rebuilt by the tick before it visits
+	// them. The raid cap is the first thing to ask; a hub chooser cannot walk
+	// the character manager for the answer on every decision.
+	std::map<long, int> s_mapPlayerBotsOnMap;
+	int GetPlayerBotsOnMap(long lMapIndex)
+	{
+		std::map<long, int>::const_iterator it = s_mapPlayerBotsOnMap.find(lMapIndex);
+		return it == s_mapPlayerBotsOnMap.end() ? 0 : it->second;
+	}
+
+	// Whether a hosted map spawns Metin stones at all. The three Monkey
+	// Dungeons and the Spider Dungeon ship no stone.txt; every other hosted
+	// map carries between six and thirty-seven stone spawns. A bot sent out
+	// for stones must not be sent here - "Ide do Lochu Pajakow (cel: Metiny)"
+	// was a real status line.
+	bool PlayerBotMapHasMetinStones(long mapIndex)
+	{
+		return mapIndex != PLAYERBOT_MAP_SPIDER_V1 && !IsPlayerBotMonkeyMap(mapIndex);
+	}
 
 	// Hunting stones right now: by role for life, or by expedition for half an
 	// hour. Every rule that used to ask for the role asks this instead.

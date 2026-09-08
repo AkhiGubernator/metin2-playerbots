@@ -714,6 +714,11 @@ services:
     volumes:
       - game-var:/opt/metin2/var:ro
       - rates-spool:/opt/m2spool
+      # The updater's spool, the same one the classic panel and the updater
+      # service share: 1.38 of this panel carries an update button that
+      # writes a request there and reads the updater's status back. Without
+      # the mount the button can only say "the updater is not running".
+      - update-spool:/opt/m2update
     networks: [backend]
 
   seban-collector:

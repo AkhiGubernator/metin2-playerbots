@@ -17,6 +17,54 @@ every version here.
 
 ---
 
+## 1.30.24 — 2026-09-08
+
+### Naprawione
+
+- **Wędkarze stali w miejscu zamiast łowić — i był to nasz błąd z 1.30.22.**
+  Żeby trzymali metr odstępu, promień „dotarłem" został tam zawężony z dwustu
+  jednostek do dwudziestu pięciu. Tyle że marsz zatrzymuje się przy stu — to
+  `PLAYERBOT_NAV_ARRIVAL_DISTANCE`, próg, przy którym nawigacja uznaje cel za
+  osiągnięty i przestaje iść. Między dwudziestoma pięcioma a stoma powstała
+  martwa strefa: nawigacja melduje sukces i staje, pas wędkowania prosi o
+  kolejny krok, nic się nie rusza, licznik zacięć pokazuje zero i w żadnym logu
+  nie ma śladu porażki. Dwa boty złapane na żywo stały siedemdziesiąt jeden i
+  siedemdziesiąt sześć jednostek od celu, którego żaden nigdy nie osiągnął.
+
+  Promień wrócił do stu — nigdy poniżej progu, przy którym marsz staje — a sama
+  zasada jest teraz **sprawdzana przy kompilacji**, nie zapisana w komentarzu:
+
+      static_assert(PLAYERBOT_FISHING_ARRIVE >= PLAYERBOT_NAV_ARRIVAL_DISTANCE,
+              "an arrival radius below the navigation's own strands the bot short of it");
+
+  Zmierzone po wdrożeniu: wędkarzy nad wodą 43 → **53**, z tego łowiących
+  11 → **53**. Nikt już nie chodzi do Rybaka w kółko ani nie szuka wędki.
+  Odstępy na brzegu: najmniejszy **60** jednostek zamiast dwunastu, średnio
+  **198** do najbliższego sąsiada.
+
+  Trzeba powiedzieć wprost, czego to nie daje: **metr odstępu nie jest
+  gwarantowany.** Przy stanowiskach co sto pięćdziesiąt jednostek i stu
+  jednostkach tolerancji na każdym końcu dwaj sąsiedzi mogą się zejść bliżej i
+  czasem schodzą. Żeby zagwarantować metr, stanowiska musiałyby stać co trzysta,
+  a wtedy na tym odcinku rzeki zmieści się około czterdziestu przy pięćdziesięciu
+  sześciu wędkarzach — więc na razie zostaje ta ziarnistość, opisana zamiast
+  obiecywanej.
+
+  Przy okazji sprawdzone: drugi i ostatni promień przybycia w kodzie,
+  `PLAYERBOT_MARKET_ARRIVE`, wynosi 450 i leży bezpiecznie powyżej progu.
+
+- **Panel podstawowy zaniżał liczbę botów.** Zgłoszone z Discorda ze zrzutami obu
+  paneli obok siebie: zaawansowany pokazywał **999 botów w grze**, podstawowy
+  **399**. Boty były — mylił się licznik. Odczyt migawki stanu miał `int()`
+  wewnątrz `try`, które obejmowało **całą pętlę po pliku**, więc jedna nieczytelna
+  linia — wystarczy rozdarty odczyt w chwili, gdy rdzeń przepisuje plik —
+  wyrzucała wszystkie pozostałe wiersze tego pliku. Stąd dokładnie taka liczba:
+  parsowanie urwane w połowie. Teraz zła linia kosztuje jedną linię, a panel
+  zapisuje w swoim logu, ile wierszy pominął. Sprawdzone na próbie: plik z 999
+  wierszami i jednym uszkodzonym daje 998 odczytanych i jeden pominięty.
+
+---
+
 ## 1.30.23 — 2026-09-08
 
 ### Naprawione

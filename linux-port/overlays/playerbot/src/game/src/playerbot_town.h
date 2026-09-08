@@ -958,6 +958,12 @@ namespace
 			const BYTE type = item->GetType();
 			if (type == ITEM_WEAPON || type == ITEM_ARMOR)
 			{
+				// Something the bot ought to be wearing is not a spare, whatever
+				// the slot says. This pass runs near the top of the tick and the
+				// equipment pass near the bottom, so without this line the
+				// counter always won the race for a gift.
+				if (IsPlayerBotWearableUpgrade(ch, item, cell))
+					continue;
 				const int wearCell = item->FindEquipCell(ch);
 				if (wearCell < 0 || ch->GetWear((BYTE)wearCell) == NULL)
 					continue;

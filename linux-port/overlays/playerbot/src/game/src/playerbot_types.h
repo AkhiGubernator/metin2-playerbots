@@ -1280,11 +1280,45 @@ namespace
 	// along Y and all face +X. This band -- x 67250..67450, y 156900..157350 --
 	// was read out of map_b1's server_attr: every cell in it is standable, and
 	// open water starts a little east of it (tools/decode_server_attr.py).
-	const long PLAYERBOT_FISHING_BANK_X = 67250;
-	const long PLAYERBOT_FISHING_BANK_Y = 156900;
+	const long PLAYERBOT_FISHING_BANK_X = 66450;
+	const long PLAYERBOT_FISHING_BANK_Y = 156300;
+	// One angler to a stand, a metre apart, on a grid read out of map_b1's
+	// server_attr: ninety cells, six columns by fifteen rows at a hundred and
+	// fifty world units from (66450, 156300), every one of them standable. The
+	// live angler population is about fifty-five, so there are stands to spare.
+	//
+	// The spacing is a hundred and fifty rather than a hundred because the
+	// arrival radius is what actually decides how close two anglers end up: each
+	// stops within PLAYERBOT_FISHING_ARRIVE of its own stand, so the guaranteed
+	// gap is the spacing less twice that. At a hundred and fifty against
+	// twenty-five, two anglers are always at least a metre apart - which is what
+	// was asked for - and usually a metre and a half. A first attempt at a
+	// hundred and fifty units of arrival radius measured thirty-four units
+	// between the closest pair.
+	//
+	// It runs inland rather than along the water's edge: at this spacing a
+	// fourth column already stands in the river. Six rows back from the bank is
+	// a beach with fifty-five people on it, which is what this is.
+	//
+	// It used to be fifty slots at fifty units - half a metre - on a patch two
+	// metres by four, and the Discord photographed the result: forty name plates
+	// in a heap with one bot visible underneath them.
+	const int PLAYERBOT_FISHING_STAND_SPACING = 150;
+	const int PLAYERBOT_FISHING_STAND_COLUMNS = 6;
+	const int PLAYERBOT_FISHING_STAND_ROWS = 15;
+	// A stand nobody has stood on for this long is free again. A hash alone
+	// cannot keep anglers apart - fifty of them over eighty-eight slots collide
+	// long before they fill it - so a stand is claimed, and a claim has to
+	// expire or a bot that logged out mid-cast would hold its place for ever.
+	const DWORD PLAYERBOT_FISHING_STAND_CLAIM = 120000;
 	// A point well inside the river, used only to turn the bot to face the water.
 	const long PLAYERBOT_FISHING_WATER_X = 68000;
-	const int PLAYERBOT_FISHING_ARRIVE = 200;
+	// A quarter of a metre. This is half of what keeps two anglers apart - see
+	// the stand grid above - and the stand itself is a cell server_attr says is
+	// standable, so there is nothing to be generous about. It was two hundred,
+	// which let a bot stop on its neighbour's place and undo the spacing
+	// entirely.
+	const int PLAYERBOT_FISHING_ARRIVE = 25;
 	// Independently planned route failures before the bank is written off. Six
 	// matches the town-service rescue; anything larger is indistinguishable from
 	// never giving up at all.

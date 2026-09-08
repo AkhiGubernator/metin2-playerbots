@@ -1026,9 +1026,13 @@ namespace
 			{
 				const DWORD routeSeed = ch->GetPlayerID() ^
 						((DWORD)state.bStuckCounter * 0x9e3779b9U);
+				// A bot that has been turned away this many times stops queueing
+				// behind the per-tick count. Nothing else about the request
+				// changes, and the tick's microsecond budget still applies.
 				const EPlayerBotNavPlanResult planResult = navigation.FindRoute(
 						ch->GetX(), ch->GetY(), destX, destY, routeSeed, dwNow,
-						targetSnapRadius, flexibleTargetSnap, state.vecRoute);
+						targetSnapRadius, flexibleTargetSnap, state.vecRoute,
+						state.bNavDeferredCount >= PLAYERBOT_NAV_STARVED_ATTEMPTS);
 				if (planResult == PLAYERBOT_NAV_PLAN_DEFERRED)
 				{
 					if (state.bNavDeferredCount < 255)

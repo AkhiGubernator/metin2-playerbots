@@ -216,14 +216,79 @@ namespace
 		return PlayerBotWeightedRoll(roll, chance, PLAYERBOT_WEIGHT_FISHING);
 	}
 
-	// Anglers spread out along the shoreline rather than stacking on one tile.
-	// The band is walked along Y because that is the way this stretch of bank
-	// runs; every resulting point is inside the verified standable rectangle.
-	void GetPlayerBotFishingStand(DWORD playerID, long& standX, long& standY)
+	// Which angler stands where. A stand is claimed for the session and released
+	// with it, because a hash cannot promise what the Discord asked for: fifty
+	// anglers drawing from fifty slots collide by the birthday problem long
+	// before they fill them, and what that looks like in game is a heap.
+	//
+	// The engine constrains none of this. CHARACTER::fishing() tests only the
+	// cell the angler is standing on; it computes a point four hundred units in
+	// front of the character and then never reads it. So the bank is chosen to
+	// look right - standable ground with the river in front - and the spacing is
+	// a metre because that is what was asked for.
+	struct TPlayerBotFishingStand
 	{
-		const DWORD hash = PlayerBotNavHash(playerID ^ 0x42414e4bU);
-		standX = PLAYERBOT_FISHING_BANK_X + (long)(hash % 5U) * 50;
-		standY = PLAYERBOT_FISHING_BANK_Y + (long)((hash / 5U) % 10U) * 50;
+		DWORD dwPid;
+		DWORD dwTouched;
+	};
+	std::map<int, TPlayerBotFishingStand> s_mapPlayerBotFishingStands;
+
+	void ReleasePlayerBotFishingStand(DWORD playerID)
+	{
+		for (std::map<int, TPlayerBotFishingStand>::iterator it =
+				s_mapPlayerBotFishingStands.begin();
+				it != s_mapPlayerBotFishingStands.end(); ++it)
+		{
+			if (it->second.dwPid == playerID)
+			{
+				s_mapPlayerBotFishingStands.erase(it);
+				return;
+			}
+		}
+	}
+
+	void GetPlayerBotFishingStand(DWORD playerID, DWORD dwNow, long& standX, long& standY)
+	{
+		const int slots = PLAYERBOT_FISHING_STAND_COLUMNS * PLAYERBOT_FISHING_STAND_ROWS;
+		int mine = -1;
+		for (std::map<int, TPlayerBotFishingStand>::iterator it =
+				s_mapPlayerBotFishingStands.begin();
+				it != s_mapPlayerBotFishingStands.end(); ++it)
+		{
+			if (it->second.dwPid == playerID)
+			{
+				mine = it->first;
+				it->second.dwTouched = dwNow;
+				break;
+			}
+		}
+		if (mine < 0)
+		{
+			// From its own place in the row, then along it: the same bot comes
+			// back to the same stand session after session while the bank is
+			// empty, and takes the next free one when it is not.
+			const int start = (int)(PlayerBotNavHash(playerID ^ 0x42414e4bU) % (DWORD)slots);
+			for (int step = 0; step < slots && mine < 0; ++step)
+			{
+				const int slot = (start + step) % slots;
+				std::map<int, TPlayerBotFishingStand>::const_iterator it =
+						s_mapPlayerBotFishingStands.find(slot);
+				if (it == s_mapPlayerBotFishingStands.end() ||
+						dwNow - it->second.dwTouched >= PLAYERBOT_FISHING_STAND_CLAIM)
+					mine = slot;
+			}
+			// More anglers than stands one day: share a stand rather than refuse
+			// to fish.
+			if (mine < 0)
+				mine = start;
+			TPlayerBotFishingStand& claim = s_mapPlayerBotFishingStands[mine];
+			claim.dwPid = playerID;
+			claim.dwTouched = dwNow;
+		}
+		standX = PLAYERBOT_FISHING_BANK_X +
+				(long)(mine % PLAYERBOT_FISHING_STAND_COLUMNS) * PLAYERBOT_FISHING_STAND_SPACING;
+		standY = PLAYERBOT_FISHING_BANK_Y +
+				(long)(mine / PLAYERBOT_FISHING_STAND_COLUMNS) * PLAYERBOT_FISHING_STAND_SPACING;
 	}
 
 	bool IsPlayerBotHoldingRod(LPCHARACTER ch)
@@ -526,6 +591,8 @@ namespace
 		if (ch && ch->m_pkFishingEvent)
 			ch->fishing_take();
 
+		if (ch)
+			ReleasePlayerBotFishingStand(ch->GetPlayerID());
 		state.bFishingSession = false;
 		state.bIsFishing = false;
 		state.dwFishingCastTime = 0;
@@ -699,7 +766,7 @@ namespace
 		}
 		else
 		{
-			GetPlayerBotFishingStand(ch->GetPlayerID(), destX, destY);
+			GetPlayerBotFishingStand(ch->GetPlayerID(), dwNow, destX, destY);
 			// The bank spots are hand-picked world coordinates. server_attr is the
 			// only authority on whether one is standable, and the town services
 			// already learned that a hand-picked point can be a cell the navigation

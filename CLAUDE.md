@@ -372,6 +372,51 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   gives a full step at elapsed zero, and an accepted step resets the clock, so
   forty counters opening together moved the shared anchor forty times. Whole
   intervals only.
+- **A plan budget counted in plans starves the plans that matter.** Measured
+  over a minute at 839 bots: 7440 route plans, of which 7086 were sub-64-cell
+  hops to the next monster costing 41 milliseconds between them, while 148 long
+  ones cost eleven of the twelve seconds. Every one of them charged the same
+  slot against `PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK`, so the hops filled the
+  tick and the crossings - the walk to a portal, the trip to a merchant - were
+  refused: half of all requests deferred and one waiting thirteen minutes.
+  `PLAYERBOT_NAV_PLAN_COST` charges by distance bucket and a hop is free;
+  `PLAYERBOT_NAV_STARVED_ATTEMPTS` lets a request that has been turned away that
+  many times past the count, still bounded by the microsecond budget and the
+  far-plan minute. Deferrals fell to 264 a minute and starvation to none.
+- **A pass that yields the tick must not leave something for the next pass to
+  claim.** `MovePlayerBotToWorldPortal` returns false after
+  `PLAYERBOT_PORTAL_WALK_TIMEOUT` so the bot falls through to wandering and
+  plans afresh from somewhere else. The manager's "a transport horse must not
+  fight" dismount took that tick instead - it dismounts and `continue`s - so the
+  bot spent its escape getting off the horse and remounted on the next travel
+  pass. Forty-six bots at the Sohan exit, mounting and dismounting every twenty
+  seconds without a step. The walk dismounts itself before yielding.
+- **A snapped goal must stay inside the radius that tests arrival - the portal
+  walk too.** It asked for a 24-cell snap (1200 world units) against
+  `PLAYERBOT_PORTAL_SWITCH_DISTANCE` of 200, so a route could end a kilometre
+  short and the transition never fired. `PLAYERBOT_PORTAL_SNAP_CELLS` derives
+  the snap from the switch distance instead. `MovePlayerBotTownLeg` sprang this
+  first; anything that walks to a point and then tests a small radius around it
+  is the same shape.
+- **The shop pass judges an item before the equipment pass does.**
+  `ManagePlayerBotPrivateShop` runs near the top of the tick and
+  `ManagePlayerBotEquipment` near the bottom, and the stall treated any weapon
+  or armour whose slot was already filled as a spare - which a gift is not: it
+  beats a full slot rather than filling an empty one, and a spare at +6 or
+  better is the highest-scoring thing a counter can carry.
+  `IsPlayerBotWearableUpgrade` asks the engine's own `CanEquipNow` and the
+  equipment pass's own score, so the race stops mattering. The line is "can wear
+  it now": a level-30 weapon in a level-5 bag stays goods.
+- **A fast build that ships only the core ships a different server.**
+  `tools/fast-game-build` swapped the compiled binary into whatever the last
+  full build left behind, so the test server ran month-old container scripts
+  without saying so: an `m2-render-config` from before the Spider Dungeon and
+  the hard Monkey Dungeon moved onto game1, a `MAP_ALLOW` without them, and
+  every bot that reached either gate refused by `TransitionPlayerBotMap` ten
+  thousand times a minute - one throttled log line a minute with the real count
+  hidden in its `[+N more]`. A day of measurements concluded those maps were
+  empty for reasons that were never true. The fast build copies
+  `linux-port/docker/game/bin/` now, exactly as the real image does.
 - **A price of one yang is permanent.** `GetPlayerBotNpcSellUnitPrice` returns
   zero for anything `item_proto` prices at zero - the horse medal 50050, every
   chest and casket - so the asking price came out `max(1, 0 * markup)`, and the

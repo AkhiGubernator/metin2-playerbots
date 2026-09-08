@@ -17,6 +17,66 @@ every version here.
 
 ---
 
+## 1.30.18 — 2026-09-08
+
+### Naprawione
+
+- **Niedokończona sprawa w mieście przestaje trafiać do przypadkowej walki.**
+  To była pętla opisana w audycie z 8 września i widać ją w logu jak na dłoni:
+  bot potrzebuje handlarza → trasa zostaje odroczona przez budżet planowania →
+  po dziewięćdziesięciu sekundach bezruchu budzi go watchdog → wizyta zostaje
+  skasowana → sekundę później bot rzuca umiejętność w pierwszego moba obok, a
+  potrzeba, po którą przyszedł, dalej jest niezaspokojona. I tak w kółko, z
+  zapasami topniejącymi po drodze.
+  Watchdog nadal robi to, do czego służy — kasuje martwą trasę i odblokowuje
+  postać — ale **sprawa zostaje przy bocie**. Dostaje własny termin ponowienia
+  (15–40 s), a do tego czasu bot jest klientem, nie myśliwym: zwykłe walki są
+  dla niego zamknięte, obrona nie. Sprawa, której nie da się załatwić przez
+  piętnaście minut, jest jawnie porzucana z powodem w logu, żeby nic nie mogło
+  utknąć na zawsze.
+- **Bokjung przestaje być expowiskiem dla tych, którzy z niego wyrośli.**
+  Filtr opłacalności odcinał skrajnie słabe cele, ale nie zabraniał grindu na
+  mapie, z której bot już wyrósł — a to dwie różne reguły i audyt słusznie się
+  tego czepił. Powyżej progu kohorty (35) Bokjung jest miejscem, gdzie można
+  kupować, przechodzić, handlować i **dokończyć konkretne zadanie** — z nazwanym
+  potworem albo z materiałem, którego naprawdę brakuje i który realnie z niego
+  wypada. Samo „mam ambicję Metiny" albo „mam ambicję konia" nie jest zgodą na
+  polowanie.
+  Reguła obowiązuje wszystkie drogi do walki, nie tylko wybór nowego celu:
+  wspólny cel drużyny, cel już trzymany, przeciwnik zaangażowany, podciąganie
+  grup i lur łucznika. Ratowanie życia jest poza nią — bot bije się z tym, co
+  bije jego, gdziekolwiek stoi.
+- **Zamiar wyjazdu przeżywa wizytę i watchdog.** Bot, który wrócił do miasta po
+  zapasy, pamięta teraz, dokąd zmierzał. Zakupy odraczają wyjazd, ale go nie
+  kasują, a po załatwieniu sprawy nie trzeba czekać na kolejne losowanie
+  ambicji. W logu widać to jako `PLAYERBOT_DEPARTURE: held`.
+
+### Dla ciekawych
+
+- **Odroczenie trasy mówi wreszcie, które ograniczenie ją wstrzymało.** Trzy
+  różne budżety — plany na takt, czas planowania na takt i dalekie trasy na
+  minutę — zwracały jedną i tę samą odpowiedź, więc „odroczono" bywało czytane
+  jako „nie ma drogi". Log podaje teraz powód i to, jak długo bot czeka — i od
+  razu się to opłaciło: przez 26 minut **108 odroczających to limit planów na
+  takt, 10 to budżet czasu, a limit dalekich tras nie zatrzymał ani jednej**.
+  Audyt ostrzegał, żeby nie zakładać, że chodzi o dalekie trasy, i miał rację.
+- **Każdy bot 40+ w Bokjung ma odczytywalny powód i następny krok.** Rdzeń pisze
+  `PLAYERBOT_M2: why` dla rotacyjnej garstki botów na minutę: poziom, cel, czy
+  wolno mu tu polować, stan sprawy i jej wiek, mapa docelowa wyjazdu, stan
+  mikstur, aktualny cel walki wraz z powodem, w którym miejscu jest trasa i jak
+  długo czeka na planowanie. To odpowiedź na zarzut audytu, że po samym opisie
+  akcji nie da się orzec, czy bot działa sensownie.
+  Zmierzone przez 26 minut po wdrożeniu: 2870 odmów walki z powodu
+  reguły mapy, 422 zapamiętanych zamiarów wyjazdu, 9 (z czego 4 zakonczone zakupem, zero porzuconych)
+  spraw przejętych przez naprawę po watchdogu.
+- Czego **nie** zrobiłem z tego audytu: sprawiedliwej kolejki planowania tras z
+  wiekiem zlecenia i rezerwacją części budżetu dla usług krytycznych. To
+  przebudowa gorącej ścieżki wydajnościowej i chcę ją mierzyć osobno, a nie
+  doklejać do wydania naprawiającego pętlę usług. Odroczenia są na razie tylko
+  opisane w logu.
+
+---
+
 ## 1.30.17 — 2026-09-08
 
 ### Zmienione

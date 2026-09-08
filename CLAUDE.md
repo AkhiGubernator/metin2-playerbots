@@ -419,6 +419,39 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   refusal found the cause on our own server in two minutes. Any stack bought
   from an NPC wants the same shape: take what the purse reaches, re-price the
   smaller count and re-check it, and let a single item stay all-or-nothing.
+- **`AutoGiveItem` never refuses a full bag: it drops the item at the
+  character's feet and returns it as a success.** `char_item.cpp` -
+  `AddToGround` + `StartDestroyEvent` on the no-cell branch. Every purchase
+  therefore has to test `GetEmptyInventory` *before* paying, or the bot pays,
+  the item lies on the grass, and the bot buys again on the next pass. The
+  arrow purchase in `playerbot_gear.h` learned this and says so; the tackle
+  purchase was written a day later without it and produced the Discord
+  photograph of a herd of summoned horses round the Rybak standing in
+  "Wedka+1". A stackable that already has a stack merges and needs no cell;
+  potions are capped at free cells * 200 plus the partial stack's headroom.
+- **"Carrying" a specimen has to mean carrying enough.** The Biologist's
+  first pass took any bot holding one of a row's items to that row, ahead of
+  every other rule, so a single Gango Root from a Joan fishing trip pinned a
+  level-40 bot to the level-15 row for good: outgrown, so never hunted, so
+  never five, so never handed in. 38 bots of 26+ held roots, 36 of them one
+  to four. An outgrown row is taken only when the bag holds the whole hand-in.
+  The classic panel's "Etap Biologa" labelled the *first incomplete* row with
+  no reference to the core's choice, which is what "the panel says one thing
+  and the ranking another" was; it applies the same rule now, reading the bag.
+  A panel change is only live after `docker compose up --build panel` - a
+  recreate runs the old image, and the first verification did.
+- **The level-30 weapon was a thing a bot got young or never.** M3 stopped at
+  24 and the Bestials at 35; past that the only route was a counter the bot
+  never walked to, because the market trip refuses anything further than
+  `PLAYERBOT_MARKET_TRIP_RANGE` from a pitch and a frontier bot is a map away.
+  205 of 393 rich bots of 36+ had none. `PLAYERBOT_LEVEL30_WEAPON_HUNT_MAX_LEVEL`
+  carries the farm to 40 (the kill-drop curve is still 70% ten levels over
+  the mob) and the frontier hands a weaponless bot back to M2
+  (`frontier_weapon_to_m2`), where the existing M3 branch takes over. Six
+  weapons found in the first three minutes. Pricing: an unrefined one fell
+  into the "under +4" scrap branch at merchant x2; `PLAYERBOT_PRIOR_LEVEL30_WEAPON`
+  floors it at 250 000 and a damage line in the upper half of what rolls
+  (average >= 24, skill >= 15) adds `PLAYERBOT_SHOP_BONUS_PRIZE_LINE`.
 - **A guard belongs on the path that does the thing, not beside it.**
   The build-context check went into `start-server.ps1` and the report came back
   unchanged, because `Metin2-Launcher.ps1` calls that script with

@@ -17,6 +17,79 @@ every version here.
 
 ---
 
+## 1.30.29 — 2026-09-08
+
+### Naprawione
+
+- **Wędki leżały na ziemi, a wokół stało stado koni.** Zgłoszone z Discorda ze
+  zdjęciem i słusznie: to był nasz błąd z 1.30.26. Silnik przy pełnym plecaku
+  **kładzie kupiony przedmiot na ziemi i zgłasza sukces** — `AutoGiveItem` nie
+  zwraca błędu, tylko `AddToGround`. Nowy zakup wędki tego nie sprawdzał: bot
+  płacił, wędka lądowała na trawie, bot nadal jej nie miał i kupował następną.
+  Konie wokół to towarzysze wezwani przy zsiadaniu. Kod strzał znał tę pułapkę od
+  dawna („rynek wyłożony drewnianymi strzałami") — zakup wędki powstał dzień
+  później bez tej wiedzy. Sprzęt wędkarski, drewno na ognisko i mikstury sprawdzają
+  teraz miejsce w plecaku **przed** zapłatą; mikstury kupowane są najwyżej do
+  pojemności, a nie do zamierzonej liczby.
+
+- **Bot na czterdziestym poziomie „zbierał Korzeń Gango 0/5" do końca świata.**
+  Zgłoszone czterokrotnie z Discorda i jako pytanie od operatora. Dwa osobne błędy,
+  oba potwierdzone liczbowo.
+
+  W rdzeniu: przejście „noszę okazy" wygrywało z każdym innym i liczyło **jeden**
+  okaz. Bot na czterdziestce z jednym Korzeniem Gango z wyprawy wędkarskiej do Joan
+  był przypięty do wiersza z piętnastego poziomu na zawsze: wiersz przerośnięty,
+  więc nie poluje na tego potwora, więc nigdy nie zbierze pięciu, więc nigdy nie
+  odda. Zmierzone: **38 botów na 26+ trzyma korzenie, 36 z nich po jednym do
+  czterech sztuk.** Przerośnięty wiersz liczy się teraz tylko wtedy, gdy plecak
+  trzyma już całe oddanie; wiersz własnego pasma działa jak dotąd.
+
+  W panelu klasycznym: „Etap Biologa" pokazywał **pierwszy nieukończony** wiersz,
+  bez związku z tym, co rdzeń naprawdę robi — stąd „w panelu bota jedno, w rankingu
+  drugie". Panel liczy teraz tą samą regułą co rdzeń, z odczytem plecaka.
+  Sprawdzone na trzech przypiętych botach: dwa na 33 i 34 poziomie pokazują Grzyb
+  Tue, jeden na 49 — Ząb Orka, czyli najwyższy otwarty wiersz, gdy wszystkie są
+  przerośnięte.
+
+- **Przycisk „ZAINSTALUJ / PRZYGOTUJ" w launcherze mówił „Paczka jest gotowa"
+  paczce bez źródeł gry.** Zgłoszone z Discorda po 1.30.27: „ponowne uruchomienie
+  instalatora przez Install in GUI nie odtworzyło źródeł". Nie mogło — ten
+  przycisk **nigdy nie był instalatorem**. Sprawdza Dockera, tworzy skrót na
+  pulpicie i zakłada, że źródła już są na dysku; nie ma w nim ani jednego
+  odwołania do `installer\install.ps1`. Teraz wykrywa brak źródeł i mówi po
+  polsku, czego brakuje, że żaden przycisk ani aktualizacja tego nie pobierze, i
+  podaje dokładne polecenie z `M2_SRC_ARCHIVE`.
+
+### Zmienione
+
+- **Broń z trzydziestego poziomu: boty jej szukają dłużej, wracają po nią z
+  rubieży i wyceniają ją jak nagrodę.** Trzy zgłoszenia z Discorda naraz.
+
+  Pułap polowania wynosił 24 (Loch M3) i 35 (Bestiale w Bokjungu) — broń była
+  czymś, co bot albo zdobył młodo, albo nigdy. Zmierzone: **205 z 393** botów na
+  36+ z ponad milionem yang nie miało jej nigdzie — „latają na 37 z sześcioma
+  milionami i stożkowym mieczem +6 po dolinie". Farmą teraz do czterdziestki
+  (krzywa dropu trzyma siedemdziesiąt procent dziesięć poziomów nad potworem), a
+  rubież **oddaje** bezbronnego bota do M2, skąd idzie na M3. Trzy minuty po
+  wdrożeniu: trzy powroty z rubieży, siedem wyjść na M3 i **sześć znalezionych
+  broni**.
+
+  Cena: nieulepszona broń 30 wpadała do gałęzi „szrot" (cena handlarza razy dwa,
+  29 032 na naszej ladzie), podczas gdy Futro Tygrysa obok stało po kilkaset
+  tysięcy z podłogi materiałowej. Propozycja z Discorda — piętnaście do dwudziestu
+  razy drożej — ma rację co do rzędu wielkości: podłoga 250 000, między +7 a +8
+  zwykłego sprzętu. Na ladach po zmianie: **312 500, 375 000, 512 500.** Do tego
+  osobny, stromy schodek (+300%) za linię **średniej 24%+ albo umiejętności
+  15%+** — progi dobrane do realnych zakresów tego świata (46 i 18), tylko na
+  tym zestawie broni.
+
+- **Dwie rzeczy z tej samej listy zgłoszeń celowo bez zmiany.** Bransoleta,
+  naszyjnik i kolczyk **są kupowane** u handlarza zbroi, a zwoje błogosławieństwa
+  **są używane** przy ulepszaniu — oba mechanizmy istniały wcześniej i działają;
+  ogranicza je 30 poziom i trzy zwoje na wizytę.
+
+---
+
 ## 1.30.28 — 2026-09-08
 
 ### Naprawione

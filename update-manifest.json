@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T18:11:00Z",
-  "statusMessage": "Aktualizacja 1.30.28. Instalacja bez zrodel gry mowi o tym jednym zdaniem takze wtedy, gdy klikasz GRAJ - poprzednia poprawka trafila w polowe kodu, ktorej ten przycisk nie uruchamia. Boty w Lochu Malp nie ogłaszaja juz wyjscia, ktorego nie ma, a bonusy sa wazone wedlug klasy: mag nie wyrzuca najlepszej linii dla swojego buildu. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T19:34:00Z",
+  "statusMessage": "Aktualizacja 1.30.29. Wedki nie laduja juz na ziemi przy pelnym plecaku, a stado koni wokol Rybaka znika. Biolog: bot nie jest juz przypiety do Korzenia Gango przez jeden okaz, a panel pokazuje ten sam etap co rdzen. Bron z 30 poziomu: boty farmia ja do czterdziestki, wracaja po nia z rubiezy i wyceniaja jak nagrode - od 250 tysiecy, wiecej za wysokie srednie lub umiejetnosci. Przycisk ZAINSTALUJ mowi wprost, gdy brakuje zrodel gry. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.28",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.28/metin2-server-update-1.30.28.zip",
-    "sha256": "1430CA18703512E3646FABED856DD8A6364A74E14BC3CA79CFDC425E27BBC8C6"
+    "version": "1.30.29",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.29/metin2-server-update-1.30.29.zip",
+    "sha256": "0059B573E0B5234A64E870E898D0F4056AFD3409C125FA92066617E36013FAB5"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

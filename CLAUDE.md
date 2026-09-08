@@ -372,6 +372,40 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   gives a full step at elapsed zero, and an accepted step resets the clock, so
   forty counters opening together moved the shared anchor forty times. Whole
   intervals only.
+- **A price of one yang is permanent.** `GetPlayerBotNpcSellUnitPrice` returns
+  zero for anything `item_proto` prices at zero - the horse medal 50050, every
+  chest and casket - so the asking price came out `max(1, 0 * markup)`, and the
+  median wallet is zero until `RefreshPlayerBotMarketLedger` has run for the
+  first time, which removes the only other floor. `LimitPlayerBotAskStep` then
+  made it permanent: five percent of one yang is zero in integer arithmetic, so
+  no anchor under four could ever move, and every stall listing the item
+  refreshed the clock before the hour of staleness could run out. Three things
+  hold it now - a prior for the goods with no merchant price, an anchor under
+  `PLAYERBOT_MARKET_ASK_FLOOR` treated as an accident rather than a price, and a
+  step of at least one yang per whole interval.
+- **A pass that refuses must also back off.** The private shop returned without
+  setting `dwNextShopKeepTime` when the bag had no cell for the shop bundle, so
+  it asked again on the next tick: eight log lines a second for one bot, and the
+  bot pacing its pitch for ever - because the pass that would have emptied the
+  bag is the merchant leg of the town visit, and this one kept claiming the
+  tick ahead of it.
+- **The Biologist's seven rows are seven quests, not one chain.** Picking "the
+  first row left undone" as the fallback handed a bot of forty-two in Orc Valley
+  the Gango Root of level fifteen, whose monster stands in Joan; it never goes
+  there, so the panel read "Korzen Gango 0/5" while the bot hit Orcs, for ever.
+  A row outgrown by `PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS` is stepped over by
+  both middle passes - including "its monster is on this map", or a hand-in trip
+  to Joan would leave a bot of forty camped on level-fifteen ground - and when
+  every row is outgrown the highest one left is taken instead of none.
+- **The advanced panel's restart console wrote to a name nobody reads.**
+  `queue_server_settings` published `server-settings.request`; the game
+  container watches `request` and only `request` (see `m2-rates`). Nothing
+  deleted the orphan either, so the exclusive `os.link` that guarded against
+  double clicks refused every click after the first one, permanently. Both
+  buttons now go through `queue_rate_restart`, which is the path the rates page
+  has always used, and the double-click guard is a bounded look at
+  `rates.status` instead of a lock nothing releases. The map respawn half of
+  that console still has no consumer in this image and the panel now says so.
 - **An unfinished errand is somebody's job until it is done.** The 8 September
   audit traced the loop that kept level-40 bots fighting in Bokjung, and it is
   not the map choice: the bot needs a merchant, the route is deferred for want

@@ -530,9 +530,18 @@ namespace
 			unit = PLAYERBOT_PRIOR_PEARL_BLUE;
 		else if (item->GetVnum() == PLAYERBOT_PEARL_LAST_VNUM)
 			unit = PLAYERBOT_PRIOR_PEARL_RED;
+		else if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM)
+			unit = PLAYERBOT_PRIOR_HORSE_MEDAL;
 		// A soul stone has no merchant price: the counter asks by grade.
 		if (item->GetType() == ITEM_METIN)
 			unit = PLAYERBOT_SHOP_PRICE_SOUL_STONE[std::min(4, GetPlayerBotSoulStoneGrade(item->GetVnum()))];
+
+		// Anything the merchant refuses to buy has no prior at all, and the
+		// wallet block below is skipped whole while the ledger has not run yet -
+		// the first minute after every start. That pair is what put horse medals
+		// and unopened chests on the counters at one yang each.
+		if (unit == 0)
+			unit = PLAYERBOT_PRIOR_NO_MERCHANT_PRICE;
 
 		// And scaled to the buyers' wallets, where that is more - see the
 		// PLAYERBOT_MARKET_*_WALLET_* constants for why the merchant's markup
@@ -827,6 +836,11 @@ namespace
 				return -1;
 			return 100;
 		}
+
+		// An unopened box. Ranked between the materials and the spare gear: it
+		// is a gamble somebody might want, not a thing anybody came for.
+		if (IsPlayerBotSurplusChest(item))
+			return 350;
 
 		// Whatever is left is the bot's own business, not goods. A stall with two
 		// things worth buying beats one padded out to eight.
@@ -1540,7 +1554,16 @@ namespace
 			// in the drop-protection window while the bots ran about between them.
 			if (ch->GetEmptyInventory(1) < 0)
 			{
-				sys_log(0, "PLAYERBOT_SHOP: no room for bundle pid=%u name=%s lines=%u",
+				// And back off. Returning without a clock left the keeper asking
+				// again on the very next tick: one log line a second per bot, and
+				// the bot itself pacing its pitch with a stall it could never
+				// open - reported from the Discord with eight identical lines a
+				// second for one pid. A full bag is relieved by the merchant leg
+				// of an ordinary town visit, which cannot have the tick while
+				// this pass keeps claiming it.
+				state.dwNextShopKeepTime = dwNow + number(60000, 180000);
+				PlayerBotLogThrottled("shop_no_bundle_room", dwNow,
+						"PLAYERBOT_SHOP: no room for bundle pid=%u name=%s lines=%u",
 						ch->GetPlayerID(), ch->GetName(), (unsigned int)tableCount);
 				return false;
 			}

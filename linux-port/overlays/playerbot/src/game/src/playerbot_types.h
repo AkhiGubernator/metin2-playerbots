@@ -645,6 +645,19 @@ namespace
 	const DWORD PLAYERBOT_PRIOR_PEARL_WHITE = 2000000;
 	const DWORD PLAYERBOT_PRIOR_PEARL_BLUE = 3000000;
 	const DWORD PLAYERBOT_PRIOR_PEARL_RED = 6000000;
+	// A horse medal, and everything else the merchant will not buy.
+	//
+	// item_proto gives 50050 a shop price of zero, so GetPlayerBotNpcSellUnitPrice
+	// returns nothing, the markup multiplies nothing, and the counter asked
+	// max(1, 0) - one yang - for the one item in this world a bot cannot farm on
+	// demand and needs twenty-one of. The Discord watched bots of fifteen to
+	// twenty-five put them out at that price. Every chest and casket is in the
+	// same position: 50011, 50192 and 50193 all carry a zero price.
+	const DWORD PLAYERBOT_PRIOR_HORSE_MEDAL = 400000;
+	const DWORD PLAYERBOT_PRIOR_NO_MERCHANT_PRICE = 30000;
+	// Under this a number on a counter is not a price, it is an accident - and
+	// the accident used to be permanent, see LimitPlayerBotAskStep.
+	const DWORD PLAYERBOT_MARKET_ASK_FLOOR = 100;
 	const DWORD PLAYERBOT_MARKET_WALLET_REFERENCE_PRICE = 600;
 	const DWORD PLAYERBOT_MARKET_WALLET_WORTH_MIN_PERCENT = 100;
 	const DWORD PLAYERBOT_MARKET_WALLET_WORTH_MAX_PERCENT = 800;
@@ -1024,6 +1037,12 @@ namespace
 	// fight and refused by the engine while the last one still runs, so a
 	// minute between attempts costs nothing and keeps the log readable.
 	const DWORD PLAYERBOT_MOONLIGHT_CHEST_VNUM = 50011;
+	// How many of one box a bot has to be holding before the surplus is goods
+	// rather than its own supply. Suggested on the Discord: most of what drops
+	// should still be opened - that is where the potions and the boosters come
+	// from - but an unopened box is the one thing in this market a player can
+	// gamble on, and there was never one on a counter.
+	const DWORD PLAYERBOT_CHEST_STALL_MIN_STACK = 5;
 	// The Forgetting Scroll (ITEM_SKILLFORGET): one level off a skill and the
 	// point back. A skill that reached seventeen without turning Master is
 	// left there rather than pushed on - every further point is a point the
@@ -1504,6 +1523,13 @@ namespace
 	// partial load was never a problem for the quest - only for the gate in
 	// front of it.
 	const int PLAYERBOT_BIOLOGIST_MIN_HANDIN = 4;
+	// A herb row this far below the bot is one it will never do: the monsters
+	// that carry the early specimens stand in Joan and Bokjung, and a bot of
+	// forty lives in the valley. The chain is not one quest but seven, so a row
+	// can be stepped over rather than blocking every row behind it - which is
+	// what the Discord saw: a Sura of forty-two with "Korzen Gango 0/5" as its
+	// stated goal, hitting Orcs, for ever.
+	const int PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS = 10;
 	const DWORD PLAYERBOT_JINUNGGYI_STONE_VNUM = 30220;
 	const DWORD PLAYERBOT_ELITE_ORC_VNUM = 631;
 	const DWORD PLAYERBOT_ORC_TOOTH_REWARD_BOX_VNUM = 50109;

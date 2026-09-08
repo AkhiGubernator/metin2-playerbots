@@ -3,7 +3,6 @@ import os
 import socket
 import time
 import re
-import uuid
 from pathlib import Path
 from urllib.parse import quote
 from datetime import datetime, timedelta
@@ -585,22 +584,42 @@ def queue_rate_restart(values):
         (int(time.time()), values["exp"], values["drop"], values["yang"]), encoding="utf-8")
 
 
-def queue_server_settings(action, values=None, changes=None):
-    """Publish a complete request exclusively; a second click cannot replace it."""
-    RATES_SPOOL.mkdir(parents=True, exist_ok=True)
-    request_id = "seban-" + uuid.uuid4().hex
-    lines = [f"id={request_id}", f"action={action}", "source=panel"]
-    if action == "apply":
-        lines.extend(f"{key}={values[key]}" for key in RATE_NAMES)
-        lines.extend(f"map_{key}={value}" for key, value in (changes or {}).items())
-    temporary = RATES_SPOOL / (request_id + ".new")
+# A restart that has been asked for and not yet reported finished. Bounded,
+# because a game container that never answers must not jam the console for
+# ever - which is exactly what the previous exclusive lock did.
+RESTART_STALE_SECONDS = 600
+
+
+def restart_in_flight():
+    status = read_rate_status()
+    if status.get("state") != "running":
+        return False
     try:
-        temporary.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        temporary.chmod(0o660)
-        # A hard link is an atomic, exclusive publication on the shared volume.
-        os.link(temporary, RATES_SPOOL / "server-settings.request")
-    finally:
-        temporary.unlink(missing_ok=True)
+        started = int(status.get("time", "0"))
+    except (TypeError, ValueError):
+        return False
+    return 0 < time.time() - started < RESTART_STALE_SECONDS
+
+
+def queue_server_settings(action, values=None, changes=None):
+    """Ask the game container for a restart, through the spool it watches.
+
+    This used to publish a file of its own, ``server-settings.request``.
+    Nothing on the game side has ever read that name - the container watches
+    ``request`` and only ``request``, see m2-rates in the game image - and
+    nothing ever deleted it either, so the first click left it lying there and
+    every click after it was refused as "a previous request is still running".
+    Both buttons of the restart console were therefore silent for good, which
+    is how the console came to be reported sitting at "last completed restart:
+    no data recorded" however often it was pressed.
+
+    A restart with nothing to change is that same file carrying the rates the
+    server already has: the game stages them, finds them identical, and
+    restarts the cores, which is the whole point of the button.
+    """
+    if restart_in_flight():
+        raise FileExistsError("a restart is already under way")
+    queue_rate_restart(values if action == "apply" and values else read_rates())
 
 
 def queue_map_regen_changes(changes):
@@ -1297,8 +1316,14 @@ def manage_restart_config():
     except OSError:
         flash("Nie udało się zapisać zlecenia do kolejki gry.", "error")
     else:
-        flash("Zestaw zapisany do kolejki: jeden restart zastosuje raty i respawn." if action == "apply"
-              else "Zlecono restart bez zapisywania zmian w formularzu.")
+        if action != "apply":
+            flash("Zlecono restart rdzeni. Odśwież tę stronę za chwilę, aby zobaczyć wynik.")
+        elif changes:
+            flash("Mnożniki zapisane i zlecony restart. Zmiany respawnu nie zostały "
+                  "zlecone: ten serwer nie ma jeszcze modułu, który zapisuje pliki "
+                  "regen.txt w kontenerze gry.", "error")
+        else:
+            flash("Mnożniki zapisane i zlecony restart. Odśwież tę stronę za chwilę.")
     return redirect(url_for("manage"))
 
 

@@ -278,7 +278,15 @@ namespace
 			DWORD skillVnum = 0)
 	{
 		TPlayerBotAskMemory& mem = s_mapAskMemory[PlayerBotSaleKey(vnum, refine, skillVnum)];
-		if (mem.dwUnit == 0 || dwNow - mem.dwAskTime >= PLAYERBOT_MARKET_ASK_STALE)
+		// An anchor under the floor is not a price to step away from, it is an
+		// accident to forget. One yang got onto the counters because the median
+		// wallet is zero until the ledger has run for the first time, and in
+		// that first minute anything without a merchant price came out at
+		// max(1, 0); after that the anchor could never move, because five
+		// percent of one yang is nothing in integer arithmetic and every stall
+		// that listed the item kept the memory too fresh to go stale.
+		if (mem.dwUnit == 0 || mem.dwUnit < PLAYERBOT_MARKET_ASK_FLOOR ||
+				dwNow - mem.dwAskTime >= PLAYERBOT_MARKET_ASK_STALE)
 		{
 			mem.dwUnit = wanted;
 			mem.dwAskTime = mem.dwMovedTime = dwNow;
@@ -293,8 +301,13 @@ namespace
 		const DWORD steps = std::min<DWORD>(PLAYERBOT_MARKET_STEP_MAX_STEPS,
 				(dwNow - mem.dwMovedTime) / PLAYERBOT_MARKET_STEP_INTERVAL);
 		const DWORD span = PLAYERBOT_MARKET_STEP_PERCENT * steps;
-		const DWORD lo = std::max<DWORD>(1, mem.dwUnit * (100 - span) / 100);
-		const DWORD hi = std::max<DWORD>(lo, mem.dwUnit * (100 + span) / 100);
+		// At least one yang of movement per whole interval. A purely
+		// multiplicative step cannot leave any anchor below four, and the point
+		// of a step limiter is to slow a price down, not to hold one still.
+		const DWORD move = steps == 0 ? 0
+				: std::max<DWORD>(steps, mem.dwUnit * span / 100);
+		const DWORD lo = mem.dwUnit > move ? mem.dwUnit - move : 1;
+		const DWORD hi = mem.dwUnit + move;
 		const DWORD unit = std::min(hi, std::max(lo, wanted));
 		if (unit != mem.dwUnit)
 		{

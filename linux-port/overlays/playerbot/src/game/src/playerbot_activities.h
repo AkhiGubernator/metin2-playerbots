@@ -612,6 +612,7 @@ namespace
 		state.bFishingSession = false;
 		state.bIsFishing = false;
 		state.dwFishingCastTime = 0;
+		state.dwFishingIdleSince = 0;
 		state.dwFishingSessionEndTime = 0;
 		state.dwNextFishingActionTime = 0;
 		state.dwNextFishingCheckTime = dwNow +
@@ -878,6 +879,27 @@ namespace
 
 		if (dwNow < state.dwNextFishingActionTime)
 			return true;
+
+		// Ready to fish and not fishing. If that goes on long enough the session
+		// is over: a rod that will not go on, a bait that will not seat, or
+		// anything else nobody has thought of yet, all end the same way instead
+		// of standing at the water for hours.
+		if (state.bIsFishing)
+			state.dwFishingIdleSince = 0;
+		else
+		{
+			if (state.dwFishingIdleSince == 0)
+				state.dwFishingIdleSince = dwNow;
+			else if (dwNow - state.dwFishingIdleSince >= PLAYERBOT_FISHING_NO_CAST_GIVE_UP)
+			{
+				sys_log(0, "PLAYERBOT_FISHING: no cast pid=%u name=%s rod=%d bait=%d idle_ms=%u",
+						ch->GetPlayerID(), ch->GetName(),
+						IsPlayerBotHoldingRod(ch) ? 1 : 0,
+						ch->CountSpecifyItem(PLAYERBOT_FISHING_BAIT_VNUM),
+						(unsigned int)(dwNow - state.dwFishingIdleSince));
+				return EndPlayerBotFishingSession(ch, state, dwNow, "never_cast");
+			}
+		}
 
 		LPITEM rod = ch->GetWear(WEAR_WEAPON);
 		if (!state.bIsFishing && rod && rod->GetSocket(2) == 0 && !BaitPlayerBotRod(ch))

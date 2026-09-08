@@ -240,6 +240,11 @@ namespace
 		}
 		if (level >= PLAYERBOT_SPIDER_MIN_LEVEL && level >= PLAYERBOT_SOHAN_MIN_LEVEL)
 			return (draw & 1U) != 0 ? PLAYERBOT_MAP_SPIDER_V1 : PLAYERBOT_MAP_SOHAN;
+		// Thirty-six to forty-seven: the valley and the desert share them, the
+		// same way thirty to thirty-five already do. See
+		// PLAYERBOT_DESERT_MAX_LEVEL for what was sitting unused.
+		if (level >= PLAYERBOT_ORC_VALLEY_MIN_LEVEL && level <= PLAYERBOT_DESERT_MAX_LEVEL)
+			return (draw & 1U) != 0 ? PLAYERBOT_MAP_ORC_VALLEY : PLAYERBOT_MAP_DESERT;
 		if (level >= PLAYERBOT_ORC_VALLEY_MIN_LEVEL && level <= PLAYERBOT_ORC_VALLEY_MAX_LEVEL)
 			return PLAYERBOT_MAP_ORC_VALLEY;
 		// Thirty to thirty-five: the Fanatic islands and the desert share the

@@ -354,6 +354,13 @@ namespace
 					snprintf(status, statusSize, "%sIde nad rzeke lowic ryby", prefix);
 				else if (state.bIsFishing)
 					snprintf(status, statusSize, "%sLowie ryby - czekam na branie", prefix);
+				else if (!IsPlayerBotHoldingRod(ch))
+					// The old text here was a plain else, so an angler standing at
+					// the water with no rod on its back announced that it was
+					// baiting one - which is what got reported as "bots put bait
+					// on weapons". Nothing was ever put on a weapon; the label
+					// was simply wrong about what the bot was doing.
+					snprintf(status, statusSize, "%sSzukam wedki", prefix);
 				else
 					snprintf(status, statusSize, "%sZakladam przynete na wedke", prefix);
 				break;

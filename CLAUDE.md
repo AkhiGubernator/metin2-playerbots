@@ -372,6 +372,31 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   gives a full step at elapsed zero, and an accepted step resets the clock, so
   forty counters opening together moved the shared anchor forty times. Whole
   intervals only.
+- **The spawn queue was filled once and never looked at again.**
+  `SpawnRegistered` queues the cohort at startup and drains it over
+  `PLAYERBOT_SPAWN_WINDOW`; nothing counted the world afterwards, so a bot whose
+  load failed or which left later was gone until a restart. Reported as "a
+  thousand asked for, six hundred and fifty arrived, three hundred and fifty an
+  hour later". `TopUpMissingBots` re-counts once a minute against
+  `CHARACTER_MANAGER::FindByPID` and re-queues the missing through the same
+  staggered path, bounded by the original window so it restores the cohort and
+  never grows it. On a healthy server eleven of eight hundred and fifty were
+  missing from the first fill.
+- **A conjunction that rejects tells nobody which clause did it.**
+  `LoadRegisteredBots` accepts an identity only when six conditions hold at
+  once, and printed one number. `ReportPlayerBotRegistryShortfall` runs the same
+  joins with conditional sums and says which clause dropped what: on this world
+  `rows=1182 usable=1012 login=170 social_id=101 other_characters=62`, so the
+  ceiling is accounts whose login or social id does not match the generator's
+  pattern - not the launcher's slider.
+- **The desert was the richest map in the world and nobody hunted on it.**
+  14026 spawn points against Orc Valley's 8122, levels 37 to 51 across its own
+  bands, and `PLAYERBOT_DESERT_MAX_LEVEL` capped it at 36 - so everyone from
+  thirty-six up went to the valley and the desert was a corridor to the Spider
+  Dungeon. Raising the cap to 47 and splitting the band moved Orc Valley from
+  308-388 bots to 141 and the desert from 97-123 to 232, and cut the tick from
+  13-19 s of every 60 to 5.2: spreading the population over more maps is worth
+  more than any navigation tuning done so far.
 - **An engine patch is only tested where prepare-context.sh runs, and that is
   never Windows.** `0008-warp-npc-ignores-playerbots.patch` shipped truncated
   from 1.30.13 to 1.30.20: the header said `@@ -6447,7 +6447,19 @@` and the body

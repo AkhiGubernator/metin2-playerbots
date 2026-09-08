@@ -177,6 +177,13 @@ namespace
 	// for, and short enough that nobody watching notices the world filling up.
 	const DWORD PLAYERBOT_SPAWN_WINDOW = 60000;
 	const DWORD PLAYERBOT_SPAWN_BATCH_INTERVAL = 1000;
+	// And how often the world is counted afterwards, to put back what it has
+	// lost. The queue used to be filled once at startup and never again: a bot
+	// that failed to enter the world, or left it later for any reason, was gone
+	// until the next restart. An operator reported a thousand asked for, six
+	// hundred and fifty arriving, and three hundred and fifty an hour later -
+	// and nothing in the core would have noticed any of that.
+	const DWORD PLAYERBOT_TOPUP_INTERVAL = 60000;
 	// And the same spread for a bot's own first heavy passes - the refine, the
 	// gear pass, the shopping decision - which all had timers of zero and so
 	// all ran on the bot's first tick, whichever second it logged in.
@@ -1002,7 +1009,18 @@ namespace
 	// which is why it belongs to the high band even though its monsters do not.
 	// Bokjung keeps everyone up to 29.
 	const BYTE PLAYERBOT_DESERT_MIN_LEVEL = 30;
-	const BYTE PLAYERBOT_DESERT_MAX_LEVEL = 36;
+	// The desert reaches as far as its own monsters do, which is much further
+	// than thirty-six.
+	//
+	// Counted out of metin2_map_n_desert_01/regen.txt: 14026 spawn points, more
+	// than any other map this world hosts and nearly twice Orc Valley's 8122.
+	// The Scorpion King at 39 alone stands in 2234 places, the Desert Flying Eye
+	// of 37 in 1242, the Poison Spider of 45 in 1548, the Scorpion Archer of 47
+	// in 876. Capping the map at thirty-six meant nobody hunted on it past that
+	// - the whole band from thirty-six to forty-seven went to Orc Valley - and
+	// the richest map in the game was a corridor people walked across on their
+	// way to the Spider Dungeon, which is exactly what the panel showed.
+	const BYTE PLAYERBOT_DESERT_MAX_LEVEL = 47;
 	// One distance decides both halves of this: how far away counts as somewhere
 	// else, and how far a forced march goes before the bot may settle again.
 	// Twelve thousand is the spacing Orc Valley's hunting hubs were generated
@@ -1479,6 +1497,15 @@ namespace
 	// A cast that never reports a bite (the engine waits 10-40 s) is abandoned so
 	// one wedged event cannot park a bot at the water forever.
 	const DWORD PLAYERBOT_FISHING_CAST_TIMEOUT = 60000;
+	// And a bot that reaches the water and never casts at all.
+	//
+	// The cast timeout above covers a line that goes in and never bites. Nothing
+	// covered the step before it: an angler standing on its bank with bait in
+	// the bag and no rod on its back had no clock of any kind, and one was
+	// reported standing there for two hours. A session that has not managed a
+	// single cast in this long is over; the ordinary rest interval then keeps
+	// the bot away from the water until something has changed.
+	const DWORD PLAYERBOT_FISHING_NO_CAST_GIVE_UP = 120000;
 	const DWORD PLAYERBOT_FISHING_SESSION_MIN = 900000;    // 15 min
 	const DWORD PLAYERBOT_FISHING_SESSION_MAX = 2400000;   // 40 min
 	const DWORD PLAYERBOT_FISHING_REST_MIN = 2700000;      // 45 min
@@ -2068,6 +2095,7 @@ namespace
 			dwNextFishingCheckTime(0),
 			dwNextFishingActionTime(0),
 			dwFishingCastTime(0),
+			dwFishingIdleSince(0),
 			dwFishingSessionEndTime(0),
 			dwNextFishingProgressLogTime(0),
 			dwBakeUntil(0),
@@ -2290,6 +2318,8 @@ namespace
 		// When the current line went into the water, so a cast that never reports
 		// a bite can be given up on instead of parking the bot at the bank.
 		DWORD dwFishingCastTime;
+		// When this angler was last ready to fish and did not. Cleared by a cast.
+		DWORD dwFishingIdleSince;
 		DWORD dwFishingSessionEndTime;
 		// A stuck angler used to be invisible: bFishingSession exempts it from the
 		// inactivity watchdog, so nothing complained while it stood still for the

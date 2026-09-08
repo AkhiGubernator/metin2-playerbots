@@ -839,6 +839,7 @@ CPlayerBotManager::CPlayerBotManager()
 	  m_bPendingSpawnEmpire(0),
 	  m_dwSpawnWindowStarted(0),
 	  m_uSpawnWindowTotal(0),
+	  m_dwNextTopUpTime(0),
 	  m_bRegistryLoaded(false),
 	  m_bRegistryAvailable(false)
 {
@@ -955,7 +956,61 @@ bool CPlayerBotManager::LoadRegisteredBots()
 
 	sys_log(0, "PLAYERBOT_AUTH: loaded %u registered bot identities",
 			(unsigned int)m_setRegisteredBots.size());
+	ReportPlayerBotRegistryShortfall((unsigned int)m_setRegisteredBots.size());
 	return true;
+}
+
+// Why the cohort is smaller than the seed, in one line.
+//
+// The query above is a single conjunction: a row that fails any of six
+// conditions disappears without a word, and the only number anybody sees is
+// the total. An operator who asks the launcher for a thousand bots and gets
+// six hundred and fifty has nothing to go on - reported from the Discord
+// exactly that way - so the same joins are counted again, one column per
+// reason, and the answer is printed once at startup.
+//
+// LEFT JOINs and conditional sums, because the point is to count what the
+// working query threw away. It runs once per process and touches the same
+// rows the load already read.
+void CPlayerBotManager::ReportPlayerBotRegistryShortfall(unsigned int usable)
+{
+	const char* query =
+			"SELECT COUNT(*),"
+			" SUM(l.seed_version<>1 OR l.state NOT IN ('complete','adopted')),"
+			" SUM(p.id IS NULL),"
+			" SUM(p.id IS NOT NULL AND a.id IS NULL),"
+			" SUM(a.id IS NOT NULL AND pi.id IS NULL),"
+			" SUM(a.id IS NOT NULL AND BINARY a.login<>BINARY CONCAT('playerbot_',"
+			"  LPAD(l.pid-3,GREATEST(3,LENGTH(l.pid-3)),'0'))),"
+			" SUM(a.id IS NOT NULL AND BINARY a.social_id<>BINARY CONCAT('9',LPAD(l.pid-3,12,'0'))),"
+			" SUM(pi.id IS NOT NULL AND (pi.pid1<>l.pid OR pi.pid2<>0 OR pi.pid3<>0 OR pi.pid4<>0)),"
+			" SUM(pi.id IS NOT NULL AND pi.empire<>2) "
+			"FROM common.playerbot_seed_state AS l "
+			"LEFT JOIN player.player AS p ON p.id=l.pid "
+			"LEFT JOIN account.account AS a ON a.id=p.account_id "
+			"LEFT JOIN player.player_index AS pi ON pi.id=a.id";
+
+	std::unique_ptr<SQLMsg> msg(AccountDB::instance().DirectQuery(query));
+	if (!msg.get() || msg->uiSQLErrno != 0 || !msg->Get() || !msg->Get()->pSQLResult)
+		return;
+	MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
+	if (!row)
+		return;
+
+	DWORD value[9];
+	for (int i = 0; i < 9; ++i)
+	{
+		value[i] = 0;
+		if (row[i])
+			str_to_number(value[i], row[i]);
+	}
+	sys_log(0, "PLAYERBOT_AUTH: registry rows=%u usable=%u rejected: "
+			"not_complete=%u no_character=%u no_account=%u no_index=%u "
+			"login=%u social_id=%u other_characters=%u wrong_empire=%u",
+			(unsigned int)value[0], usable, (unsigned int)value[1],
+			(unsigned int)value[2], (unsigned int)value[3], (unsigned int)value[4],
+			(unsigned int)value[5], (unsigned int)value[6], (unsigned int)value[7],
+			(unsigned int)value[8]);
 }
 
 bool CPlayerBotManager::IsRegistered(DWORD dwPlayerID)
@@ -1016,6 +1071,53 @@ void CPlayerBotManager::SpawnPendingBatch(DWORD dwNow)
 		sys_log(0, "PLAYERBOT: staggered spawn complete scheduled=%u over=%ums",
 				(unsigned int)m_uSpawnWindowTotal,
 				(unsigned int)(dwNow - m_dwSpawnWindowStarted));
+}
+
+// Put back whoever the world has lost.
+//
+// SpawnRegistered fills the queue once and drains it over a minute, and that
+// was the whole of it: nothing ever looked again. A bot whose load failed, or
+// which left the world later, stayed gone until somebody restarted the server -
+// which is what "I asked for a thousand, six hundred and fifty arrived, and an
+// hour later I had three hundred and fifty" looks like from the inside.
+//
+// Bounded by what was actually asked for: only the identities inside the
+// original window are considered, so this restores the cohort and never grows
+// it. It runs a minute apart and reuses the same staggered queue, so a hundred
+// missing bots come back the way they arrived rather than all in one tick.
+void CPlayerBotManager::TopUpMissingBots(DWORD dwNow)
+{
+	// Not while the first fill is still running, and not before there was one.
+	if (m_uSpawnWindowTotal == 0 || !m_dequePendingSpawns.empty())
+		return;
+	if (m_dwNextTopUpTime != 0 && dwNow < m_dwNextTopUpTime)
+		return;
+	m_dwNextTopUpTime = dwNow + PLAYERBOT_TOPUP_INTERVAL;
+	if (!LoadRegisteredBots())
+		return;
+
+	size_t considered = 0, live = 0;
+	std::deque<DWORD> missing;
+	for (TRegisteredPlayerBotSet::const_iterator it = m_setRegisteredBots.begin();
+			it != m_setRegisteredBots.end() && considered < m_uSpawnWindowTotal;
+			++it, ++considered)
+	{
+		if (CHARACTER_MANAGER::instance().FindByPID(*it) != NULL)
+			++live;
+		else
+			missing.push_back(*it);
+	}
+	if (missing.empty())
+		return;
+
+	m_dequePendingSpawns = missing;
+	m_uSpawnBatchSize = std::max<size_t>(1, m_uSpawnBatchSize);
+	m_bPendingSpawnEmpire = 2;
+	m_dwNextSpawnBatchTime = 0;
+	sys_log(0, "PLAYERBOT: topping up asked=%u live=%u missing=%u",
+			(unsigned int)m_uSpawnWindowTotal, (unsigned int)live,
+			(unsigned int)missing.size());
+	SpawnPendingBatch(dwNow);
 }
 
 bool CPlayerBotManager::Despawn(DWORD dwPlayerID)
@@ -1171,6 +1273,8 @@ void CPlayerBotManager::Update()
 
 	// The next batch of the cohort, if one is due - see PLAYERBOT_SPAWN_WINDOW.
 	SpawnPendingBatch(dwNow);
+	// And a minute apart, whoever is missing from it.
+	TopUpMissingBots(dwNow);
 
 	// Once for the whole population: the panel may have moved a weight since
 	// the last tick, and every bot planned below must see the same numbers.

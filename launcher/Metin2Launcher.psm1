@@ -13,6 +13,10 @@ function Get-M2DefaultLauncherConfig {
         clientRoot = ''
         clientExecutable = ''
         supportUploadUrl = ''
+        # Interface language: 'pl' or 'en'. More and more of the Discord is
+        # English-speaking, and a launcher nobody can read is a launcher nobody
+        # runs correctly.
+        language = 'pl'
         serverRoot = [IO.Path]::GetFullPath($ServerRoot)
     }
 }
@@ -29,7 +33,7 @@ function Get-M2LauncherConfig {
     }
 
     $loaded = Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    foreach ($name in @('manifestUrl', 'clientRoot', 'clientExecutable', 'supportUploadUrl')) {
+    foreach ($name in @('manifestUrl', 'clientRoot', 'clientExecutable', 'supportUploadUrl', 'language')) {
         if ($null -ne $loaded.PSObject.Properties[$name]) {
             $defaults.$name = [string]$loaded.$name
         }
@@ -43,7 +47,7 @@ function Save-M2LauncherConfig {
         [Parameter(Mandatory = $true)][string]$ConfigPath
     )
 
-    $Config | Select-Object schema, manifestUrl, clientRoot, clientExecutable, supportUploadUrl |
+    $Config | Select-Object schema, manifestUrl, clientRoot, clientExecutable, supportUploadUrl, language |
         ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $ConfigPath -Encoding UTF8
 }
 

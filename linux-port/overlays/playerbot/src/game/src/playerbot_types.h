@@ -630,6 +630,21 @@ namespace
 	// upwards: nothing gets cheaper, and what is genuinely worth more costs
 	// more. The cap keeps one expensive material from pricing itself out of
 	// every buyer's reach.
+	// Opening prices for the goods whose merchant value says nothing about what
+	// they are worth here. A skill book costs the merchant a thousand yang
+	// whichever skill it teaches, and a pearl's proto price was set for a world
+	// with different wallets - the median bot here carries over a million and a
+	// half. These are a starting calibration to be corrected by what actually
+	// sells, not equilibrium prices: the market memory blends them away as
+	// transactions accumulate.
+	const DWORD PLAYERBOT_PRIOR_BOOK_AURA = 250000;        // Aura Miecza (4)
+	const DWORD PLAYERBOT_PRIOR_BOOK_ENCHANTED_BLADE = 220000; // Czarowane Ostrze (63)
+	const DWORD PLAYERBOT_PRIOR_BOOK_STRONG_BODY = 180000; // Silne Cialo (19)
+	const DWORD PLAYERBOT_PRIOR_BOOK_KEY = 140000;         // inne kluczowe dla buildu
+	const DWORD PLAYERBOT_PRIOR_BOOK_ORDINARY = 45000;
+	const DWORD PLAYERBOT_PRIOR_PEARL_WHITE = 2000000;
+	const DWORD PLAYERBOT_PRIOR_PEARL_BLUE = 3000000;
+	const DWORD PLAYERBOT_PRIOR_PEARL_RED = 6000000;
 	const DWORD PLAYERBOT_MARKET_WALLET_REFERENCE_PRICE = 600;
 	const DWORD PLAYERBOT_MARKET_WALLET_WORTH_MIN_PERCENT = 100;
 	const DWORD PLAYERBOT_MARKET_WALLET_WORTH_MAX_PERCENT = 800;
@@ -1076,10 +1091,22 @@ namespace
 	// a blue or a blood pearl. Thousandths. Once the population has opened
 	// enough of them, its own count replaces the table.
 	const DWORD PLAYERBOT_STONE_PIECE_VNUM = 27990;
+	// What a shell actually holds, read out of the engine rather than guessed.
+	//
+	// char_item.cpp case 27987 rolls 1..100: at or under 50 a Stone Piece, and
+	// the rest goes through one of two tables chosen by g_iUseLocale -
+	// {80,90,97} when it is false and {95,97,99} when it is true. This world's
+	// common.locale says "english", and __LocaleService_Init_English sets
+	// g_iUseLocale = TRUE, so the second table is the live one: 45% nothing,
+	// 2% white, 2% blue, 1% blood. The numbers here said 10/7/3 - the other
+	// table - which made opening a shell look four times more rewarding than it
+	// is, and every decision built on that estimate was wrong in the same
+	// direction. A server that changes locale changes this; check the flag
+	// before trusting the constants.
 	const int PLAYERBOT_SHELLFISH_STONE_PERMILLE = 500;
-	const int PLAYERBOT_SHELLFISH_WHITE_PERMILLE = 100;
-	const int PLAYERBOT_SHELLFISH_BLUE_PERMILLE = 70;
-	const int PLAYERBOT_SHELLFISH_RED_PERMILLE = 30;
+	const int PLAYERBOT_SHELLFISH_WHITE_PERMILLE = 20;
+	const int PLAYERBOT_SHELLFISH_BLUE_PERMILLE = 20;
+	const int PLAYERBOT_SHELLFISH_RED_PERMILLE = 10;
 	const DWORD PLAYERBOT_SHELLFISH_LEARN_SAMPLES = 50;
 	// The Blessing Scroll (CHUKBOK_SCROLL to the engine): a refine that fails
 	// under it drops the item one level instead of destroying it, at the
@@ -1127,6 +1154,20 @@ namespace
 	// roomy and stopped working: stalls at opposite ends were out of each other's
 	// reach and nobody bought anything at all. The ceiling belongs to the engine,
 	// not to us.
+	// How many counters Bokjung's ring may hold before a keeper takes its goods
+	// to Joan instead. Bokjung is where the bots are, so left alone every stall
+	// opens there and the other town's market never happens; a cap is what
+	// pushes the overflow somewhere it is worth walking to.
+	const int PLAYERBOT_SHOP_M2_MAX_STALLS = 7;
+	// How long Bokjung's counters are worth a look after Joan had nothing. Long
+	// enough that a bot which crossed for nothing is not sent straight back,
+	// short enough that Joan stays the first stop.
+	const DWORD PLAYERBOT_MARKET_M2_FALLBACK = 600000;
+	// Counters standing in Bokjung right now. Recounted by the market ledger
+	// once a minute and incremented the moment one opens, so a burst of
+	// keepers in the same minute cannot walk past the cap together. A stale
+	// count can only be too high, which errs towards sending a keeper to Joan.
+	int s_iPlayerBotStallsInM2 = 0;
 	const int PLAYERBOT_SHOP_RING_MIN = 400;
 	const int PLAYERBOT_SHOP_RING_RADIUS = 1700;
 	// The shop bundle (item 50200) carries LIMIT_NONE in item_proto, so the game
@@ -1453,6 +1494,16 @@ namespace
 	};
 	const size_t PLAYERBOT_BIOLOGIST_ORC_TOOTH_INDEX = 6;
 	const DWORD PLAYERBOT_ORC_TOOTH_VNUM = 30006;
+	// How many specimens are worth a walk to Joan.
+	//
+	// The hand-in was gated on carrying the whole remaining count - ten Orc
+	// Teeth in one bag - and almost nobody ever got there: 700 bots held 2219
+	// teeth between them, three apiece, and exactly three had ten. Meanwhile the
+	// Biologist's counter stood at 0/10 for the entire world. The hand-in itself
+	// has always been one specimen at a time with a 60% accept roll, so a
+	// partial load was never a problem for the quest - only for the gate in
+	// front of it.
+	const int PLAYERBOT_BIOLOGIST_MIN_HANDIN = 4;
 	const DWORD PLAYERBOT_JINUNGGYI_STONE_VNUM = 30220;
 	const DWORD PLAYERBOT_ELITE_ORC_VNUM = 631;
 	const DWORD PLAYERBOT_ORC_TOOTH_REWARD_BOX_VNUM = 50109;
@@ -1951,6 +2002,7 @@ namespace
 			dwHubChosenTime(0),
 			dwTownLingerUntil(0),
 			dwFirstNavDeferTime(0),
+			dwMarketM2AllowedUntil(0),
 			dwServiceRetryAt(0),
 			dwServiceSince(0),
 			dwDepartureSince(0),
@@ -2245,6 +2297,10 @@ namespace
 		// The audit asked for the queue age: a deferral that has stood for a
 		// minute is a different thing from one that has stood for a second.
 		DWORD dwFirstNavDeferTime;
+		// Until when this bot may look for goods in Bokjung. Zero means "look in
+		// Joan first": a shopper crosses to the quieter market, and only after
+		// finding nothing there is Bokjung worth the walk for a while.
+		DWORD dwMarketM2AllowedUntil;
 		// A town errand that has not finished. Set when the watchdog or a failed
 		// visit gives up on the attempt, cleared when a visit completes or the
 		// need goes away. While it stands the bot is a customer, not a hunter.

@@ -221,7 +221,10 @@ namespace
 				GetPlayerBotBiologistFlag(*mission, "collect_count")));
 		const int remaining = std::max(0, required - accepted);
 		const int carried = ch->CountSpecifyItem(wantedVnum);
-		if (!state.bVisitingBiologist && carried < remaining)
+		// A handful is worth the walk. See PLAYERBOT_BIOLOGIST_MIN_HANDIN: the
+		// quest takes them one at a time, so there is nothing to wait for.
+		const int worthTheWalk = std::min(remaining, PLAYERBOT_BIOLOGIST_MIN_HANDIN);
+		if (!state.bVisitingBiologist && carried < worthTheWalk)
 			return false;
 
 		if (!state.bVisitingBiologist)
@@ -492,6 +495,13 @@ namespace
 			return ApplyPlayerBotBonusPremium(PLAYERBOT_SHOP_PRICE_PLUS8, bonusPercent);
 		if (refine == 7)
 			return ApplyPlayerBotBonusPremium(PLAYERBOT_SHOP_PRICE_PLUS7, bonusPercent);
+		// A skill book's own market, and the goods whose merchant price says
+		// nothing about what they are worth here. Both come from the audit of
+		// 8 September: the merchant charges a thousand yang for every book
+		// whatever skill is in its socket, and the pearls' proto prices were set
+		// for wallets a hundred times smaller than these.
+		const DWORD bookSkill = item->GetType() == ITEM_SKILLBOOK
+				? GetPlayerBotSkillBookSkillVnum(item) : 0;
 		const DWORD npcUnit = GetPlayerBotNpcSellUnitPrice(item);
 		// Scrap gear is priced as scrap: twice what the merchant pays, so the
 		// player burning it at the blacksmith is not paying market money for it.
@@ -500,6 +510,26 @@ namespace
 			return ApplyPlayerBotBonusPremium(
 					std::max<DWORD>(1, npcUnit * PLAYERBOT_SCRAP_PRICE_MULT), bonusPercent);
 		DWORD unit = npcUnit * PLAYERBOT_SHOP_MATERIAL_MARKUP;
+		// The opening prices. Blended away by the sale memory below as real
+		// transactions accumulate - a prior is where a price starts, not where
+		// it stays.
+		if (bookSkill != 0)
+		{
+			if (bookSkill == 4)
+				unit = PLAYERBOT_PRIOR_BOOK_AURA;
+			else if (bookSkill == 63)
+				unit = PLAYERBOT_PRIOR_BOOK_ENCHANTED_BLADE;
+			else if (bookSkill == 19)
+				unit = PLAYERBOT_PRIOR_BOOK_STRONG_BODY;
+			else
+				unit = std::max(unit, PLAYERBOT_PRIOR_BOOK_ORDINARY);
+		}
+		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM)
+			unit = PLAYERBOT_PRIOR_PEARL_WHITE;
+		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM + 1)
+			unit = PLAYERBOT_PRIOR_PEARL_BLUE;
+		else if (item->GetVnum() == PLAYERBOT_PEARL_LAST_VNUM)
+			unit = PLAYERBOT_PRIOR_PEARL_RED;
 		// A soul stone has no merchant price: the counter asks by grade.
 		if (item->GetType() == ITEM_METIN)
 			unit = PLAYERBOT_SHOP_PRICE_SOUL_STONE[std::min(4, GetPlayerBotSoulStoneGrade(item->GetVnum()))];
@@ -556,7 +586,8 @@ namespace
 		// of every other bot's reach, and one giveaway cannot drag it back to
 		// the merchant's pennies.
 		size_t samples = 0;
-		const DWORD paid = GetPlayerBotSaleUnitPrice(item->GetVnum(), refine, dwNow, &samples);
+		const DWORD paid = GetPlayerBotSaleUnitPrice(item->GetVnum(), refine, dwNow,
+				&samples, bookSkill);
 		if (paid != 0)
 		{
 			const DWORD floor = std::max<DWORD>(std::max<DWORD>(1, npcUnit),
@@ -597,7 +628,8 @@ namespace
 
 		// And a bounded step from wherever the last counter had it, so the
 		// market's price of a thing drifts rather than jumps.
-		unit = LimitPlayerBotAskStep(item->GetVnum(), refine, std::max<DWORD>(1, unit), dwNow);
+		unit = LimitPlayerBotAskStep(item->GetVnum(), refine, std::max<DWORD>(1, unit),
+				dwNow, bookSkill);
 		// And last, the lines rolled on it - on top of the step limiter rather
 		// than under it, because the limiter and the sale memory are both keyed
 		// by vnum and refine, the one pair that cannot tell two otherwise
@@ -1285,6 +1317,27 @@ namespace
 		long pitchX = 0, pitchY = 0;
 		if (!GetPlayerBotShopCentre(ch->GetMapIndex(), pitchX, pitchY))
 			return false;
+		// Bokjung's ring is capped. A keeper that finds it full takes its goods
+		// to Joan rather than adding an eighth counter nobody can see past -
+		// which is the only way the second market ever gets stock, since this is
+		// where the bots with something to sell happen to be standing.
+		if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 &&
+				s_iPlayerBotStallsInM2 >= PLAYERBOT_SHOP_M2_MAX_STALLS)
+		{
+			std::vector<std::pair<int, WORD> > worthTaking;
+			CollectPlayerBotShopItems(ch, worthTaking, IsPlayerBotStallKeeper(state));
+			if (!IsPlayerBotStallWorthOpening(worthTaking.size(),
+					worthTaking.empty() ? 0 : worthTaking[0].first))
+				return false;
+			PlayerBotLogThrottled("stall_overflow", dwNow,
+					"PLAYERBOT_SHOP: Bokjung full, taking the stall to Joan pid=%u name=%s stalls=%d lines=%u",
+					ch->GetPlayerID(), ch->GetName(), s_iPlayerBotStallsInM2,
+					(unsigned int)worthTaking.size());
+			return MovePlayerBotToWorldPortal(ch, state,
+					PLAYERBOT_M2_TO_M1_PORTAL_X, PLAYERBOT_M2_TO_M1_PORTAL_Y,
+					PLAYERBOT_MAP_CHUNJO_M1, PLAYERBOT_M1_GUARD_X,
+					PLAYERBOT_M1_GUARD_Y, dwNow, "stall_overflow_to_m1");
+		}
 		// A keeper already standing on the ring counts as in town too. A server
 		// restart drops every shop - they live only in memory - and leaves its
 		// keeper parked exactly where the stall was, with no errand to bring it
@@ -1326,6 +1379,10 @@ namespace
 		if (!MovePlayerBotTownLeg(ch, state, dwNow, stallX, stallY,
 				PLAYERBOT_MARKET_ARRIVE))
 			return true; // still walking to the pitch
+		// Counted the moment it opens rather than at the next ledger sweep, or
+		// eight keepers arriving in the same minute would all read six.
+		if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
+			++s_iPlayerBotStallsInM2;
 
 		// OpenMyShop refuses a character whose main part is not its own body, so
 		// the horse has to go before the stall can be set up.

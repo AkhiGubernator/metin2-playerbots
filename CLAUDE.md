@@ -343,6 +343,35 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   passes it.
   `PLAYERBOT_M2: census` is how this is measured: a count of level-40 bots in
   Bokjung says nothing, the reason each one is there says everything.
+- **A Biologist hand-in is one specimen at a time, so the trip is too.** The
+  walk to Joan was gated on carrying the whole remaining count - ten Orc Teeth
+  at once - and the world had ten such bots against 700 carrying 2219 teeth
+  between them, so the counter sat at 0/10 for everybody. The hand-in itself
+  has always taken one specimen per interaction with a 60% accept roll;
+  `PLAYERBOT_BIOLOGIST_MIN_HANDIN` is what the gate should have been, and the
+  same threshold has to be used in `NeedsPlayerBotM1OnlyServices` or the trip
+  from Bokjung never starts.
+- **A shell holds what the engine says it holds.** `char_item.cpp` case 27987
+  picks between two tables by `g_iUseLocale`: `{80,90,97}` when false and
+  `{95,97,99}` when true. This world's `common.locale` is "english" and
+  `__LocaleService_Init_English` sets the flag, so the live odds are 50% stone,
+  45% nothing, 2/2/1 percent pearls - not the 10/7/3 the AI constants carried,
+  which made opening one look four times better than it is. Check the flag
+  before trusting `PLAYERBOT_SHELLFISH_*_PERMILLE`.
+- **A skill book is not one commodity.** `PlayerBotSaleKey` was
+  `vnum * 16 + refine`, and every ordinary book is vnum 50300 with the skill in
+  socket 0 - so one cheap sale of a spare set the price of Aura Miecza, and a
+  sale of Aura moved every other book. The key carries the skill now (seven
+  bits, skills run 1..111) through the sale memory, the ask-step limiter and
+  the asking price. Priors per named book and per pearl are the starting
+  calibration; the sale memory blends them away as transactions arrive.
+  `WantsPlayerBotStallItem` had no ITEM_SKILLBOOK branch at all, so no bot ever
+  bought one - raising the price without that would only have made expensive
+  unsold stalls.
+- **`LimitPlayerBotAskStep` stepped on every call.** `1 + elapsed/interval`
+  gives a full step at elapsed zero, and an accepted step resets the clock, so
+  forty counters opening together moved the shared anchor forty times. Whole
+  intervals only.
 - **An unfinished errand is somebody's job until it is done.** The 8 September
   audit traced the loop that kept level-40 bots fighting in Bokjung, and it is
   not the map choice: the bot needs a merchant, the route is deferred for want

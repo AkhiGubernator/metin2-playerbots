@@ -65,6 +65,30 @@ namespace
 		}
 	}
 
+	// The map a player would name, not the one the code names. Used by the
+	// travel line, which used to announce every journey as a hunt for
+	// experience whatever the errand actually was.
+	// Polish declines the destination, so the table carries the phrase that
+	// follows "ide" rather than the bare name: "Ide na Dolina Orkow" is not a
+	// sentence anybody would write.
+	const char* GetPlayerBotMapDestinationPl(long mapIndex)
+	{
+		switch (mapIndex)
+		{
+			case PLAYERBOT_MAP_CHUNJO_M1: return "do Joan";
+			case PLAYERBOT_MAP_CHUNJO_M2: return "do Bokjung";
+			case PLAYERBOT_MAP_CHUNJO_M3: return "do Pyungmoo";
+			case PLAYERBOT_MAP_MONKEY_EASY: return "do Lochu Malp";
+			case PLAYERBOT_MAP_MONKEY_MEDIUM: return "do Lochu Malp II";
+			case PLAYERBOT_MAP_MONKEY_HARD: return "do Lochu Malp III";
+			case PLAYERBOT_MAP_DESERT: return "na Pustynie Yongbi";
+			case PLAYERBOT_MAP_ORC_VALLEY: return "do Doliny Orkow";
+			case PLAYERBOT_MAP_SOHAN: return "na Gore Sohan";
+			case PLAYERBOT_MAP_SPIDER_V1: return "do Lochu Pajakow";
+			default: return "";
+		}
+	}
+
 	const char* GetPlayerBotActionLabel(BYTE action)
 	{
 		switch (action)
@@ -83,6 +107,8 @@ namespace
 			case BOT_ACTION_STABLE: return "odwiedzam Stajennego";
 			case BOT_ACTION_STALL: return "prowadze stragan";
 			case BOT_ACTION_MARKET: return "jestem na zakupach";
+			case BOT_ACTION_LURE: return "podciagam moby dla PT";
+			case BOT_ACTION_TOWN_REST: return "odpoczywam w miescie";
 			default: return "mysle";
 		}
 	}
@@ -148,6 +174,19 @@ namespace
 		const char* goal = GetPlayerBotGoalLabel(state.bLongTermGoal);
 		if (state.bVisitingShop)
 		{
+			// "Handluje bronia (cel: zapasy)" says what the bot is standing at
+			// and nothing about what it came for. When the errand is potions,
+			// the numbers are the whole story - and they are the one thing an
+			// operator can check against the shelf.
+			if (state.bLongTermGoal == BOT_GOAL_RESTOCK)
+			{
+				size_t redCount = 0, blueCount = 0;
+				CountPlayerBotPotions(ch, redCount, blueCount);
+				snprintf(status, statusSize, "%s%s - potki %u/%u", prefix,
+						GetPlayerBotTownStatusLabel(state),
+						(unsigned int)redCount, (unsigned int)blueCount);
+				return;
+			}
 			snprintf(status, statusSize, "%s%s (cel: %s)", prefix,
 					GetPlayerBotTownStatusLabel(state), goal);
 			return;
@@ -216,7 +255,24 @@ namespace
 					const int range = bow ? 800 : 280;
 					const int distance = DISTANCE_APPROX(
 							ch->GetX() - target->GetX(), ch->GetY() - target->GetY());
-					if (distance > range)
+					// Action plus what for. "Walcze z X" is only half of what an
+					// observer needs - the audit's complaint was that a status
+					// never says why this monster and not another one. The
+					// reason is the combat policy's own, recorded when it last
+					// looked at this target.
+					if (state.bLastCombatReason ==
+							(BYTE)playerbot_combat_value::ALLOW_SELF_DEFENSE)
+						snprintf(status, statusSize, "%sBronie sie przed %s", prefix,
+								target->GetName());
+					else if (state.bLastCombatReason ==
+							(BYTE)playerbot_combat_value::ALLOW_PARTY_DEFENSE)
+						snprintf(status, statusSize, "%sPomagam druzynie: %s", prefix,
+								target->GetName());
+					else if (state.bLastCombatReason ==
+							(BYTE)playerbot_combat_value::ALLOW_MATERIAL)
+						snprintf(status, statusSize, "%sZbieram material z %s", prefix,
+								target->GetName());
+					else if (distance > range)
 						snprintf(status, statusSize, "%sGonie %s", prefix, target->GetName());
 					else
 						snprintf(status, statusSize, "%sWalcze z %s", prefix, target->GetName());
@@ -284,6 +340,9 @@ namespace
 				else
 					snprintf(status, statusSize, "%sZakladam przynete na wedke", prefix);
 				break;
+			case BOT_ACTION_TOWN_REST:
+				snprintf(status, statusSize, "%sOdpoczywam w miescie", prefix);
+				break;
 			case BOT_ACTION_MARKET:
 				if (state.dwMarketStallVID != 0)
 					snprintf(status, statusSize, "%sOgladam stragan", prefix);
@@ -302,8 +361,33 @@ namespace
 					snprintf(status, statusSize, "%sIde do najblizszego Stajennego z Medalem", prefix);
 				else if (IsPlayerBotMonkeyMap(ch->GetMapIndex()))
 					snprintf(status, statusSize, "%sWychodze z Lochu Malp", prefix);
+				// "Szukam miejsca do expa (cel: zapasy)" was said over a bot
+				// walking to a merchant, which is the audit's example of a
+				// status that describes an action without its purpose. Say
+				// where the bot is going, and when the errand is not experience,
+				// say the errand instead.
+				else if (state.bLongTermGoal == BOT_GOAL_RESTOCK)
+					snprintf(status, statusSize, "%sIde do miasta po zapasy", prefix);
+				else if (state.bLongTermGoal == BOT_GOAL_REFINE)
+					snprintf(status, statusSize, "%sIde do kowala ulepszyc ekwipunek", prefix);
+				else if (state.bLongTermGoal == BOT_GOAL_BIOLOGIST)
+					snprintf(status, statusSize, "%sIde do Biologa", prefix);
+				else if (state.bLongTermGoal == BOT_GOAL_FISHING)
+					snprintf(status, statusSize, "%sIde nad rzeke lowic ryby", prefix);
+				else if (state.bLongTermGoal == BOT_GOAL_GET_EQUIPMENT)
+					snprintf(status, statusSize, "%sIde do miasta po ekwipunek", prefix);
 				else
-					snprintf(status, statusSize, "%sSzukam miejsca do expa (cel: %s)", prefix, goal);
+				{
+					const long wantMap = GetPlayerBotFrontierMapForLevel(ch);
+					const char* where = wantMap != 0 && wantMap != ch->GetMapIndex()
+							? GetPlayerBotMapDestinationPl(wantMap) : "";
+					if (where[0])
+						snprintf(status, statusSize, "%sIde %s (cel: %s)", prefix,
+								where, goal);
+					else
+						snprintf(status, statusSize, "%sSzukam lepszego miejsca (cel: %s)",
+								prefix, goal);
+				}
 				break;
 			default:
 				snprintf(status, statusSize, "%sPlanuje: %s", prefix, goal);

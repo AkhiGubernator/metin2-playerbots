@@ -374,7 +374,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   a town and then refuse to open unless the bot was already there - nine
   rolls in ten chose Joan while the bots with goods stood in Bokjung, so Joan
   got no stalls at all. The market browse has always read the ring of its own
-  bot's map, so a stall in Joan has map 21's four hundred bots for customers.
+  bot's map, so a stall opens where its customers are.
+- **`player.map_index` is where a bot was last saved, not where one is.**
+  The table holds every registered bot, and most of them are not spawned: it
+  said four hundred bots on map 21 while `playerbot_status.tsv` - which only
+  carries live characters - said nineteen of eight hundred and thirty-seven.
+  A conclusion about where the population is must come from the status file
+  or the core, never from a count over `player`. Joan is thin because the
+  live cohort is mostly level 40+, and everyone past the M2 band leaves for
+  the frontier; what actually takes a bot there is fishing, whose bank, bait
+  merchant and market ring are all on that one map.
 - **A boss is news, and the news travels through a guild.** A boss hub scored
   `PLAYERBOT_RAID_WORTH` for everybody, which outran every hunting ground by
   two orders of magnitude, so a whole level band walked to one monster - 145

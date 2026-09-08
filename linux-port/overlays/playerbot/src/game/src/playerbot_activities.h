@@ -203,10 +203,16 @@ namespace
 		if (!CanPlayerBotUseFishingRod(ch))
 			return false;
 		const DWORD roll = PlayerBotNavHash(ch->GetPlayerID() ^ 0x46495348U) % 100U;
-		// Twenty collectors in a hundred and two of everyone else, stretched or
-		// shrunk by the FISHING weight. At the neutral 100 the two thresholds are
-		// exactly the ones this has always used.
-		const int chance = state.bPersonality == BOT_PERSONALITY_CAREFUL_COLLECTOR ? 20 : 2;
+		// Thirty collectors in a hundred and eight of everyone else, stretched or
+		// shrunk by the FISHING weight.
+		//
+		// Raised from 20/2 because fishing is the one errand that takes a bot to
+		// Joan and keeps it there: the bank, the Fisherman who sells the bait and
+		// the market ring are all on map 21, so an angler is a customer, a
+		// passer-by and a stall in one. Joan looked deserted with nineteen of
+		// eight hundred live bots standing on its map, and half of those nineteen
+		// were the anglers.
+		const int chance = state.bPersonality == BOT_PERSONALITY_CAREFUL_COLLECTOR ? 30 : 8;
 		return PlayerBotWeightedRoll(roll, chance, PLAYERBOT_WEIGHT_FISHING);
 	}
 
@@ -529,6 +535,15 @@ namespace
 				number(PLAYERBOT_FISHING_REST_MIN, PLAYERBOT_FISHING_REST_MAX);
 		StowPlayerBotRod(ch);
 		ClearPlayerBotRoute(state, true);
+		// An angler that has just packed the rod away is the one bot reliably
+		// standing in Joan with nothing left to do. Half of them wander over to
+		// the market ring for a while instead of walking straight back out -
+		// which is the whole of what makes that square look inhabited, since the
+		// bank, the bait merchant and the stalls are all on this one map.
+		if (ch && ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 &&
+				number(1, 100) <= PLAYERBOT_TOWN_LINGER_PERCENT)
+			state.dwTownLingerUntil = dwNow + number(
+					(int)PLAYERBOT_TOWN_LINGER_MIN, (int)PLAYERBOT_TOWN_LINGER_MAX);
 		if (ch)
 			sys_log(0, "PLAYERBOT_FISHING: session over pid=%u name=%s pearls=%d/%d/%d reason=%s",
 					ch->GetPlayerID(), ch->GetName(),

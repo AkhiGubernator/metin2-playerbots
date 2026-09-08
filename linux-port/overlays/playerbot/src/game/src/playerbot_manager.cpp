@@ -694,7 +694,10 @@ namespace
 				dwNow - state.dwLastBotSkillTime <= 10000;
 		// An angler stands still on purpose: a single cast can wait 40 s for the
 		// bite alone, so stillness at the bank is the activity, not a symptom.
-		if (moved || foughtRecently || castRecently || state.bFishingSession)
+		// A bot resting in town stands still on purpose, exactly like an angler
+		// waiting for a bite - stillness is the activity, not a symptom.
+		if (moved || foughtRecently || castRecently || state.bFishingSession ||
+				state.dwTownLingerUntil != 0)
 		{
 			state.dwLastMeaningfulActivityTime = dwNow;
 			state.lLastX = ch->GetX();
@@ -1423,6 +1426,16 @@ void CPlayerBotManager::Update()
 		// pass below must not run while a session is live.
 		if (!state.bMultiPullActive && !bFightingMetin &&
 				ManagePlayerBotFishing(ch, state, dwNow))
+			continue;
+
+		// Spending time in town once the errand that brought the bot here is
+		// done - and above the travel pass, not below it. The rod carries a
+		// level limit of thirty, so every angler is old enough for the frontier
+		// and the travel pass walked each one straight back out of Joan on the
+		// tick its session ended: the rest never got a turn. It claims the tick
+		// like fishing does, for a bounded few minutes, and ends the moment
+		// anything real wants the bot.
+		if (ManagePlayerBotTownLinger(ch, state, dwNow))
 			continue;
 
 		// Move between the real Chunjo portals in controlled, staggered waves.

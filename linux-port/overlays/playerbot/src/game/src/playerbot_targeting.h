@@ -676,7 +676,7 @@ namespace
 	// needs the bot's material shortages and those cost a walk of the bag.
 	// Stones are not asked: they keep their own worth rule and reservation.
 	bool IsPlayerBotTargetWorthNow(LPCHARACTER ch, LPCHARACTER target,
-			const TPlayerBotAIState& state, DWORD dwNow)
+			const TPlayerBotAIState& state, DWORD dwNow, BYTE* pReasonOut = NULL)
 	{
 		if (!ch || !target || !target->IsMonster() || target->IsStone())
 			return true;
@@ -688,6 +688,11 @@ namespace
 				DecidePlayerBotCombatValue(ch, target, state, true,
 						GetPlayerBotDesiredQuestMobVnum(ch, state, dwNow),
 						huntBestials, &wantedDrops, dwNow);
+		// Handed back rather than written into the state: this overload is the
+		// one the collector calls with a const state, and the line over a bot's
+		// head needs the reason its own fight was allowed for.
+		if (pReasonOut)
+			*pReasonOut = (BYTE)decision.reason;
 		if (!decision.allowed)
 			PlayerBotLogThrottled("combat_dropped", dwNow,
 					"PLAYERBOT_COMBAT: refused target pid=%u name=%s target=%s target_level=%u reason=%s",
@@ -744,7 +749,8 @@ namespace
 		if (dwNow < state.dwNextCombatRecheckTime)
 			return true;
 		state.dwNextCombatRecheckTime = dwNow + PLAYERBOT_COMBAT_RECHECK_INTERVAL;
-		return IsPlayerBotTargetWorthNow(ch, target, state, dwNow);
+		return IsPlayerBotTargetWorthNow(ch, target, state, dwNow,
+				&state.bLastCombatReason);
 	}
 
 	class CCollectPlayerBotTargets

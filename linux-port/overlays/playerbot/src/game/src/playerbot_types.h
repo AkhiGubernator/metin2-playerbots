@@ -221,6 +221,23 @@ namespace
 	// for its three enchantments - longer than most of the fights they were
 	// buffing for, which is why they were usually seen without them.
 	const DWORD PLAYERBOT_BUFF_RECHECK_FAST = 1200;
+	// A town nobody stays in is a town nobody sees.
+	//
+	// Joan holds four hundred bots and its square holds a couple of dozen: a bot
+	// comes in for an errand and leaves the moment it is done, so the market
+	// ring the stalls stand on is empty of customers and of anything to look at.
+	// A share of the bots that finish an errand in Joan now stay a while - which
+	// is what a player does with a town, and what makes one look inhabited.
+	// Bokjung is deliberately excluded: it is crowded already, and the whole
+	// point of the M2 census work was to get level-40 bots out of it.
+	// Every bot that finishes something in Joan, not half of them: the triggers
+	// are rare enough on their own. An angler fishes for fifteen to forty
+	// minutes and then rests for three quarters of an hour to two hours, so a
+	// session ends about once a minute across the whole angler cohort - at half
+	// that is three or four bots on the square at a time, which is not a market.
+	const int PLAYERBOT_TOWN_LINGER_PERCENT = 100;
+	const DWORD PLAYERBOT_TOWN_LINGER_MIN = 240000;
+	const DWORD PLAYERBOT_TOWN_LINGER_MAX = 600000;
 	const BYTE PLAYERBOT_PRECIOUS_REFINE = 6;
 	// The lowest refine an ordinary spare may carry and still be worth a counter
 	// slot. Below it nobody wants the thing: the market code buys medals,
@@ -1647,7 +1664,12 @@ namespace
 		BOT_ACTION_MARKET,
 		// Bringing monsters to the party. Distinct from BOT_ACTION_FIGHT on
 		// purpose: the Archer is not fighting, it tags and runs.
-		BOT_ACTION_LURE
+		BOT_ACTION_LURE,
+		// Standing about in town with nothing to do. Distinct from
+		// BOT_ACTION_RECOVER, which is a bot getting its health back, and from
+		// BOT_ACTION_STALL, which is a bot behind a counter. Appended, never
+		// inserted - the id goes into the status file the panel reads.
+		BOT_ACTION_TOWN_REST
 	};
 
 	// Where an Archer is in its course. WAIT_READY is the absence of a session
@@ -1913,6 +1935,8 @@ namespace
 			dwRelocateSince(0),
 			wHuntingHub(0xffff),
 			dwHubChosenTime(0),
+			dwTownLingerUntil(0),
+			bLastCombatReason(0),
 			dwLureSessionId(0),
 			dwLureStageTime(0),
 			dwLureCourseTime(0),
@@ -2193,6 +2217,15 @@ namespace
 		// logged when it changes rather than on every decision.
 		WORD wHuntingHub;
 		DWORD dwHubChosenTime;
+
+		// Until when this bot is spending time in town rather than leaving the
+		// moment its errand is done.
+		DWORD dwTownLingerUntil;
+		// Why the monster this bot is fighting was allowed - the combat policy's
+		// own Reason, kept so the line over the bot's head can say what it is
+		// doing *for*, which is the whole point of the audit's status section.
+		// Zero until the three-second re-check has run once.
+		BYTE bLastCombatReason;
 
 		// The luring course. The session id is what a log line is followed by
 		// and what tells one course from the next; the party's own record of who

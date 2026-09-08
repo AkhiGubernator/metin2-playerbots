@@ -358,6 +358,15 @@ namespace
 			(completed ? number(300000, 600000) : number(60000, 120000));
 		if (completed)
 			state.dwErrandDoneTime = dwNow;
+		// Half the bots that finish an errand in Joan stay a while instead of
+		// walking straight back out. See PLAYERBOT_TOWN_LINGER_PERCENT: a town
+		// with four hundred bots on its map and two dozen in its square does not
+		// look like a town, and the stalls that now open there have nobody to
+		// stand among. Bokjung is left out on purpose - it is crowded already.
+		if (completed && ch && ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 &&
+				number(1, 100) <= PLAYERBOT_TOWN_LINGER_PERCENT)
+			state.dwTownLingerUntil = dwNow + number(
+					(int)PLAYERBOT_TOWN_LINGER_MIN, (int)PLAYERBOT_TOWN_LINGER_MAX);
 		// Free, standing in town, errands done: the one moment this bot is the
 		// customer the market needs. The shopping timer is cleared rather than
 		// left where the visit pushed it - every check that ran during the visit
@@ -778,6 +787,60 @@ namespace
 		// Whatever is left is the bot's own business, not goods. A stall with two
 		// things worth buying beats one padded out to eight.
 		return -1;
+	}
+
+	// Standing about in town, because that is what a town is for.
+	//
+	// Claims the tick while it runs, so the wandering does not walk the bot back
+	// out to the fields - and the inactivity watchdog is told about it in the
+	// manager, since a bot resting on purpose is still and that is the point.
+	// Anything with a claim on the bot ends it: an errand, a stall of its own, a
+	// shopping trip, a retreat, or simply leaving the map.
+	bool ManagePlayerBotTownLinger(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || state.dwTownLingerUntil == 0)
+			return false;
+		// Over for good: the clock ran out, the bot left Joan, it opened a stall
+		// of its own, or it is busy staying alive.
+		if (dwNow >= state.dwTownLingerUntil ||
+				ch->GetMapIndex() != PLAYERBOT_MAP_CHUNJO_M1 ||
+				ch->GetMyShop() || state.bTacticalRetreat || state.bRecoveringAfterDeath)
+		{
+			state.dwTownLingerUntil = 0;
+			return false;
+		}
+		// Merely interrupted: an errand, a shopping trip, a cast or a fight has
+		// the tick for now and the rest resumes when it is done. Clearing the
+		// clock here instead is what made this never happen at all - an angler
+		// that finishes a session is usually out of bait, so a town visit starts
+		// on the very next tick and cancelled the rest before it began.
+		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
+				state.bMarketTrip || state.bFishingSession || ch->GetVictim() != NULL)
+			return false;
+
+		long pitchX = 0, pitchY = 0;
+		if (!GetPlayerBotShopCentre(ch->GetMapIndex(), pitchX, pitchY))
+		{
+			state.dwTownLingerUntil = 0;
+			return false;
+		}
+		// Its own spot on the square, stable per bot, so the crowd looks like a
+		// crowd of people rather than a heap in one place.
+		long offsetX = 0, offsetY = 0;
+		GetPlayerBotStableOffset(ch->GetPlayerID(), 0x52455354U,
+				PLAYERBOT_SHOP_RING_MIN, PLAYERBOT_SHOP_RING_RADIUS + 900,
+				offsetX, offsetY);
+		SetPlayerBotAction(state, BOT_ACTION_TOWN_REST, dwNow);
+		if (DISTANCE_APPROX(ch->GetX() - (pitchX + offsetX),
+				ch->GetY() - (pitchY + offsetY)) > PLAYERBOT_MARKET_ARRIVE)
+		{
+			MovePlayerBot(ch, pitchX + offsetX, pitchY + offsetY, dwNow, 6, true);
+			return true;
+		}
+		if (ch->IsStateMove())
+			ch->Stop();
+		ch->SetPosition(POS_STANDING);
+		return true;
 	}
 
 	// Is this worth putting a sign up for? Three lines make a stall; fewer than

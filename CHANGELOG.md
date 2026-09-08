@@ -17,6 +17,84 @@ every version here.
 
 ---
 
+## 1.30.20 — 2026-09-08
+
+### Naprawione
+
+- **Jeden yang za medal konny.** Zgłoszone z Discorda: boty dostały medale konne
+  i zaczęły je wystawiać po jednym yangu. `item_proto` daje medalowi (50050) cenę
+  zero, więc wycena mnożyła zero przez marżę handlarza i wychodziło z niej
+  `max(1, 0)`. Dokładnie tak samo stały wszystkie skrzynki i szkatułki — 50011,
+  50192 i 50193 też mają tam zero. Gorzej: taka cena zostawała na zawsze.
+  Ogranicznik kroku pozwala ruszyć kotwicą o pięć procent na dziesięć minut, a
+  pięć procent z jednego yanga to w liczbach całkowitych zero — więc kotwica
+  poniżej czterech yangów nie mogła się już nigdy ruszyć, a każdy stragan
+  wystawiający ten przedmiot odświeżał jej zegar, zanim zdążyła się zestarzeć.
+  Teraz przedmiot, którego handlarz nie kupi, dostaje własną cenę wyjściową
+  (medal konny 400 tys., reszta 30 tys.), kotwica poniżej stu yangów jest
+  traktowana jak pomyłka i liczona od nowa, a krok ceny przesuwa ją o co najmniej
+  jednego yanga. Zmierzone po wdrożeniu: 39 otwartych straganów i ani
+  jednej linii poniżej stu yangów, przy medianie 150 000 yang.
+
+- **Stragan bez zawiniątka kręcił bota w kółko.** Zgłoszone z Discorda razem ze
+  zrzutem logu: osiem identycznych linii `no room for bundle` na sekundę dla
+  jednego bota, który chodził w tę i z powrotem wzdłuż jednej linii. Gdy plecak
+  jest pełny, nie ma gdzie położyć kupionego zawiniątka — a kod nie ustawiał
+  wtedy żadnego zegara, więc pytał ponownie na każdym takcie i sam sobie odbierał
+  kolejkę, w której handlarz opróżniłby plecak. Teraz odczekuje od minuty do
+  trzech, a linia w logu jest dławiona jak każda inna.
+
+- **Biolog stawał na Korzeniu Gango.** Zgłoszone z Discorda: Sura czterdziestego
+  drugiego poziomu z celem „Etap Biologa: Korzeń Gango 0/5", bijąca orki. Wybór
+  misji szedł trzema przebiegami — co bot niesie, co stoi na jego mapie, pierwsza
+  niezrobiona — i ten trzeci wręczał postaci z Doliny Orków zbiórkę z poziomu
+  piętnastego, której potwór stoi w Joan. Bot tam nie chodzi, więc łańcuch stawał
+  na tym wierszu i nie ruszał się dalej. Siedem etapów Biologa to siedem osobnych
+  zadań, nie jeden łańcuch, więc wiersz wyrośnięty o dziesięć poziomów jest teraz
+  pomijany zamiast blokować wszystko za sobą, a gdy wyrośnięte są już wszystkie,
+  bot bierze najwyższy, jaki mu został — czyli Ząb Orka, po który i tak chodzi.
+
+- **Konsola restartu w panelu zaawansowanym nikogo o restart nie prosiła.**
+  Zgłoszone z Discorda: „Zleć restart" nic nie robi, a konsola stoi na „Ostatni
+  ukończony restart: brak zarejestrowanych danych". Panel publikował własny plik
+  `server-settings.request`, którego po stronie gry nie czyta nikt — kontener
+  pilnuje pliku `request` i tylko jego. Nikt tego pliku również nie kasował, więc
+  po pierwszym kliknięciu każde następne było odrzucane jako „poprzednie zlecenie
+  nadal trwa", i to na stałe. Teraz oba przyciski zlecają restart tą samą drogą,
+  którą od zawsze działa strona mnożników, a blokada podwójnego kliknięcia wygasa
+  po dziesięciu minutach, żeby milczący kontener nie zablokował konsoli na dobre.
+  To jest ta droga, którą wchodzą zmiany wprowadzone ręcznie w bazie: rdzenie
+  czytają `item_proto` tylko przy starcie.
+
+### Zmienione
+
+- **Nieotwarte skrzynki trafiają na lady.** Zaproponowane na Discordzie, żeby boty
+  wystawiały blaski i szkatułki zamiast otwierać wszystko. Większość i tak się
+  otwiera — stamtąd biorą mikstury i wzmocnienia — ale dwa rodzaje idą na ladę:
+  te, których silnik na tym serwerze nie otworzy w ogóle (50192 i 50193, w tej
+  chwili blisko osiemset sztuk zajmujących po jednej komórce w plecakach), oraz nadwyżka stosu
+  od pięciu sztuk w górę. Nieotwarte pudełko to jedyna rzecz na tym rynku, na
+  którą gracz może zagrać w ciemno, a dotąd nie było ani jednego. Bot nie próbuje
+  otworzyć pudełka, które sam wystawił: silnik odmawia na zablokowanym
+  przedmiocie, a taka odmowa jest zapamiętywana dla całego świata i uciszyłaby
+  otwieranie u wszystkich. Kupującym jest tu gracz, nie bot: żaden bot nie ma w
+  sobie powodu, żeby kupić pudełko, i to się nie zmienia. Zmierzone: cztery
+  odmowy silnika zapisane w ciągu pół godziny, czyli warunek wystawienia jest
+  spełniony — sama lada nie jest w logu widoczna poza najlepszą linią, więc
+  pudełko na straganie zobaczycie w grze, nie w pomiarze.
+
+### Czego w tym wydaniu nie ma
+
+- Respawn ustawiany z panelu zaawansowanego nadal nie działa — po stronie gry nie
+  ma modułu, który zapisywałby pliki `regen.txt`. Panel przestał przynajmniej
+  twierdzić, że zadziałał.
+- Stackowanie odłamków: `Odłamek Smoczego Kamienia` (30270) nie ma w `item_proto`
+  flagi stosu, więc każda sztuka zajmuje osobną komórkę. To zmiana w danych
+  serwera i klienta naraz, nie w kodzie botów.
+- Zakładki w składzie i misja na powiększenie plecaka — to funkcje silnika, nie AI.
+
+---
+
 ## 1.30.19 — 2026-09-08
 
 ### Nowe

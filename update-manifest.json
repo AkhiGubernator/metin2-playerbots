@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T09:25:00Z",
-  "statusMessage": "Aktualizacja 1.30.19. Launcher ma przelacznik jezyka polski/angielski, boty wreszcie chodza do Biologa, ceny ksiag i perel przestaja byc wspolne dla wszystkiego, a w Bokjung stoi najwyzej siedem straganow - reszta handlu przenosi sie do Joan. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T11:00:00Z",
+  "statusMessage": "Aktualizacja 1.30.20. Koniec z przedmiotami wystawianymi po jednym yangu, stragan bez zawiniatka nie kreci juz bota w kolko, Biolog nie staje na Korzeniu Gango, a konsola restartu w panelu zaawansowanym naprawde zleca restart. Nieotwarte skrzynki trafiaja na lady. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.19",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.19/metin2-server-update-1.30.19.zip",
-    "sha256": "FBCD69DBD9ABFC5F0E1905419505D134F859BD98BB1F672A00451F51A90C9CBD"
+    "version": "1.30.20",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.20/metin2-server-update-1.30.20.zip",
+    "sha256": "339EAAEB19D721A90E688DE3B955217BB82A21AE36705CF7124B3A570C452FF4"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

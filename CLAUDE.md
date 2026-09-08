@@ -419,6 +419,47 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   refusal found the cause on our own server in two minutes. Any stack bought
   from an NPC wants the same shape: take what the purse reaches, re-price the
   smaller count and re-check it, and let a single item stay all-or-nothing.
+- **Never delete a build context before proving it can be rebuilt.**
+  `prepare-context.sh` did `rm -rf game/src` and discovered a missing engine
+  module a hundred lines later, so a truncated porting tree turned a working
+  install into a broken one. What the operator is left with is the context the
+  update package alone provides - `src/server/game` and nothing beside it,
+  because that is where the playerbot sources belong - and a build that fails
+  with fifteen "failed to calculate checksum ... not found" lines naming paths
+  nobody deleted on purpose. Reported from the Discord with a 1.61 MB build
+  context against hundreds of megabytes for a complete one, and the 38 files
+  the package puts under `game/src` are exactly that 1.61 MB. The nine modules
+  and four share directories are now checked first, and `start-server.ps1`
+  refuses the build with one sentence naming what is missing rather than
+  letting Docker say it fifteen times.
+- **`StopRiding()` summons the horse as a follower.** So a bot that dismounts
+  keeps its horse trotting behind it until something mounts again or dismisses
+  it - which is what "bots walk long distances and the horse runs after them"
+  was. The cause was the default: `MovePlayerBot`'s seventh argument is
+  `allowHorse` and every wander leg passed six, leaving it false, while
+  `ChoosePlayerBotHuntingHub` picks ground up to twenty kilometres away. Long
+  legs ask for the horse now (wander, known Metin, boss hub, the walk back from
+  a respawn); `UpdatePlayerBotTravelMount` still refuses inside
+  `PLAYERBOT_HORSE_MOUNT_DISTANCE`, so short hops are unchanged. Mounts for
+  long travel went from 7 in twenty-five minutes to 304 in five.
+- **A Metin stone is not a monster, and the recovery pass did not know it.**
+  `IsStone()` is `CHAR_TYPE_STONE`; the emergency recovery drops the target at
+  `PLAYERBOT_RECOVERY_INITIAL_HP_PERCENT` whatever it is. Right for a monster,
+  which chases; wrong for a stone, which does not, and which is then found at
+  full health or gone. A stone under `PLAYERBOT_STONE_FINISH_STONE_HP_PERCENT`
+  is finished while the bot is above `PLAYERBOT_STONE_FINISH_OWN_HP_PERCENT`.
+- **The old woman is one town errand and no new machinery.**
+  `skill_reset2.quest` (NPC 9006, map 21 cell 588,633) charges
+  `10000 + level * 2000`, refuses under five and over thirty, then
+  `clear_skill()` and `set_skill_group(0)` - and a group of zero is already
+  what sends a bot to the trainer, so `BOT_TOWN_PHASE_SKILL_RESET` only has to
+  pay and let the existing trainer phase follow. `ClearSkill()` refunds
+  `4 + (level - 5)` points. Worth doing only when nothing else is left: a skill
+  at seventeen that will not turn Master *and* no skill points in hand, because
+  the reset costs every skill level the character has. Verified live end to
+  end: cost 64000 at level 27, 26 points back, at the trainer twenty-six
+  seconds later. Note `GetJob()` maps the DB's race column through `RaceToJob`
+  and returns 0..3 - gating on the raw column would refuse every character.
 - **Being tracked by Git is not being delivered.** An install assembled from an
   update package holds exactly what `server-update-files.txt` lists;
   `panel/bin/apply_rates.sh` was tracked and still missing on the machine that

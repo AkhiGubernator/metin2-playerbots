@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T16:53:00Z",
-  "statusMessage": "Aktualizacja 1.30.26. Bot, ktorego nie stac na cala paczke przynety, kupuje teraz tyle, na ile go stac - dotad nie kupowal nic i stal pod Rybakiem. Potwierdzone po 1.30.25: 1455 przejsc portalami i zero zaciec przy 850 botach, swiat rozlozony na dziewiec map. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T17:44:00Z",
+  "statusMessage": "Aktualizacja 1.30.27. Instalacja, ktorej brakuje zrodel gry, mowi o tym jednym zdaniem zamiast pietnastoma bledami Dockera - i nie niszczy juz dzialajacego kontekstu budowy. Boty jezdza konno na dlugich trasach zamiast isc pieszo, dobijaja metina zamiast odchodzic przy resztce jego zycia, a te ponizej 30 poziomu resetuja umiejetnosci u staruszki, gdy utkna na 17 punktach. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.26",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.26/metin2-server-update-1.30.26.zip",
-    "sha256": "DA672766D197B761706F0B89AB4C206B91921163C6A798BC4EB784E8ABE56986"
+    "version": "1.30.27",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.27/metin2-server-update-1.30.27.zip",
+    "sha256": "F0818DD1CCA9EA79FC08FBEB0D5892BBFB379641CBA1D86EB543A184A4028689"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

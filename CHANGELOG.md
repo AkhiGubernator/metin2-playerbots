@@ -17,6 +17,105 @@ every version here.
 
 ---
 
+## 1.30.27 — 2026-09-08
+
+### Naprawione
+
+- **Instalacja, która straciła źródła gry, nie mówiła o tym ani słowa.**
+  Zgłoszone z Discorda po 1.30.26: budowa kończy się piętnastoma liniami
+  `failed to calculate checksum ... not found`, wymieniającymi `src/server/common`,
+  `libgame`, `extern`, `serverfiles/share/...` — a Docker i WSL działają poprawnie.
+
+  Liczba, która to rozstrzygnęła: kontekst budowy miał **1,61 MB**, a pełny liczy
+  się w setkach megabajtów. Paczka aktualizacji wkłada pod `game/src` dokładnie
+  **trzydzieści osiem plików** — sam `src/server/game`, bo tam należą źródła botów.
+  Cała reszta drzewa pochodzi z **własnej paczki serwera r40250** operatora i jest
+  rozpakowywana raz, przy instalacji; aktualizacja jej nie przywraca, bo nie wolno
+  nam jej rozpowszechniać. Na maszynie, która to drzewo straciła, aktualizacja
+  **wytwarza** wiarygodnie wyglądający `src/server/game` — i budowa dochodzi dalej
+  tylko po to, by paść na wszystkim obok.
+
+  A dlaczego drzewo znikało: `prepare-context.sh` kasował kontekst budowy, **zanim**
+  sprawdził, czy ma z czego go odtworzyć. Kontrola na górze pliku patrzyła tylko,
+  czy katalog `server/` istnieje — nie czy zawiera dziewięć modułów. Niepełne
+  drzewo przechodziło tę kontrolę, po czym skrypt **niszczył działającą
+  instalację i dopiero potem umierał**. Teraz sprawdza wszystkie dziewięć modułów
+  i cztery katalogi `share/` przed skasowaniem czegokolwiek, a gdy źródeł brakuje,
+  zostawia istniejący kontekst w spokoju.
+
+  Drugie zabezpieczenie jest po stronie gracza: launcher sprawdza kompletność
+  kontekstu **przed** uruchomieniem budowy i mówi jednym zdaniem po polsku, czego
+  brakuje, że to nie jest błąd Dockera ani aktualizacji, i że ratunkiem jest
+  ponowne uruchomienie instalatora — baza, postacie i ustawienia zostają nietknięte.
+
+- **Boty przemierzały pół mapy pieszo, a koń biegł za nimi.** Zgłoszone z Discorda
+  dokładnie taką obserwacją — i tak właśnie było. Silnik przy zsiadaniu
+  **przywołuje konia jako towarzysza**, a nic nie sadzało jeźdźca z powrotem:
+  każde przejście wędrowne prosiło o trasę z końmi **wyłączonymi**, choć miejsce
+  polowania wybierane jest nawet dwadzieścia kilometrów dalej. Koń wraca na trasy
+  wędrowne, do znanego metina, na wyprawę na bossa i na powrót po śmierci; krótkie
+  przebieżki są nietknięte, bo dosiad i tak nie zachodzi bliżej niż 1800 jednostek.
+
+  Zmierzone po wdrożeniu: **304 dosiady na długą trasę w pięć minut** — wobec
+  **siedmiu w dwadzieścia pięć minut** przed poprawką.
+
+- **Bot odchodził od metina, któremu został ułamek życia.** Zgłoszone przez dwie
+  osoby. To nie był odwrót taktyczny — kamień jest w silniku `CHAR_TYPE_STONE`, a
+  nie `CHAR_TYPE_MONSTER`, więc odwrót go nie dotyczy. Winna była **awaryjna
+  regeneracja przy dwudziestu procentach życia**, która porzuca cel bez względu na
+  to, czym on jest. Dla potwora to słuszne: goni i zabije. Kamień **nikogo nie
+  goni**, a odejście od niego wyrzuca całą walkę — bot wraca do kamienia w pełni
+  sił albo nie zastaje go wcale. Teraz dobija kamień poniżej piętnastu procent
+  jego wytrzymałości i tylko dopóki sam jest powyżej dziesięciu. Śmierć kosztuje
+  doświadczenie i to nie jest przyzwolenie na stanie w fali uderzeniowej.
+
+- **Przynęta kupowana za tyle, ile bot ma — ale nie do ostatniego yanga.**
+  Poprawka z 1.30.26 zadziałała aż za dobrze: ten sam bot przeszedł z 556 przez
+  601 do **jednego yanga**, wydając ostatni grosz na robaki i nie zostawiając nic
+  na miksturkę. Rezerwa kwotowa nie da się tu zastosować — każda dość duża, by
+  miała sens, jest większa niż majątek botów, którym ta poprawka pomaga, więc
+  odmówiłaby dokładnie tego zakupu, dla którego powstała. Jest udziałem: bot
+  wydaje najwyżej dziewięćdziesiąt procent sakiewki.
+
+### Nowe
+
+- **Boty resetują umiejętności u staruszki, gdy nie mają już czym próbować.**
+  Zaproponowane na Discordzie. Sprawdzone w plikach serwerowych i zrobione
+  dokładnie tak, jak robi to gracz: **NPC 9006** na południe od Joan, koszt
+  `10000 + poziom × 2000`, odmowa poniżej piątego i **powyżej trzydziestego**
+  poziomu — wszystko wprost z `skill_reset2.quest`.
+
+  Bot idzie tam tylko wtedy, gdy naprawdę utknął: umiejętność stoi na siedemnastu
+  bez mistrza **i** nie został mu ani jeden punkt umiejętności. Reset kasuje
+  wszystkie poziomy umiejętności, więc bot z punktami w ręce ma je najpierw wydać
+  i rzucać dalej za darmo. Do tego pół godziny odstępu i zapas w sakiewce, żeby
+  reset nie zostawił go bez pieniędzy na mikstury.
+
+  Zmierzone na żywo, od zapłaty po powrót do pracy:
+
+      19:36:44  reset u staruszki  poziom=27 grupa=2 zablokowana=48 koszt=64000 punkty=26
+      19:36:49  cel: wybór profesji
+      19:37:10  wybrał grupę u trenera  punkty=26
+      19:37:14  wrócił do roboty
+
+  Koszt 64 000 to dokładnie `10000 + 27 × 2000`, a 26 punktów to dokładnie tyle,
+  ile zwraca silnik przy czyszczeniu umiejętności. **Dwadzieścia sześć sekund
+  po zapłacie bot stał u trenera** — bo grupa wyzerowana to dokładnie ten stan,
+  który od zawsze odsyłał bota do trenera, więc druga połowa sprawy nie
+  potrzebowała żadnej nowej mechaniki.
+
+### Zmienione
+
+- **Trzy pozycje robią stragan.** Zgłoszone z Discorda: „bez sensu, że boty mają
+  dużo yang i miejsce w ekwipunku, a wystawiają na siłę sklep z jedną Niedźwiedzią
+  Skórą czy innym ornamentem". Zasada obok tego progu od zawsze mówiła „trzy",
+  podczas gdy liczba mówiła „dwa" — a dwa tanie materiały to ta sama skarga jedną
+  linię dalej. Prawdziwy łup otwiera stragan sam jak dotąd: broń z trzydziestego
+  poziomu, cokolwiek na +6, duży bonus, medal konny. Materiał nigdy nie zbliża
+  się do tego progu.
+
+---
+
 ## 1.30.26 — 2026-09-08
 
 ### Naprawione

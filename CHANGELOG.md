@@ -17,6 +17,94 @@ every version here.
 
 ---
 
+## 1.30.22 — 2026-09-08
+
+### Naprawione
+
+- **Instalacje na Linuksie i VPS-ach nie dawały się zaktualizować.** Zgłoszone z
+  Discorda z dokładną diagnozą, za którą dziękujemy: łatka silnika
+  `0008-warp-npc-ignores-playerbots.patch` jest ucięta. Jej nagłówek deklaruje
+  `@@ -6447,7 +6447,19 @@`, a treść niesie sześć starych i osiemnaście nowych
+  linii — brakuje ostatniej linii kontekstu z zamykającą klamrą. `patch` odrzuca
+  taki plik, `prepare-context.sh` przerywa i aktualizacja staje w pół drogi.
+  Dotyczyło to wydań od 1.30.13 do 1.30.20; w 1.30.12 tej łatki jeszcze nie ma.
+  Brakująca linia jest dopisana, a łatka przechodzi teraz próbę na sucho z
+  `--fuzz=0` przeciwko czystemu drzewu portu.
+  Dlaczego nikt tego u nas nie złapał: **na Windowsie ta łatka w ogóle się nie
+  uruchamia** — launcher wgrywa gotowy, już załatany `char.cpp`, a
+  `prepare-context.sh` odpala się tylko tam, gdzie serwer buduje się ze źródeł.
+  Cały nasz tor testowy jest windowsowy, więc trafiło to wyłącznie w instalacje,
+  których nie testujemy. To się zmienia: próba na sucho z `--fuzz=0` wchodzi na
+  stałe do sprawdzania łatek.
+
+- **Jeden uszkodzony plik potrafił zatrzymać cały serwer i żadna aktualizacja go
+  nie naprawiała.** Zgłoszone z Discorda: „nie mogę aktualizować ani grać".
+  W logu widać `linux-port/docker/panel/Dockerfile` o rozmiarze **dwóch bajtów**
+  (u nas ma prawie pięć kilobajtów). `docker compose up` buduje trzy obrazy
+  jednym przebiegiem, więc panel wywalał się na pierwszym kroku, a gra i panel
+  zaawansowany szły z nim (`CANCELED`) — nie wstawało nic. Rada z komunikatu,
+  żeby kliknąć GRAJ ponownie, nie miała jak pomóc, bo nic tego pliku nie
+  zastępowało: **z siedmiu Dockerfile'ów, które budują się na maszynie gracza,
+  aktualizacja wysyłała tylko ten od gry.** Teraz jadą wszystkie, razem z plikami
+  `.dockerignore`, więc następna aktualizacja odbudowuje uszkodzony plik sama.
+
+- **Dwóch wędkarzy stawało na jednym stanowisku.** Dwie przyczyny, obie po
+  naszej stronie. Po pierwsze, po wyborze miejsca kod dociągał je do
+  „najbliższej chodzalnej komórki" w promieniu **dwunastu komórek, czyli
+  sześciuset jednostek**, przy promieniu przybycia równym dwudziestu pięciu —
+  więc dwa stanowiska odległe o sto pięćdziesiąt mogły trafić na jedno miejsce.
+  To ten sam błąd, który w tym samym wydaniu naprawiliśmy w marszu do portalu.
+  Po drugie, i głębiej: **nawigacja ocenia komórkę, próbkując jej środek**
+  (`podstawa + n*50 + 25`), a stanowiska były generowane na wielokrotnościach
+  pięćdziesięciu, czyli na rogach komórek. Sprawdzaliśmy jeden punkt, a silnik
+  sądził po sąsiednim. Cała tablica jest przeliczona na środki komórek.
+
+### Nowe
+
+- **Świątynia Hwang.** Mapa 65 wchodzi jako szósty teren dla botów, dla postaci
+  od 52 poziomu, obok Sohanu i Lochu Pająków. Wszystko wzięte z plików samego
+  serwera, nie z opisu: 5088 punktów odrodzenia, potwory od 52 do 61, mediana
+  56. Zachodnia połowa to Elit. Ezoterycy 52–55 i tam się na mapę wchodzi,
+  wschodnia to Drzewne Żółwie i Straszydła 55–58 — i tak samo dzieli się
+  dziewięć miejsc łowieckich, policzonych z gęstości odrodzeń i sprawdzonych co
+  do jednego, czy da się na nich stanąć.
+  Metinów tam nie ma; to, co u innych map jest plikiem kamieni, tutaj jest
+  szesnastoma żyłami rudy. Nie ma też miejsca zbiórki na bossa: dwa punkty
+  losują wśród trzech ras, a jedna z nich to Zjawa Żółtego Tygrysa na
+  siedemdziesiątym piątym poziomie — nie ma po co wysyłać tam pięćdziesiątki.
+  **Prawdziwym powodem jest jednak drop.** Język Żaby, Żabie Udka, Liść,
+  Nieznany Talizman+ i Księga Klątw+ występują w osiemnastu recepturach
+  ulepszania i nie wypadały na żadnej mapie, po której chodziły boty — rejestr
+  rynku prosił o pierwszy z nich przy podaży dokładnie zero. Botom nie trzeba
+  było o nich mówić ani słowa: kod czyta tabelę receptur samego silnika, więc
+  stały się towarem w tej samej chwili, w której bot mógł stanąć tam, gdzie
+  wypadają.
+
+### Zmienione
+
+- **Koniec ze staniem w mieście — boty chodzą po straganach.** Poproszone na
+  Discordzie. Postój po załatwionych sprawach skrócony z czterech–dziesięciu
+  minut do około trzech, a zamiast stać w jednym punkcie rynku bot co
+  sześć–czternaście sekund wybiera inną ladę i tam idzie; nad głową pisze
+  „Oglądam stragany". Lada, do której nie potrafi dojść, jest porzucana po
+  dwudziestu sekundach — bez tego jeden bot ze zniszczoną trasą stałby przez
+  cały postój, czyli dokładnie tak, jak przedtem.
+  Zmierzone: cztery boty z napisem 'Ogladam stragany', wszystkie w ruchu — zaden nie trafil na liste stojacych.
+
+- **Wędkarze stoją wzdłuż rzeki, nie na trawie.** Poprzednie wydanie rozstawiło
+  ich na prostokącie, a ta rzeka się wije — brzeg biegnie od x 69 900 na północy
+  przez 67 200 w środku do 67 800 na południu — więc prostokąt dość szeroki, by
+  pomieścić pięćdziesiąt osób, sięgał tam, gdzie wody nie ma wcale.
+  Stanowiska są teraz tablicą, tak jak miejsca łowieckie są tablicą: każda
+  chodzalna komórka wzdłuż rzeki, posortowana po odległości do wody i przyjęta
+  tylko wtedy, gdy żadne przyjęte wcześniej nie leży bliżej niż sto pięćdziesiąt
+  jednostek. **162 miejsca**, każde najwyżej trzysta pięćdziesiąt jednostek od
+  wody. Każde niesie też własny punkt wody, bo obracanie się na wschód jest
+  poprawne dla jednego prostego odcinka i błędne wszędzie tam, gdzie rzeka
+  skręca. Zmierzone: trzydziestu wedkarzy rozlozonych wzdluz rzeki, najblizsza para dwanascie jednostek od siebie. To wciaz mniej niz zalozone poltora metra i nie jest to jeszcze wyjasnione — osobno tloczy sie tez kolejka dwudziestu dziewieciu botow po przynete u Rybaka, ktora rozstawia zupelnie inny kod.
+
+---
+
 ## 1.30.21 — 2026-09-08
 
 ### Naprawione

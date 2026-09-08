@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T12:51:00Z",
-  "statusMessage": "Aktualizacja 1.30.21. Bot nie wystawia juz na stragan tego, co powinien nosic, koniec z setkami botow stojacych w miejscu z napisem ide nad glowa, marsz do portalu celuje w portal, a wedkarze stoja metr od siebie zamiast na jednej kupce. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T13:43:00Z",
+  "statusMessage": "Aktualizacja 1.30.22. Naprawiona latka silnika, ktora blokowala aktualizacje na Linuksie i VPS-ach, oraz pliki budowania, ktorych brak potrafil zatrzymac caly serwer. Nowy teren dla botow od 52 poziomu: Swiatynia Hwang. Wedkarze stoja wzdluz rzeki, a boty w miescie chodza po straganach zamiast stac. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.21",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.21/metin2-server-update-1.30.21.zip",
-    "sha256": "99D930AA92846B45BD743D5FCD04EF52DDB6CA0A66D607463521AFD70A4F6187"
+    "version": "1.30.22",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.22/metin2-server-update-1.30.22.zip",
+    "sha256": "5A929B95ABF8F2395F14E1DBF5AA1F001475ACE93891CB84873217E0F030833F"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

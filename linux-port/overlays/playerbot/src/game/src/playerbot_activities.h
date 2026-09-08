@@ -249,7 +249,7 @@ namespace
 
 	void GetPlayerBotFishingStand(DWORD playerID, DWORD dwNow, long& standX, long& standY)
 	{
-		const int slots = PLAYERBOT_FISHING_STAND_COLUMNS * PLAYERBOT_FISHING_STAND_ROWS;
+		const int slots = (int)PLAYERBOT_FISHING_STAND_COUNT;
 		int mine = -1;
 		for (std::map<int, TPlayerBotFishingStand>::iterator it =
 				s_mapPlayerBotFishingStands.begin();
@@ -285,10 +285,26 @@ namespace
 			claim.dwPid = playerID;
 			claim.dwTouched = dwNow;
 		}
-		standX = PLAYERBOT_FISHING_BANK_X +
-				(long)(mine % PLAYERBOT_FISHING_STAND_COLUMNS) * PLAYERBOT_FISHING_STAND_SPACING;
-		standY = PLAYERBOT_FISHING_BANK_Y +
-				(long)(mine / PLAYERBOT_FISHING_STAND_COLUMNS) * PLAYERBOT_FISHING_STAND_SPACING;
+		standX = PLAYERBOT_FISHING_STANDS[mine].x;
+		standY = PLAYERBOT_FISHING_STANDS[mine].y;
+	}
+
+	// The water this stand looks at. Due east was right for the one straight
+	// stretch the first version knew about and wrong for every bend.
+	void GetPlayerBotFishingFacing(DWORD playerID, long& waterX, long& waterY)
+	{
+		waterX = PLAYERBOT_FISHING_WATER_X;
+		waterY = 0;
+		for (std::map<int, TPlayerBotFishingStand>::const_iterator it =
+				s_mapPlayerBotFishingStands.begin();
+				it != s_mapPlayerBotFishingStands.end(); ++it)
+		{
+			if (it->second.dwPid != playerID)
+				continue;
+			waterX = PLAYERBOT_FISHING_STANDS[it->first].waterX;
+			waterY = PLAYERBOT_FISHING_STANDS[it->first].waterY;
+			return;
+		}
 	}
 
 	bool IsPlayerBotHoldingRod(LPCHARACTER ch)
@@ -767,15 +783,17 @@ namespace
 		else
 		{
 			GetPlayerBotFishingStand(ch->GetPlayerID(), dwNow, destX, destY);
-			// The bank spots are hand-picked world coordinates. server_attr is the
-			// only authority on whether one is standable, and the town services
-			// already learned that a hand-picked point can be a cell the navigation
-			// refuses. Snap to a verified walkable cell before walking at it.
+			// A last check against the navigation's own grid, in case a stand
+			// falls in a cell it refuses - but within two cells, not twelve.
+			// Twelve is six hundred world units against an arrival radius of
+			// twenty-five, which is the same mistake the portal walk made: two
+			// stands a hundred and fifty apart could both be dragged onto one
+			// cell, and two anglers were found eight units apart because of it.
 			CPlayerBotNavigation& navigation =
 					CPlayerBotNavigation::instance(ch->GetMapIndex());
 			PIXEL_POSITION bank;
 			if (navigation.Init(ch->GetMapIndex()) &&
-					navigation.FindNearestWalkableWorld(destX, destY, 12, bank,
+					navigation.FindNearestWalkableWorld(destX, destY, 2, bank,
 							ch->GetPlayerID()))
 			{
 				destX = bank.x;
@@ -907,7 +925,9 @@ namespace
 
 			// Face straight across at the river rather than along the bank: the
 			// water lies due east of this stretch.
-			ch->SetRotationToXY(PLAYERBOT_FISHING_WATER_X, ch->GetY());
+			long waterX = 0, waterY = 0;
+			GetPlayerBotFishingFacing(ch->GetPlayerID(), waterX, waterY);
+			ch->SetRotationToXY(waterX, waterY != 0 ? waterY : ch->GetY());
 			ch->fishing();
 			if (!ch->m_pkFishingEvent)
 			{

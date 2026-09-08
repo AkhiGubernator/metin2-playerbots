@@ -49,7 +49,7 @@ with tempfile.TemporaryDirectory() as tmp, patch.object(panel,'RATES_SPOOL',Path
     assert panel.MAP_NAMES[108] == 'Loch Małp Normalny' and panel.MAP_NAMES[109] == 'Loch Małp Trudny'
     assert panel.MAP_BOUNDS[61] == (358400, 153600, 153600, 153600)
     assert 61 in panel.MAP_STONE_RESPAWN_IDS and not {25, 104, 108, 109} & panel.MAP_STONE_RESPAWN_IDS
-    assert [index for index, _name in panel.TRACKED_MAP_OPTIONS] == [21, 23, 24, 25, 61, 63, 64, 104, 108, 109]
+    assert [index for index, _name in panel.TRACKED_MAP_OPTIONS] == [21, 23, 24, 25, 61, 63, 64, 104, 108, 109, 65]
     assert panel.changelog_entries()[0]['version'] == '1.37.2'
     with patch.object(panel, 'rows', return_value=[]) as ranking_rows:
         assert panel.bot_ranking('bosses') == []

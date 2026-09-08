@@ -270,7 +270,8 @@ namespace
 						mapIndex != PLAYERBOT_MAP_ORC_VALLEY &&
 						mapIndex != PLAYERBOT_MAP_DESERT &&
 						mapIndex != PLAYERBOT_MAP_SOHAN &&
-						mapIndex != PLAYERBOT_MAP_SPIDER_V1)
+						mapIndex != PLAYERBOT_MAP_SPIDER_V1 &&
+						mapIndex != PLAYERBOT_MAP_HWANG)
 					return false;
 
 				if (m_initialized && m_mapIndex == mapIndex)

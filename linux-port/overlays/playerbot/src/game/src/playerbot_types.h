@@ -250,8 +250,22 @@ namespace
 	// session ends about once a minute across the whole angler cohort - at half
 	// that is three or four bots on the square at a time, which is not a market.
 	const int PLAYERBOT_TOWN_LINGER_PERCENT = 100;
-	const DWORD PLAYERBOT_TOWN_LINGER_MIN = 240000;
-	const DWORD PLAYERBOT_TOWN_LINGER_MAX = 600000;
+	// Three minutes of walking the counters, not four to ten of standing.
+	//
+	// The first version parked a bot on one spot of the square and left it
+	// there, which filled Joan and made it look like a car park: a hundred
+	// people motionless for up to ten minutes. What a town needs is movement,
+	// and the market ring is what there is to walk between - so the bot strolls
+	// from counter to counter instead, picking a new one every few seconds.
+	const DWORD PLAYERBOT_TOWN_LINGER_MIN = 150000;
+	const DWORD PLAYERBOT_TOWN_LINGER_MAX = 210000;
+	// How long a bot looks at one counter before moving to the next. Long
+	// enough to read as looking at something, short enough that the square is
+	// never still.
+	const DWORD PLAYERBOT_TOWN_BROWSE_MIN = 6000;
+	const DWORD PLAYERBOT_TOWN_BROWSE_MAX = 14000;
+	// And how long after that a counter it never reached is given up on.
+	const DWORD PLAYERBOT_TOWN_BROWSE_GIVE_UP = 20000;
 	const BYTE PLAYERBOT_PRECIOUS_REFINE = 6;
 	// The lowest refine an ordinary spare may carry and still be worth a counter
 	// slot. Below it nobody wants the thing: the market code buys medals,
@@ -824,6 +838,31 @@ namespace
 	// (10015) at (88,82) - so a bot never crosses the map to leave.
 	const long PLAYERBOT_MAP_SOHAN = 61;
 	const long PLAYERBOT_MAP_SPIDER_V1 = 104;
+	// The Hwang Temple, metin2_map_milgyo, base (537600,51200), 102400 square.
+	//
+	// Read out of the server's own spawn files rather than off a wiki, with
+	// tools/analyse_map_spawns.py: 5088 spawn points over nineteen kinds, levels
+	// 52 to 61, the median at 56. The west half is the Elite Esoterics of 52-55
+	// and is where the map is entered; the east half is the Tree Turtle Soldier
+	// (57, 612 points), the Bogey (58) and the Esoteric Tormentor (56). Two boss
+	// points every two hours roll among the Esoteric Summoner (54), the Frog
+	// General (61) and the Yellow Tiger Spectre (75) - no boss hub here, because
+	// a hub needs one named race and that roll has three.
+	//
+	// It has no Metin stones. What its stone.txt carries is sixteen ore veins -
+	// ebony, crystal, amethyst, diamond, white gold, shells, heaven's tears -
+	// which is what the wiki says too and is the one thing worth checking twice,
+	// since every other frontier's stone.txt means stones.
+	//
+	// The reason to add it is not the level band, which Sohan and V1 already
+	// cover from 48. It is the drops: the Frog Tongue (30060), the Frog Legs
+	// (30061), the Leaf (30040), the Unknown Talisman+ (30079) and the Curse
+	// Book+ (30080) appear in eighteen refine recipes and on no map this world
+	// hosts for bots, and the market ledger has been asking for the first of
+	// them with a supply of exactly zero. Nothing had to be taught about them:
+	// GetPlayerBotRefineMaterialVnums reads the engine's own recipe table, so
+	// they became goods the moment a bot could stand where they drop.
+	const long PLAYERBOT_MAP_HWANG = 65;
 	// The Spider Dungeon is entered from the desert, the way the game has it:
 	// NPC 10016 "Kuahlo Dong" in the desert's bottom-right corner (cell 1425,
 	// 1477 of metin2_map_n_desert_01) sends a character to (600, 4960) in V1,
@@ -891,6 +930,18 @@ namespace
 	// the Infected.
 	const BYTE PLAYERBOT_SOHAN_ICE_MIN_LEVEL = 58;
 	const BYTE PLAYERBOT_SPIDER_MIN_LEVEL = 48;
+	// The arrival is the temple's own Town.txt cell (161,938); the exit is five
+	// hundred units south of it. Both were checked against milgyo's server_attr
+	// and stand on open ground - eighty-one of eighty-one free cells within two
+	// hundred units, which is the radius the portal switch tests.
+	const long PLAYERBOT_HWANG_ARRIVAL_X = 553700;
+	const long PLAYERBOT_HWANG_ARRIVAL_Y = 145000;
+	const long PLAYERBOT_HWANG_EXIT_X = 553700;
+	const long PLAYERBOT_HWANG_EXIT_Y = 145500;
+	// Fifty-two is where its weakest Elite Esoteric stands, and fifty-five where
+	// the east half begins. Nothing below the first has any business here.
+	const BYTE PLAYERBOT_HWANG_MIN_LEVEL = 52;
+	const BYTE PLAYERBOT_HWANG_EAST_MIN_LEVEL = 55;
 
 	// Where a frontier map is entered and where it is left, by map. Every
 	// place that used to choose between the valley and the desert with a
@@ -904,6 +955,7 @@ namespace
 			case PLAYERBOT_MAP_DESERT: outX = PLAYERBOT_DESERT_ARRIVAL_X; outY = PLAYERBOT_DESERT_ARRIVAL_Y; return true;
 			case PLAYERBOT_MAP_SOHAN: outX = PLAYERBOT_SOHAN_ARRIVAL_X; outY = PLAYERBOT_SOHAN_ARRIVAL_Y; return true;
 			case PLAYERBOT_MAP_SPIDER_V1: outX = PLAYERBOT_SPIDER_ARRIVAL_X; outY = PLAYERBOT_SPIDER_ARRIVAL_Y; return true;
+			case PLAYERBOT_MAP_HWANG: outX = PLAYERBOT_HWANG_ARRIVAL_X; outY = PLAYERBOT_HWANG_ARRIVAL_Y; return true;
 			default: return false;
 		}
 	}
@@ -916,6 +968,7 @@ namespace
 			case PLAYERBOT_MAP_DESERT: outX = PLAYERBOT_DESERT_EXIT_X; outY = PLAYERBOT_DESERT_EXIT_Y; return true;
 			case PLAYERBOT_MAP_SOHAN: outX = PLAYERBOT_SOHAN_EXIT_X; outY = PLAYERBOT_SOHAN_EXIT_Y; return true;
 			case PLAYERBOT_MAP_SPIDER_V1: outX = PLAYERBOT_SPIDER_EXIT_X; outY = PLAYERBOT_SPIDER_EXIT_Y; return true;
+			case PLAYERBOT_MAP_HWANG: outX = PLAYERBOT_HWANG_EXIT_X; outY = PLAYERBOT_HWANG_EXIT_Y; return true;
 			default: return false;
 		}
 	}
@@ -926,7 +979,8 @@ namespace
 	bool IsPlayerBotFrontierMapIndex(long mapIndex)
 	{
 		return mapIndex == PLAYERBOT_MAP_ORC_VALLEY || mapIndex == PLAYERBOT_MAP_DESERT ||
-				mapIndex == PLAYERBOT_MAP_SOHAN || mapIndex == PLAYERBOT_MAP_SPIDER_V1;
+				mapIndex == PLAYERBOT_MAP_SOHAN || mapIndex == PLAYERBOT_MAP_SPIDER_V1 ||
+				mapIndex == PLAYERBOT_MAP_HWANG;
 	}
 
 	const char* GetPlayerBotFrontierName(long mapIndex)
@@ -937,6 +991,7 @@ namespace
 			case PLAYERBOT_MAP_DESERT: return "desert";
 			case PLAYERBOT_MAP_SOHAN: return "sohan";
 			case PLAYERBOT_MAP_SPIDER_V1: return "spider_v1";
+			case PLAYERBOT_MAP_HWANG: return "hwang";
 			default: return "frontier";
 		}
 	}
@@ -1280,41 +1335,133 @@ namespace
 	// along Y and all face +X. This band -- x 67250..67450, y 156900..157350 --
 	// was read out of map_b1's server_attr: every cell in it is standable, and
 	// open water starts a little east of it (tools/decode_server_attr.py).
-	const long PLAYERBOT_FISHING_BANK_X = 66450;
-	const long PLAYERBOT_FISHING_BANK_Y = 156300;
-	// One angler to a stand, a metre apart, on a grid read out of map_b1's
-	// server_attr: ninety cells, six columns by fifteen rows at a hundred and
-	// fifty world units from (66450, 156300), every one of them standable. The
-	// live angler population is about fifty-five, so there are stands to spare.
+	// Where the anglers stand, measured along the river rather than laid out on
+	// a grid.
 	//
-	// The spacing is a hundred and fifty rather than a hundred because the
-	// arrival radius is what actually decides how close two anglers end up: each
-	// stops within PLAYERBOT_FISHING_ARRIVE of its own stand, so the guaranteed
-	// gap is the spacing less twice that. At a hundred and fifty against
-	// twenty-five, two anglers are always at least a metre apart - which is what
-	// was asked for - and usually a metre and a half. A first attempt at a
-	// hundred and fifty units of arrival radius measured thirty-four units
-	// between the closest pair.
+	// A rectangle was the first attempt and it put half of them on the grass:
+	// this river bends, its bank running from x 69900 in the north through
+	// 67200 in the middle to 67800 in the south, so any rectangle wide enough
+	// to hold fifty people reaches inland to where there is no water at all.
+	// A photograph from the Discord showed exactly that - a crowd on the lawn
+	// with rods, several metres from the bank.
 	//
-	// It runs inland rather than along the water's edge: at this spacing a
-	// fourth column already stands in the river. Six rows back from the bank is
-	// a beach with fifty-five people on it, which is what this is.
+	// So the stands are a table, the way hunting hubs are a table. Every
+	// candidate cell along the river was taken out of map_b1's server_attr,
+	// sorted by its distance to open water, and kept only if no already-kept
+	// stand was within 150 units: 162 places, each one standable, each
+	// within 350 units of water, and none closer to another than a metre and a
+	// half. Against a live angler population near sixty that is a bank with
+	// room to spare, and the first ones taken are the ones at the water's edge.
 	//
-	// It used to be fifty slots at fifty units - half a metre - on a patch two
-	// metres by four, and the Discord photographed the result: forty name plates
-	// in a heap with one bot visible underneath them.
-	const int PLAYERBOT_FISHING_STAND_SPACING = 150;
-	const int PLAYERBOT_FISHING_STAND_COLUMNS = 6;
-	const int PLAYERBOT_FISHING_STAND_ROWS = 15;
-	// A stand nobody has stood on for this long is free again. A hash alone
-	// cannot keep anglers apart - fifty of them over eighty-eight slots collide
-	// long before they fill it - so a stand is claimed, and a claim has to
-	// expire or a bot that logged out mid-cast would hold its place for ever.
+	// Every coordinate sits on a navigation cell centre - base + n*50 + 25 -
+	// because that is the point CPlayerBotNavigation samples when it decides
+	// whether a cell may be stood on. Stands generated on the multiples of
+	// fifty instead sat on cell corners, so the grid judged them by a
+	// neighbouring sample: some were called blocked, the walk snapped them to
+	// the nearest cell it did accept, and two anglers ended up eight units
+	// apart on the same one.
+	//
+	// The last two numbers are a point in the water in front of the stand. A
+	// bot used to be turned to face due east, which is right for a north-south
+	// bank and wrong everywhere this river turns.
+	struct TPlayerBotFishingStandPoint { long x; long y; long waterX; long waterY; };
+	const TPlayerBotFishingStandPoint PLAYERBOT_FISHING_STANDS[] = {
+		{  69775, 155625,  70825, 156675 }, {  69575, 155675,  70625, 156725 },
+		{  70175, 155675,  70625, 156125 }, {  70375, 155675,  70525, 155825 },
+		{  69925, 155725,  70525, 156325 }, {  69275, 155775,  70325, 156825 },
+		{  69425, 155775,  70475, 156825 }, {  69725, 155825,  70325, 156425 },
+		{  70275, 155825,  70425, 155825 }, {  68775, 155875,  69825, 156925 },
+		{  68925, 155875,  69975, 156925 }, {  69075, 155875,  70125, 156925 },
+		{  70075, 155875,  70225, 156025 }, {  69425, 155925,  70025, 156525 },
+		{  69575, 155925,  70175, 156525 }, {  68575, 155975,  69625, 157025 },
+		{  69875, 155975,  70025, 156125 }, {  70225, 155975,  70375, 155975 },
+		{  70375, 155975,  70525, 155975 }, {  68925, 156025,  69525, 156625 },
+		{  69075, 156025,  69675, 156625 }, {  69225, 156025,  69225, 156625 },
+		{  68275, 156075,  69325, 157125 }, {  68425, 156075,  69475, 157125 },
+		{  69575, 156075,  69725, 156225 }, {  69725, 156075,  69725, 156225 },
+		{  68725, 156125,  69325, 156725 }, {  68125, 156175,  69175, 157225 },
+		{  69075, 156175,  69225, 156325 }, {  69225, 156175,  69225, 156325 },
+		{  69375, 156175,  69375, 156325 }, {  68425, 156225,  69025, 156825 },
+		{  68575, 156225,  69175, 156825 }, {  69525, 156225,  69675, 156225 },
+		{  67975, 156275,  68725, 157025 }, {  68875, 156275,  69025, 156425 },
+		{  68225, 156325,  68225, 156925 }, {  69025, 156325,  69175, 156325 },
+		{  69175, 156325,  69325, 156325 }, {  69325, 156325,  69475, 156325 },
+		{  67575, 156375,  68625, 157425 }, {  67775, 156375,  68525, 157125 },
+		{  68575, 156375,  68725, 156525 }, {  68725, 156375,  68725, 156525 },
+		{  69475, 156375,  69625, 156375 }, {  68875, 156425,  69025, 156425 },
+		{  68325, 156475,  68325, 156625 }, {  69025, 156475,  69175, 156475 },
+		{  69175, 156475,  69325, 156475 }, {  67525, 156525,  68425, 157425 },
+		{  67675, 156525,  68425, 157275 }, {  68475, 156525,  68625, 156525 },
+		{  68625, 156525,  68775, 156525 }, {  68775, 156575,  68925, 156575 },
+		{  67325, 156625,  68225, 157525 }, {  67175, 156775,  68225, 157825 },
+		{  67325, 156775,  68225, 157675 }, {  67475, 156775,  67925, 157225 },
+		{  67175, 156925,  68225, 157975 }, {  67325, 156925,  67925, 157525 },
+		{  67575, 156925,  67725, 156925 }, {  67075, 157075,  68125, 158125 },
+		{  67325, 157075,  67925, 157675 }, {  67475, 157075,  67625, 157225 },
+		{  67075, 157225,  68125, 158275 }, {  67225, 157225,  67825, 157825 },
+		{  67475, 157225,  67625, 157225 }, {  67225, 157375,  67825, 157975 },
+		{  67375, 157375,  67525, 157525 }, {  67075, 157425,  68125, 157425 },
+		{  67225, 157525,  67825, 157525 }, {  67375, 157525,  67525, 157525 },
+		{  67075, 157575,  68125, 157575 }, {  67225, 157675,  67825, 157675 },
+		{  67375, 157675,  67525, 157675 }, {  67125, 157825,  68025, 156925 },
+		{  67275, 157825,  67725, 157375 }, {  67475, 157925,  67625, 157925 },
+		{  67125, 157975,  68025, 157075 }, {  67325, 157975,  67925, 157975 },
+		{  67475, 158075,  67625, 158075 }, {  67175, 158125,  68225, 158125 },
+		{  67325, 158125,  67925, 158125 }, {  67475, 158225,  67625, 158225 },
+		{  67625, 158225,  67775, 158225 }, {  67775, 158225,  67925, 158225 },
+		{  68725, 158225,  68875, 158225 }, {  68875, 158225,  69025, 158225 },
+		{  69025, 158225,  69175, 158225 }, {  69175, 158225,  69025, 158225 },
+		{  69325, 158225,  69325, 158075 }, {  69475, 158225,  69475, 158075 },
+		{  69625, 158225,  69625, 158075 }, {  69775, 158225,  69775, 158075 },
+		{  69925, 158225,  69925, 158075 }, {  70075, 158225,  70225, 158225 },
+		{  67275, 158275,  68025, 158275 }, {  67925, 158325,  68075, 158325 },
+		{  68075, 158325,  68225, 158325 }, {  68225, 158325,  68375, 158325 },
+		{  68375, 158325,  68525, 158325 }, {  68525, 158325,  68675, 158325 },
+		{  70225, 158325,  70225, 158175 }, {  67425, 158375,  67725, 158075 },
+		{  67675, 158375,  67825, 158375 }, {  68675, 158375,  68825, 158375 },
+		{  68825, 158375,  68975, 158375 }, {  68975, 158375,  68675, 158375 },
+		{  69125, 158375,  69125, 158075 }, {  69275, 158375,  68975, 158075 },
+		{  69425, 158375,  69425, 157775 }, {  69575, 158375,  69575, 157775 },
+		{  69725, 158375,  69725, 157775 }, {  69925, 158375,  70225, 158075 },
+		{  70075, 158375,  70075, 158075 }, {  67275, 158425,  68025, 157675 },
+		{  70375, 158425,  70375, 158275 }, {  67825, 158475,  67975, 158475 },
+		{  67975, 158475,  67825, 158475 }, {  68125, 158475,  68125, 158175 },
+		{  68275, 158475,  68275, 158175 }, {  68425, 158475,  68425, 158175 },
+		{  70225, 158475,  70525, 158175 }, {  67425, 158525,  68175, 157775 },
+		{  67575, 158525,  68025, 158075 }, {  68575, 158525,  68575, 158075 },
+		{  68725, 158525,  68725, 158075 }, {  68875, 158525,  68875, 158075 },
+		{  69025, 158525,  68575, 158075 }, {  69175, 158525,  69175, 157775 },
+		{  69325, 158525,  68575, 157775 }, {  69475, 158525,  68575, 157625 },
+		{  69625, 158525,  69625, 157475 }, {  69775, 158525,  70525, 157775 },
+		{  69925, 158525,  70675, 157775 }, {  70075, 158525,  70075, 157775 },
+		{  67225, 158575,  68125, 157675 }, {  70375, 158575,  70825, 158125 },
+		{  67725, 158625,  68175, 158175 }, {  67875, 158625,  67875, 158175 },
+		{  68025, 158625,  67575, 158175 }, {  68175, 158625,  67575, 158025 },
+		{  68325, 158625,  68325, 157875 }, {  70225, 158625,  70975, 157875 },
+		{  67425, 158675,  68325, 157775 }, {  67575, 158675,  68325, 157925 },
+		{  68475, 158675,  68475, 157775 }, {  68625, 158675,  68625, 157775 },
+		{  68775, 158675,  68775, 157775 }, {  68925, 158675,  68025, 157775 },
+		{  69075, 158675,  68175, 157775 }, {  69225, 158675,  68175, 157625 },
+		{  70025, 158675,  70925, 157775 }, {  70375, 158725,  71125, 157975 },
+		{  67825, 158775,  67825, 157875 }, {  67975, 158775,  67975, 157875 },
+		{  68125, 158775,  67225, 157875 }, {  68275, 158775,  67375, 157875 },
+		{  70225, 158775,  71125, 157875 }, {  67475, 158825,  68525, 157775 },
+		{  67625, 158825,  68675, 157775 }, {  70375, 158875,  71425, 157825 }
+	};
+	const size_t PLAYERBOT_FISHING_STAND_COUNT =
+			sizeof(PLAYERBOT_FISHING_STANDS) / sizeof(PLAYERBOT_FISHING_STANDS[0]);
+	// The middle of that table and a radius that covers all of it. Only the
+	// status line uses these, for the one question it asks about an angler: is
+	// it at the river yet, or still on its way. The stands themselves span
+	// x 67050..70400 and y 155600..158850, so nothing smaller reaches the ends.
+	const long PLAYERBOT_FISHING_BANK_X = 68725;
+	const long PLAYERBOT_FISHING_BANK_Y = 157225;
+	const int PLAYERBOT_FISHING_BANK_RADIUS = 2600;
 	const DWORD PLAYERBOT_FISHING_STAND_CLAIM = 120000;
 	// A point well inside the river, used only to turn the bot to face the water.
 	const long PLAYERBOT_FISHING_WATER_X = 68000;
 	// A quarter of a metre. This is half of what keeps two anglers apart - see
-	// the stand grid above - and the stand itself is a cell server_attr says is
+	// the stand table above - and the stand itself is a cell server_attr says is
 	// standable, so there is nothing to be generous about. It was two hundred,
 	// which let a bot stop on its neighbour's place and undo the spacing
 	// entirely.
@@ -2061,6 +2208,9 @@ namespace
 			wHuntingHub(0xffff),
 			dwHubChosenTime(0),
 			dwTownLingerUntil(0),
+			dwTownBrowseUntil(0),
+			lTownBrowseX(0),
+			lTownBrowseY(0),
 			dwFirstNavDeferTime(0),
 			dwMarketM2AllowedUntil(0),
 			dwServiceRetryAt(0),
@@ -2353,6 +2503,10 @@ namespace
 		// Until when this bot is spending time in town rather than leaving the
 		// moment its errand is done.
 		DWORD dwTownLingerUntil;
+		// The next counter this bot strolls to, and when to choose another.
+		DWORD dwTownBrowseUntil;
+		long lTownBrowseX;
+		long lTownBrowseY;
 		// When this bot first had a route refused for want of planning budget.
 		// The audit asked for the queue age: a deferral that has stood for a
 		// minute is a different thing from one that has stood for a second.

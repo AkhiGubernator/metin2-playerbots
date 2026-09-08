@@ -85,6 +85,7 @@ namespace
 			case PLAYERBOT_MAP_ORC_VALLEY: return "do Doliny Orkow";
 			case PLAYERBOT_MAP_SOHAN: return "na Gore Sohan";
 			case PLAYERBOT_MAP_SPIDER_V1: return "do Lochu Pajakow";
+			case PLAYERBOT_MAP_HWANG: return "do Swiatyni Hwang";
 			default: return "";
 		}
 	}
@@ -108,7 +109,7 @@ namespace
 			case BOT_ACTION_STALL: return "prowadze stragan";
 			case BOT_ACTION_MARKET: return "jestem na zakupach";
 			case BOT_ACTION_LURE: return "podciagam moby dla PT";
-			case BOT_ACTION_TOWN_REST: return "odpoczywam w miescie";
+			case BOT_ACTION_TOWN_REST: return "chodze po straganach";
 			default: return "mysle";
 		}
 	}
@@ -348,7 +349,8 @@ namespace
 						PLAYERBOT_FISHING_BAIT_RESTOCK)
 					snprintf(status, statusSize, "%sIde do Rybaka po przynete", prefix);
 				else if (DISTANCE_APPROX(ch->GetX() - PLAYERBOT_FISHING_BANK_X,
-						ch->GetY() - PLAYERBOT_FISHING_BANK_Y) > 850)
+						ch->GetY() - PLAYERBOT_FISHING_BANK_Y) >
+						PLAYERBOT_FISHING_BANK_RADIUS)
 					snprintf(status, statusSize, "%sIde nad rzeke lowic ryby", prefix);
 				else if (state.bIsFishing)
 					snprintf(status, statusSize, "%sLowie ryby - czekam na branie", prefix);
@@ -356,7 +358,7 @@ namespace
 					snprintf(status, statusSize, "%sZakladam przynete na wedke", prefix);
 				break;
 			case BOT_ACTION_TOWN_REST:
-				snprintf(status, statusSize, "%sOdpoczywam w miescie", prefix);
+				snprintf(status, statusSize, "%sOgladam stragany", prefix);
 				break;
 			case BOT_ACTION_MARKET:
 				if (state.dwMarketStallVID != 0)

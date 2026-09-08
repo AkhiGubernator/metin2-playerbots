@@ -70,6 +70,21 @@ linux-port/overlays/playerbot/patches/*.patch
 # a server-side bot cannot cross between cores, so this must ship with it.
 linux-port/docker/game/bin/m2-render-config
 linux-port/docker/game/Dockerfile
+# Every other build context that "docker compose up" builds on the player's
+# machine. Only the game's Dockerfile used to ship, and an update therefore
+# could not repair one of the others: a two-byte panel/Dockerfile - reported
+# from the Discord - failed the bake before it started, so game and seban-panel
+# were CANCELED with it and nothing came up at all. Clicking PLAY again cannot
+# help, because nothing in the update replaces the broken file.
+linux-port/docker/panel/Dockerfile
+linux-port/docker/panel/.dockerignore
+linux-port/docker/game/.dockerignore
+linux-port/docker/client-builder/Dockerfile
+linux-port/docker/client-builder/.dockerignore
+linux-port/docker/webclient-fetcher/Dockerfile
+linux-port/docker/wsbridge/Dockerfile
+linux-port/docker/wsbridge/.dockerignore
+linux-port/docker/updater/Dockerfile
 # The chest table the Dockerfile COPYs, at the path the COPY reads it from.
 # The update builds the image the moment the files land, before start-server
 # gets to stage it, so the package puts it there itself.

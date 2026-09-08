@@ -21,6 +21,7 @@ MAP_NAMES = {
     24: "Chunjo M3", 25: "Łatwy Loch Małp", 41: "Jinno M1", 43: "Jinno M2",
     61: "Góra Sohan", 63: "Pustynia Yongbi", 64: "Dolina Orków", 104: "Loch Pająków V1",
     108: "Loch Małp Normalny", 109: "Loch Małp Trudny",
+    65: "Świątynia Hwang",
 }
 MAP_BOUNDS = {
     21: (0, 102400, 102400, 128000), 23: (102400, 204800, 102400, 102400),
@@ -28,6 +29,7 @@ MAP_BOUNDS = {
     61: (358400, 153600, 153600, 153600), 63: (204800, 486400, 153600, 153600),
     64: (256000, 665600, 153600, 153600), 104: (51200, 486400, 76800, 76800),
     108: (128000, 640000, 76800, 76800), 109: (128000, 716800, 76800, 76800),
+    65: (537600, 51200, 102400, 102400),
 }
 TRACKED_MAP_OPTIONS = tuple((index, MAP_NAMES[index]) for index in MAP_BOUNDS)
 MAP_RESPAWN_OPTIONS = (

@@ -865,6 +865,7 @@ namespace
 				ch->GetMyShop() || state.bTacticalRetreat || state.bRecoveringAfterDeath)
 		{
 			state.dwTownLingerUntil = 0;
+			state.dwTownBrowseUntil = 0;
 			return false;
 		}
 		// Merely interrupted: an errand, a shopping trip, a cast or a fight has
@@ -882,19 +883,40 @@ namespace
 			state.dwTownLingerUntil = 0;
 			return false;
 		}
-		// Its own spot on the square, stable per bot, so the crowd looks like a
-		// crowd of people rather than a heap in one place.
-		long offsetX = 0, offsetY = 0;
-		GetPlayerBotStableOffset(ch->GetPlayerID(), 0x52455354U,
-				PLAYERBOT_SHOP_RING_MIN, PLAYERBOT_SHOP_RING_RADIUS + 900,
-				offsetX, offsetY);
+		// A new place on the market ring every few seconds, rather than one spot
+		// held for the whole visit. The salt is the clock, so each stop is
+		// somewhere else and the square keeps moving; what a passer-by sees is
+		// people walking between the counters, which is what a market looks
+		// like. This is the whole of the change asked for on the Discord: bots
+		// were standing still in town for up to ten minutes at a time.
 		SetPlayerBotAction(state, BOT_ACTION_TOWN_REST, dwNow);
-		if (DISTANCE_APPROX(ch->GetX() - (pitchX + offsetX),
-				ch->GetY() - (pitchY + offsetY)) > PLAYERBOT_MARKET_ARRIVE)
+		const bool arrived = state.dwTownBrowseUntil != 0 &&
+				DISTANCE_APPROX(ch->GetX() - state.lTownBrowseX,
+						ch->GetY() - state.lTownBrowseY) <= PLAYERBOT_MARKET_ARRIVE;
+		// A counter it cannot reach is abandoned rather than walked at for ever:
+		// without the second clause a bot whose route keeps failing would stand
+		// facing an unreachable point for the whole visit, which is exactly the
+		// standing still this replaced.
+		if (state.dwTownBrowseUntil == 0 || (arrived && dwNow >= state.dwTownBrowseUntil) ||
+				dwNow >= state.dwTownBrowseUntil + PLAYERBOT_TOWN_BROWSE_GIVE_UP)
 		{
-			MovePlayerBot(ch, pitchX + offsetX, pitchY + offsetY, dwNow, 6, true);
+			long offsetX = 0, offsetY = 0;
+			GetPlayerBotStableOffset(ch->GetPlayerID() ^ (dwNow >> 13), 0x52455354U,
+					PLAYERBOT_SHOP_RING_MIN, PLAYERBOT_SHOP_RING_RADIUS + 900,
+					offsetX, offsetY);
+			state.lTownBrowseX = pitchX + offsetX;
+			state.lTownBrowseY = pitchY + offsetY;
+			state.dwTownBrowseUntil = dwNow + number(
+					(int)PLAYERBOT_TOWN_BROWSE_MIN, (int)PLAYERBOT_TOWN_BROWSE_MAX);
+		}
+		if (DISTANCE_APPROX(ch->GetX() - state.lTownBrowseX,
+				ch->GetY() - state.lTownBrowseY) > PLAYERBOT_MARKET_ARRIVE)
+		{
+			MovePlayerBot(ch, state.lTownBrowseX, state.lTownBrowseY, dwNow, 6, true);
 			return true;
 		}
+		// Standing at a counter for a moment is the looking; the clock above
+		// sends it to the next one.
 		if (ch->IsStateMove())
 			ch->Stop();
 		ch->SetPosition(POS_STANDING);

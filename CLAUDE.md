@@ -372,6 +372,31 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   gives a full step at elapsed zero, and an accepted step resets the clock, so
   forty counters opening together moved the shared anchor forty times. Whole
   intervals only.
+- **An engine patch is only tested where prepare-context.sh runs, and that is
+  never Windows.** `0008-warp-npc-ignores-playerbots.patch` shipped truncated
+  from 1.30.13 to 1.30.20: the header said `@@ -6447,7 +6447,19 @@` and the body
+  carried six old and eighteen new lines, one context line short of the closing
+  brace. Every Linux and VPS install stopped at "Hunk #1 FAILED" and could not
+  update; no Windows install noticed, because there the launcher stages the
+  already-patched `char.cpp` and the patch is never applied. Dry-run every patch
+  with `--fuzz=0` against `m2src-cache/tree/port40250/server` before shipping it -
+  the note above this one already said so, and this is what skipping it costs.
+- **Every build context a player builds has to ship, not just the game's.**
+  `docker compose up` bakes game, panel and seban-panel together, so a
+  two-byte `linux-port/docker/panel/Dockerfile` failed the whole bake and the
+  other two were CANCELED with it: nothing started, and "click PLAY again"
+  could not help because no update replaced the broken file - only
+  `game/Dockerfile` was in `server-update-files.txt`. All seven are now, with
+  their `.dockerignore` files.
+- **The point you verified must be the point the engine samples.** The
+  navigation grid calls a cell blocked by testing its centre,
+  `base + n * PLAYERBOT_NAV_CELL + PLAYERBOT_NAV_CELL / 2`. Fishing stands
+  generated on the multiples of fifty sit on cell corners, so server_attr said
+  "standable" about one point and the grid judged a different one; the walk then
+  snapped them - with a twelve-cell radius against an arrival radius of
+  twenty-five - and two anglers ended up eight units apart on one stand. Both
+  halves are the same lesson as the portal walk: generate on cell centres, and
+  keep the snap inside the radius that tests arrival.
 - **A plan budget counted in plans starves the plans that matter.** Measured
   over a minute at 839 bots: 7440 route plans, of which 7086 were sub-64-cell
   hops to the next monster costing 41 milliseconds between them, while 148 long

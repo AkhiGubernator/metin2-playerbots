@@ -17,6 +17,116 @@ every version here.
 
 ---
 
+## 1.30.25 — 2026-09-08
+
+### Naprawione
+
+- **Świeża instalacja nie budowała się — i nie chodziło o jeden plik.**
+  Zgłoszone z Discorda: budowa zatrzymywała się na
+  `failed to compute cache key ... "/rates": not found`, a katalogu `rates/`
+  nie było ani w instalacji, ani w żadnej kopii aktualizacji.
+  Sprawdziliśmy **wszystkie 33 instrukcje `COPY`** we wszystkich Dockerfile'ach
+  i brakowało **sześciu** rzeczy: `game/rates/`, `client-builder/pack/`,
+  `client-builder/bin/`, `updater/bin/` i `wsbridge/bin/`.
+
+  Wniosek, który trzeba zapisać wprost, bo to już trzeci raz ta sama pomyłka:
+  **bycie w repozytorium to nie to samo co bycie dostarczonym.** Instalacja
+  złożona z paczki ma dokładnie to, co wymienia lista plików —
+  `panel/bin/apply_rates.sh` był w repozytorium i mimo to go tam nie było.
+  Doszło `tools/check-update-covers-build.py`, które czyta każdy `COPY`
+  każdego Dockerfile'a i odmawia, gdy cokolwiek, czego budowa dotyka, nie
+  jechałoby w aktualizacji. Paczka tego wydania została nim sprawdzona:
+  1878 plików, nakładka i kopia sceniczna zgodne co do pliku.
+
+- **Boty nie potrafiły wejść w portal — w żaden portal.** Zgłoszone z Discorda dla
+  Lochu Małp („cały czas pisze nad ich głowami «Ide do lochu po medal konny»
+  i tak stoją na koniach"), potwierdzone dla M3, a zmierzone u nas na
+  **pięciu portalach na czterech mapach naraz**.
+
+  Przyczyna nie była ani w terenie, ani w trasie. **Planer i marsz mierzyły co
+  innego.** Planer prostuje trasę po środkach komórek swojej siatki; marsz
+  sprawdza rzeczywisty odcinek z dokładnej pozycji postaci, przejściem, które
+  liczy komórkę muśniętą o milimetr rogu. Cel portalu to surowa współrzędna
+  ze stałej — na granicy komórki, nie w jej środku. Te dwa testy różnią się
+  właśnie tam, a różnica jest **trwała**: ten sam plan wraca za każdym razem.
+
+  Bot odrzucał więc własny jedyny punkt trasy **czterdzieści dwa razy w
+  dwadzieścia sekund**, i robił to **w zupełnej ciszy**: gałąź, która wyrzuca
+  trasę, nie logowała niczego, a sąsiednia odzywa się tylko przy pierwszej i
+  trzeciej porażce, po czym milknie na zawsze. Dlatego nie było tego widać w
+  żadnym logu i dlatego trzeba było to najpierw oprzyrządować.
+
+  Marsz do portalu celuje teraz w środek komórki, na której planer liczył — to
+  najwyżej trzydzieści pięć jednostek różnicy przy progu przejścia dwustu — a
+  odrzucony odcinek ma dwie próby ratunku, zanim trasa pójdzie do kosza. Sama
+  gałąź przestała być cicha, a linia zacięcia niesie teraz komplet: ile razy
+  marsz naprawdę pytano, jaka była trasa i która dokładnie odmowa zapadła.
+
+  Zmierzone u nas, ta sama wersja co u graczy:
+
+  | | przed | po |
+  |---|---|---|
+  | zacięcia portali | ~90–100 na minutę | **0** |
+  | przejścia portalami | — | **569** w ośmiu minutach |
+  | boty w Lochach Małp | 1 i 1 | **10 i 5** |
+  | `tick_ms` | 9558–9939 | **4389** |
+  | trasy planowane na minutę | 4108 | **623** |
+
+- **Marsz uznawany za zacięty, gdy bot legalnie obchodził budynek.** Postęp
+  mierzono wyłącznie skracaniem się linii prostej do portalu, a portal
+  praktycznie zawsze stoi przy zabudowie — więc obejście było regułą, nie
+  wyjątkiem. Złapany na żywo bot miał trasę w punkcie piątym z siedmiu,
+  licznik zacięć na zerze i był wyrzucany ze swojej trasy co dwadzieścia
+  sekund. Zaliczony punkt trasy jest teraz postępem na równi ze skróceniem
+  odległości.
+
+- **Zegar zacięcia liczył czas ścienny, nie próby marszu.** Zegar biegł także
+  wtedy, gdy bot robił coś zupełnie innego — walczył, zbierał, stał u kupca —
+  więc pierwszy tick podróży po zajętych dwudziestu sekundach ogłaszał
+  zacięcie bota, który dostał dokładnie jedną szansę, żeby zrobić krok.
+  Złapany na gorącym uczynku: jeden przebieg, pełna trasa i osiemdziesiąt
+  osiem kilometrów do celu.
+
+- **Sprzęt nie był powodem, by pójść na stragany.** Zgłoszone z Discorda:
+  „wystawiłem bojowe tarcze +8 za 1 yang i boty nie kupują, mimo że mają
+  tylko +4". Porównywanie oferty z tym, co bot nosi, działało od dawna — ale
+  brama, która decyduje, czy w ogóle wybrać się pod ladę, znała tylko
+  materiały do ulepszeń, medal konny, zwój zapomnienia, wolne gniazdo na
+  kamień duszy i broń z trzydziestego poziomu. Sprzęt był osiągalny wyłącznie
+  przypadkiem, przy okazji wyprawy po coś innego.
+
+- **Odmowa zakupu przynęty w końcu mówi, dlaczego odmawia.** Zgłoszone
+  z Discorda: „stoją pod Rybakiem, a przynęty nie kupują". Trzeba powiedzieć
+  wprost: **tego jeszcze nie rozstrzygnęliśmy** — u nas ta ścieżka działa,
+  w godzinie pomiaru zanotowaliśmy 69 zakupów po dwadzieścia robaków za 800
+  yang. Powodem, dla którego nie da się tego orzec ze zgłoszenia, jest sam log:
+  zakup mógł się nie udać na **trzy zupełnie różne sposoby** — przedmiot bez
+  ceny w serverfiles, bot bez pieniędzy, plecak bez miejsca — a wszystkie trzy
+  wychodziły jednymi drzwiami jako „cannot_afford_tackle". Teraz każdy mówi
+  własnym zdaniem, z ceną, stanem sakiewki i numerem przedmiotu.
+  Przy okazji naprawiona prawdziwa wada: funkcja zwracała „czy cokolwiek
+  kupiono", więc „nie było czego kupować" i „kupno się nie udało" dawały tę samą
+  odpowiedź. Sprawdzone też w silniku, żeby nie zgadywać: `AutoGiveItem`
+  dokłada do istniejącego stosu, zanim poszuka wolnej komórki — pełny plecak
+  blokuje więc przynętę tylko temu botowi, który nie ma jej wcale.
+
+  Drugie zgłoszenie z tego samego wątku — bot z napisem „Zakladam przynete na
+  wedke", który nie ma wędki na plecach — zostało poprawione w **1.30.23**
+  i ten zrzut pochodzi ze starszej wersji.
+
+### Zmienione
+
+- **Na rubieżach częściej w drużynie, i częściej z szamanem.** Szaman już
+  wcześniej rzucał na całą drużynę — Błogosławieństwo, Pomoc Smoka,
+  Chyżość, Wzmocnienie Ataku i leczenie — tyle że polował samotnie, więc
+  rzucał to na nikogo. Przy doborze partnera na mapach rubieży para
+  z **dokładnie jednym** szamanem ma teraz wyraźną przewagę (drugi szaman nic
+  nie dodaje, bo buffy i tak obejmują drużynę), drużyna z szamanem ma
+  pierwszeństwo przed drużyną bez niego, a skłonność do samotnego polowania
+  spada tam z dwudziestu pięciu procent do dziesięciu.
+
+---
+
 ## 1.30.24 — 2026-09-08
 
 ### Naprawione

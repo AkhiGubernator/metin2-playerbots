@@ -384,6 +384,40 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   now, because this is the third shape the same mistake has taken - the goal
   snap for the town leg, the goal snap for the portal walk, and now the arrival
   test itself - and a comment has stopped three times being enough.
+- **The planner and the walk have to agree about the same segment.**
+  A* strings its corners straight between cell centres on the static grid;
+  `SegmentClearWorld` runs a supercover traversal from the character's exact
+  interpolated position and counts a cell grazed by a millimetre of corner.
+  Where they disagree the walk refuses the waypoint, `MovePlayerBot` throws the
+  route away and replans two hundred milliseconds later - identically, for
+  ever. A portal destination is a raw constant sitting on a cell boundary, so
+  every portal in the world had this: measured at five of them on four maps,
+  forty-two refusals in twenty seconds with no movement and **nothing in any
+  log**, because that branch logged nothing and the unreachable branch beside
+  it speaks at failures one and three and then goes quiet. The walk aims at the
+  destination's cell centre now (thirty-five units at most, against a switch
+  distance of two hundred), a refused segment gets two rescues before the route
+  is dropped, and the branch says so. Stalls went from ninety a minute to none
+  and 569 transitions ran in eight minutes; the tick fell from 9.5 s to 4.4.
+  When a diagnosis needs three deploys to find, record the outcome
+  (`bLastNavOutcome`) rather than deducing it - every way this function can
+  decline looks identical from outside.
+- **Progress towards a portal is a waypoint consumed, not a shorter straight
+  line.** A portal stands against scenery far more often than in open ground,
+  so walking round a building is the normal case; measuring only the straight
+  line threw a bot at route 5/7 off its route every twenty seconds. And the
+  stall clock is wall time, which runs while the bot is fighting or shopping -
+  `PLAYERBOT_PORTAL_WALK_MIN_TICKS` makes it count attempts, after one bot was
+  caught being declared stalled on its first walk step with 88 km to go.
+- **Being tracked by Git is not being delivered.** An install assembled from an
+  update package holds exactly what `server-update-files.txt` lists;
+  `panel/bin/apply_rates.sh` was tracked and still missing on the machine that
+  reported it, and `game/rates/` was the next one along - "failed to compute
+  cache key ... /rates: not found", unrepairable by reinstalling because the
+  reinstall uses the same package. Six build inputs were missing across the
+  contexts. `tools/check-update-covers-build.py` reads every `COPY` of every
+  Dockerfile and fails when one of them would not arrive; run it before a
+  release rather than trusting this list to stay complete.
 - **The spawn queue was filled once and never looked at again.**
   `SpawnRegistered` queues the cohort at startup and drains it over
   `PLAYERBOT_SPAWN_WINDOW`; nothing counted the world afterwards, so a bot whose

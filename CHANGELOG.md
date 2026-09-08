@@ -17,6 +17,70 @@ every version here.
 
 ---
 
+## 1.30.19 — 2026-09-08
+
+### Nowe
+
+- **Launcher po angielsku.** Na dole okna jest przycisk „JĘZYK / LANGUAGE" —
+  przełącza całe okno między polskim a angielskim i zapamiętuje wybór w
+  `.m2launcher.json`, więc następne uruchomienie startuje w wybranym języku.
+  Przetłumaczony jest interfejs launchera: przyciski, nagłówki, okna wyboru
+  botów, panelu i importu bazy. **Panele WWW zostają po polsku** — to dwie
+  osobne aplikacje z ponad tysiącem własnych napisów każda i ich tłumaczenie to
+  oddzielna robota, nie dopisek do tego wydania.
+
+### Naprawione
+
+- **Boty wreszcie chodzą do Biologa.** Ząb Orka stał na 0/10 dla całego świata,
+  a 700 botów nosiło 2219 zębów w plecakach — po trzy na głowę. Powód: wyprawa
+  do Biologa zaczynała się dopiero, gdy bot miał **cały** brakujący komplet
+  naraz, czyli dziesięć sztuk. Miało to dziesięć osób w całym świecie.
+  Tymczasem samo oddawanie zawsze działało po jednej sztuce, z sześćdziesięciu-
+  procentową szansą przyjęcia — więc na komplet nie było na co czekać. Teraz
+  wystarczą cztery sztuki, żeby wyprawa się opłacała, i ten sam próg otwiera
+  drogę z Bokjung do Joan. Zmierzone przez pierwsze minuty po wdrożeniu:
+  1742 oddanych okazów.
+- **Szanse w małżu były cztery razy zawyżone.** Kod AI zakładał 10% białej
+  perły, 7% niebieskiej i 3% krwawej. Silnik ma dwie tabele wybierane flagą
+  `g_iUseLocale`, a `common.locale` tego świata to **english**, co ustawia tę
+  flagę — czyli obowiązuje druga tabela: 50% kamień, 45% nic, **2% / 2% / 1%**
+  na perły. Każda decyzja „otworzyć czy sprzedać" liczyła się więc z wartości
+  cztery razy za wysokiej. Stałe poprawione na te, które silnik naprawdę
+  stosuje.
+- **Aura Miecza przestaje kosztować tyle co byle księga.** Rynek pamiętał ceny
+  po numerze przedmiotu, a każda zwykła księga to ten sam numer 50300 — skill
+  siedzi w gnieździe. Sprzedaż czyjejś zbędnej księgi ustawiała więc cenę Aury,
+  a sprzedaż Aury cenę wszystkich pozostałych. Klucz rynku zawiera teraz
+  umiejętność: każda księga ma własną historię cen, własny limit kroku ceny i
+  własną cenę startową (Aura 250 tys., Czarowane Ostrze 220 tys., Silne Ciało
+  180 tys., zwykłe od 45 tys.). Perły dostały to samo — 2 / 3 / 6 mln.
+- **Boty kupują wreszcie księgi umiejętności.** W kodzie kupującego nie było
+  dla nich żadnej gałęzi, więc żaden bot nigdy nie kupił księgi ze straganu —
+  same wisiały. Teraz bot bierze księgę swojej profesji i swojego skilla,
+  dopóki nie ma jeszcze roboczego zapasu i dopóki skill da się jeszcze
+  podnieść. Bez kupujących samo podniesienie ceny zrobiłoby tylko drogie,
+  niesprzedające się sklepy.
+- **Księga obcej profesji nie idzie już do handlarza za grosze.** Aura
+  znaleziona przez ninję była złomem — teraz trafia na stragan, gdzie stoi po
+  nią wojownik.
+- **Cena mogła skoczyć przy każdym wywołaniu.** Ogranicznik liczył
+  `1 + czas/interwał`, więc nawet przy zerowym czasie dawał jeden pełny krok, a
+  każdy krok zerował zegar. Czterdzieści straganów otwartych w tej samej minucie
+  przesuwało wspólną kotwicę czterdzieści razy, mimo komentarza o pięciu
+  procentach na dziesięć minut. Teraz liczą się wyłącznie pełne interwały.
+
+### Zmienione
+
+- **W Bokjung stoi najwyżej siedem straganów.** Ósmy kupiec zabiera towar do
+  Joan zamiast dokładać ladę, której i tak nikt nie zobaczy. A kupujący
+  zaglądają **najpierw do Joan** — dopiero gdy tam niczego nie znajdą, przez
+  dziesięć minut wolno im szukać w Bokjung. To jest to, co ożywia drugie
+  miasto: nie sam stragan, tylko klienci, którzy do niego przychodzą.
+  Zmierzone: 20 straganow w Joan przeciwko dokladnie siedmiu w Bokjung straganów przeniesionych do Joan i 300 żywych
+  botów na jej mapie zamiast dziewiętnastu z rana.
+
+---
+
 ## 1.30.18 — 2026-09-08
 
 ### Naprawione

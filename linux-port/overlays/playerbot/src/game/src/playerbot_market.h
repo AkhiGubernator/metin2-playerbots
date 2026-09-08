@@ -179,6 +179,21 @@ namespace
 		// A socket open on a piece it keeps.
 		if (PlayerBotHasOpenSoulStoneSocket(ch))
 			return true;
+		// And a piece of gear for a slot that is empty or behind the ladder.
+		//
+		// This branch was missing, and it is the whole of why "I put +8 battle
+		// shields on a stall for one yang and the bots would not buy them"
+		// happens: WantsPlayerBotStallItem has always known how to compare an
+		// offered piece against what is worn, but nothing ever walked a bot to
+		// a counter to look. Gear was reachable only by accident, on a trip the
+		// bot made for a refine material. The question has to be answerable
+		// without reading a counter, and these predicates are exactly that -
+		// the same ones the tick uses to decide a merchant trip is due.
+		if (NeedsPlayerBotProgressionWeapon(ch) || NeedsPlayerBotProgressionArmor(ch) ||
+				NeedsPlayerBotProgressionShield(ch) || NeedsPlayerBotProgressionHelmet(ch) ||
+				NeedsPlayerBotProgressionBoots(ch) || NeedsPlayerBotProgressionWrist(ch) ||
+				NeedsPlayerBotProgressionNecklace(ch) || NeedsPlayerBotProgressionEarring(ch))
+			return true;
 		// And the level-30 weapon it would otherwise cross the world to farm.
 		return ch->GetLevel() >= 30 && !HasPlayerBotSpecialLevel30Weapon(ch, false);
 	}

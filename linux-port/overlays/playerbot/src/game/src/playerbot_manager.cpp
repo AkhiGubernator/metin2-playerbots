@@ -172,6 +172,26 @@ namespace
 				? PLAYERBOT_ORC_VALLEY_PARTY_MAX : PLAYERBOT_PARTY_DESIRED_MAX;
 	}
 
+	// Does this party already have somebody to cast Blessing?
+	bool PlayerBotPartyHasShaman(LPPARTY party)
+	{
+		if (!party)
+			return false;
+		struct FFindShaman
+		{
+			FFindShaman() : m_bFound(false) {}
+			void operator()(LPCHARACTER member)
+			{
+				if (member && member->GetJob() == JOB_SHAMAN)
+					m_bFound = true;
+			}
+			bool m_bFound;
+		};
+		FFindShaman finder;
+		party->ForEachOnlineMember(finder);
+		return finder.m_bFound;
+	}
+
 	bool ArePlayerBotsGuildMates(LPCHARACTER a, LPCHARACTER b)
 	{
 		return a && b && a->GetGuild() != NULL && a->GetGuild() == b->GetGuild();
@@ -247,8 +267,10 @@ namespace
 			return;
 		}
 
-		// 25% chance for a bot to prefer playing solo for a while
-		if (number(1, 100) <= 25)
+		// A stretch of hunting alone, less often where a party is the point.
+		const int soloPercent = IsPlayerBotFrontierMapIndex(ch->GetMapIndex())
+				? PLAYERBOT_PARTY_SOLO_PERCENT_FRONTIER : PLAYERBOT_PARTY_SOLO_PERCENT;
+		if (number(1, 100) <= soloPercent)
 		{
 			state.dwNextPartyCheckTime = dwNow + number(60000, 180000);
 			return;
@@ -259,7 +281,8 @@ namespace
 		{
 			TPartyFinder(LPCHARACTER me, const TPlayerBotAIState& st)
 				: m_me(me), m_state(st), m_pTargetParty(NULL),
-				  m_pSoloCandidate(NULL), m_iSoloAffinity(-1), m_bTargetPartyGuild(false) {}
+				  m_pSoloCandidate(NULL), m_iSoloAffinity(-1),
+				  m_bTargetPartyGuild(false), m_bTargetPartyShaman(false) {}
 			bool operator()(LPENTITY ent)
 			{
 				if (!ent || !ent->IsType(ENTITY_CHARACTER))
@@ -300,11 +323,21 @@ namespace
 							{
 								// A guild mate's party is taken at once; any other is
 								// kept in hand while the sweep looks for a guild mate's.
+								// Out on the frontier a party with a Shaman in it
+								// outranks one without, for the same reason a Shaman
+								// is worth pairing with in the first place - it is
+								// the one job that keeps the others standing.
 								const bool bGuild = ArePlayerBotsGuildMates(m_me, leader);
-								if (bGuild || !m_pTargetParty)
+								const bool bWantsShaman =
+										m_me->GetJob() != JOB_SHAMAN &&
+										IsPlayerBotFrontierMapIndex(m_me->GetMapIndex());
+								const bool bShamanParty = bWantsShaman && PlayerBotPartyHasShaman(cp);
+								if (bGuild || !m_pTargetParty ||
+										(bShamanParty && !m_bTargetPartyShaman && !m_bTargetPartyGuild))
 								{
 									m_pTargetParty = cp;
 									m_bTargetPartyGuild = bGuild;
+									m_bTargetPartyShaman = bShamanParty;
 								}
 								return !bGuild;
 							}
@@ -315,9 +348,17 @@ namespace
 						// Whoever it has got on with best, rather than whoever the
 						// sector happened to hand over first. A bot that has hunted
 						// with somebody before will look for them again.
+						// One Shaman in the pair, not two: the buffs land on the
+						// party whoever casts them, so a second Shaman adds
+						// nothing a first has not already given.
+						const bool bPairHasShaman =
+								(m_me->GetJob() == JOB_SHAMAN) != (candidate->GetJob() == JOB_SHAMAN);
 						const int affinity = GetPlayerBotAffinity(
 								m_state, candidate->GetPlayerID()) +
-								(ArePlayerBotsGuildMates(m_me, candidate) ? PLAYERBOT_GUILD_PARTY_POINTS : 0);
+								(ArePlayerBotsGuildMates(m_me, candidate) ? PLAYERBOT_GUILD_PARTY_POINTS : 0) +
+								((bPairHasShaman &&
+									IsPlayerBotFrontierMapIndex(m_me->GetMapIndex()))
+									? PLAYERBOT_PARTY_SHAMAN_POINTS : 0);
 						if (affinity > m_iSoloAffinity)
 						{
 							m_iSoloAffinity = affinity;
@@ -333,6 +374,7 @@ namespace
 			LPCHARACTER m_pSoloCandidate;
 			int m_iSoloAffinity;
 			bool m_bTargetPartyGuild;
+			bool m_bTargetPartyShaman;
 		};
 
 		TPartyFinder finder(ch, state);

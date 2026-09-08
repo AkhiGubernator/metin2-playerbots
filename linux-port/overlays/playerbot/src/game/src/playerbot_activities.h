@@ -648,47 +648,77 @@ namespace
 
 	// Rod and bait both come from the Rybak, who stands on the bank the bots fish
 	// from, so restocking and fishing share one walk.
+	// Buying one thing from the Rybak, and saying out loud when it will not
+	// happen. Three quite different failures used to leave by the same door and
+	// arrive as "cannot_afford_tackle": an item this world does not price, a bot
+	// that genuinely has no money, and a bot whose bag has no free cell. The
+	// first is a serverfile question, the second fixes itself, the third is a
+	// bag the merchant pass should have emptied - and no log told them apart.
+	bool BuyPlayerBotTackleItem(LPCHARACTER ch, DWORD vnum, int count,
+			const char* what, DWORD dwNow)
+	{
+		TItemTable* proto = ITEM_MANAGER::instance().GetTable(vnum);
+		if (!proto)
+		{
+			PlayerBotLogThrottled("tackle_no_proto", dwNow,
+					"PLAYERBOT_FISHING: %s has no item table pid=%u name=%s vnum=%u",
+					what, ch->GetPlayerID(), ch->GetName(), vnum);
+			return false;
+		}
+		const long long price = GetPlayerBotNpcPurchasePrice(proto, count);
+		if (price <= 0)
+		{
+			PlayerBotLogThrottled("tackle_no_price", dwNow,
+					"PLAYERBOT_FISHING: %s has no price on this world pid=%u name=%s vnum=%u count=%d",
+					what, ch->GetPlayerID(), ch->GetName(), vnum, count);
+			return false;
+		}
+		if (ch->GetGold() < price)
+			RaisePlayerBotEmergencyGold(ch, price, what);
+		if (ch->GetGold() < price)
+		{
+			PlayerBotLogThrottled("tackle_no_gold", dwNow,
+					"PLAYERBOT_FISHING: cannot afford %s pid=%u name=%s vnum=%u count=%d price=%lld gold=%d",
+					what, ch->GetPlayerID(), ch->GetName(), vnum, count,
+					price, ch->GetGold());
+			return false;
+		}
+		if (!ch->AutoGiveItem(vnum, count, -1, false))
+		{
+			// Not poverty - the bag. Reported from the Discord as bots standing
+			// under the Rybak with money and no bait.
+			PlayerBotLogThrottled("tackle_no_room", dwNow,
+					"PLAYERBOT_FISHING: no bag room for %s pid=%u name=%s vnum=%u count=%d gold=%d",
+					what, ch->GetPlayerID(), ch->GetName(), vnum, count, ch->GetGold());
+			return false;
+		}
+		ch->PointChange(POINT_GOLD, -price);
+		sys_log(0, "PLAYERBOT_FISHING: bought %s pid=%u name=%s vnum=%u count=%d price=%lld",
+				what, ch->GetPlayerID(), ch->GetName(), vnum, count, price);
+		return true;
+	}
+
 	bool RestockPlayerBotTackle(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch)
 			return false;
 
-		bool bought = false;
+		// "Nothing needed buying" and "buying failed" are not the same answer,
+		// and returning the same false for both ended the session of every bot
+		// that was already carrying what it came for.
+		bool refused = false;
 		if (!IsPlayerBotHoldingRod(ch) && ch->CountSpecifyItem(PLAYERBOT_FISHING_ROD_VNUM) <= 0)
 		{
-			TItemTable* proto = ITEM_MANAGER::instance().GetTable(PLAYERBOT_FISHING_ROD_VNUM);
-			if (!proto)
-				return false;
-			const long long price = GetPlayerBotNpcPurchasePrice(proto, 1);
-			if (ch->GetGold() < price)
-				RaisePlayerBotEmergencyGold(ch, price, "fishing_rod");
-			if (price <= 0 || ch->GetGold() < price)
-				return false;
-			if (!ch->AutoGiveItem(PLAYERBOT_FISHING_ROD_VNUM, 1, -1, false))
-				return false;
-			ch->PointChange(POINT_GOLD, -price);
-			bought = true;
-			sys_log(0, "PLAYERBOT_FISHING: bought rod pid=%u name=%s vnum=%u price=%lld",
-					ch->GetPlayerID(), ch->GetName(), PLAYERBOT_FISHING_ROD_VNUM, price);
+			if (!BuyPlayerBotTackleItem(ch, PLAYERBOT_FISHING_ROD_VNUM, 1, "fishing_rod", dwNow))
+				refused = true;
 		}
 
-		if (ch->CountSpecifyItem(PLAYERBOT_FISHING_BAIT_VNUM) < PLAYERBOT_FISHING_BAIT_RESTOCK)
+		if (!refused &&
+				ch->CountSpecifyItem(PLAYERBOT_FISHING_BAIT_VNUM) < PLAYERBOT_FISHING_BAIT_RESTOCK)
 		{
-			TItemTable* proto = ITEM_MANAGER::instance().GetTable(PLAYERBOT_FISHING_BAIT_VNUM);
-			if (!proto)
-				return bought;
-			const long long price = GetPlayerBotNpcPurchasePrice(proto, PLAYERBOT_FISHING_BAIT_BUNDLE);
-			if (ch->GetGold() < price)
-				RaisePlayerBotEmergencyGold(ch, price, "fishing_bait");
-			if (price <= 0 || ch->GetGold() < price)
-				return bought;
-			if (!ch->AutoGiveItem(PLAYERBOT_FISHING_BAIT_VNUM, PLAYERBOT_FISHING_BAIT_BUNDLE, -1, false))
-				return bought;
-			ch->PointChange(POINT_GOLD, -price);
-			bought = true;
-			sys_log(0, "PLAYERBOT_FISHING: bought bait pid=%u name=%s vnum=%u count=%d price=%lld",
-					ch->GetPlayerID(), ch->GetName(), PLAYERBOT_FISHING_BAIT_VNUM,
-					PLAYERBOT_FISHING_BAIT_BUNDLE, price);
+			if (!BuyPlayerBotTackleItem(ch, PLAYERBOT_FISHING_BAIT_VNUM,
+					PLAYERBOT_FISHING_BAIT_BUNDLE, "fishing_bait", dwNow))
+				refused = true;
 		}
 		// And one piece of Dried Wood for the end of the session, from the same
 		// counter: the dead fish get grilled instead of vendored. The wood costs
@@ -705,13 +735,15 @@ namespace
 						ch->AutoGiveItem(PLAYERBOT_CAMPFIRE_VNUM, 1, -1, false))
 				{
 					ch->PointChange(POINT_GOLD, -price);
-					bought = true;
 					sys_log(0, "PLAYERBOT_FISHING: bought campfire pid=%u name=%s price=%lld",
 							ch->GetPlayerID(), ch->GetName(), price);
 				}
 			}
 		}
-		return bought;
+		// The wood is a nicety and never a reason to end a session, so it does
+		// not speak here. What matters is whether the two things the bot cannot
+		// fish without were refused.
+		return !refused;
 	}
 
 	bool ManagePlayerBotFishing(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)

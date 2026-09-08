@@ -728,6 +728,13 @@ namespace
 	// What counts as having moved. Below this the bot is standing still, whether
 	// the navigation deferred the plan, backed off, or quietly reported success.
 	const int PLAYERBOT_PORTAL_WALK_PROGRESS = 150;
+	// And the walk has to have been attempted, not merely awaited. The clock
+	// above is wall time and runs while the bot is doing something else
+	// entirely - fighting, looting, standing at a merchant - so the first travel
+	// tick after a busy twenty seconds declared a stall on a bot that had been
+	// given exactly one chance to walk. Caught in the act: one tick, a full
+	// route, and eighty-eight kilometres still to go.
+	const WORD PLAYERBOT_PORTAL_WALK_MIN_TICKS = 8;
 
 	const long PLAYERBOT_M2_TO_M1_PORTAL_X = 113000;
 	const long PLAYERBOT_M2_TO_M1_PORTAL_Y = 213600;
@@ -918,6 +925,22 @@ namespace
 	// no longer grabs a bot at the portal, so this only has to cover one
 	// tick of running rather than the nine metres it used to.
 	const int PLAYERBOT_PORTAL_SWITCH_DISTANCE = 200;
+	// The ways a walk step can end, as the portal diagnostic reports them.
+	enum EPlayerBotNavOutcome
+	{
+		PLAYERBOT_NAV_OUT_NONE = 0,
+		PLAYERBOT_NAV_OUT_MOVED = 1,        // a waypoint was issued
+		PLAYERBOT_NAV_OUT_ARRIVED = 2,      // the route ran out under the bot
+		PLAYERBOT_NAV_OUT_BACKOFF = 3,      // waiting out a planning back-off
+		PLAYERBOT_NAV_OUT_DEFERRED = 4,     // the tick's planning budget was spent
+		PLAYERBOT_NAV_OUT_UNREACHABLE = 5,  // the planner says there is no way
+		PLAYERBOT_NAV_OUT_NO_PROGRESS = 6,  // a waypoint that would not come closer
+		PLAYERBOT_NAV_OUT_SEGMENT = 7,      // the live world refused the next step
+		PLAYERBOT_NAV_OUT_ALIGNED = 8,      // stepped to the cell centre to clear a corner
+		PLAYERBOT_NAV_OUT_CORNERED = 9,     // skipped a grazed corner waypoint
+		PLAYERBOT_NAV_OUT_ESCAPED = 10,     // stepped off ground nothing can leave
+		PLAYERBOT_NAV_OUT_REFUSED = 11      // Goto itself would not take the order
+	};
 	const DWORD PLAYERBOT_CROSSING_STONE_CHECK_INTERVAL = 3000;
 	// map_n_snowm_01, base (358400,153600), 153600 square; the town spawn from
 	// its Town.txt (cell 768,768). 43 was the second Jinno village and carried
@@ -1062,6 +1085,22 @@ namespace
 	// so one guild ends up on one camp. That is what the map looked like on the
 	// servers this world imitates.
 	const int PLAYERBOT_GUILD_PARTY_POINTS = 8;
+	// What a Shaman is worth as a partner out on the frontier maps.
+	//
+	// A Shaman already buffs everyone in its party - Blessing, Dragon Aid,
+	// Swiftness, Attack Up and a heal - and does it for nobody at all while it
+	// hunts alone, which is how most of them hunt. On the Spider Dungeon and
+	// the maps like it, where a bot is fighting monsters within a few levels of
+	// itself and a great many do not survive it, one Shaman in the pair is the
+	// difference between two characters that hold their ground and two that do
+	// not. Worth more than a guild badge, which is why it outweighs it: the
+	// guild is who a bot likes, this is who keeps it alive.
+	const int PLAYERBOT_PARTY_SHAMAN_POINTS = 14;
+	// And out there a bot is less inclined to go it alone. One in four kept to
+	// itself everywhere, frontier included; on the frontier that is now one in
+	// ten, so pairs actually form on the maps where they matter.
+	const int PLAYERBOT_PARTY_SOLO_PERCENT = 25;
+	const int PLAYERBOT_PARTY_SOLO_PERCENT_FRONTIER = 10;
 	// How far a follower may fall behind a leader who is walking to a new camp
 	// before it gives the party up. The cohesion radius is for fighting as one
 	// formation; a thirty-kilometre relocation with a deferred route in the
@@ -2231,6 +2270,9 @@ namespace
 			dwNextShopSignClearTime(0),
 			dwPortalWalkSince(0),
 			iPortalWalkBest(0),
+			wPortalWalkTicks(0),
+			wPortalWalkRouteIndex(0),
+			bLastNavOutcome(0),
 			dwFightProgressVID(0),
 			dwDefenceTargetVID(0),
 			dwDefenceEpisodeStart(0),
@@ -2519,6 +2561,20 @@ namespace
 		DWORD dwNextShopSignClearTime;
 		DWORD dwPortalWalkSince;
 		int iPortalWalkBest;
+		// How many times the portal walk has been asked to make progress since
+		// the clock started. The clock is wall time, so a stall says nothing
+		// about whether the bot was ever given a tick to walk in.
+		WORD wPortalWalkTicks;
+		// The route position the portal walk last saw. Walking round a
+		// building is progress even while the straight line to the portal
+		// does not shorten, and only the route knows that.
+		WORD wPortalWalkRouteIndex;
+		// Why the last walk step came to nothing. Every way MovePlayerBot can
+		// decline is throttled or silent, and three of them look identical from
+		// outside: no route, no movement, nothing in any log. Recording which
+		// one it was costs a byte and is the difference between a diagnosis and
+		// a guess.
+		BYTE bLastNavOutcome;
 		DWORD dwFightProgressVID;
 		// The attacker this bot is currently defending itself against, since when,
 		// and from where. See PLAYERBOT_DEFENCE_EPISODE_TIME.

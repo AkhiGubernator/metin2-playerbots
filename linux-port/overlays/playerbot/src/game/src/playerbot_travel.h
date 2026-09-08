@@ -597,6 +597,8 @@ namespace
 		{
 			state.dwPortalWalkSince = 0;
 			state.iPortalWalkBest = 0;
+			state.wPortalWalkTicks = 0;
+			state.wPortalWalkRouteIndex = 0;
 			return TransitionPlayerBotMap(ch, state, targetMap, targetX, targetY, dwNow, reason);
 		}
 
@@ -624,17 +626,34 @@ namespace
 		// moved for PLAYERBOT_PORTAL_WALK_TIMEOUT hands the tick back, and that is
 		// all it takes: the update falls through to hunting and wandering, the bot
 		// ends up somewhere else, and the next attempt plans from there.
+		// Progress is the straight line shortening - or a waypoint going by.
+		//
+		// The straight line alone declared a stall on a bot that was walking
+		// perfectly well: measured live at the Orc Valley teleporter, route
+		// five of seven, stuck counter zero, three hundred and seventy units
+		// away and thrown off its route every twenty seconds for the crime of
+		// going round the building rather than through it. A portal stands
+		// against scenery far more often than in open ground, so the detour is
+		// the normal case and not the exception.
+		const WORD routeIndex = (WORD)std::min<size_t>(state.uRouteIndex, 65535);
 		if (state.dwPortalWalkSince == 0 ||
 				distance + PLAYERBOT_PORTAL_WALK_PROGRESS <= state.iPortalWalkBest ||
-				distance >= state.iPortalWalkBest + PLAYERBOT_PORTAL_WALK_PROGRESS)
+				distance >= state.iPortalWalkBest + PLAYERBOT_PORTAL_WALK_PROGRESS ||
+				routeIndex > state.wPortalWalkRouteIndex)
 		{
 			state.dwPortalWalkSince = dwNow;
 			state.iPortalWalkBest = distance;
+			state.wPortalWalkTicks = 0;
+			state.wPortalWalkRouteIndex = routeIndex;
 		}
-		else if (dwNow - state.dwPortalWalkSince >= PLAYERBOT_PORTAL_WALK_TIMEOUT)
+		else if (dwNow - state.dwPortalWalkSince >= PLAYERBOT_PORTAL_WALK_TIMEOUT &&
+				state.wPortalWalkTicks >= PLAYERBOT_PORTAL_WALK_MIN_TICKS)
 		{
 			state.dwPortalWalkSince = 0;
 			state.iPortalWalkBest = 0;
+			const WORD ticks = state.wPortalWalkTicks;
+			state.wPortalWalkTicks = 0;
+			state.wPortalWalkRouteIndex = 0;
 			// And get off the horse on the way out. The tick handed back here is
 			// the bot's whole escape - it is meant to fall through to hunting and
 			// wandering, end up somewhere else and plan from there - and the
@@ -645,11 +664,33 @@ namespace
 			// were found doing exactly that at the Sohan exit, mounting and
 			// dismounting every twenty seconds without moving a step.
 			SetPlayerBotRidingForTravel(ch, state, false, dwNow, "portal_walk_stalled");
-			PlayerBotLogThrottled("portal_stuck", dwNow,
-					"PLAYERBOT_WORLD: portal walk stalled pid=%u name=%s map=%ld pos=(%ld,%ld) portal=(%ld,%ld) distance=%d reason=%s",
+			// Everything needed to tell the three failures apart without a
+			// second deploy: whether the walk was ever asked to happen (ticks),
+			// whether it had a route to follow (route), whether the planner was
+			// holding it off (plan_in), and whether the straight line to the
+			// portal is clear at all (seg).
+			CPlayerBotNavigation& diagNav =
+					CPlayerBotNavigation::instance(ch->GetMapIndex());
+			const int segClear = diagNav.Init(ch->GetMapIndex())
+					? (diagNav.SegmentClearWorld(ch->GetX(), ch->GetY(), portalX, portalY) ? 1 : 0)
+					: -1;
+			// Tagged by the portal, not by the whole subsystem: one tag for
+			// every portal in the world meant one line a minute between them,
+			// and the busiest one hid the other nine behind its own count.
+			char szStuckTag[64];
+			snprintf(szStuckTag, sizeof(szStuckTag), "portal_stuck:%s",
+					reason ? reason : "?");
+			PlayerBotLogThrottled(szStuckTag, dwNow,
+					"PLAYERBOT_WORLD: portal walk stalled pid=%u name=%s map=%ld pos=(%ld,%ld) portal=(%ld,%ld) distance=%d reason=%s "
+					"ticks=%u route=%u/%u plan_in=%d defer=%u stuck=%u seg=%d riding=%d last=%u",
 					ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(),
 					ch->GetX(), ch->GetY(), portalX, portalY, distance,
-					reason ? reason : "?");
+					reason ? reason : "?", (unsigned int)ticks,
+					(unsigned int)state.uRouteIndex, (unsigned int)state.vecRoute.size(),
+					state.dwNextNavPlanTime > dwNow ? (int)(state.dwNextNavPlanTime - dwNow) : 0,
+					(unsigned int)state.bNavDeferredCount, (unsigned int)state.bStuckCounter,
+					segClear, ch->IsRiding() ? 1 : 0,
+					(unsigned int)state.bLastNavOutcome);
 			return false;
 		}
 
@@ -658,7 +699,23 @@ namespace
 		// MovePlayerBot performs on arrival at an ordinary destination buys nothing
 		// here. It was 1362 of one evening's dismounts, each followed by a remount
 		// on the far side three seconds later.
-		MovePlayerBot(ch, portalX, portalY, dwNow, PLAYERBOT_PORTAL_SNAP_CELLS,
+		if (state.wPortalWalkTicks < 65535)
+			++state.wPortalWalkTicks;
+		// Walk to the middle of the portal's cell, not to the coordinate the
+		// constant names. The planner works in cells and strings its corners
+		// straight between their centres; the walk tests the real segment with
+		// a supercover traversal that counts a cell grazed by a millimetre. Aim
+		// at a raw point on a cell boundary and the two disagree about the last
+		// segment, permanently - the plan comes back identical every time, and
+		// a bot refuses its own only waypoint forty-two times in twenty seconds
+		// without a word in any log. Measured at five portals on four maps. The
+		// centre is at most thirty-five units off, against a switch distance of
+		// two hundred.
+		long walkX = portalX, walkY = portalY;
+		CPlayerBotNavigation& portalNav = CPlayerBotNavigation::instance(ch->GetMapIndex());
+		if (portalNav.Init(ch->GetMapIndex()))
+			portalNav.CellCentreWorld(portalX, portalY, walkX, walkY);
+		MovePlayerBot(ch, walkX, walkY, dwNow, PLAYERBOT_PORTAL_SNAP_CELLS,
 				true, true, false, true);
 		return true;
 	}
@@ -1084,7 +1141,17 @@ namespace
 			if (state.dwM3EnteredTime == 0)
 				state.dwM3EnteredTime = dwNow;
 			const bool visitExpired = dwNow - state.dwM3EnteredTime >= PLAYERBOT_M3_MAX_VISIT_TIME;
-			if (!visitExpired && !needsCriticalTownServices && !needsM1OnlyServices &&
+			// An open town visit is reason enough to leave, critical or not.
+			//
+			// M3 is a guild map: no merchant, no blacksmith, no trainer. A bot
+			// that decided in Bokjung to go shopping and then came here could
+			// neither shop - HandlePlayerBotTownVisit refuses on any map but M1
+			// and M2 - nor leave, because only a *critical* need opened this
+			// gate. So it stood on the arrival point with "going to town for
+			// supplies" over its head until the twenty-minute visit timer ran
+			// out. Two of them were photographed doing exactly that.
+			if (!visitExpired && !state.bVisitingShop &&
+					!needsCriticalTownServices && !needsM1OnlyServices &&
 					!scheduledRemoteRefine &&
 					!HasPlayerBotSpecialLevel30Weapon(ch, true))
 				return false;
@@ -1095,6 +1162,8 @@ namespace
 			const char* reason = "m3_weapon_found";
 			if (needsCriticalTownServices || needsM1OnlyServices)
 				reason = "m3_services_to_m2";
+			else if (state.bVisitingShop)
+				reason = "m3_shopping_to_m2";
 			else if (scheduledRemoteRefine)
 				reason = "m3_scheduled_refine_to_m2";
 			else if (visitExpired)

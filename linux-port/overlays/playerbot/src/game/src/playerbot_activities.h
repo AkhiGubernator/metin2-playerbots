@@ -665,7 +665,7 @@ namespace
 					what, ch->GetPlayerID(), ch->GetName(), vnum);
 			return false;
 		}
-		const long long price = GetPlayerBotNpcPurchasePrice(proto, count);
+		long long price = GetPlayerBotNpcPurchasePrice(proto, count);
 		if (price <= 0)
 		{
 			PlayerBotLogThrottled("tackle_no_price", dwNow,
@@ -675,7 +675,28 @@ namespace
 		}
 		if (ch->GetGold() < price)
 			RaisePlayerBotEmergencyGold(ch, price, what);
-		if (ch->GetGold() < price)
+		// Buy what the purse reaches rather than nothing at all. A bundle is
+		// twenty worms for eight hundred yang and the bot was refusing the whole
+		// purchase over the last few: caught on our own world with 556 yang in
+		// hand, which is thirteen worms and a session's fishing, standing at the
+		// Rybak buying none of them. Only for a stack - a rod is one item and
+		// either affordable or not.
+		if (ch->GetGold() < price && count > 1)
+		{
+			const long long unit = GetPlayerBotNpcPurchasePrice(proto, 1);
+			const int affordable = unit > 0
+					? (int)std::min<long long>(count, ch->GetGold() / unit) : 0;
+			if (affordable > 0)
+			{
+				count = affordable;
+				price = GetPlayerBotNpcPurchasePrice(proto, count);
+				PlayerBotLogThrottled("tackle_part_buy", dwNow,
+						"PLAYERBOT_FISHING: buying what it can afford of %s pid=%u name=%s vnum=%u count=%d price=%lld gold=%d",
+						what, ch->GetPlayerID(), ch->GetName(), vnum, count,
+						price, ch->GetGold());
+			}
+		}
+		if (price <= 0 || ch->GetGold() < price)
 		{
 			PlayerBotLogThrottled("tackle_no_gold", dwNow,
 					"PLAYERBOT_FISHING: cannot afford %s pid=%u name=%s vnum=%u count=%d price=%lld gold=%d",

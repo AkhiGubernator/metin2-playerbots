@@ -114,14 +114,20 @@ namespace
 				ch->GetEmptyInventory(3) < 0;
 	}
 
-	bool NeedsPlayerBotM1OnlyServices(LPCHARACTER ch)
+	bool NeedsPlayerBotM1OnlyServices(LPCHARACTER ch, const TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch)
 			return false;
-		// Bokjung has no profession trainers or Biologist. Everything else can be
-		// handled locally in M2, so only these two real activities justify M2 -> M1.
+		// Bokjung has no profession trainers, no Biologist and no old woman.
+		// Everything else can be handled locally in M2, so only these real
+		// activities justify M2 -> M1.
 		if (ch->GetLevel() >= 5 && ch->GetSkillGroup() == 0 &&
 				ch->GetJob() <= JOB_SHAMAN)
+			return true;
+		// Her too: a skill stuck at seventeen with no points left to try
+		// anything else is worth a trip to Joan while the character is still
+		// young enough for her to serve it.
+		if (ShouldPlayerBotResetSkills(ch, state, dwNow))
 			return true;
 
 		size_t missionIndex = 0;
@@ -800,7 +806,7 @@ namespace
 		const bool m2LevelingCohort = IsPlayerBotM2LevelingCohort(ch);
 		const bool wantsM3 = ShouldPlayerBotVisitM3(ch);
 		const bool needsCriticalTownServices = NeedsPlayerBotCriticalTownServices(ch);
-		const bool needsM1OnlyServices = NeedsPlayerBotM1OnlyServices(ch);
+		const bool needsM1OnlyServices = NeedsPlayerBotM1OnlyServices(ch, state, dwNow);
 		// M2 has its own blacksmith. Only the remote M3 farm needs to schedule a
 		// return to town for equipment progression.
 		const bool scheduledRemoteRefine = mapIndex == PLAYERBOT_MAP_CHUNJO_M3 &&

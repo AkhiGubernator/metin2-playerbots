@@ -459,7 +459,8 @@ namespace
 					state.dwNextWanderTime = dwNow + 1200;
 					targetX = knownMetin->GetX();
 					targetY = knownMetin->GetY();
-					if (!MovePlayerBot(ch, targetX, targetY, dwNow, 32, true) && state.bStuckCounter >= 3)
+					if (!MovePlayerBot(ch, targetX, targetY, dwNow, 32, true, true) &&
+							state.bStuckCounter >= 3)
 					{
 						s_mapKnownPlayerBotMetins.erase(knownMetin->GetVID());
 						ClearPlayerBotRoute(state, true);
@@ -603,7 +604,7 @@ namespace
 					long offsetX = 0, offsetY = 0;
 					GetPlayerBotStableOffset(pid, 0x43415054U, 100, 350, offsetX, offsetY);
 					state.dwNextWanderTime = dwNow + 1500;
-					MovePlayerBot(ch, bossX + offsetX, bossY + offsetY, dwNow, 32, true);
+					MovePlayerBot(ch, bossX + offsetX, bossY + offsetY, dwNow, 32, true, true);
 					return;
 				}
 			}
@@ -815,7 +816,7 @@ namespace
 						DISTANCE_APPROX(ch->GetX() - knownMetin->GetX(), ch->GetY() - knownMetin->GetY()) > 800)
 				{
 					state.dwNextWanderTime = dwNow + 1200;
-					if (!MovePlayerBot(ch, knownMetin->GetX(), knownMetin->GetY(), dwNow, 32, true) &&
+					if (!MovePlayerBot(ch, knownMetin->GetX(), knownMetin->GetY(), dwNow, 32, true, true) &&
 							state.bStuckCounter >= 3)
 					{
 						s_mapKnownPlayerBotMetins.erase(knownMetin->GetVID());
@@ -1019,7 +1020,16 @@ namespace
 			targetY += number(-1500, 1500);
 		}
 
-		if (!MovePlayerBot(ch, targetX, targetY, dwNow, 32, true))
+		// On the horse, if there is one and the hub is far. Reported from the
+		// Discord: "bots travelling a long way go on foot and the horse runs
+		// along behind them" - which is exactly what it looks like, because
+		// StopRiding summons the horse as a follower and nothing put the rider
+		// back on it. A hunting hub is chosen up to twenty kilometres away and
+		// every wander leg asked for allowHorse=false, so the whole crossing was
+		// walked. UpdatePlayerBotTravelMount still refuses to mount inside
+		// PLAYERBOT_HORSE_MOUNT_DISTANCE, so a step across a clearing is
+		// unaffected.
+		if (!MovePlayerBot(ch, targetX, targetY, dwNow, 32, true, true))
 		{
 			state.dwNextWanderTime = dwNow + 1500;
 			if (state.bStuckCounter >= 3)

@@ -65,6 +65,23 @@ namespace
 	const int PLAYERBOT_RECOVERY_INITIAL_HP_PERCENT = 20;
 	const int PLAYERBOT_RECOVERY_REST_HEAL_PERCENT = 5;
 	const int PLAYERBOT_RETREAT_START_HP_PERCENT = 35;
+	// Finishing a stone that is nearly broken, instead of walking away from it.
+	//
+	// Reported from the Discord by two people: "bots often fight a Metin and
+	// leave at the end when their health goes". They do, and this is why - the
+	// emergency recovery above drops the target at
+	// PLAYERBOT_RECOVERY_INITIAL_HP_PERCENT whatever the target is. For a
+	// monster that is right: it chases, and a bot that stands there dies. A
+	// Metin stone is the opposite case - it is CHAR_TYPE_STONE and not
+	// CHAR_TYPE_MONSTER, it does not follow anybody, and leaving one at a
+	// sliver of health throws away the whole fight, because the bot comes back
+	// to a stone at full health or finds it gone.
+	//
+	// So a stone within sight of breaking is finished, and only while the bot is
+	// still clearly above the floor where dying becomes the likely outcome.
+	// Dying costs experience; this is not licence to stand in the shockwave.
+	const int PLAYERBOT_STONE_FINISH_STONE_HP_PERCENT = 15;
+	const int PLAYERBOT_STONE_FINISH_OWN_HP_PERCENT = 10;
 	const int PLAYERBOT_RETREAT_END_HP_PERCENT = 65;
 	const DWORD PLAYERBOT_RETREAT_MOVE_INTERVAL = 1800;
 	const DWORD PLAYERBOT_ATTACK_INTERVAL = 1200;
@@ -301,7 +318,16 @@ namespace
 	// stalls standing where the old rule had left thirty-four - and the seven
 	// with three lines or more were the same seven either way, so the extra
 	// strictness bought nothing except a quieter market.
-	const size_t PLAYERBOT_SHOP_MIN_ITEMS = 2;
+	// Three lines make a stall, which is what the rule beside it always said it
+	// meant while the number said two. Reported from the Discord: "it makes no
+	// sense that a bot with plenty of yang and free bag space forces a shop open
+	// with one Bear Hide or some other trinket" - and two ordinary materials is
+	// the same complaint one line further on. A stall exists to move a surplus;
+	// a keeper with money and room has no surplus to move. What still opens on
+	// its own is a genuine prize (PLAYERBOT_SHOP_PRIZE_SCORE): a level-30
+	// weapon, anything at +6, a big bonus roll, a horse medal - a material never
+	// scores that high.
+	const size_t PLAYERBOT_SHOP_MIN_ITEMS = 3;
 	// Unless that one line is the reason somebody would cross the market: a
 	// level-30 weapon, a horse medal, a big bonus roll, anything at +6 or better.
 	// This is the score at which a single item carries a stall on its own.
@@ -1184,6 +1210,28 @@ namespace
 	// An archer pulls too, but a bow is not a shield: one group, four attackers.
 	const int PLAYERBOT_MULTI_PULL_ARCHER_MAX_AGGRESSORS = 4;
 	const BYTE PLAYERBOT_SKILL_MASTER_TRY_LEVEL = 17;
+	// The old woman south of Joan, and what she does.
+	//
+	// skill_reset2.quest, NPC 9006: refuses under level five and over thirty,
+	// refuses a character with no skill group, charges 10000 + level * 2000,
+	// then pc.clear_skill() and pc.set_skill_group(0) - which is exactly what
+	// the trainer visit already knows how to follow, because a group of zero is
+	// what sends a bot to the trainer in the first place. So the whole feature
+	// is one town errand and no new machinery.
+	//
+	// It is worth doing only for a bot that has run out of moves: a skill at
+	// seventeen that will not go Master and no skill points left to put
+	// anywhere. Resetting costs every skill level the character has, so a bot
+	// with points still in hand should spend those first.
+	const long PLAYERBOT_SKILL_RESET_NPC_X = 58800;   // npc.txt cell 588,633 on
+	const long PLAYERBOT_SKILL_RESET_NPC_Y = 165700;  // map 21, base (0,102400)
+	const BYTE PLAYERBOT_SKILL_RESET_MIN_LEVEL = 5;
+	const BYTE PLAYERBOT_SKILL_RESET_MAX_LEVEL = 30;
+	const long long PLAYERBOT_SKILL_RESET_BASE_COST = 10000;
+	const long long PLAYERBOT_SKILL_RESET_LEVEL_COST = 2000;
+	// A wallet cushion, so a reset never leaves a bot unable to buy potions.
+	const long long PLAYERBOT_SKILL_RESET_GOLD_MARGIN = 100000;
+	const DWORD PLAYERBOT_SKILL_RESET_COOLDOWN = 1800000;   // 30 min between tries
 	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
 	// How long a box the engine has refused is left alone. A refusal can be
 	// a bag that happened to be full, so it is a wait rather than a verdict.
@@ -1382,6 +1430,17 @@ namespace
 					vnum <= PLAYERBOT_HAIR_DYE_SHOP_LAST_VNUM);
 	}
 	const int PLAYERBOT_FISHING_BAIT_BUNDLE = 20;
+	// What a partial purchase leaves behind, as a share and not as a sum.
+	//
+	// Buying what the purse reaches was right - a bot with 556 yang and none of
+	// the 800 a bundle costs used to stand at the Rybak buying nothing - but it
+	// went too far the other way the moment it worked: the same bot went 556 to
+	// 601 to one yang, spending its last coin on worms with nothing left for a
+	// potion. A flat reserve cannot fix that, because any reserve large enough
+	// to matter is larger than what the bots this helps actually own, and it
+	// would refuse the very purchase it was written for. A share always leaves
+	// something and never blocks the poor case.
+	const int PLAYERBOT_FISHING_TACKLE_SPEND_PERCENT = 90;
 	const int PLAYERBOT_FISHING_BAIT_RESTOCK = 5;
 	// The Rybak (9009) himself, from map_b1 npc.txt cell (675,539) against
 	// BasePosition (0,102400). Tackle is bought here.
@@ -1965,7 +2024,11 @@ namespace
 		BOT_TOWN_PHASE_BLACKSMITH,
 		BOT_TOWN_PHASE_BLACKSMITH_WAIT,
 		BOT_TOWN_PHASE_GATE_OUT,
-		BOT_TOWN_PHASE_GATE_CROSS_OUT
+		BOT_TOWN_PHASE_GATE_CROSS_OUT,
+		// Appended, never inserted: the panel's status file carries this value
+		// as a number and inserting one shifts every phase after it.
+		BOT_TOWN_PHASE_SKILL_RESET,
+		BOT_TOWN_PHASE_SKILL_RESET_WAIT
 	};
 
 	enum EPlayerBotLongTermGoal
@@ -2179,6 +2242,7 @@ namespace
 			dwNextMultiPullActionTime(0),
 			dwMultiPullTargetVID(0),
 			dwNextShopCheckTime(0),
+			dwNextSkillResetTime(0),
 			dwEmergencyScavengeUntil(0),
 			dwTownWaitUntil(0),
 			dwStoneFightStartTime(0),
@@ -2221,6 +2285,7 @@ namespace
 			bTownNeedArmorMerchant(false),
 			bTownNeedBlacksmith(false),
 			bTownNeedTrainer(false),
+			bTownNeedSkillReset(false),
 			bVisitingBiologist(false),
 			bVisitingStable(false),
 			bFishingSession(false),
@@ -2421,6 +2486,8 @@ namespace
 		DWORD dwNextMultiPullActionTime;
 		DWORD dwMultiPullTargetVID;
 		DWORD dwNextShopCheckTime;
+		// When this bot may next pay the old woman to forget its skills.
+		DWORD dwNextSkillResetTime;
 		DWORD dwEmergencyScavengeUntil;
 		DWORD dwTownWaitUntil;
 		DWORD dwStoneFightStartTime;
@@ -2471,6 +2538,7 @@ namespace
 		bool bTownNeedArmorMerchant;
 		bool bTownNeedBlacksmith;
 		bool bTownNeedTrainer;
+		bool bTownNeedSkillReset;
 		bool bVisitingBiologist;
 		bool bVisitingStable;
 		// The bot has committed to a fishing trip: it carries a rod in the weapon

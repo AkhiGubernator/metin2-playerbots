@@ -684,8 +684,10 @@ namespace
 		if (ch->GetGold() < price && count > 1)
 		{
 			const long long unit = GetPlayerBotNpcPurchasePrice(proto, 1);
+			const long long spendable = (long long)ch->GetGold() *
+					PLAYERBOT_FISHING_TACKLE_SPEND_PERCENT / 100;
 			const int affordable = unit > 0
-					? (int)std::min<long long>(count, ch->GetGold() / unit) : 0;
+					? (int)std::min<long long>(count, spendable / unit) : 0;
 			if (affordable > 0)
 			{
 				count = affordable;

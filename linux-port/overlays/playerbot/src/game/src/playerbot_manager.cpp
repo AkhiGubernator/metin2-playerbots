@@ -1792,7 +1792,21 @@ void CPlayerBotManager::Update()
 		ManagePlayerBotScrollRefine(ch, state, dwNow);
 		// This also catches a bot loaded from the database at critically low HP
 		// after a server restart.  Do not let it immediately reacquire a target.
+		// One exception to walking away, and it is about what the target is
+		// rather than about how much health is left: a Metin stone within a
+		// sliver of breaking. See PLAYERBOT_STONE_FINISH_STONE_HP_PERCENT.
+		bool bFinishingStone = false;
 		if (!state.bRecoveringAfterDeath && ch->GetMaxHP() > 0 &&
+				ch->GetHP() * 100 > ch->GetMaxHP() * PLAYERBOT_STONE_FINISH_OWN_HP_PERCENT)
+		{
+			LPCHARACTER stoneTarget = state.dwTargetVID != 0
+					? CHARACTER_MANAGER::instance().Find(state.dwTargetVID) : NULL;
+			bFinishingStone = stoneTarget && stoneTarget->IsStone() &&
+					!stoneTarget->IsDead() && stoneTarget->GetMaxHP() > 0 &&
+					stoneTarget->GetHP() * 100 <=
+						stoneTarget->GetMaxHP() * PLAYERBOT_STONE_FINISH_STONE_HP_PERCENT;
+		}
+		if (!bFinishingStone && !state.bRecoveringAfterDeath && ch->GetMaxHP() > 0 &&
 				ch->GetHP() * 100 <= ch->GetMaxHP() * PLAYERBOT_RECOVERY_INITIAL_HP_PERCENT)
 		{
 			state.bRecoveringAfterDeath = true;

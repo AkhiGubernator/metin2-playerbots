@@ -34,6 +34,11 @@ namespace
 
 	BYTE GetPlayerBotFirstExteriorTownPhase(const TPlayerBotAIState& state)
 	{
+		// Before the trainer, because it is what creates the need for one: the
+		// reset leaves the skill group at zero and the trainer is where a group
+		// is chosen again.
+		if (state.bTownNeedSkillReset)
+			return BOT_TOWN_PHASE_SKILL_RESET;
 		if (state.bTownNeedTrainer)
 			return BOT_TOWN_PHASE_TRAINER;
 		if (state.bTownNeedWeaponMerchant)
@@ -66,6 +71,7 @@ namespace
 
 		state.bTownNeedTrainer = !inM2 && ch->GetLevel() >= 5 && ch->GetSkillGroup() == 0 &&
 				ch->GetJob() <= JOB_SHAMAN;
+		state.bTownNeedSkillReset = !inM2 && ShouldPlayerBotResetSkills(ch, state, dwNow);
 		state.bTownNeedMisc = HasPlayerBotJunkForMerchant(ch, BOT_MERCHANT_MISC) ||
 				NeedsPlayerBotPotions(ch) || HasPlayerBotExcessPotions(ch) ||
 				NeedsPlayerBotProgressionBoots(ch);
@@ -76,7 +82,8 @@ namespace
 				NeedsPlayerBotProgressionArmor(ch) || NeedsPlayerBotProgressionShield(ch) ||
 				NeedsPlayerBotProgressionHelmet(ch);
 		state.bTownNeedBlacksmith = HasPlayerBotRefineOpportunity(ch);
-		if (!state.bTownNeedTrainer && !state.bTownNeedMisc && !state.bTownNeedWeaponMerchant &&
+		if (!state.bTownNeedTrainer && !state.bTownNeedSkillReset && !state.bTownNeedMisc &&
+				!state.bTownNeedWeaponMerchant &&
 				!state.bTownNeedArmorMerchant && !state.bTownNeedBlacksmith)
 		{
 			state.dwNextShopCheckTime = dwNow + number(60000, 120000);
@@ -355,6 +362,7 @@ namespace
 		state.bTownNeedArmorMerchant = false;
 		state.bTownNeedBlacksmith = false;
 		state.bTownNeedTrainer = false;
+		state.bTownNeedSkillReset = false;
 		state.bTownVisitPhase = BOT_TOWN_PHASE_NONE;
 		state.dwTownWaitUntil = 0;
 		state.dwNextShopCheckTime = dwNow +
@@ -1776,7 +1784,9 @@ namespace
 		const long blacksmithNpcY = inM2 ? PLAYERBOT_M2_BLACKSMITH_Y : PLAYERBOT_BLACKSMITH_Y;
 
 		if (state.bTownVisitPhase == BOT_TOWN_PHASE_TRAINER ||
-				state.bTownVisitPhase == BOT_TOWN_PHASE_TRAINER_WAIT)
+				state.bTownVisitPhase == BOT_TOWN_PHASE_TRAINER_WAIT ||
+				state.bTownVisitPhase == BOT_TOWN_PHASE_SKILL_RESET ||
+				state.bTownVisitPhase == BOT_TOWN_PHASE_SKILL_RESET_WAIT)
 			SetPlayerBotAction(state, BOT_ACTION_TRAIN, dwNow);
 		else if (state.bTownVisitPhase == BOT_TOWN_PHASE_BLACKSMITH ||
 				state.bTownVisitPhase == BOT_TOWN_PHASE_BLACKSMITH_WAIT)
@@ -1818,6 +1828,48 @@ namespace
 		long trainerX = 0, trainerY = 0;
 		GetPlayerBotNpcApproach(ch->GetPlayerID(), trainerNpcX, trainerNpcY,
 				0x54524149U, trainerX, trainerY);
+
+		if (state.bTownVisitPhase == BOT_TOWN_PHASE_SKILL_RESET)
+		{
+			SetPlayerBotAction(state, BOT_ACTION_TRAIN, dwNow);
+			long resetX = 0, resetY = 0;
+			GetPlayerBotNpcApproach(ch->GetPlayerID(), PLAYERBOT_SKILL_RESET_NPC_X,
+					PLAYERBOT_SKILL_RESET_NPC_Y, 0x52534554U, resetX, resetY);
+			if (MovePlayerBotTownLeg(ch, state, dwNow, resetX, resetY, 550))
+			{
+				// Asked again on arrival rather than trusted from the walk: a
+				// level gained on the way, a purse spent at a merchant, or a
+				// Master that finally rolled all end the errand here instead of
+				// paying for nothing.
+				if (ShouldPlayerBotResetSkills(ch, state, dwNow) &&
+						PayPlayerBotSkillReset(ch, state, dwNow))
+					state.bTownNeedTrainer = true;
+				state.bTownNeedSkillReset = false;
+				state.dwTownWaitUntil = dwNow + number(
+						PLAYERBOT_TRAINER_WAIT_MIN, PLAYERBOT_TRAINER_WAIT_MAX);
+				state.bTownVisitPhase = BOT_TOWN_PHASE_SKILL_RESET_WAIT;
+			}
+			return true;
+		}
+
+		if (state.bTownVisitPhase == BOT_TOWN_PHASE_SKILL_RESET_WAIT)
+		{
+			SetPlayerBotAction(state, BOT_ACTION_TRAIN, dwNow);
+			ch->Stop();
+			ch->SetPosition(POS_STANDING);
+			if (dwNow >= state.dwTownWaitUntil)
+			{
+				state.dwTownWaitUntil = 0;
+				ClearPlayerBotRoute(state, true);
+				state.bTownVisitPhase = GetPlayerBotFirstExteriorTownPhase(state);
+				if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE &&
+						(state.bTownNeedMisc || state.bTownNeedBlacksmith))
+					state.bTownVisitPhase = BOT_TOWN_PHASE_GATE_IN;
+				if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
+					FinishPlayerBotTownVisit(ch, state, dwNow, true);
+			}
+			return true;
+		}
 
 		if (state.bTownVisitPhase == BOT_TOWN_PHASE_TRAINER)
 		{

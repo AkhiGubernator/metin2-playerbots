@@ -710,6 +710,46 @@ if ((Test-Path -LiteralPath $overlaySource -PathType Container) -and
     }
 }
 
+# The game image is built from linux-port/docker/game/src, and that tree is put
+# there once by fetch-sources.sh at install time out of the operator's own
+# r40250 package. It is not ours to ship, so an update never restores it - and
+# an update *does* write linux-port/docker/game/src/server/game/src, because
+# that is where the playerbot sources belong. On an install whose staged tree
+# has gone missing that combination is quietly misleading: src/server/game
+# exists, everything beside it does not, and `docker compose' answers with a
+# dozen "failed to calculate checksum ... not found" lines naming paths the
+# operator never touched. Reported from the Discord with a 1.61 MB build
+# context, where a complete one is hundreds of megabytes.
+#
+# So say it here, once, in words, before Docker gets a chance to say it badly.
+$gameContext = Join-Path $PSScriptRoot 'linux-port\docker\game\src'
+$requiredContext = @(
+    'build-deps-40250.sh',
+    'extern',
+    'server\common', 'server\db', 'server\game', 'server\libgame',
+    'server\liblua', 'server\libpoly', 'server\libserverkey',
+    'server\libsql', 'server\libthecore',
+    'serverfiles\share\conf', 'serverfiles\share\data',
+    'serverfiles\share\locale', 'serverfiles\share\package',
+    'serverfiles\mark-default'
+)
+$missingContext = @()
+foreach ($entry in $requiredContext) {
+    if (-not (Test-Path -LiteralPath (Join-Path $gameContext $entry))) {
+        $missingContext += $entry
+    }
+}
+if ($missingContext.Count -gt 0) {
+    throw ("Niekompletne zrodla gry w " + $gameContext + ".`n" +
+           "Brakuje: " + ($missingContext -join ', ') + "`n`n" +
+           "To nie jest blad Dockera ani aktualizacji. Te pliki pochodza z Twojej " +
+           "wlasnej paczki serwera r40250 i sa rozpakowywane raz, przy instalacji - " +
+           "aktualizacja ich nie przywraca, bo nie wolno nam ich rozpowszechniac.`n" +
+           "Uruchom ponownie instalator (installer\install.ps1), ktory pobierze " +
+           "zrodla i odtworzy kontekst budowy. Twoja baza, postacie i ustawienia " +
+           "zostaja nietkniete.")
+}
+
 Write-Host 'Starting Metin2 services...' -ForegroundColor Cyan
 Push-Location $composeDirectory
 try {

@@ -303,7 +303,12 @@ namespace
 				snprintf(status, statusSize, "%sRegeneruje HP", prefix);
 				break;
 			case BOT_ACTION_TRAIN:
-				snprintf(status, statusSize, "%sWybieram profesje", prefix);
+				if (state.bVisitingShop &&
+						(state.bTownVisitPhase == BOT_TOWN_PHASE_SKILL_RESET ||
+						 state.bTownVisitPhase == BOT_TOWN_PHASE_SKILL_RESET_WAIT))
+					snprintf(status, statusSize, "%sResetuje umiejetnosci u staruszki", prefix);
+				else
+					snprintf(status, statusSize, "%sWybieram profesje", prefix);
 				break;
 			case BOT_ACTION_SHOP:
 				snprintf(status, statusSize, "%sHandluje", prefix);

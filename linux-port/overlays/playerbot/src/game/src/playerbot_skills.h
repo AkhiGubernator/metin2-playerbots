@@ -366,6 +366,66 @@ namespace
 		return 0;
 	}
 
+	// What the old woman charges this character, exactly as skill_reset2.quest
+	// computes it.
+	long long GetPlayerBotSkillResetCost(LPCHARACTER ch)
+	{
+		if (!ch)
+			return 0;
+		return PLAYERBOT_SKILL_RESET_BASE_COST +
+				PLAYERBOT_SKILL_RESET_LEVEL_COST * (long long)ch->GetLevel();
+	}
+
+	// Is paying her the best move this bot has left?
+	//
+	// Only when there is nothing else to try: a skill sitting at seventeen that
+	// will not turn Master, and no skill points in hand to put anywhere else.
+	// A reset takes every skill level the character has, so a bot with points
+	// still unspent should spend those first and roll again for free. The level
+	// window and the refusal without a skill group are the quest's own.
+	bool ShouldPlayerBotResetSkills(LPCHARACTER ch, const TPlayerBotAIState& state, DWORD dwNow)
+	{
+		// Deliberately not a question about where the bot is standing: the town
+		// visit already knows it is in Joan, and the travel gate has to be able
+		// to ask this from Bokjung in order to decide to come here at all.
+		if (!ch)
+			return false;
+		if (ch->GetLevel() < PLAYERBOT_SKILL_RESET_MIN_LEVEL ||
+				ch->GetLevel() > PLAYERBOT_SKILL_RESET_MAX_LEVEL)
+			return false;
+		if (ch->GetSkillGroup() == 0 || ch->GetJob() > JOB_SHAMAN)
+			return false;
+		if (state.dwNextSkillResetTime != 0 && dwNow < state.dwNextSkillResetTime)
+			return false;
+		if (GetPlayerBotStuckSkill(ch) == 0 || ch->GetPoint(POINT_SKILL) > 0)
+			return false;
+		return (long long)ch->GetGold() >=
+				GetPlayerBotSkillResetCost(ch) + PLAYERBOT_SKILL_RESET_GOLD_MARGIN;
+	}
+
+	// Pay her, and forget. The quest does exactly these three things, in this
+	// order; a skill group of zero is what sends the bot back to the trainer,
+	// so nothing else has to be arranged for the second half of the errand.
+	bool PayPlayerBotSkillReset(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch)
+			return false;
+		const long long cost = GetPlayerBotSkillResetCost(ch);
+		if ((long long)ch->GetGold() < cost)
+			return false;
+		const DWORD dwStuck = GetPlayerBotStuckSkill(ch);
+		const BYTE bOldGroup = ch->GetSkillGroup();
+		ch->PointChange(POINT_GOLD, (int)-cost);
+		ch->ClearSkill();
+		ch->SetSkillGroup(0);
+		state.dwNextSkillResetTime = dwNow + PLAYERBOT_SKILL_RESET_COOLDOWN;
+		sys_log(0, "PLAYERBOT_SKILL: reset at the old woman pid=%u name=%s level=%u group=%u stuck_skill=%u cost=%lld gold_left=%d points=%d",
+				ch->GetPlayerID(), ch->GetName(), (unsigned int)ch->GetLevel(),
+				(unsigned int)bOldGroup, dwStuck, cost, ch->GetGold(),
+				ch->GetPoint(POINT_SKILL));
+		return true;
+	}
+
 	// The scroll, if the bag holds one: one level off the stuck skill, the
 	// point back, and the next pass rolls for Master again at seventeen. The
 	// engine reads the skill from the item's first socket.

@@ -653,6 +653,42 @@ namespace
 			}
 	}
 
+	// One bot, one line, everything the 8 September audit asked to be able to
+	// read: what it is for, what is holding it, and what happens next.
+	//
+	// The census counts; this explains. A few bots a minute rather than all of
+	// them, because the point is to be able to follow one bot through a cycle,
+	// not to fill the log with a hundred identical lines.
+	void ReportPlayerBotM2Why(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch)
+			return;
+		size_t redCount = 0, blueCount = 0;
+		CountPlayerBotPotions(ch, redCount, blueCount);
+		LPCHARACTER target = state.dwTargetVID != 0
+				? CHARACTER_MANAGER::instance().Find(state.dwTargetVID) : NULL;
+		sys_log(0, "PLAYERBOT_M2: why pid=%u name=%s level=%u goal=%u grind=%d service=%d service_age_ms=%u retry_in_ms=%d "
+				"departure_to=%ld departure_age_ms=%u red=%u blue=%u target=%s target_level=%u combat_reason=%s "
+				"route=%u/%u nav_defer=%u nav_wait_ms=%u action=%u",
+				ch->GetPlayerID(), ch->GetName(), ch->GetLevel(),
+				(unsigned int)state.bLongTermGoal,
+				IsPlayerBotGrindAllowedHere(ch) ? 1 : 0,
+				state.bServicePending ? 1 : 0,
+				state.dwServiceSince != 0 ? dwNow - state.dwServiceSince : 0,
+				state.dwServiceRetryAt != 0 ? (int)(state.dwServiceRetryAt - dwNow) : -1,
+				state.lDepartureMap,
+				state.dwDepartureSince != 0 ? dwNow - state.dwDepartureSince : 0,
+				(unsigned int)redCount, (unsigned int)blueCount,
+				target ? target->GetName() : "-",
+				target ? target->GetLevel() : 0,
+				playerbot_combat_value::ReasonName(
+						(playerbot_combat_value::Reason)state.bLastCombatReason),
+				(unsigned int)state.uRouteIndex, (unsigned int)state.vecRoute.size(),
+				(unsigned int)state.bNavDeferredCount,
+				state.dwFirstNavDeferTime != 0 ? dwNow - state.dwFirstNavDeferTime : 0,
+				(unsigned int)state.bCurrentAction);
+	}
+
 	void ReportPlayerBotM2Census()
 	{
 		char line[512];
@@ -717,8 +753,29 @@ namespace
 				state.bVisitingStable ? 1 : 0, (unsigned int)state.uRouteIndex,
 				(unsigned int)state.vecRoute.size());
 
+		// The errand survives the reset. FinishPlayerBotTownVisit clears the
+		// phase and the stuck route - which is what the watchdog is for - but
+		// the need that brought the bot to town is handed to SERVICE_RECOVERY
+		// rather than to whatever monster is standing nearby, and the bot stays
+		// out of ordinary fights until its retry comes round.
 		if (state.bVisitingShop)
+		{
+			const bool stillNeeded = NeedsPlayerBotPotions(ch) ||
+					BlocksPlayerBotTravel(ch);
 			FinishPlayerBotTownVisit(ch, state, dwNow, false);
+			if (stillNeeded)
+			{
+				if (state.dwServiceSince == 0)
+					state.dwServiceSince = dwNow;
+				state.bServicePending = true;
+				state.dwServiceRetryAt = dwNow + number(
+						(int)PLAYERBOT_SERVICE_RETRY_MIN, (int)PLAYERBOT_SERVICE_RETRY_MAX);
+				state.dwNextShopCheckTime = state.dwServiceRetryAt;
+				sys_log(0, "PLAYERBOT_SERVICE: recovery armed pid=%u name=%s map=%ld retry_in_ms=%u age_ms=%u",
+						ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(),
+						state.dwServiceRetryAt - dwNow, dwNow - state.dwServiceSince);
+			}
+		}
 
 		// A leader and its nearby followers can keep each other in
 		// BOT_ACTION_PARTY_ASSEMBLE after a failed shared objective.  Merely
@@ -732,6 +789,10 @@ namespace
 			state.dwPartyExpireTime = 0;
 			state.dwNextPartyCheckTime = dwNow + number(60000, 120000);
 		}
+		// Deliberately not cleared here: bServicePending, dwServiceRetryAt,
+		// dwServiceSince and the departure intent. A reset drops a stale route
+		// and a stale target; the reason the bot came to town and the map it
+		// means to leave for outlive it.
 		state.bVisitingBiologist = false;
 		state.bVisitingStable = false;
 		state.bTacticalRetreat = false;
@@ -1308,7 +1369,39 @@ void CPlayerBotManager::Update()
 		// The census, once a minute: why each level-40 bot in Bokjung is there.
 		if (s_bPlayerBotM2CensusPass && ch->GetLevel() >= 40 &&
 				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
+		{
 			NotePlayerBotM2Stay(ClassifyPlayerBotTownStay(ch, state, dwNow));
+			// A rotating handful explains itself in full. The rotation is by
+			// minute so following one bot across a cycle is possible without
+			// eight hundred lines a minute.
+			if ((ch->GetPlayerID() + dwNow / 60000U) % 24U == 0)
+				ReportPlayerBotM2Why(ch, state, dwNow);
+		}
+
+		// A service that cannot be finished must not hold the bot for ever: past
+		// PLAYERBOT_SERVICE_GIVE_UP the recovery is abandoned with a reason, and
+		// the ordinary planner has the bot back. Better a bot that hunts than a
+		// bot that waits on a merchant it will never reach.
+		if (state.bServicePending && state.dwServiceSince != 0 &&
+				dwNow - state.dwServiceSince > PLAYERBOT_SERVICE_GIVE_UP)
+		{
+			sys_log(0, "PLAYERBOT_SERVICE: gave up pid=%u name=%s map=%ld age_ms=%u red_low=%d blocked=%d",
+					ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(),
+					dwNow - state.dwServiceSince, NeedsPlayerBotPotions(ch) ? 1 : 0,
+					BlocksPlayerBotTravel(ch) ? 1 : 0);
+			state.bServicePending = false;
+			state.dwServiceRetryAt = 0;
+			state.dwServiceSince = 0;
+		}
+		// The need may simply have gone away - a bot that bought from a counter
+		// beside it, or whose gear turned up as loot.
+		if (state.bServicePending && !NeedsPlayerBotPotions(ch) &&
+				!BlocksPlayerBotTravel(ch))
+		{
+			state.bServicePending = false;
+			state.dwServiceRetryAt = 0;
+			state.dwServiceSince = 0;
+		}
 
 		// And whether the defence episode is over. It ends when the fighting
 		// has actually stopped, not when its timer runs out: otherwise the next

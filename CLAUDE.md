@@ -343,6 +343,37 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   passes it.
   `PLAYERBOT_M2: census` is how this is measured: a count of level-40 bots in
   Bokjung says nothing, the reason each one is there says everything.
+- **An unfinished errand is somebody's job until it is done.** The 8 September
+  audit traced the loop that kept level-40 bots fighting in Bokjung, and it is
+  not the map choice: the bot needs a merchant, the route is deferred for want
+  of planning budget, the inactivity watchdog fires on the stillness, the visit
+  is thrown away, and one second later the bot casts an attack skill at
+  whatever is nearby with the need it came for still unmet. The watchdog still
+  clears the dead route - that is what it is for - but `bServicePending` now
+  carries the errand across the reset with its own retry, and the combat
+  adapter puts such a bot in COMMITTED_TRAVEL so the reset cannot hand an unmet
+  need to the target picker. It gives up loudly after
+  `PLAYERBOT_SERVICE_GIVE_UP` rather than wedging.
+- **"Is this fight worth it" and "may I grind here at all" are two rules.**
+  The combat value policy answers the first; `IsPlayerBotGrindAllowedHere`
+  answers the second, and above `PLAYERBOT_M2_COHORT_MAX_LEVEL` in Bokjung the
+  answer is no. That needed a fourth mode in the policy - `SERVICE_ONLY`,
+  placed after the named objectives and before the experience checks, because
+  `COMMITTED_TRAVEL` refuses everything including the quest the bot is
+  legitimately there for. The rule has to cover every road to a fight, not just
+  the collector: party focus, the held target, the engaged target, the
+  multi-pull and the Archer's lure all ask it. Self-defence never does.
+- **A departure intent outlives the errand that delays it.**
+  `lDepartureMap`/`dwDepartureSince` are set when travel is held back by a
+  purchase and are not cleared by the watchdog, so after the visit the bot
+  leaves instead of waiting for ambition to be rolled again.
+- **A deferral is not an unreachable destination.** Three budgets -
+  plans per tick, planning time per tick, far plans per minute - returned the
+  same `PLAYERBOT_NAV_PLAN_DEFERRED`, and the log could not tell them apart.
+  `s_szPlayerBotNavDeferReason` and `dwFirstNavDeferTime` put the reason and the
+  wait into the line. The fair queue with per-request ageing that the audit also
+  asked for is *not* built: it is a hot-path redesign and belongs in its own
+  measured change.
 - **A buff cast claims the tick, so the set has to be gathered quickly.**
   `ManagePlayerBotCombatBuffs` casts one buff and returns; at five seconds
   between passes a Warrior needed ten seconds for aura and berserk and a

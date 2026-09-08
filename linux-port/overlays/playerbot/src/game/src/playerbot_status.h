@@ -197,6 +197,21 @@ namespace
 			snprintf(status, statusSize, "%sUciekam - mam malo HP", prefix);
 			return;
 		}
+		// An errand the watchdog interrupted, and the map the bot still means to
+		// leave for. The audit asked for exactly this pair - "Uzupelniam
+		// mikstury; potem Sohan" - because an observer cannot otherwise tell a
+		// bot that is stuck from one that is waiting.
+		if (state.bServicePending)
+		{
+			const char* where = state.lDepartureMap != 0
+					? GetPlayerBotMapDestinationPl(state.lDepartureMap) : "";
+			if (where[0])
+				snprintf(status, statusSize, "%sCzekam na trase do handlarza; potem %s",
+						prefix, where);
+			else
+				snprintf(status, statusSize, "%sCzekam na trase do handlarza", prefix);
+			return;
+		}
 		// The luring course says which stage it is in, because "walking away
 		// from the party" and "bringing nine monsters back to it" look the same
 		// from outside and are not the same thing at all.

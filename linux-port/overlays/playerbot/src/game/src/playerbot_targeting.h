@@ -164,7 +164,12 @@ namespace
 
 	LPCHARACTER FindPlayerBotPartyFocusTarget(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
+		// The party's shared target is a fresh fight like any other, so the map
+		// rule applies to it too: on ground this bot has outgrown, joining a
+		// friend's grind is still a grind. Defence reaches the bot by another
+		// road and is not affected.
 		if (!ch || !ch->GetParty() || state.bVisitingShop || state.bRecoveringAfterDeath ||
+				state.bServicePending || !IsPlayerBotGrindAllowedHere(ch) ||
 				!IsPlayerBotPartyCohesive(ch, 2, PLAYERBOT_PARTY_COHESION_RADIUS) ||
 				IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
 				(state.dwLastDeathTime != 0 && dwNow - state.dwLastDeathTime < 60000) ||
@@ -536,6 +541,16 @@ namespace
 		else if (state.bVisitingShop || state.bVisitingBiologist ||
 				state.bVisitingStable || state.bMarketTrip || state.bFishingSession)
 			context.mode = playerbot_combat_value::COMMITTED_TRAVEL;
+		// An errand the watchdog interrupted is still this bot's job. Without
+		// this the reset handed an unmet need straight back to the target
+		// picker: "shop=1 route=0/0" in the watchdog line, an attack skill one
+		// second later, and the merchant never reached.
+		else if (state.bServicePending)
+			context.mode = playerbot_combat_value::COMMITTED_TRAVEL;
+		// And the residence rule: on a map this bot has outgrown, a named
+		// errand still counts and plain experience does not.
+		else if (!IsPlayerBotGrindAllowedHere(ch))
+			context.mode = playerbot_combat_value::SERVICE_ONLY;
 		else
 			context.mode = playerbot_combat_value::OBJECTIVES;
 
@@ -1593,6 +1608,10 @@ namespace
 		if (!ch || ch->GetLevel() < 15 || ch->GetParty() ||
 				(ch->GetMapIndex() != PLAYERBOT_MAP_CHUNJO_M1 &&
 				 ch->GetMapIndex() != PLAYERBOT_MAP_CHUNJO_M2))
+			return false;
+		// Gathering four packs at once is the largest grind there is, so it
+		// answers to the map rule before anything else about the build.
+		if (!IsPlayerBotGrindAllowedHere(ch))
 			return false;
 
 		LPITEM weapon = ch->GetWear(WEAR_WEAPON);

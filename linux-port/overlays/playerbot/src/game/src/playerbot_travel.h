@@ -146,6 +146,23 @@ namespace
 		return ch && ch->GetLevel() > PLAYERBOT_M2_COHORT_MAX_LEVEL;
 	}
 
+	// May this bot start an ordinary fight where it is standing?
+	//
+	// Bokjung above the cohort ceiling is the one place where the answer is no.
+	// A bot that has outgrown it may still be there as a customer, a traveller,
+	// a trader or to finish a named errand - the combat policy keeps allowing a
+	// quest target, a material it is genuinely short of and self-defence - but
+	// experience is not a reason to be there, and "my ambition is Metins" is
+	// not consent. Everywhere else this is true and nothing changes.
+	bool IsPlayerBotGrindAllowedHere(LPCHARACTER ch)
+	{
+		if (!ch)
+			return false;
+		if (ch->GetMapIndex() != PLAYERBOT_MAP_CHUNJO_M2)
+			return true;
+		return !IsPlayerBotPastM2Ceiling(ch);
+	}
+
 	bool IsPlayerBotM2LevelingCohort(LPCHARACTER ch)
 	{
 		if (!ch || ch->GetLevel() < 20 ||
@@ -922,11 +939,25 @@ namespace
 			// Same rule in Bokjung: its own shops own this need, but only until a
 			// visit has actually happened. Otherwise a bot the town cannot equip
 			// would never reach the frontier maps either.
-			if (BlocksPlayerBotTravel(ch))
+			// The intent to leave outlives the errand that holds it up. The
+			// audit's point: a higher-priority purchase defers the departure,
+			// it does not cancel it, and after the visit the traveller comes
+			// straight back rather than waiting for another roll of ambition.
+			if (BlocksPlayerBotTravel(ch) ||
+					(needsCriticalTownServices && (state.dwNextShopCheckTime == 0 ||
+						dwNow < state.dwNextShopCheckTime)))
+			{
+				const long wantMap = GetPlayerBotFrontierMapForLevel(ch);
+				if (wantMap != 0 && state.lDepartureMap != wantMap)
+				{
+					state.lDepartureMap = wantMap;
+					state.dwDepartureSince = dwNow;
+					sys_log(0, "PLAYERBOT_DEPARTURE: held pid=%u name=%s level=%u to=%ld reason=%s",
+							ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), wantMap,
+							BlocksPlayerBotTravel(ch) ? "gear_or_potions" : "town_visit");
+				}
 				return false;
-			if (needsCriticalTownServices && (state.dwNextShopCheckTime == 0 ||
-					dwNow < state.dwNextShopCheckTime))
-				return false; // local M2 town visit owns this need
+			}
 
 			if (needsHorseExpedition)
 			{

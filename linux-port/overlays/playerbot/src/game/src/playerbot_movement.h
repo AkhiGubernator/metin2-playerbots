@@ -1033,9 +1033,14 @@ namespace
 				{
 					if (state.bNavDeferredCount < 255)
 						++state.bNavDeferredCount;
+					if (state.dwFirstNavDeferTime == 0)
+						state.dwFirstNavDeferTime = dwNow;
 					if (state.bNavDeferredCount == 20)
-						sys_err("PLAYERBOT_NAV: repeatedly deferred pid=%u name=%s pos=(%ld,%ld) dest=(%ld,%ld)",
-								ch->GetPlayerID(), ch->GetName(), ch->GetX(), ch->GetY(), destX, destY);
+						sys_err("PLAYERBOT_NAV: repeatedly deferred pid=%u name=%s pos=(%ld,%ld) dest=(%ld,%ld) reason=%s waited_ms=%u",
+								ch->GetPlayerID(), ch->GetName(), ch->GetX(), ch->GetY(),
+								destX, destY, s_szPlayerBotNavDeferReason,
+								state.dwFirstNavDeferTime != 0
+									? dwNow - state.dwFirstNavDeferTime : 0);
 					// Desynchronise retries so the same low PIDs do not consume every
 					// planning slot on each pass through the ordered bot map.
 					state.dwNextNavPlanTime = dwNow + 750 +

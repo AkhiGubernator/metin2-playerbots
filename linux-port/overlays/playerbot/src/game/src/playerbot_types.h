@@ -221,6 +221,20 @@ namespace
 	// for its three enchantments - longer than most of the fights they were
 	// buffing for, which is why they were usually seen without them.
 	const DWORD PLAYERBOT_BUFF_RECHECK_FAST = 1200;
+	// An unfinished town errand is somebody's job until it is done.
+	//
+	// The 8 September audit traced the loop: the bot needs a merchant, the
+	// route is deferred, the inactivity watchdog fires, the visit is thrown
+	// away, and a second later the bot is casting an attack skill at whatever
+	// stands nearby - with the need it came for still unmet. The watchdog may
+	// cancel a stale route; it may not cancel the errand. These carry the
+	// errand across the reset and keep the bot out of a fresh grind while it
+	// waits for its retry.
+	const DWORD PLAYERBOT_SERVICE_RETRY_MIN = 15000;
+	const DWORD PLAYERBOT_SERVICE_RETRY_MAX = 40000;
+	// How long a service may stay unfinished before it is given up and the
+	// ordinary planner takes over again, so nothing can wedge for ever.
+	const DWORD PLAYERBOT_SERVICE_GIVE_UP = 900000;
 	// A town nobody stays in is a town nobody sees.
 	//
 	// Joan holds four hundred bots and its square holds a couple of dozen: a bot
@@ -1936,6 +1950,12 @@ namespace
 			wHuntingHub(0xffff),
 			dwHubChosenTime(0),
 			dwTownLingerUntil(0),
+			dwFirstNavDeferTime(0),
+			dwServiceRetryAt(0),
+			dwServiceSince(0),
+			dwDepartureSince(0),
+			lDepartureMap(0),
+			bServicePending(false),
 			bLastCombatReason(0),
 			dwLureSessionId(0),
 			dwLureStageTime(0),
@@ -2221,6 +2241,21 @@ namespace
 		// Until when this bot is spending time in town rather than leaving the
 		// moment its errand is done.
 		DWORD dwTownLingerUntil;
+		// When this bot first had a route refused for want of planning budget.
+		// The audit asked for the queue age: a deferral that has stood for a
+		// minute is a different thing from one that has stood for a second.
+		DWORD dwFirstNavDeferTime;
+		// A town errand that has not finished. Set when the watchdog or a failed
+		// visit gives up on the attempt, cleared when a visit completes or the
+		// need goes away. While it stands the bot is a customer, not a hunter.
+		DWORD dwServiceRetryAt;
+		DWORD dwServiceSince;
+		// Where this bot means to go once the town is done with it, and since
+		// when. Survives the visit and the watchdog: the audit's point was that
+		// a reset may drop a stale route but not the intent behind it.
+		DWORD dwDepartureSince;
+		long lDepartureMap;
+		bool bServicePending;
 		// Why the monster this bot is fighting was allowed - the combat policy's
 		// own Reason, kept so the line over the bot's head can say what it is
 		// doing *for*, which is the whole point of the audit's status section.

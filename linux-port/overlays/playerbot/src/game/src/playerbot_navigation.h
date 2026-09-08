@@ -111,6 +111,10 @@ namespace
 	DWORD s_uPlayerBotNavPlanUsThisTick = 0;
 	DWORD s_dwPlayerBotNavFarMinuteStamp = 0;
 	int s_iPlayerBotNavFarPlansThisMinute = 0;
+	// Which budget refused the last plan. Three different limits returned the
+	// same DEFERRED and the log could not tell them apart, so a deferral was
+	// read more than once as a destination with no route to it.
+	const char* s_szPlayerBotNavDeferReason = "none";
 
 	enum EPlayerBotNavPlanResult
 	{
@@ -545,11 +549,19 @@ namespace
 					s_dwPlayerBotNavFarMinuteStamp = now;
 					s_iPlayerBotNavFarPlansThisMinute = 0;
 				}
+				// Three different budgets end in the same answer, and the log
+				// could not tell them apart - so "deferred" was read as "no way
+				// there" more than once. Say which one it was.
 				if (s_iPlayerBotNavHeavyPlansThisTick >= PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK ||
 						s_uPlayerBotNavPlanUsThisTick >= PLAYERBOT_NAV_PLAN_TIME_BUDGET_US ||
 						(planBucket == 3 &&
 						 s_iPlayerBotNavFarPlansThisMinute >= PLAYERBOT_NAV_MAX_FAR_PLANS_PER_MINUTE))
 				{
+					s_szPlayerBotNavDeferReason =
+							s_iPlayerBotNavHeavyPlansThisTick >= PLAYERBOT_NAV_MAX_HEAVY_PLANS_PER_TICK
+								? "plans_per_tick"
+								: (s_uPlayerBotNavPlanUsThisTick >= PLAYERBOT_NAV_PLAN_TIME_BUDGET_US
+									? "plan_time_budget" : "far_plans_per_minute");
 					++s_uPlayerBotLoadPlanDeferred;
 					return PLAYERBOT_NAV_PLAN_DEFERRED;
 				}

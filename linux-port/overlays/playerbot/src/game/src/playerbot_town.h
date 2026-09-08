@@ -357,7 +357,19 @@ namespace
 		state.dwNextShopCheckTime = dwNow +
 			(completed ? number(300000, 600000) : number(60000, 120000));
 		if (completed)
+		{
 			state.dwErrandDoneTime = dwNow;
+			// The errand is done, so the recovery that was carrying it is over
+			// and the departure the audit asked to keep alive can go ahead.
+			if (state.bServicePending)
+				sys_log(0, "PLAYERBOT_SERVICE: settled pid=%u name=%s map=%ld age_ms=%u",
+						ch ? ch->GetPlayerID() : 0, ch ? ch->GetName() : "?",
+						ch ? ch->GetMapIndex() : 0,
+						state.dwServiceSince != 0 ? dwNow - state.dwServiceSince : 0);
+			state.bServicePending = false;
+			state.dwServiceRetryAt = 0;
+			state.dwServiceSince = 0;
+		}
 		// Half the bots that finish an errand in Joan stay a while instead of
 		// walking straight back out. See PLAYERBOT_TOWN_LINGER_PERCENT: a town
 		// with four hundred bots on its map and two dozen in its square does not

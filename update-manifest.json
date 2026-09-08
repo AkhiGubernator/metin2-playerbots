@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T19:34:00Z",
-  "statusMessage": "Aktualizacja 1.30.29. Wedki nie laduja juz na ziemi przy pelnym plecaku, a stado koni wokol Rybaka znika. Biolog: bot nie jest juz przypiety do Korzenia Gango przez jeden okaz, a panel pokazuje ten sam etap co rdzen. Bron z 30 poziomu: boty farmia ja do czterdziestki, wracaja po nia z rubiezy i wyceniaja jak nagrode - od 250 tysiecy, wiecej za wysokie srednie lub umiejetnosci. Przycisk ZAINSTALUJ mowi wprost, gdy brakuje zrodel gry. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T22:25:00Z",
+  "statusMessage": "Aktualizacja 1.30.30. Boty nie migocza juz na koniu i znow chodza po mapach (regresja z 1.30.28), boss szukany na calej mapie, ksiegi ida na stragan zamiast lezec w plecaku, stosy w plecaku scalane, zwoje na straganie po sztuce, panel Sebana 1.38.5, w launcherze dane do bazy dla Navicat i naprawa hasla roota.",
   "server": {
-    "version": "1.30.29",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.29/metin2-server-update-1.30.29.zip",
-    "sha256": "0059B573E0B5234A64E870E898D0F4056AFD3409C125FA92066617E36013FAB5"
+    "version": "1.30.30",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.30/metin2-server-update-1.30.30.zip",
+    "sha256": "357E5CFE603AE369F22DE7CCB917B2B1E632CE3653C72A894442B16F4ED80947"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

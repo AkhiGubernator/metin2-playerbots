@@ -17,6 +17,117 @@ every version here.
 
 ---
 
+## 1.30.30 — 2026-09-09
+
+### Naprawione
+
+- **Boty na mapach łowieckich wsiadały i zsiadały z konia co sekundę i nie
+  robiły ani kroku na długiej trasie.** Regresja z 1.30.28 („koń biegnie za
+  botem"): wędrówka na końcu ticku wsadzała bota na konia na długą nogę, a
+  początek następnego ticku zdejmował go bezwarunkowo „do walki" — i każdy z
+  tych kroków kasował trasę. Zmierzone na 970 botach: **133 000 wsiadań i
+  zsiadań w 28 minut u 261 botów, 6 sekund z każdych 60 sekund ticku** i ani
+  jednej przejścia między hubami. To dlatego rajd na Królową Pająków nigdy
+  nie dochodził do skutku: 27 decyzji „idę na bossa" i zero botów w promieniu
+  trzech kilometrów od niej. Koń transportowy schodzi teraz tylko wtedy, gdy
+  jest z kim walczyć (cel albo napastnik), sekcja celu zsiada w ticku, w
+  którym cel wybrała, a bufy i wieloprzyciąganie nie ruszają z siodła (silnik
+  odmawia umiejętności z konia bez umiejętności konnych). Po poprawce:
+  z 4 732 wsiadań na minutę do ~200, tick z 12,1 s na 6–7 s z każdych 60.
+
+- **Boss szukany był w dziewięciu sektorach wokół punktu z tabeli — a Królowa
+  Pająków łazi za tymi, którzy ją biją.** Znaleziona 5 km od huba, trzy minuty
+  później „powalona" bez żadnego BOSS_KILL w logu, po chwili znów stojąca
+  11 km dalej — i każdy rajd był odsyłany do pracy, gdy ona stała. Boss jest
+  teraz szukany na całej mapie (jedna migawka bytów mapy, wynik pamiętany
+  30 s). Uczciwie: rajd wciąż jej nie zabija — ma 193 408 PŻ i 60 poziom, a
+  bierze się za nią 8–10 botów z 48–56 poziomem, które giną lub uciekają
+  (59 śmierci od potworów na tej mapie w godzinę). Do przemyślenia liczba
+  rajdowiczów; mechanika chodzenia i szukania jest już poprawna.
+
+- **Bot z celem „Metiny" szedł do Lochu Pająków, gdzie kamieni nie ma.**
+  Zgłoszone z Discorda ze zrzutem („Ide do Lochu Pajakow (cel: Metiny)").
+  Loch Pająków i trzy Lochy Małp nie mają `stone.txt`. Metinowiec z roli
+  losuje zamiast Lochu Pająków Górę Sohan, a wyprawa metinowa nie startuje z
+  mapy bez kamieni ani w jej stronę (los za godzinę, z miejsca, gdzie bot stoi).
+
+- **Księgi umiejętności zalegały w plecakach.** Zgłoszone z Discorda
+  („głównie są to KU, cały dzień nic z nimi nie robią"). Bot trzymał
+  dwanaście ksiąg każdej własnej umiejętności — także tej, której czytać
+  jeszcze nie może, bo nie ma jej na M. Zmierzone: **2 636 ksiąg w 929
+  plecakach, 5 przeczytanych w 3 godziny, 4 sprzedane.** Dwanaście zostaje
+  tylko dla umiejętności na M1–M9 (czytelnych teraz), trzy na zapas dla
+  reszty, zero dla umiejętności na G; nadwyżka idzie na stragan jak księgi
+  cudzych klas, a do handlarza dopiero pod presją plecaka.
+
+- **Stosy w plecaku i pojedyncze sztuki na straganie.** Zgłoszone z
+  Discorda: dwa stosy tego samego przedmiotu, których nie da się złączyć.
+  Reguła silnika jest jedna — ten sam numer przedmiotu i identyczne gniazda,
+  do 200 sztuk — i tylko przeciągnięcie ręką ją uruchamia, którego bot nie
+  ma. Bot co pięć minut zlewa swoje rozdzielone stosy (po częściowym zakupie,
+  sprzedaży czy podniesieniu do pełnego stosu), a na straganie robi odwrotnie:
+  ze zwojów i kamieni duszy odłącza do czterech pojedynczych sztuk na osobne
+  linie, bo prywatny sklep sprzedaje linię w całości — dwadzieścia zwojów na
+  jednej linii to dwadzieścia albo nic. Materiały zostają w stosach, bo boty,
+  które je kupują, kupują stos. U gracza dwóch stosów o różnych gniazdach
+  silnik nie złączy nigdy — to nie jest coś, co można naprawić po stronie
+  botów.
+
+- **Panel „Loch Pająków" pokazywał 0 widocznych postaci przy 150 botach na
+  mapie.** Lista pozycji brała tylko boty z zapisanym `map_index` z listy
+  starych map. Filtr mapy w zapytaniu obejmuje teraz każdą mapę z granicami
+  (Loch Pająków, oba nowe Lochy Małp, Sohan, Hwang): 846 pozycji zamiast 587.
+
+- **Mikstury: 300 czerwonych i 200 niebieskich na wyprawę, duże od 40
+  poziomu.** Pytanie z Discorda „czemu tak mało potek". Handlarka sprzedaje
+  duże mikstury (27003/27006) i od czterdziestki bot kupuje właśnie je; zakup
+  liczony do pojemności plecaka, nie do zamierzonej liczby.
+
+- **Małże po 7 000 na straganie.** Cena wywoławcza małża ma próg 100 000 —
+  jak perły — zamiast trzykrotności ceny handlarza.
+
+- **Ubijanie kamienia.** Bot nie odpuszcza metina poniżej 15% jego PŻ, dopóki
+  sam ma powyżej 10%: kamień nie goni, a wracał do pełnego zdrowia.
+
+### Panel zaawansowany 1.38.5 (Seban)
+
+Scalone z tym wydaniem: konto GM z gotową postacią (klasa, punkt startowy),
+nazwy przedmiotów w kanale zdarzeń, sezon tygodniowy z właściwych wpisów
+logu (`REFINE SUCCESS`, `BOSS_KILL`), przycisk aktualizacji przez nasz
+`updater` (profil `update`; panel dostaje wolumen `update-spool` w compose),
+ciasteczko sesji osobne od panelu klasycznego. Zachowane nasze poprawki:
+Świątynia Hwang (nazwa, granice, kafelek), poprawne ŚR/UM w tablicy bonusów,
+odporność na brak migawki systemu na świeżej instalacji. Restart i zapis rat
+z konsoli restartu działają bez helpera z `integration/` (którego ten obraz
+nie zawiera) — odmawiana jest tylko zmiana respawnów, i panel mówi dlaczego.
+
+### Launcher
+
+- **Dane do bazy (Navicat, HeidiSQL, DBeaver).** Zgłoszone z Discorda
+  („1045 - Access denied for user 'root'@'172.18.0.1'"). Nowy przycisk
+  **DANE DO BAZY (NAVICAT)** w GUI (akcja `DbAccess`, pozycja 16 w menu
+  konsolowym) pokazuje host, port i oba konta z hasłami z `.env` — w polach
+  do skopiowania, nie w logu, bo log trafia do paczek diagnostycznych.
+  **NAPRAW DOSTĘP DO BAZY** ustawia teraz oprócz konta `metin2` także
+  `root@'%'` na hasło z `.env`, więc po nim dane z tego przycisku zawsze
+  działają. Opis w README i `docs/INSTALL.md`.
+
+### Spawn
+
+- Kolejność spawnu: najpierw boty grane w ostatnim tygodniu, potem świeże
+  (poziom ≤4), potem reszta — suwak podniesiony o 120 daje 120 nowych
+  postaci od pierwszego poziomu (zweryfikowane: `registered_started=970`,
+  120 botów na 1–10 poziomie po kwadransie).
+
+### Weryfikacja
+
+Cztery pełne przebiegi na serwerze testowym (970 botów): koń, rajd, księgi,
+stosy, panel Sebana, akcja DbAccess. Zmierzone przed i po; liczby wyżej.
+Paczka aktualizacji sprawdzona pod kątem kompletności (`check-update-covers-build`)
+i przeskanowana Defenderem przed publikacją.
+
+---
+
 ## 1.30.29 — 2026-09-08
 
 ### Naprawione

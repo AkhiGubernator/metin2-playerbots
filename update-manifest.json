@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-07T23:04:00Z",
-  "statusMessage": "Aktualizacja 1.30.16. Aury i zaklecia wchodza od razu zamiast po jednym co piec sekund, obszarowki nie leca juz w kamien Metin, perly kosztuja jak perly, a stragany staja wreszcie takze w Joan. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T08:05:00Z",
+  "statusMessage": "Aktualizacja 1.30.17. Boty mowia nad glowa, co robia i po co - podroz nazywa cel, wizyta po zapasy pokazuje stan mikstur, a walka mowi, dlaczego akurat ta. Do tego Joan wreszcie zyje: polowa botow zostaje po sprawie na rynku, a wedkarzy jest wiecej. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.16",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.16/metin2-server-update-1.30.16.zip",
-    "sha256": "2505D1010F6B95122C53A38E891FDFE51374B5B01ED27EC548C2CE8E95BFAC14"
+    "version": "1.30.17",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.17/metin2-server-update-1.30.17.zip",
+    "sha256": "ED0F1043069C33DCAB1CB5BA26D42BD9EF35E5D9C5E8E847E5982B25080D4E9D"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

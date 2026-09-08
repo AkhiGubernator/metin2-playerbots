@@ -17,6 +17,50 @@ every version here.
 
 ---
 
+## 1.30.17 — 2026-09-08
+
+### Zmienione
+
+- **Bot mówi nad głową, co robi i po co.** Do tej pory opis mówił o czynności i
+  milczał o jej celu — a czasem obie części sobie przeczyły: „Szukam miejsca do
+  expa (cel: zapasy)" wisiało nad postacią idącą do handlarza. Teraz:
+  - podróż nazywa miejsce i powód — „Idę do Doliny Orków (cel: poziom)",
+    „Idę do miasta po zapasy", „Idę do kowala ulepszyć ekwipunek", „Idę do
+    Biologa", „Idę nad rzekę łowić ryby";
+  - wizyta po zapasy pokazuje stan mikstur, czyli jedyną rzecz, którą da się
+    sprawdzić w ekwipunku — „Kupuje potki i sprzedaje lup - potki 143/86";
+  - walka mówi, **dlaczego ta walka** — „Bronię się przed …", „Pomagam
+    drużynie: …", „Zbieram materiał z …" zamiast samego „Walczę z …". Powód
+    bierze się z tego samego modułu, który decyduje, czy walka ma sens, a nie
+    ze zgadywania po tekście.
+- **Joan ma po co żyć.** Bot, który załatwi sprawę albo skończy łowienie w Joan,
+  zostaje teraz na cztery do dziesięciu minut na rynku zamiast wychodzić w pole w
+  tej samej sekundzie —
+  a wędkarzy jest więcej (8 na stu zamiast 2, a wśród rozważnych zbieraczy 30
+  zamiast 20). Łowienie to jedyna czynność, która sama z siebie prowadzi bota do
+  Joan: brzeg, Rybak sprzedający przynętę i pierścień straganów leżą na tej
+  samej mapie, więc wędkarz jest przy okazji klientem i sprzedawcą.
+  Bokjung świadomie pominięty — tam tłok jest problemem, nie brakiem.
+
+### Dla ciekawych
+
+- Poprzednia wersja opierała się na złym pomiarze i trzeba to sprostować:
+  kolumna `map_index` w bazie to **ostatnia zapisana pozycja każdego
+  zarejestrowanego bota**, także tych niewłączonych. Mówiła o 400 botach na
+  mapie Joan, podczas gdy plik statusów — a ten zawiera wyłącznie żywe postacie
+  — mówił o 19 na 837. Stąd pusty rynek: nie brakowało straganów,
+  brakowało ludzi, bo prawie cała żyjąca populacja to poziom 40+, a ci dawno
+  wyjechali na pogranicze. Po zmianie w Joan stoi 52 botów — prawie
+  trzy razy więcej, i to zasługa samych wędkarzy.
+- Odpoczynek na rynku jest w tej wersji **niepotwierdzony w grze**. Kod jest
+  wdrożony i sprawdzony kompilatorem, ale jego wyzwalacze — załatwiona sprawa w
+  Joan albo skończona sesja wędkarska — zdarzają się rzadko, a sesja trwa od
+  piętnastu do czterdziestu minut, więc każde przebudowanie serwera zerowało
+  licznik, zanim cokolwiek zdążyło się wydarzyć. Zobaczymy to dopiero po
+  dłuższej pracy bez restartu.
+
+---
+
 ## 1.30.16 — 2026-09-08
 
 ### Naprawione

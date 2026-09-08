@@ -409,6 +409,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   stall clock is wall time, which runs while the bot is fighting or shopping -
   `PLAYERBOT_PORTAL_WALK_MIN_TICKS` makes it count attempts, after one bot was
   caught being declared stalled on its first walk step with 88 km to go.
+- **A purchase priced per bundle refuses the whole bundle.** The Rybak sells
+  bait twenty at a time for eight hundred yang and `RestockPlayerBotTackle`
+  bought all of it or none, so a bot holding 556 - thirteen worms and a
+  session's fishing - stood at the counter buying nothing. Reported as "they
+  stand under the Rybak and do not buy bait", and unresolvable from the report
+  because three quite different failures (no price on this world, no money, no
+  bag cell) all left through one door as "cannot_afford_tackle". Naming each
+  refusal found the cause on our own server in two minutes. Any stack bought
+  from an NPC wants the same shape: take what the purse reaches, re-price the
+  smaller count and re-check it, and let a single item stay all-or-nothing.
 - **Being tracked by Git is not being delivered.** An install assembled from an
   update package holds exactly what `server-update-files.txt` lists;
   `panel/bin/apply_rates.sh` was tracked and still missing on the machine that

@@ -17,6 +17,60 @@ every version here.
 
 ---
 
+## 1.30.26 — 2026-09-08
+
+### Naprawione
+
+- **Bot, którego nie stać na całą paczkę przynęty, nie kupował jej wcale.**
+  Zgłoszone z Discorda jako „stoją pod Rybakiem, a przynęty nie kupują", i
+  w 1.30.25 nie umieliśmy tego rozstrzygnąć — zakup mógł się nie udać na trzy
+  różne sposoby, a wszystkie wychodziły jednymi drzwiami. Kiedy każda odmowa
+  zaczęła mówić własnym zdaniem, przyczyna znalazła się **na naszym własnym
+  serwerze w dwie minuty**:
+
+      cannot afford fishing_bait vnum=27801 count=20 price=800 gold=556
+
+  Paczka to dwadzieścia robaków za osiemset yang. Bot miał pięćset
+  pięćdziesiąt sześć — czyli trzynaście robaków i całą sesję łowienia — i nie
+  kupował żadnego, bo kupno było „cała paczka albo nic". Teraz bierze tyle, na
+  ile go stać. Dotyczy to rzeczy kupowanych na sztuki: wędka jest jedna i albo
+  na nią stać, albo nie.
+
+  Trzeba powiedzieć uczciwie, czego **nie** widać w pomiarze: przez pół godziny
+  po wdrożeniu ta gałąź nie miała okazji się odpalić — osiemdziesiąt trzy
+  zakupy przynęty i żadnej odmowy, bo nasze boty są zamożne. Zmiana jest
+  bezpieczna z konstrukcji: po zmniejszeniu ilości cena jest przeliczana i
+  sprawdzana ponownie, więc w najgorszym razie kończy się tą samą odmową co
+  dotąd.
+
+### Potwierdzone po 1.30.25
+
+- **Portale trzymają przy pełnej obsadzie.** Szesnaście minut pomiaru przy
+  850 botach: **1455 przejść portalami i zero zacięć**. Przed poprawką było
+  dziewięćdziesiąt do stu zacięć na minutę.
+
+- **Świat rozkłada się na dziewięć map.** To było pytanie z Discorda —
+  „nie wiem jak jest z górą Sohan, jest tam mało botów" — i odpowiedź okazała
+  się inna, niż wyglądała. Sohan nie był pusty z powodu Sohanu: boty nie mogły
+  wyjść z miasta. Po naprawie portali Bokjung spadł z 465 botów na 107, a
+  reszta rozeszła się po świecie:
+
+  | mapa | boty |
+  |---|---|
+  | Pustynia Yongbi | 239 |
+  | Joan | 201 |
+  | Mount Sohan | **108** |
+  | Bokjung | 107 |
+  | Dolina Orków | 105 |
+  | Loch Pająków V1 | 36 |
+  | Loch Małp trudny | 20 |
+  | Świątynia Hwang | 18 |
+  | Loch Małp średni | 12 |
+
+- **Drużyny na rubieżach.** 354 boty z 846 polują w drużynie.
+
+---
+
 ## 1.30.25 — 2026-09-08
 
 ### Naprawione

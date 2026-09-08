@@ -1478,12 +1478,22 @@ namespace
 	const DWORD PLAYERBOT_FISHING_STAND_CLAIM = 120000;
 	// A point well inside the river, used only to turn the bot to face the water.
 	const long PLAYERBOT_FISHING_WATER_X = 68000;
-	// A quarter of a metre. This is half of what keeps two anglers apart - see
-	// the stand table above - and the stand itself is a cell server_attr says is
-	// standable, so there is nothing to be generous about. It was two hundred,
-	// which let a bot stop on its neighbour's place and undo the spacing
-	// entirely.
-	const int PLAYERBOT_FISHING_ARRIVE = 25;
+	// Where an angler counts as arrived - and it may never be tighter than
+	// PLAYERBOT_NAV_ARRIVAL_DISTANCE, which is where the walk itself stops.
+	//
+	// This was cut to twenty-five to keep anglers a metre apart and that made a
+	// dead zone: MovePlayerBot reports success and stops moving at a hundred
+	// units from the goal, the fishing pass kept asking for another step, and
+	// the bot stood between the two numbers for ever with stuck=0 and nothing in
+	// any log. Measured on the live server at seventy-one and seventy-six units
+	// from a destination neither bot ever reached.
+	//
+	// The consequence is honest and worth stating: with stands a hundred and
+	// fifty apart and a hundred units of tolerance at each end, two anglers can
+	// still end up close. Spacing them further is a separate change to the stand
+	// table, not a number to shave here. The static_assert in
+	// playerbot_activities.h keeps this from being lowered again.
+	const int PLAYERBOT_FISHING_ARRIVE = 100;
 	// Independently planned route failures before the bank is written off. Six
 	// matches the town-service rescue; anything larger is indistinguishable from
 	// never giving up at all.

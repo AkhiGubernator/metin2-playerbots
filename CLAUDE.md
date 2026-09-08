@@ -372,6 +372,18 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   gives a full step at elapsed zero, and an accepted step resets the clock, so
   forty counters opening together moved the shared anchor forty times. Whole
   intervals only.
+- **An arrival radius below `PLAYERBOT_NAV_ARRIVAL_DISTANCE` strands the bot.**
+  `MovePlayerBot` reports success and stops moving a hundred units from its
+  goal; a caller that keeps asking until twenty-five leaves the bot standing in
+  the gap for ever, with `stuck=0` and nothing in any log - the walk did
+  succeed, by its own rule. Cutting `PLAYERBOT_FISHING_ARRIVE` to twenty-five
+  for the sake of spacing anglers froze most of them: forty-three at the water
+  and eleven fishing, two of them measured stuck at seventy-one and seventy-six
+  units from a destination neither reached. Back at a hundred it is fifty-three
+  and fifty-three. The rule is a `static_assert` in `playerbot_activities.h`
+  now, because this is the third shape the same mistake has taken - the goal
+  snap for the town leg, the goal snap for the portal walk, and now the arrival
+  test itself - and a comment has stopped three times being enough.
 - **The spawn queue was filled once and never looked at again.**
   `SpawnRegistered` queues the cohort at startup and drains it over
   `PLAYERBOT_SPAWN_WINDOW`; nothing counted the world afterwards, so a bot whose

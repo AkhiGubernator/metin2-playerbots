@@ -261,6 +261,7 @@ def read_playerbot_live_status():
         for path, modified in cache_key:
             if not modified or now - modified > 20:
                 continue
+            skipped = 0
             try:
                 # The r40250 core and Polish locale tables use Windows-1250.
                 with open(path, "r", encoding="cp1250", errors="replace") as stream:
@@ -269,8 +270,22 @@ def read_playerbot_live_status():
                             continue
                         parts = line.rstrip("\r\n").split("\t", 13)
                         if len(parts) != 14:
+                            skipped += 1
                             continue
-                        values = [int(value) for value in parts[:13]]
+                        # One bad row costs one row.
+                        #
+                        # This int() used to sit inside a try that wrapped the
+                        # whole file, so a single unparseable line - a torn read
+                        # while the core rewrites the snapshot is enough - threw
+                        # away every remaining line in it. An operator with 999
+                        # bots in the world saw 399 here and the right number in
+                        # the other panel, which is what a truncated parse looks
+                        # like from the outside.
+                        try:
+                            values = [int(value) for value in parts[:13]]
+                        except ValueError:
+                            skipped += 1
+                            continue
                         pid = values[0]
                         result[pid] = {
                             "pid": pid, "personality_id": values[1],
@@ -281,8 +296,11 @@ def read_playerbot_live_status():
                             "hp": values[11], "max_hp": values[12],
                             "status": parts[13],
                         }
-            except (OSError, ValueError):
+            except OSError:
                 continue
+            if skipped:
+                app.logger.warning(
+                    "playerbot status: %s dropped %d unreadable rows", path, skipped)
 
         _PLAYERBOT_STATUS_CACHE_KEY = cache_key
         _PLAYERBOT_STATUS_CACHE = result

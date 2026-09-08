@@ -313,6 +313,14 @@ namespace
 		return rod && rod->GetType() == ITEM_ROD;
 	}
 
+	// A bot stops walking at PLAYERBOT_NAV_ARRIVAL_DISTANCE from its goal, so an
+	// arrival test tighter than that can never pass: the walk reports success,
+	// the caller asks for another step, nothing moves, and the bot stands in the
+	// gap with no failure recorded anywhere. Both files are included here, so
+	// the rule can be checked rather than remembered.
+	static_assert(PLAYERBOT_FISHING_ARRIVE >= PLAYERBOT_NAV_ARRIVAL_DISTANCE,
+			"an arrival radius below the navigation's own strands the bot short of it");
+
 	bool EquipPlayerBotRod(LPCHARACTER ch)
 	{
 		if (!ch)

@@ -40,11 +40,35 @@ namespace
 
 		switch (type)
 		{
-			case APPLY_SKILL_DAMAGE_BONUS:      return value * 12;
-			case APPLY_NORMAL_HIT_DAMAGE_BONUS: return value * 10;
+			// The two damage lines are not the same line for every character,
+			// and weighting them alike had one class rerolling away the only
+			// bonus that does anything for it.
+			//
+			// Measured over every attribute on this world's items: average
+			// damage rolls up to 46 and skill damage only to 18. At twelve and
+			// ten a maximum average roll scored 460 against a maximum skill
+			// roll's 216, so average damage won by more than two to one - for
+			// everybody, a Shaman included, whose damage is very nearly all
+			// skills. A caster that rolled the best skill-damage line in the
+			// game would throw it away on the next pass.
+			//
+			// So the weights are per build, and chosen against those two
+			// ceilings rather than by feel: a caster's best skill roll (18 x 30
+			// = 540) beats its best average roll (46 x 6 = 276), and for
+			// everyone else the order stays as it was.
+			case APPLY_SKILL_DAMAGE_BONUS:
+				return IsPlayerBotCaster(ch) ? value * 30 : value * 12;
+			case APPLY_NORMAL_HIT_DAMAGE_BONUS:
+				return IsPlayerBotCaster(ch) ? value * 6 : value * 10;
 			case APPLY_CRITICAL_PCT:            return value * 10;
 			case APPLY_PENETRATE_PCT:           return value * 10;
-			case APPLY_ATTBONUS_MONSTER:        return value * 8;
+			// Worth having and worth nothing to chase: "Silny przeciwko
+			// Potworom" raises damage against every monster and against Metin
+			// stones, which is the whole of what a bot ever fights. But it does
+			// not roll here - not once across every attribute on every item in
+			// this world - so it is scored for the pieces that carry it built
+			// in, and no reroll will ever produce one.
+			case APPLY_ATTBONUS_MONSTER:        return value * 14;
 			case APPLY_ATT_SPEED:               return value * 8;
 			case APPLY_STEAL_HP:                return value * 6;
 			case APPLY_ATT_GRADE_BONUS:         return bOffensiveSlot ? value * 5 : value * 3;

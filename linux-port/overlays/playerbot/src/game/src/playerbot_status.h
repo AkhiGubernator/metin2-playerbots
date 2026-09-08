@@ -389,7 +389,28 @@ namespace
 				else if (ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) > 0)
 					snprintf(status, statusSize, "%sIde do najblizszego Stajennego z Medalem", prefix);
 				else if (IsPlayerBotMonkeyMap(ch->GetMapIndex()))
-					snprintf(status, statusSize, "%sWychodze z Lochu Malp", prefix);
+				{
+					// Only when the bot has actually decided to go. This was a
+					// plain else on a monkey map, so every bot moving inside the
+					// dungeon announced that it was leaving - and moving is what
+					// a bot in here does all the time: the maze is eleven
+					// chambers joined only by GOTO NPCs, and crossing to the
+					// next one is a walk like any other. Reported from the
+					// Discord as "the bubble says they are leaving and they do
+					// not leave". They were not leaving. Leaving is instant when
+					// it happens at all - the exit is a direct map change, not a
+					// walk - so a bot that is still here is doing something else.
+					// Never "leaving" while the bot is still here, because
+					// leaving is not something that takes time: the exit is a
+					// direct map change made on the tick the decision is taken,
+					// so a bot anybody can still see in the dungeon is by
+					// definition not on its way out. Gating on the goal was not
+					// enough - BOT_GOAL_HORSE is what a medal expedition carries
+					// for its whole visit, so twenty-one of thirty bots still
+					// announced an exit they were nowhere near. Say the true
+					// thing instead: it is crossing the maze.
+					snprintf(status, statusSize, "%sSzukam drogi przez Loch Malp", prefix);
+				}
 				// "Szukam miejsca do expa (cel: zapasy)" was said over a bot
 				// walking to a merchant, which is the audit's example of a
 				// status that describes an action without its purpose. Say

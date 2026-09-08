@@ -243,6 +243,51 @@ function Rebuild-Server {
     if ($patched -gt 0) {
         Write-Host "Nalozono $patched latek silnika." -ForegroundColor DarkGray
     }
+    # And the sources the image is actually built from.
+    #
+    # This check exists in start-server.ps1 too, and that was not enough: this
+    # path calls start-server.ps1 with -IdentityOnly, which returns after
+    # writing the .env and never reaches it, then builds here. So a player
+    # clicking GRAJ went straight to `docker compose --build' with an
+    # incomplete context and got fifteen "failed to calculate checksum ... not
+    # found" lines. Reported from the Discord twice, the second time against a
+    # version that was supposed to have fixed it - because the fix was in the
+    # half of the code that click does not run.
+    #
+    # linux-port/docker/game/src holds the r40250 tree, put there once by
+    # fetch-sources.sh during installation. It is the operator's own package and
+    # never travels in an update; what an update does put there is
+    # src/server/game, because that is where the bot sources belong - which is
+    # why a broken install still shows a plausible src/server/game and a build
+    # context of about 1.6 MB where a complete one is hundreds of megabytes.
+    $gameContext = Join-Path $serverRoot 'linux-port\docker\game\src'
+    $requiredContext = @(
+        'build-deps-40250.sh', 'extern',
+        'server\common', 'server\db', 'server\game', 'server\libgame',
+        'server\liblua', 'server\libpoly', 'server\libserverkey',
+        'server\libsql', 'server\libthecore',
+        'serverfiles\share\conf', 'serverfiles\share\data',
+        'serverfiles\share\locale', 'serverfiles\share\package',
+        'serverfiles\mark-default'
+    )
+    $missingContext = @()
+    foreach ($entry in $requiredContext) {
+        if (-not (Test-Path -LiteralPath (Join-Path $gameContext $entry))) {
+            $missingContext += $entry
+        }
+    }
+    if ($missingContext.Count -gt 0) {
+        throw ("Brakuje zrodel gry, wiec nie ma z czego zbudowac serwera.`n`n" +
+               "Katalog: " + $gameContext + "`n" +
+               "Brakuje: " + ($missingContext -join ', ') + "`n`n" +
+               "To nie jest blad Dockera, WSL ani tej aktualizacji. Te pliki pochodza " +
+               "z Twojej wlasnej paczki serwera r40250 i sa rozpakowywane raz, podczas " +
+               "instalacji - zadna aktualizacja ich nie przywroci, bo nie wolno nam ich " +
+               "rozpowszechniac.`n`n" +
+               "Uruchom ponownie instalator (installer\install.ps1). Pobierze zrodla i " +
+               "odtworzy kontekst budowania. Baza, postacie i ustawienia zostaja nietkniete.")
+    }
+
     # See Stop-Server: compose progress on stderr must not be treated as failure
     # under $ErrorActionPreference='Stop' in Windows PowerShell 5.1.
     $previousPreference = $ErrorActionPreference

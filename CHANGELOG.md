@@ -17,6 +17,100 @@ every version here.
 
 ---
 
+## 1.30.21 — 2026-09-08
+
+### Naprawione
+
+- **Bot sprzedawał prezent zamiast go założyć.** Zgłoszone z Discorda trzy razy
+  jednego popołudnia przez ludzi, którzy właśnie dali botowi coś dobrego: buty
+  +9 z trzema bonusami i 1500 HP wylądowały na ladzie zamiast na nogach.
+  To nie była ocena przedmiotu, tylko wyścig w takcie. Stragan uznaje za „zapas"
+  każdą broń i zbroję, której slot jest już zajęty — a prezent nie zajmuje
+  pustego slotu, tylko bije zajęty. Pas straganu stoi w takcie kilkaset linii
+  przed pasem ekwipunku, więc lada dostawała rzecz pierwsza, i to na sam szczyt:
+  „zapas +6 lub lepszy" to najwyżej punktowany towar, jaki stragan może nieść.
+  Teraz przed uznaniem czegoś za zapas pada pytanie, czy bot powinien to na
+  sobie mieć — silnikowe `CanEquipNow` plus ta sama punktacja, której używa pas
+  ekwipunku, więc liczą się linie bonusów i HP. Granica jest przy „może założyć
+  **teraz**": miecz na trzydziesty poziom w plecaku bota z piątego zostaje
+  towarem. Do handlarza NPC nic takiego nigdy nie trafiało — tam +6 i wyżej jest
+  wykluczone; jedyną drogą utraty prezentu była lada.
+
+- **Setki botów stały w miejscu, twierdząc, że idą.** Zgłoszone z Discorda przez
+  dwie osoby: „nie chcą iść tam, gdzie piszą, że idą" i „500 na 750 botów stoi
+  w kółku". U nas stało 148 z 838, z czego 53 w podróży, która nigdzie nie
+  prowadziła. Złożyły się na to trzy rzeczy.
+
+  Po pierwsze, **budżet planowania tras liczył sztuki**. Na minutę przy 839
+  botach: 7440 planów, z tego 7086 to skoki do sąsiedniego potwora kosztujące
+  **41 milisekund razem**, a całe jedenaście z dwunastu sekund zjadało 148
+  długich tras. Skok za sześć mikrosekund zajmował dokładnie ten sam slot co
+  przejście przez Dolinę Orków — i to długie trasy były wypychane z kolejki.
+  Połowa wszystkich żądań odrzucana, jedno z nich czekało **trzynaście minut**.
+  Plan kosztuje teraz wedle dystansu, a budżet mikrosekundowy dalej ogranicza
+  cały takt.
+
+  Po drugie, **żądanie odrzucone dwadzieścia razy przestaje stać w kolejce** za
+  licznikiem. Dalej podlega budżetowi czasu i limitowi dalekich tras — to nie
+  otwiera dziury, tylko przestaje trzymać jednego bota na końcu kolejki na
+  zawsze.
+
+  Po trzecie, **zsiadanie z konia zjadało takt ucieczki**. Zatrzymany marsz do
+  portalu oddaje takt właśnie po to, żeby bot poszedł gdzie indziej i zaplanował
+  od nowa; pas „koń transportowy nie walczy" ten takt zabierał, bot wsiadał z
+  powrotem i stał kolejne dwadzieścia sekund. Czterdzieści sześć botów robiło to
+  na wyjściu z Sohanu, wsiadając i zsiadając co dwadzieścia sekund bez jednego
+  kroku. Teraz marsz sam zsiada, zanim odda takt.
+
+  Zmierzone po wdrożeniu: odroczeń 3738 → 264 na minutę, zagłodzonych żądań
+  170 → 0, botów stojących w podróży 53 → 13.
+
+- **Marsz do portalu celował o kilometr obok.** Promień dociągania celu wynosił
+  24 komórki nawigacji, czyli 1200 jednostek świata, a przejście przez portal
+  testuje 200. Trasa mogła się legalnie skończyć kilometr od bramy: bot stawał
+  na jej końcu, po dwudziestu sekundach marsz się poddawał, a następny takt
+  planował to samo. To ta sama pułapka, którą zastawił kiedyś marsz do NPC w
+  mieście, i ta sama zasada ją zamyka — dociągnięty cel musi zmieścić się w
+  promieniu, który testuje przybycie.
+
+### Zmienione
+
+- **Wędkarze stoją metr od siebie.** Zgłoszone z Discorda ze zdjęciem: kilkadziesiąt
+  tabliczek z imionami w jednym stosie i jeden widoczny bot pod spodem. Wszyscy
+  szli na tę samą łatkę dwa na cztery metry, a gniazd było pięćdziesiąt co pół
+  metra i rozdawał je sam hash — przy pięćdziesięciu wędkarzach i pięćdziesięciu
+  gniazdach kolizje są regułą.
+  Brzeg został zmierzony z `server_attr` mapy Joan: stojący grunt z otwartą wodą
+  na wschód biegnie przez 2250 jednostek. Na nim leży **dziewięćdziesiąt
+  stanowisk, sześć kolumn na piętnaście rzędów co 150 jednostek**, każde
+  sprawdzone. Stanowisko jest zajmowane na czas sesji i zwalniane razem z nią,
+  jak miejsce przy ladzie; zajęcie, którego nikt nie dotknął przez dwie minuty,
+  wygasa, żeby bot wylogowany w połowie zarzutu nie trzymał miejsca na zawsze.
+  Promień „dotarłem" zszedł z 200 na 25 jednostek — to on decyduje, jak blisko
+  siebie kończą dwaj sąsiedzi, i przy dwustu można było stanąć na cudzym
+  miejscu.
+  Silnik niczego tu nie narzuca: `CHARACTER::fishing()` liczy punkt czterysta
+  jednostek przed postacią i nigdy go nie odczytuje, a jedyny teren, jaki
+  sprawdza, to kafelek pod nogami.
+
+### Dla budujących z repozytorium
+
+- **Szybki build kopiuje teraz skrypty kontenera.** Do tej pory podmieniał
+  wyłącznie skompilowany rdzeń i brał całą resztę z warstwy bazowej, czyli z
+  tego, co zostawił ostatni pełny build. Serwer testowy cicho odjeżdżał od tego,
+  co dostają gracze: jego warstwa bazowa nosiła przydział map sprzed
+  przeniesienia Lochu Pająków V1 i Trudnego Lochu Małp na rdzeń botów, więc
+  `m2-render-config` pisał `MAP_ALLOW` bez nich, każdy bot dochodzący do którejś
+  z tych bram był odprawiany z kwitkiem **ponad dziesięć tysięcy razy na
+  minutę**, a cały dzień pomiarów mówił, że te mapy są puste z powodów, które
+  nigdy nie były prawdziwe. Wydania tego nie dotyczyło — `m2-render-config`
+  jedzie w paczce aktualizacji od zawsze i u gracza, który się zaktualizował,
+  przydział był poprawny.
+  Po naprawie narzędzia i przebudowie: V1 z 0 na 55 botów, Trudny Loch Małp z 0
+  na 18, Średni z 6 na 14, a korek tranzytowy na pustyni ze 123 na 77.
+
+---
+
 ## 1.30.20 — 2026-09-08
 
 ### Naprawione

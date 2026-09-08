@@ -17,6 +17,78 @@ every version here.
 
 ---
 
+## 1.30.23 — 2026-09-08
+
+### Naprawione
+
+- **Botów ubywało i nic ich nie przywracało.** Zgłoszone z Discorda: „z tysiąca
+  po godzinie mam trzysta pięćdziesiąt". Kolejka odrodzeń była napełniana
+  **raz**, przy starcie, i opróżniana przez minutę — potem nikt już nigdy nie
+  liczył. Bot, któremu nie powiodło się wejście do świata, albo który z niego
+  wypadł, był stracony aż do restartu serwera.
+  Teraz raz na minutę rdzeń przelicza, ilu z zamówionych naprawdę jest w
+  świecie, i dosyła brakujących tą samą rozłożoną w czasie kolejką. Ograniczone
+  do tego, co zamówiono, więc odbudowuje obsadę i nigdy jej nie powiększa.
+  Zmierzone na naszym własnym, zdrowym serwerze zaraz po wdrożeniu: **jedenastu
+  botów nie było** po pierwszym napełnieniu — i przed tą zmianą zostaliby poza
+  światem do końca dnia.
+
+- **Nie dało się dowiedzieć, dlaczego botów jest mniej, niż się zamówiło.**
+  Rdzeń przyjmuje tożsamość tylko wtedy, gdy przejdzie sześć warunków naraz —
+  jeden wielki AND — a wiersz, który poległ, znikał bez słowa. Operator prosił o
+  tysiąc, dostawał sześćset pięćdziesiąt i nie miał się czego chwycić.
+  Teraz przy starcie idzie jedna linia z rozbiciem. U nas wygląda tak:
+  `registry rows=1182 usable=1012 rejected: login=170 social_id=101
+  other_characters=62` — czyli sufitu nie wyznacza suwak w launcherze, tylko
+  konta, których login albo social_id nie pasuje do wzorca generatora.
+
+- **Skrypt, który jedzie tylko w instalatorze, to skrypt nie do naprawienia.**
+  Zgłoszone z Discorda: instalacja bez `panel/bin/apply_rates.sh` nie miała skąd
+  go wziąć. Sprawdziliśmy całość i było gorzej: **z dziewięciu skryptów
+  kontenera gry aktualizacja wysyłała jeden.** `m2-rates`, `m2-supervise`,
+  `m2-gm`, `m2-lang`, `entrypoint.sh` — czyli wszystko, czym ten kontener jest
+  sterowany — nie jechało nigdy. Teraz idzie całe `bin/` obu kontenerów.
+
+- **Panel zaawansowany zamieniał miejscami dwa bonusy.** Zgłoszone z Discorda ze
+  zrzutem: w rankingu „ŚR" i „UM" pokazywały się na odwrót względem opisu
+  przedmiotu w grze. Kanoniczna tabela mówi `71 = Obrażenie Umiejętności`,
+  `72 = Średnie Obrażenia`, a zapytanie panelu miało te dwa numery zamienione.
+
+- **Wędkarz stał nad wodą godzinami i twierdził, że zakłada przynętę.** Zgłoszone
+  z Discorda jako „boty zakładają przynętę na bronie" — i tu trzeba powiedzieć
+  wprost: **na broń nic nie było zakładane.** Kod przynęty sprawdza, czy w ręce
+  jest wędka, i odmawia. Kłamał napis: był zwykłym „w przeciwnym razie", więc
+  każdy wędkarz nad wodą, który akurat nie zarzucił, ogłaszał zakładanie
+  przynęty — również taki, który wędki nie miał na sobie w ogóle. Teraz w tym
+  przypadku pisze „Szukam wędki".
+  Prawdziwy był drugi zarzut: **nic nie ograniczało tego stania.** Zegar
+  pilnował zarzutu, który nie bierze, ale kroku wcześniej — bota gotowego do
+  łowienia, który nie zarzuca ani razu — nie pilnowało nic. Sesja bez jednego
+  zarzutu kończy się po dwóch minutach i zostawia w logu powód razem ze stanem
+  wędki i przynęty.
+
+### Zmienione
+
+- **Pustynia przestaje być korytarzem.** To najbogatsza mapa tego świata —
+  **14 026 punktów odrodzenia** przeciwko 8122 w Dolinie Orków — a polowało na
+  niej wyłącznie pasmo 30–35. Wszyscy od 36 wzwyż szli do Doliny, więc mapa, na
+  której sam Król Skorpion stoi w 2234 miejscach, służyła za przejście do Lochu
+  Pająków. Pasmo 36–47 dzieli się teraz między Dolinę i pustynię, tak jak 30–35
+  już się dzieliło.
+  Zmierzone: Dolina Orków z 308–388 botów na **141**, pustynia z 97–123 na
+  **232**. Przy okazji spadło obciążenie — rozłożenie ludzi na więcej map ścięło
+  pracę nawigacji do jednej trzeciej: `tick_ms` z trzynastu–dziewiętnastu tysięcy
+  na **5244**, odrzuconych tras z kilkuset na **jedną**.
+
+- **Droper medali nie czeka już na swoją ambicję.** Zdobywanie medali to całość
+  tego, po co ta osobowość istnieje, a ambicja się rotuje: siedemdziesiąt trzy
+  boty z ośmiuset trzydziestu ośmiu miały ją w danej chwili, więc trzynastu
+  droperów siedziało bezczynnie dziewięć razy na dziesięć i wszystkie trzy Lochy
+  Małp stały niemal puste. Reszta botów nadal potrzebuje ambicji, więc loch nie
+  zamienia się w taśmociąg.
+
+---
+
 ## 1.30.22 — 2026-09-08
 
 ### Naprawione

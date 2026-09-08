@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T13:43:00Z",
-  "statusMessage": "Aktualizacja 1.30.22. Naprawiona latka silnika, ktora blokowala aktualizacje na Linuksie i VPS-ach, oraz pliki budowania, ktorych brak potrafil zatrzymac caly serwer. Nowy teren dla botow od 52 poziomu: Swiatynia Hwang. Wedkarze stoja wzdluz rzeki, a boty w miescie chodza po straganach zamiast stac. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
+  "publishedAt": "2026-09-08T14:32:00Z",
+  "statusMessage": "Aktualizacja 1.30.23. Rdzen dosyla boty, ktorych w swiecie zabraklo, i mowi wprost, dlaczego jest ich mniej niz zamowiono. Pustynia przestaje byc korytarzem - to najbogatsza mapa w grze. Wszystkie skrypty kontenerow jada wreszcie w aktualizacji, a wedkarz nie stoi juz godzinami nad woda. Pierwszy start po aktualizacji kompiluje gre na nowo, kilka minut dluzej.",
   "server": {
-    "version": "1.30.22",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.22/metin2-server-update-1.30.22.zip",
-    "sha256": "5A929B95ABF8F2395F14E1DBF5AA1F001475ACE93891CB84873217E0F030833F"
+    "version": "1.30.23",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.23/metin2-server-update-1.30.23.zip",
+    "sha256": "882B49FCCC83BBFEE21F39AC8E913E745B07FE3A700E42839A9797CE9F398ACD"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

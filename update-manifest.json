@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T10:03:00Z",
-  "statusMessage": "Aktualizacja 1.30.33. Lucznicy nie zamarzaja juz na punktach przybycia (strzaly ponad poziom nie liczyly sie jako brak), tarcza nie jest brakujacym slotem dla luku, dropek metinow z pelnym plecakiem ksiag otwiera stragan i sprzedaje nadmiar handlarzowi. Status stajennego nie klamie o medalu, ktorego bot nie moze oddac. Nowosc: noc na serwerze 22:00-05:59 (flaga xmas_snow, przelacznik w panelu).",
+  "publishedAt": "2026-09-09T11:53:00Z",
+  "statusMessage": "Aktualizacja 1.30.34. Ksiegi umiejetnosci nigdy nie ida do handlarza: nadmiar na stragan albo do magazynu u Dozorcy. Bot powyzej 30 lv kupuje Ksiege Zapomnienia dla skilla, ktory nie wszedl na M. Naprawiony marsz stojacy na wlasnym punkcie trasy (16 z 18 resetow watchdoga). Swiatynia Hwang: srodek, poludniowy wschod, polana zab i boss Zjawa Zoltego Tygrysa.",
   "server": {
-    "version": "1.30.33",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.33/metin2-server-update-1.30.33.zip",
-    "sha256": "0ACBB813B7EEB13DFC5204A4585469E14B417477F8506535063F85F24419D2F2"
+    "version": "1.30.34",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.34/metin2-server-update-1.30.34.zip",
+    "sha256": "0112C041A263047C7B85C250DF740B6D605B3E998BB9B63AE928F3A2A49D36C3"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -17,6 +17,85 @@ every version here.
 
 ---
 
+## 1.30.34 — 2026-09-09
+
+### Zmienione
+
+- **Księga umiejętności nigdy nie trafia do handlarza.** Zapas własnych ksiąg
+  zostaje w plecaku, nadmiar — cudze klasy i własne ponad zapas — jest towarem
+  na stragan, a to, czego plecak pod presją nie mieści ponad 12 ksiąg towaru
+  (dropek metinów: 20), bot zanosi do **Dozorcy** i wkłada do magazynu
+  (jedna strona, 45 pól) — każdy bot do własnego, na koncie `playerbot_NNN`
+  (deskryptor bota dostał wreszcie id konta; dotąd miał 0). Jak gracz: za
+  pierwszym razem płaci Dozorcy 500 yang za stronę, otwiera magazyn tylko
+  stojąc przy nim; PIN-u nie ustawia, bo silnik przyjmuje domyślne „000000”
+  dla konta bez hasła. Nowy etap wizyty w mieście, w Joan
+  i w Bokjung; status „Ide do magazynu z ksiegami” / „Oddaje ksiegi do
+  magazynu”. Pełny magazyn zostawia resztę w plecaku jako towar — do
+  handlarza nie idzie nic. Reguła z 1.30.33 („nadmiar ponad 20 ksiąg do
+  handlarza”) wycofana.
+
+- **Skill, który nie wszedł na M — Księga Zapomnienia powyżej 30 poziomu.**
+  Bot nie wkłada punktów ponad 17 od 1.30.2x; do 30 poziomu resetuje skille
+  u Starszej Pani, a powyżej miał używać Księgi Zapomnienia z rynku — której
+  nikt w tym świecie nie sprzedaje ani nie dropi, więc skill stał na 17 do
+  końca życia (81 botów nosiło 18–19 sprzed ograniczenia). Bot powyżej 30 lv
+  kupuje księgę jak w sklepie itemowym (200 000 yang prosto do plecaka, przy
+  zapasie 300 000), sparowaną ze skillem, i od razu ją czyta: jeden punkt
+  z powrotem, kolejny rzut na M przy 17. Księga wystawiona na czyimś
+  straganie też jest kupowana. Poniżej 30 lv Starsza Pani jak dotąd.
+
+- **Stragany: kto ma nadmiar ksiąg, ten handluje; materiały w pakietach;
+  scalanie zaraz po zamknięciu** (Oskar, jaksiezabic: „21 sklepów na 1000
+  botów, na nich kilka KU, a boty latają po metinach z pełnym eq”). Los
+  osobowości wybierał jednego bota na dziesięciu, a księgi leżały u
+  pozostałych dziewięciu. Teraz każdy bot z co najmniej 6 nadmiarowymi
+  księgami (cudzych klas albo własnych ponad zapas do czytania) otwiera
+  stragan niezależnie od losu — bez czekania na pełny plecak, bo na świecie
+  pełnych plecaków każdy by się kwalifikował, a na świecie półpustych nikt.
+  Materiały (ości, skóry, talizmany…) idą na ladę w pakietach po 2, do 8
+  linii jednego rodzaju — 16 ości to osiem linii po 2, nie jedna po 16;
+  perły i małż pojedynczo, mikstury/zwoje/kamienie jak dotąd po 1. Po
+  zamknięciu straganu bot scala stosy po 5 s, nie po 5 minutach, i wraca po
+  kolejną porcję, dopóki jest co scalać. Cena małża (ok. 100 tys.) to
+  celowo dziesiąta część oczekiwanej wartości pereł w środku — nie zmieniam.
+
+### Naprawione
+
+- **Marsz do Handlarki Różności w Bokjung „nieosiągalny” — 260 ratunków
+  serwisowych dziennie.** Punkt podejścia do handlarki (141300, 240400) leży
+  na pasku gruntu odciętym od placu w `server_attr`; planer odpowiadał
+  „unreachable” trzy razy, a szósta porażka przenosiła bota. Etap wizyty
+  sprawdza teraz osiągalność celu i, gdy cel leży na cudzym terenie, idzie
+  do najbliższego pola własnego terenu w promieniu przybycia — tam, gdzie
+  ratunek i tak by go postawił, bez sześciu nieudanych planów.
+
+- **Bot stojący na własnym pierwszym punkcie trasy stał w nieskończoność.**
+  16 z 18 resetów watchdoga po południu to `nav_out=11` (Goto odrzucone)
+  przy `route=0/2` na środku pola: bot stał dokładnie na punkcie 0, następny
+  odcinek był zasłonięty z jego dokładnej pozycji, pętla zjadania punktów nie
+  zjadała punktu 0 („najpierw dojdź do środka pola” — a już tam był), Goto
+  odmawiało ruchu w to samo miejsce, a marsz meldował „idę”. Jeden bot stał
+  tak 20 minut przy kowalu w Joan. Punkt, na którym bot stoi, jest zjadany;
+  zasłonięty odcinek idzie przez gałąź z ratunkami i licznikiem utknięcia.
+
+### Świątynia Hwang
+
+- Pomiar całego `regen.txt` (407 spawnów przez `group_group`): trzy komórki
+  po 800–1200 spawnów bez huba w promieniu 19 km — południowo-wschodni róg,
+  ziemia na wschód od środka i polana żab na północ od wejścia. Cztery nowe
+  huby (każdy sprawdzony w `server_attr`), więc boty obiegają całą
+  świątynię, nie tylko zachodnie i wschodnie pasmo.
+- **Boss: Zjawa Żółtego Tygrysa** (1304, 75 lv, 178 040 HP, co 2 h z
+  `boss.txt`, przy (575000, 93200) z dwoma Ropuszymi Generałami i dwoma
+  Drzewnymi Żabimi Przywoływaczami) ma hub bossa jak Królowa Pająków i
+  Dziewięć Ogonów: wyprawa grupy od 55 lv, pełna grupa może wyzwać 75,
+  a po trzech wyruszających boss wyprzedza żaby wokół niego. Wejście do
+  Wieży Demonów (Strażnik przy (590800, 110800)) stoi na ziemi bez spawnów,
+  więc huba tam nie ma — boty przechodzą obok, idąc do środkowego huba.
+
+---
+
 ## 1.30.33 — 2026-09-09
 
 ### Naprawione

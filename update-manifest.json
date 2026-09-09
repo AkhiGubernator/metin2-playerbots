@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T14:40:00Z",
-  "statusMessage": "Aktualizacja 1.30.38. Historia ekwipunku bota w panelu klasycznym: ulepszenia, spalenia, zalozenia, prezenty, sprzedaz na straganie, magazyn.",
+  "publishedAt": "2026-09-09T15:32:00Z",
+  "statusMessage": "Aktualizacja 1.30.39. Pomiar broni per klasa (procenty srednich i umiejetnosci mnoza obrazenia broni), lepsza bron zakladana takze w ciaglej walce, bron z linia nagrody ulepszana tylko pod Zwojem Blogoslawienstwa. Oba panele pokazuja wersje, ktora naprawde maja; logi na zywo bota bez linii innych botow.",
   "server": {
-    "version": "1.30.38",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.38/metin2-server-update-1.30.38.zip",
-    "sha256": "3003CB1DDF83112EF5E7246D1BC11233A263349056604D67FD5F91FFBF1440F7"
+    "version": "1.30.39",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.39/metin2-server-update-1.30.39.zip",
+    "sha256": "DCFC11503E7419116CF746865562BB912E9BC242D89A852E1CAE29F1BC1AAD42"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

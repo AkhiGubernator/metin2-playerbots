@@ -17,6 +17,71 @@ every version here.
 
 ---
 
+## 1.30.39 — 2026-09-09
+
+### Broń
+
+- **Pomiar broni per klasa: procenty średnich i umiejętności mnożą obrażenia
+  broni** (Iwakura: bot z Łukiem z Rogu Jelenia+8 151–244 i +47% średnich w
+  plecaku nosił Miedziany Łuk+4 90–156). Dotąd linia procentowa była
+  płaską sumą kilku tysięcy obok miliona za obrażenia. Teraz obrażenia broni
+  (fizyczne dla wojownika/ninji/sury broni, magiczne dla szamana i sury
+  czarnej magii; sztylet i łuk ×2 jak w silniku) są mnożone przez
+  `100 + średnie·waga + umiejętności·waga`: build zwykłych ciosów czuje
+  100% linii średnich i 35% umiejętności, build umiejętności odwrotnie.
+  Ujemne linie (np. −17% umiejętności) liczą się tak samo. Broń na 30 i 75
+  poziom z liniami nagrody wygrywa z „miedzianym” bez nich o tyle, o ile
+  naprawdę bije mocniej.
+
+- **Lepsza broń w plecaku jest zakładana także w ciągłej walce.** Silnik
+  odmawia założenia w 1,5 s po ataku lub czarze, a bot, który nie przestaje
+  atakować, nigdy nie miał okna — na teście 247 z 970 botów nosiło broń o
+  ⅓ słabszą od tej w plecaku. Dotąd pauza w walce była tylko dla pustego
+  slotu; teraz dla każdego lepszego przedmiotu (do 5 s, najwyżej raz na
+  minutę, gdy okno nie przyszło). Drugi powód: przejście ekwipunku siedziało
+  na końcu ticku, za straganem, lootem, koniem, wędkowaniem, podróżą i
+  wędrówką, z których każde przejmuje tick — bot ciągle czymś zajęty nie
+  zaglądał do plecaka wcale (wojownik 28 lvl bił Mieczem+6 z 1 poziomu mając
+  Długi Miecz+4 w plecaku). Przejście uruchamia się teraz na początku ticku,
+  poza otwartym straganem, wizytą w mieście, wędkowaniem i stajnią.
+
+- **Broń z linią nagrody nie idzie na kowadło bez Zwoju Błogosławieństwa**
+  (Oskar: „51% i spalił u kowala”). W tym silniku każde nieudane ulepszenie
+  niszczy przedmiot (nie ma progu +3), a szanse od +5 to 80/60/50/40/30%.
+  Broń ze średnimi ≥ 20% albo umiejętnościami ≥ 15% bot ulepsza tylko pod
+  zwojem (nieudane = poziom niżej, nie strata), a bez zwoju czeka. To samo
+  dotyczy każdego przedmiotu, który ma już 5 linii bonusów.
+
+- **Wzmocnienie Przedmiotu i Zaczarowanie dopiero od +4.** Bot nie wydaje
+  kamieni na przedmiot poniżej +4 — najpierw ulepszenie (i ryzyko spalenia),
+  potem bony.
+
+### Panel i launcher
+
+- **Panel klasyczny (7788) pokazuje wersję, którą naprawdę ma** (azzyl5021:
+  „Masz uruchomioną 1.29.0. Dostępna jest 1.30.38”, mimo aktualizacji i
+  przebudowy panelu). Plik VERSION i CHANGELOG do obrazu panelu kopiował tylko
+  `start-server.ps1` — za wczesnym `return` gałęzi `-IdentityOnly`, którą
+  wywołuje launcher przed własnym `docker compose up --build`. Kliknięcie
+  GRAJ/AKTUALIZUJ nigdy tam nie docierało, więc obraz panelu był budowany ze
+  starym VERSION i przebudowa nic nie zmieniała. Launcher kopiuje teraz
+  VERSION, CHANGELOG, `admin_panel.py`, `items.json`, schemat i questy panelu
+  do kontekstu budowy w tym samym miejscu, w którym kopiuje źródła botów.
+
+- **Panel zaawansowany (7790) pokazuje wersję z pliku VERSION.** Dotąd brał
+  ją z `M2_PLAYERBOTS_VERSION` w `.env` (którego nikt nie ustawia) albo z
+  domyślnej w `docker-compose.yml`, która stanęła na 1.30.29. Launcher i
+  `start-server.ps1` przekazują ją z VERSION przez środowisko procesu (compose
+  czyta je przed `.env`; sam `.env` nie jest dotykany), a domyślna w compose
+  podniesiona do 1.30.39.
+
+- **Logi na żywo bota pokazują tylko tego bota** (szubartov: przy „botgrom”
+  były też linie botgrom2…botgrom6). Filtr dopasowywał nazwę jako fragment
+  linii; teraz dopasowuje całe słowo — nazwa w logu silnika jest ograniczona
+  spacją, `=`, `:` albo końcem linii, nigdy własną cyfrą.
+
+---
+
 ## 1.30.38 — 2026-09-09
 
 ### Z kanału propozycji

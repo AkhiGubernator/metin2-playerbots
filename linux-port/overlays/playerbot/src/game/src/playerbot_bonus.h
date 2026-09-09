@@ -323,8 +323,13 @@ namespace
 			// An item that has landed the roll its slot is bought for is finished.
 			// It can still gain a line - that cannot lose what is already there -
 			// but it is never rerolled, whatever the score says.
+			// A level-30 weapon is rerolled until it lands its average line,
+			// whatever the score says: the score is a sum of good lines and a
+			// weapon full of them at twelve percent average was "good enough"
+			// to the score and not to anybody who looked at it.
 			const bool bWantChange = !bWantAdd && !HasPlayerBotFinishedBonus(item, wearCell) &&
-					score < PLAYERBOT_BONUS_KEEP_SCORE;
+					(score < PLAYERBOT_BONUS_KEEP_SCORE ||
+					 IsPlayerBotSpecialLevel30WeaponVnum(item->GetVnum()));
 			if (!bWantAdd && !bWantChange)
 				continue;
 
@@ -363,6 +368,38 @@ namespace
 					(int)(ch->GetGold() / 1000));
 		}
 
+		// The level-30 weapons in the bag are goods, and a level-30 weapon
+		// sells for its average line (PLAYERBOT_PRIZE_AVERAGE_DAMAGE). A stone
+		// costs a fortieth of what the finished piece asks, so the ones that
+		// have not rolled it yet are worked on here too - no unequipping, the
+		// engine only refuses a worn item.
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM &&
+				stonesUsed < PLAYERBOT_BONUS_STONES_PER_VISIT; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->IsEquipped() || !IsPlayerBotSpecialLevel30Weapon(item) ||
+					!CanPlayerBotRerollItem(item))
+				continue;
+			const int count = item->GetAttributeCount();
+			const bool bWantAdd = count < PLAYERBOT_BONUS_MAX_LINES;
+			if (!bWantAdd && HasPlayerBotFinishedBonus(item, WEAR_WEAPON))
+				continue;
+			const DWORD stoneVnum = bWantAdd ? PLAYERBOT_BONUS_ADD_VNUM
+					: PLAYERBOT_BONUS_CHANGE_VNUM;
+			if (!BuyPlayerBotBonusStone(ch, stoneVnum))
+				break;
+			const int score = ScorePlayerBotItemBonuses(ch, item, WEAR_WEAPON);
+			if (bWantAdd)
+				item->AddAttribute();
+			else
+				item->ChangeAttribute();
+			ConsumePlayerBotBonusStone(ch, stoneVnum);
+			++stonesUsed;
+			sys_log(0, "PLAYERBOT_BONUS: %s goods pid=%u name=%s vnum=%u lines=%d->%d score=%d->%d gold=%d",
+					bWantAdd ? "added" : "rerolled", ch->GetPlayerID(), ch->GetName(),
+					item->GetVnum(), count, item->GetAttributeCount(), score,
+					ScorePlayerBotItemBonuses(ch, item, WEAR_WEAPON), (int)(ch->GetGold() / 1000));
+		}
 		return stonesUsed > 0;
 	}
 }

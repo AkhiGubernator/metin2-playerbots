@@ -904,6 +904,49 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   free for the bundle and the loot. Two stacks that differ in a socket will
   never merge for a player either; that is the engine, not the bots.
 
+- **The walk does not own the goal.** Five world-travel legs (the desert
+  crossing, the M3 graduation, the two frontier departures, the walk back
+  to Joan) stamped `BOT_GOAL_LEVEL_UP` on every tick they ran, and the
+  planner put its own answer back five seconds later: 350 bots on the
+  frontier flipped "zapasy" <-> "poziom" for as long as a crossing took,
+  twelve thousand of twenty thousand `PLAYERBOT_GOAL` lines, and a status
+  that read "to town for supplies" and "to the Spider Dungeon" by turns -
+  which players read as "the bots do not know what to do". Nothing read
+  `dwGoalStartedTime`, and only the multi-pull and one gear rule ask for
+  LEVEL_UP by name, so every `SetPlayerBotGoal` in `playerbot_travel.h`
+  was removed - nine of them, and taking five left 1373 flips in nine
+  minutes from the frontier tail alone; the planner decides, the walk
+  walks. The fishing session was the same thing from the other side - it
+  stamped FISHING every tick against the planner's RESTOCK - so the planner
+  now defers to an active session (`bFishingSession`), the way it already
+  defers to a committed town errand. Measure goal churn as pairs of
+  `PLAYERBOT_GOAL` lines for one pid under eight seconds apart.
+- **A level-30 weapon is rerolled until its average line, score or no
+  score.** `PLAYERBOT_BONUS_KEEP_SCORE` is a sum of good lines, and a
+  level-30 weapon full of them at twelve percent average passed it while
+  every player looked at the one line that sells it.
+  `PLAYERBOT_BONUS_KEEP_AVERAGE` is twenty (the Discord's number, and thirty
+  is a roll most weapons never see); the worn one is rerolled past the
+  score until finished, and the ones in the bag - goods - are worked on
+  after it in the same pass, no unequipping needed. The advanced panel's
+  weapon ranking was checked against raw rows: type 72 carries the average
+  (to +46), 71 the skill damage, negative on this family - the two come as
+  a pair, which is the "-5%" in the screenshots.
+- **A farm is one map, so it takes a share of the population.**
+  `ShouldPlayerBotVisitM3` said "everyone past thirty-five without the
+  level-30 weapon" - right for a world whose bots are mostly fifty, and
+  "sixty percent of the server in M3" with a map to prove it on a world
+  whose bots are mostly thirty-six. `PLAYERBOT_M3_CROWD_SHARE_PERCENT` of
+  `GetPlayerBotsAlive()` (never under `PLAYERBOT_M3_CROWD_MIN`) gates the
+  door; a bot inside stays until the crowd is `PLAYERBOT_M3_CROWD_STAY_PERCENT`
+  of the share, so the door does not flap. The same shape applies to any
+  errand that names a single map.
+- **A material errand is for a map the bot may hunt on.**
+  `StartPlayerBotMaterialHunt` sent a level-61 Metin hunter, back in Bokjung
+  for a weapon, after a Black Wind Yak-To for a refine material: seven
+  minutes circling the spawns behind other bots before the Teleporter.
+  It asks `IsPlayerBotGrindAllowedHere` and `lDepartureMap` first now.
+
 - **The market is a ledger, not a shelf.** `RefreshPlayerBotMarketLedger`
   (`playerbot_market.h`, once a minute from the tick) counts the units on
   every open counter and the bots short of each material with money to buy

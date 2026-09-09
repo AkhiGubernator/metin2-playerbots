@@ -500,7 +500,10 @@ namespace
 	// The rolls that finish an item for its slot. Thirty percent average damage
 	// on a level-30 weapon, fifteen hundred health on armour or jewellery, five
 	// percent critical on jewellery - the numbers a player stops rerolling at.
-	const long PLAYERBOT_BONUS_KEEP_AVERAGE = 30;
+	// Twenty, not thirty: "jesli maja srednie nizsze niz 20% to niech mixuja
+	// az im sie uda" - and thirty is a roll most weapons never see, so the
+	// rerolling never stopped where a player would have stopped it.
+	const long PLAYERBOT_BONUS_KEEP_AVERAGE = 20;
 	const long PLAYERBOT_BONUS_KEEP_HP = 1500;
 	const long PLAYERBOT_BONUS_KEEP_CRIT = 5;
 	const int PLAYERBOT_BONUS_STONES_PER_VISIT = 3;
@@ -2827,6 +2830,26 @@ namespace
 		std::map<long, int>::const_iterator it = s_mapPlayerBotsOnMap.find(lMapIndex);
 		return it == s_mapPlayerBotsOnMap.end() ? 0 : it->second;
 	}
+
+	int GetPlayerBotsAlive()
+	{
+		int total = 0;
+		for (std::map<long, int>::const_iterator it = s_mapPlayerBotsOnMap.begin();
+				it != s_mapPlayerBotsOnMap.end(); ++it)
+			total += it->second;
+		return total;
+	}
+
+	// How much of the population the level-30 weapon farm may hold at once.
+	// "Everyone past thirty-five without the weapon" was the right rule for a
+	// world whose bots are mostly fifty; on a world whose bots are mostly
+	// thirty-six it was "sixty percent of the server in M3" with a map to
+	// prove it. A share of the living population, never under the minimum,
+	// gates the way in; a bot already there stays until the crowd is half
+	// again over the share, so the door does not flap.
+	const int PLAYERBOT_M3_CROWD_SHARE_PERCENT = 15;
+	const int PLAYERBOT_M3_CROWD_MIN = 30;
+	const int PLAYERBOT_M3_CROWD_STAY_PERCENT = 150;
 
 	// Whether a hosted map spawns Metin stones at all. The three Monkey
 	// Dungeons and the Spider Dungeon ship no stone.txt; every other hosted

@@ -1128,6 +1128,15 @@ namespace
 			return false;
 		if (ch->GetParty() && ch->GetParty()->GetLeaderCharacter() != ch)
 			return false;
+		// Not on a map this bot has outgrown, and not while it is meant to be
+		// leaving: a level-61 Metin hunter back in Bokjung for a weapon spent
+		// seven minutes circling the spawns after a Black Wind Yak-To for a
+		// refine material before it walked to the Teleporter - "kolka po m2
+		// po spotach zbierajac itemy po innych botach". The material is still
+		// wanted; it is found where the bot is going to hunt, not on the way
+		// out of town.
+		if (!IsPlayerBotGrindAllowedHere(ch) || state.lDepartureMap != 0)
+			return false;
 
 		// Nothing wanted is the common case and costs a walk over the bag, not
 		// over the map, so it is settled before the tick's scan budget is asked.

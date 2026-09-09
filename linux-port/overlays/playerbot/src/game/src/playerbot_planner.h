@@ -144,6 +144,15 @@ namespace
 					state.bVisitingStable ? BOT_GOAL_HORSE : BOT_GOAL_REFINE, dwNow);
 			return;
 		}
+		// A fishing session owns the tick, and so it owns the goal: the session
+		// stamped FISHING every tick and this planner answered RESTOCK every
+		// five seconds - forty-three anglers, six thousand goal lines in twelve
+		// minutes, and "zapasy" over the head of a bot that was fishing.
+		if (state.bFishingSession)
+		{
+			SetPlayerBotGoal(ch, state, BOT_GOAL_FISHING, dwNow);
+			return;
+		}
 
 		// --- and everything that is ------------------------------------------
 		const bool canAdvanceHorse = ShouldPlayerBotPursueHorseExpedition(ch, dwNow);

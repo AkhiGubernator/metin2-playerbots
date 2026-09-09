@@ -276,6 +276,26 @@ function Rebuild-Server {
             $missingContext += $entry
         }
     }
+    # The dumps, the same way (see start-server.ps1 for why an initialised
+    # database is exempt): this is the half of the code that click runs.
+    $missingDumps = @(Get-M2MissingSqlDumps -ServerRoot $serverRoot)
+    if ($missingDumps.Count -gt 0) {
+        $dbVolume = Get-CurrentInstallTargetVolume
+        $dbReady = $false
+        if ($dbVolume) { $dbReady = Test-M2VolumeInitialized -Volume $dbVolume }
+        if (-not $dbReady) {
+            throw ("Brakuje zrzutow bazy danych, wiec pierwsza baza powstalaby pusta.`n`n" +
+                   "Katalog: " + (Join-Path $serverRoot 'linux-port\docker\mariadb\initdb.d\dumps') + "`n" +
+                   "Brakuje: " + ($missingDumps -join ', ') + "`n`n" +
+                   "MariaDB wystartowalaby bez schematu gry (i zglosila 'healthy'), a playerbot-migrate " +
+                   "czekalby 30 minut na tabele, ktore nigdy nie powstana. Zrzuty pochodza z Twojej " +
+                   "paczki serwera r40250 (Server\metin2_mysql_dump.zip) i wystawia je wylacznie " +
+                   "instalator - zadna aktualizacja ich nie przywroci.`n`n" +
+                   "Uruchom ponownie instalator (installer\install.ps1) ze wskazana paczka " +
+                   "(`$env:M2_SRC_ARCHIVE), albo rozpakuj metin2_mysql_dump.zip do tego katalogu " +
+                   "i kliknij GRAJ jeszcze raz.")
+        }
+    }
     if ($missingContext.Count -gt 0) {
         throw ("Brakuje zrodel gry, wiec nie ma z czego zbudowac serwera.`n`n" +
                "Katalog: " + $gameContext + "`n" +

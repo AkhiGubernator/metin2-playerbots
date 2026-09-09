@@ -1187,6 +1187,19 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `ITEM_ROD`; `EquipPlayerBotRod` takes the highest vnum; a rod that another
   rod matches or beats is junk.
 
+- **The database's half of the context is five files, not a directory.**
+  `Test-ContextComplete` in the installer tested that `mariadb/initdb.d/dumps`
+  existed and the launcher never looked; MariaDB initialised an empty world
+  behind a green healthcheck and `playerbot-migrate` waited thirty minutes
+  for a schema that could not appear, with the only honest line in the
+  MariaDB log. `Get-M2MissingSqlDumps` (module) names the missing dumps;
+  `start-server.ps1`, the launcher's click path and the GUI's package check
+  all ask it before `docker compose up` - both build paths, per the guard
+  note above - and skip the refusal only when the DB volume is already
+  initialised, because initdb.d runs once and never again. The migrate
+  loop now tells "answering with none of the tables" apart from "import in
+  progress" and "not answering yet".
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

@@ -943,6 +943,27 @@ function Get-M2DbDataVolumes {
     finally { $ErrorActionPreference = $previous }
 }
 
+function Get-M2MissingSqlDumps {
+    # The five SQL dumps MariaDB imports on its very first start. They come out
+    # of the operator's own r40250 package (Server/metin2_mysql_dump.zip) and
+    # are staged by the installer into mariadb/initdb.d/dumps; an update never
+    # touches them. Missing here, the database initialises empty, the migrate
+    # container waits thirty minutes for a schema that cannot appear, and the
+    # only honest error sits in the MariaDB log - reported by an operator who
+    # found it by reading container logs by hand. Returns the missing names.
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
+    $dumpDir = Join-Path $ServerRoot 'linux-port\docker\mariadb\initdb.d\dumps'
+    $missing = @()
+    foreach ($db in @('account', 'common', 'player', 'log', 'hotbackup')) {
+        $f = Join-Path $dumpDir "$db.sql"
+        if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { $missing += "$db.sql"; continue }
+        # hotbackup is legitimately empty (its Readme says so); the rest carry
+        # the schema and must not be zero-length copies of nothing.
+        if ($db -ne 'hotbackup' -and (Get-Item -LiteralPath $f).Length -eq 0) { $missing += "$db.sql (pusty)" }
+    }
+    return $missing
+}
+
 function Test-M2VolumeInitialized {
     # True only when the volume already exists AND holds an initialized MariaDB
     # data directory. Never creates anything: `docker volume inspect' does not
@@ -1219,6 +1240,7 @@ Export-ModuleMember -Function @(
     'Invoke-M2DatabaseImport',
     'Repair-M2GameDbUser',
     'Test-M2VolumeInitialized',
+    'Get-M2MissingSqlDumps',
     'Test-M2DockerRunning',
     'Sync-M2PlayerbotOverlay',
     'Invoke-M2EnginePatches'

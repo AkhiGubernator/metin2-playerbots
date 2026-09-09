@@ -790,6 +790,10 @@ function Install-Or-Prepare {
         'serverfiles\mark-default'
     )
     $missingContext = @($requiredContext | Where-Object { -not (Test-Path -LiteralPath (Join-Path $gameContext $_)) })
+    # The database dumps are the other half of what the installer takes out
+    # of the package, and the half nobody saw missing until MariaDB came up
+    # empty: name them here with the sources.
+    $missingContext += @(Get-M2MissingSqlDumps -ServerRoot $root | ForEach-Object { 'mariadb\initdb.d\dumps\' + $_ })
     if ($missingContext.Count -gt 0) {
         $installerPath = Join-Path $root 'installer\install.ps1'
         Write-LocalLog ("Brak zrodel gry w " + $gameContext + ": " + ($missingContext -join ', '))

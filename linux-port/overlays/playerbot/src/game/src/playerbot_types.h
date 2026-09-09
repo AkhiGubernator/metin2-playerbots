@@ -1589,6 +1589,16 @@ namespace
 	const DWORD PLAYERBOT_SHOP_BUNDLE_PRICE = 2000;
 	const DWORD PLAYERBOT_SHOP_REST_MIN = 1800000;
 	const DWORD PLAYERBOT_SHOP_REST_MAX = 5400000;
+	// A stand that ran out is followed by another on the same pitch, up to
+	// this many in a row, before the rest above. A stall of ten to twenty-five
+	// minutes against a rest of thirty to ninety, and a reopening that needed
+	// the next town visit to end, meant a fifth of the keepers open at any
+	// time: ninety stalls in the minutes after a restart, when every keeper
+	// stands where its last stall was, and eleven an hour later ("boty nudza
+	// sie handlem"). Two dry stands in a row end the row early - nobody is
+	// buying, so the bot goes back to playing.
+	const int PLAYERBOT_SHOP_STANDS_IN_ROW = 3;
+	const DWORD PLAYERBOT_SHOP_REOPEN_MS = 3000;
 	const DWORD PLAYERBOT_HORSE_MEDAL_VNUM = 50050;
 	const BYTE PLAYERBOT_HORSE_REQUIRED_LEVEL = 25;
 	const char* PLAYERBOT_HORSE_MEDALS_FLAG = "playerbot.horse_medals_delivered";
@@ -2442,6 +2452,8 @@ namespace
 			dwFrontierEnteredTime(0),
 			dwShopOpenedTime(0),
 			dwShopCloseTime(0),
+			bShopStandsInRow(0),
+			bShopLastStandSold(false),
 			dwNextShopKeepTime(0),
 			dwNextShoppingTime(0),
 			dwMarketTripUntil(0),
@@ -2679,6 +2691,10 @@ namespace
 		DWORD dwFrontierEnteredTime;
 		DWORD dwShopOpenedTime;
 		DWORD dwShopCloseTime;
+		// Stands on this pitch since the last rest, and whether the previous
+		// one sold anything - see PLAYERBOT_SHOP_STANDS_IN_ROW.
+		BYTE bShopStandsInRow;
+		bool bShopLastStandSold;
 		DWORD dwNextShopKeepTime;
 		DWORD dwNextShoppingTime;
 		// The shopping trip: when it must be over, when the counters may be read

@@ -792,6 +792,21 @@ function New-M2SupportBundle {
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'compose-logs.txt') -Command {
                 docker compose --project-directory $composeDir -f $composeFile logs --no-color --tail 800
             }
+            # The core's syslog never reaches the container log - only syserr
+            # does - so a bundle sent about "the bots walk to the wrong portal"
+            # carried nothing about where any bot was going. The travel,
+            # portal, navigation and watchdog lines of the last hours, and the
+            # goal and status lines that say what each bot wanted, filtered
+            # here rather than shipped whole (a busy day's syslog is hundreds
+            # of megabytes). Bots only; a player's chat is not in it.
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'playerbot-syslog.txt') -Command {
+                docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                    'for f in /opt/metin2/var/channel1/game1/log/*/syslog.* /opt/metin2/var/channel1/game1/syslog; do [ -f "$f" ] && tail -n 400000 "$f"; done 2>/dev/null | grep -a "PLAYERBOT_WORLD\|PLAYERBOT_PORTAL\|PLAYERBOT_NAV\|PLAYERBOT_WATCHDOG\|PLAYERBOT_GOAL\|PLAYERBOT_LOAD\|PLAYERBOT_SHOP\|PLAYERBOT_TOWN\|PLAYERBOT_DEPARTURE\|PLAYERBOT_HORSE\|PLAYERBOT_MONKEY\|PLAYERBOT_AUTH\|PLAYERBOT: autospawn" | tail -n 60000'
+            }
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'playerbot-status.tsv') -Command {
+                docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                    'cat /opt/metin2/var/channel1/game1/playerbot_status.tsv 2>/dev/null'
+            }
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'compose-services.txt') -Command {
                 docker compose --project-directory $composeDir -f $composeFile config --services
             }

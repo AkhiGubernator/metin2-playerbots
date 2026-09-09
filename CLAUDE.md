@@ -731,6 +731,21 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `PLAYERBOT_MARKET_REGULATOR_MAX` went from 1.35 to 2.0: a third above the
   prior is not a market answering five hundred bots short of a thing no
   counter carries.
+- **A stall that ran out is followed by another on the same pitch.** A
+  stand of `PLAYERBOT_SHOP_MIN..MAX_DURATION` (10-25 min) was followed by
+  `PLAYERBOT_SHOP_REST_MIN..MAX` (30-90 min), and the open pass only fires
+  when a town visit has just ended or the bot is already at the pitch - so
+  after a restart, with every keeper standing where its last stall was,
+  ninety opened at once, and an hour later eleven were left: a fifth of the
+  keepers, which is what the numbers say. Measured on our own world with no
+  restart: 94 keepers at ten minutes, 33 at twenty-five.
+  `ClosePlayerBotShop` now reopens an expired stand after
+  `PLAYERBOT_SHOP_REOPEN_MS` for up to `PLAYERBOT_SHOP_STANDS_IN_ROW` stands
+  (`bShopStandsInRow`), ends the row after two dry stands
+  (`bShopLastStandSold`), and only then rests. Sold out, off the pitch and
+  a refused open still rest at once. Measure it as keepers in
+  `playerbot_status.tsv` over an hour without a restart, not as the count
+  right after one.
 - **A keeper trades in the town it is standing in.** The stall used to roll
   a town and then refuse to open unless the bot was already there - nine
   rolls in ten chose Joan while the bots with goods stood in Bokjung, so Joan

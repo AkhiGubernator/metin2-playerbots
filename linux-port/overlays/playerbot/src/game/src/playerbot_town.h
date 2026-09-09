@@ -1319,11 +1319,42 @@ namespace
 		const bool bHadShop = ch->GetMyShop() != NULL;
 		if (bHadShop)
 			ch->CloseMyShop();
+		// Did this stand sell anything? The lifetime pass writes bSoldLogged
+		// once per line that left the bag.
+		bool bSoldSomething = false;
+		for (size_t i = 0; i < state.vecShopOffers.size(); ++i)
+			if (state.vecShopOffers[i].bSoldLogged)
+				bSoldSomething = true;
 		state.dwShopOpenedTime = 0;
 		state.dwShopCloseTime = 0;
 		state.vecShopOffers.clear();
-		state.dwNextShopKeepTime = dwNow +
-				number(PLAYERBOT_SHOP_REST_MIN, PLAYERBOT_SHOP_REST_MAX);
+		// A stand that merely ran out of time is followed by another one on
+		// the same pitch - the keeper is standing there, the goods are in the
+		// bag, and the open pass takes "already at the pitch" - up to
+		// PLAYERBOT_SHOP_STANDS_IN_ROW of them, and not after two dry stands in
+		// a row. Anything else (sold out, walked off, refused) rests.
+		const bool bExpired = reason && strcmp(reason, "expired") == 0;
+		const bool bBarren = !bSoldSomething && state.bShopStandsInRow > 0 &&
+				!state.bShopLastStandSold;
+		const bool bAgain = bExpired && !bBarren &&
+				state.bShopStandsInRow + 1 < PLAYERBOT_SHOP_STANDS_IN_ROW &&
+				ShouldPlayerBotKeepShop(ch, state);
+		if (bAgain)
+		{
+			++state.bShopStandsInRow;
+			state.bShopLastStandSold = bSoldSomething;
+			state.dwNextShopKeepTime = dwNow + PLAYERBOT_SHOP_REOPEN_MS;
+			sys_log(0, "PLAYERBOT_SHOP: another stand pid=%u name=%s stand=%d/%d sold=%d",
+					ch->GetPlayerID(), ch->GetName(), (int)state.bShopStandsInRow + 1,
+					PLAYERBOT_SHOP_STANDS_IN_ROW, bSoldSomething ? 1 : 0);
+		}
+		else
+		{
+			state.bShopStandsInRow = 0;
+			state.bShopLastStandSold = false;
+			state.dwNextShopKeepTime = dwNow +
+					number(PLAYERBOT_SHOP_REST_MIN, PLAYERBOT_SHOP_REST_MAX);
+		}
 		if (bHadShop)
 		{
 			// CloseMyShop takes the sign back from whoever is in view at this

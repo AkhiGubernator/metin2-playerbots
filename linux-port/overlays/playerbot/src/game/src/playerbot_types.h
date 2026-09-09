@@ -510,6 +510,8 @@ namespace
 	// back to whatever it was doing. Long enough to cross a town, short enough
 	// that a bot which cannot get there loses one errand and not its evening.
 	const DWORD PLAYERBOT_MARKET_TRIP_TIMEOUT = 90000;
+	// The ride from Bokjung's square to the Joan gate is 38 km.
+	const DWORD PLAYERBOT_MARKET_JOAN_WALK_TIMEOUT = 300000;
 	// And how far away the stalls may be before it is not worth setting off:
 	// the whole of the town, so that a bot which has just finished its errands
 	// goes shopping while one that is out hunting stays where it is instead of
@@ -1598,6 +1600,13 @@ namespace
 	// and its status said "Ide na Gore Sohan" all the while. The wait is
 	// what lets the town visit and the stall run and earn the fee.
 	const DWORD PLAYERBOT_TELEPORTER_RETRY_MS = 300000;
+	// A bot whose next hunting ground lies behind the Teleporter keeps this
+	// many fares out of every discretionary purchase, and one that cannot pay
+	// the fare may hunt in Bokjung - past the cohort ceiling - until it holds
+	// this many. Measured before this: 268 of 362 bots of 40+ in Bokjung held
+	// less than one fare, 79 yang the poorest, and the Teleporter was asked
+	// 26 000 times a minute by bots that could neither pay nor earn.
+	const int PLAYERBOT_TELEPORTER_FARE_RESERVE_COUNT = 3;
 	// How long a keeper that found Bokjung's ring full waits before asking
 	// again. Only a merchant or a dropper carries its goods to Joan when the
 	// ring is full; with every bot holding six surplus books a keeper, that
@@ -2574,6 +2583,7 @@ namespace
 			bLastStoneAttackerCount(0),
 			bLastPersistedLevel(0),
 			bRouteAllowsHorse(false),
+			bRouteKeepsHorse(false),
 			bRecoveringAfterDeath(false),
 			bTacticalRetreat(false),
 			bMultiPullActive(false),
@@ -2581,8 +2591,10 @@ namespace
 			bMultiPullDesiredGroups(0),
 			bLootThreatNearby(false),
 			bEquipPending(false),
+			bMeleeForStone(false),
 			bVisitingShop(false),
 			bMarketTrip(false),
+			bMarketToJoan(false),
 			bTownNeedMisc(false),
 			bTownNeedWeaponMerchant(false),
 			bTownNeedArmorMerchant(false),
@@ -2834,6 +2846,9 @@ namespace
 		BYTE bLastStoneAttackerCount;
 		BYTE bLastPersistedLevel;
 		bool bRouteAllowsHorse;
+		// The portal walk rides up to the gate; the passes that merely continue
+		// its route must not climb down a kilometre short of it.
+		bool bRouteKeepsHorse;
 		bool bRecoveringAfterDeath;
 		bool bTacticalRetreat;
 		bool bMultiPullActive;
@@ -2841,9 +2856,18 @@ namespace
 		BYTE bMultiPullDesiredGroups;
 		bool bLootThreatNearby;
 		bool bEquipPending;
+		// An Archer with a Metin stone for a target has its dagger or sword in
+		// hand instead of the bow, and takes the bow back when the stone is
+		// gone. See ManagePlayerBotEquipment.
+		bool bMeleeForStone;
 		bool bVisitingShop;
 		// On a shopping trip: walking to the stalls, or standing among them.
 		bool bMarketTrip;
+		// The trip's first leg is the walk to the Joan gate from Bokjung. A
+		// portal walk is continued by the tick's route passes, not by the pass
+		// that asked for it, so the shopping pass has to keep asking until the
+		// map changes (see ManagePlayerBotShopping).
+		bool bMarketToJoan;
 		bool bTownNeedMisc;
 		bool bTownNeedWeaponMerchant;
 		bool bTownNeedArmorMerchant;

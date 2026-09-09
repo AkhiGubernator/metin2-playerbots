@@ -324,6 +324,13 @@ namespace
 		LPITEM archerArrow = NULL;
 		if (ch->GetJob() == JOB_ASSASSIN && ch->GetSkillGroup() == 2)
 		{
+			// An Archer on a stone holds its dagger (bMeleeForStone), and every
+			// Archer skill is SKILL_FLAG_USE_ARROW_DAMAGE: without a bow the
+			// engine sets atk to 0 and the cast is an animation lock for nothing.
+			// Plain swings until the bow is back.
+			LPITEM held = ch->GetWear(WEAR_WEAPON);
+			if (!held || held->GetType() != ITEM_WEAPON || held->GetSubType() != WEAPON_BOW)
+				return false;
 			if (!EnsurePlayerBotArrowsEquipped(ch) ||
 					ch->GetArrowAndBow(&archerBow, &archerArrow, 1) != 1)
 				return false;

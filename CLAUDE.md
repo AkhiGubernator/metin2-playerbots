@@ -1398,6 +1398,55 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   to any piece with `PLAYERBOT_PRIZE_LINES` lines, and `CanPlayerBotRerollItem`
   refuses a stone below `PLAYERBOT_BONUS_MIN_REFINE` - lines before the
   refine are lines a burn takes with it.
+- **An Archer breaks a Metin with a dagger, and the fight asks the hand.**
+  A bow cannot break a stone (Kuszaa: "pada na glebe x razy i rezygnuje"):
+  the stone stands still, the arrows run out, and the shot's rhythm is a
+  fraction of a swing's. `IsPlayerBotArcherBuild` (job and skill group, not
+  the weapon - `IsPlayerBotArcher` in `playerbot_targeting.h` asks for the
+  bow and the lure needs that) plus `bMeleeForStone`: `ManagePlayerBotEquipment`
+  flips it on when the target `IsStone()` and `FindPlayerBotStoneWeapon`
+  finds a dagger or sword (a dagger first, whatever the score), and the
+  candidate loop then scores the bow in hand as nothing. Every combat path
+  judges by the weapon in the hand, so a dagger swings and the bow shoots
+  without a second damage path; the one exception is the attack-skill
+  rotation, which must refuse an Archer without a bow - every Archer skill
+  is `SKILL_FLAG_USE_ARROW_DAMAGE` and `ComputeSkill` sets `atk` to 0 without
+  one. `PrepareWeapon` asks `PlayerBotWeaponFitsNow`, or it would unequip the
+  dagger as a profession mismatch on the next tick. The junk rule and the
+  stall keep the chosen stone weapon; the weapon merchant sells a dagger of
+  the bot's level when the bag has none.
+- **A portal walk asked for once is a route somebody else finishes.**
+  `MovePlayerBotToWorldPortal` plans the route and makes the map change only
+  when the pass that called it calls it again within
+  `PLAYERBOT_PORTAL_SWITCH_DISTANCE`; in between, the odd-tick continuation in
+  the manager and the wander's route continuation walk the route to its last
+  waypoint and hand the bot to the wander. The shopping pass asked for the
+  Joan gate once per `PLAYERBOT_SHOPPING_INTERVAL` ("Joan first") and never
+  again: 152 of 160 walks to the Bokjung gate in ten minutes, one crossing,
+  and a crowd of bots with "Sohan" or "Loch Malp" over their heads riding up
+  to the gate, climbing down, and riding off (Kuszaa's video, twice). Any
+  caller of the portal walk must be a state that re-asks every tick until
+  the map changes - `bMarketToJoan` here, `dwStallWalkUntil` for the stall,
+  the travel pass by construction. `bRouteKeepsHorse` is the other half: a
+  continuation pass passing `keepHorseAtDestination=false` dismounted the
+  rider a kilometre short of a gate the walk meant to ride through. The
+  diagnostic that found it was three throttled lines - who reaches the
+  travel hook at the gate, which branch refuses, and who asked for the
+  portal from where - and it is worth putting back before guessing again.
+- **A fare the bot cannot pay is a hunt it must be allowed.** The Teleporter's
+  refusal set `dwNextWorldTravelTime` since 1.30.42 and the M2 frontier
+  branch never read it, so the wait announced in the changelog was a wait of
+  one tick: 26 000 refusals a minute across the cohort. Underneath, 268 of
+  362 bots of 40+ in Bokjung held less than one fare (79 yang the poorest),
+  because a bot back from the frontier for services spent everything at the
+  blacksmith and above the cohort ceiling `IsPlayerBotGrindAllowedHere` said
+  no - so it could neither pay nor earn. `GetPlayerBotReservedGold` keeps
+  `PLAYERBOT_TELEPORTER_FARE_RESERVE_COUNT` fares for any bot whose
+  `GetPlayerBotFrontierMapForLevel` is not zero (the fare estimate lives in
+  `playerbot_battle_horse.h` because every spender is included before
+  `playerbot_travel.h`), the grind rule makes an exception for a bot short
+  of that, and the frontier branch neither sends a bot short of the fare nor
+  one inside the refusal's wait. Measure with `teleporter refuses [+N more]`.
 
 ## Engine facts worth not re-deriving
 

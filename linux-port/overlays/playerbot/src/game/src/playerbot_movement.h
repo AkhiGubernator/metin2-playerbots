@@ -1013,9 +1013,13 @@ namespace
 		// function without explicitly requesting a horse.  Treating that default
 		// value as a new decision made mounted bots dismount and remount every tick.
 		if (newGoal)
+		{
 			state.bRouteAllowsHorse = allowHorse;
+			state.bRouteKeepsHorse = keepHorseAtDestination;
+		}
 		UpdatePlayerBotTravelMount(ch, state, destX, destY,
-				state.bRouteAllowsHorse, dwNow, fightOnHorse, keepHorseAtDestination);
+				state.bRouteAllowsHorse, dwNow, fightOnHorse,
+				keepHorseAtDestination || state.bRouteKeepsHorse);
 		if (newGoal)
 		{
 			ClearPlayerBotRoute(state, false);

@@ -1141,6 +1141,10 @@ namespace
 				// counter always won the race for a gift.
 				if (IsPlayerBotWearableUpgrade(ch, item, cell))
 					continue;
+				// The Archer's stone weapon (playerbot_gear.h) is not goods.
+				if (IsPlayerBotArcherBuild(ch) && IsPlayerBotStoneMeleeWeapon(ch, item) &&
+						FindPlayerBotStoneWeapon(ch, false) == item)
+					continue;
 				const int wearCell = item->FindEquipCell(ch);
 				if (wearCell < 0 || ch->GetWear((BYTE)wearCell) == NULL)
 					continue;

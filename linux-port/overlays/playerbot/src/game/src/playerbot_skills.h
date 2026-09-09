@@ -399,7 +399,7 @@ namespace
 			return false;
 		if (GetPlayerBotStuckSkill(ch) == 0 || ch->GetPoint(POINT_SKILL) > 0)
 			return false;
-		return (long long)ch->GetGold() >=
+		return (long long)ch->GetGold() - GetPlayerBotReservedGold(ch) >=
 				GetPlayerBotSkillResetCost(ch) + PLAYERBOT_SKILL_RESET_GOLD_MARGIN;
 	}
 
@@ -461,7 +461,7 @@ namespace
 			return false;
 		if (ch->GetLevel() <= PLAYERBOT_SKILL_RESET_MAX_LEVEL)
 			return false;
-		if ((long long)ch->GetGold() <
+		if ((long long)ch->GetGold() - GetPlayerBotReservedGold(ch) <
 				PLAYERBOT_SKILL_FORGET_SCROLL_PRICE + PLAYERBOT_SKILL_FORGET_SCROLL_GOLD_MARGIN)
 			return false;
 		// AutoGiveItem drops what the bag cannot take at the bot's feet and

@@ -546,10 +546,96 @@ namespace
 		return false;
 	}
 
+	// The Archer's stone weapon (by build, whatever is in the hand - the
+	// IsPlayerBotArcher of playerbot_targeting.h asks for the bow). A bow cannot break a Metin: the stone does
+	// not move, the arrows run out, the shot's rhythm is a fraction of a
+	// swing's, and the bot "fell over x times and gave up" (Kuszaa). A dagger
+	// or a sword the ninja can wear, kept in the bag, goes into the hand for
+	// the stone and comes out afterwards. Both are one item per bot - the
+	// best by the equipment score - and the junk rule and the counter leave
+	// that one alone.
+	bool IsPlayerBotArcherBuild(LPCHARACTER ch)
+	{
+		return ch && ch->GetJob() == JOB_ASSASSIN && ch->GetSkillGroup() == 2;
+	}
+
+	bool IsPlayerBotStoneMeleeWeapon(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item || item->GetType() != ITEM_WEAPON)
+			return false;
+		const BYTE sub = item->GetSubType();
+		return (sub == WEAPON_DAGGER || sub == WEAPON_SWORD) && item->CanUsedBy(ch) &&
+				item->GetLevelLimit() <= ch->GetLevel();
+	}
+
+	// The best stone weapon the bot holds: in the bag, or - with includeWorn -
+	// in the hand as well. NULL when there is none. A dagger beats a sword
+	// whatever the score: it swings faster and costs less, and a stone has no
+	// armour worth a heavier blow.
+	LPITEM FindPlayerBotStoneWeapon(LPCHARACTER ch, bool includeWorn)
+	{
+		if (!ch)
+			return NULL;
+		LPITEM best = NULL;
+		long long bestScore = 0;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || !IsPlayerBotStoneMeleeWeapon(ch, item))
+				continue;
+			const bool dagger = item->GetSubType() == WEAPON_DAGGER;
+			const bool bestDagger = best && best->GetSubType() == WEAPON_DAGGER;
+			if (best && bestDagger && !dagger)
+				continue;
+			const long long score = GetPlayerBotEquipmentScore(item, ch);
+			if (!best || (dagger && !bestDagger) || score > bestScore)
+			{
+				best = item;
+				bestScore = score;
+			}
+		}
+		if (includeWorn && !best)
+		{
+			LPITEM worn = ch->GetWear(WEAR_WEAPON);
+			if (worn && IsPlayerBotStoneMeleeWeapon(ch, worn))
+				best = worn;
+		}
+		return best;
+	}
+
+	// What the hand should hold right now: the job's weapon, or the stone
+	// weapon while an Archer is on a stone.
+	bool PlayerBotWeaponFitsNow(LPCHARACTER ch, const TPlayerBotAIState& state, LPITEM item)
+	{
+		if (IsPlayerBotArcherBuild(ch) && state.bMeleeForStone)
+			return IsPlayerBotStoneMeleeWeapon(ch, item);
+		return IsPlayerBotWeapon(ch, item);
+	}
+
 	bool ManagePlayerBotEquipment(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !ch->IsItemLoaded())
 			return false;
+
+		// The Archer's stone mode, decided here because this pass is what
+		// puts a weapon in the hand: on while the target is a standing stone
+		// and a stone weapon is at hand, off the moment it is not - either
+		// flip is looked at on this very tick.
+		if (IsPlayerBotArcherBuild(ch))
+		{
+			LPCHARACTER target = state.dwTargetVID != 0
+					? CHARACTER_MANAGER::instance().Find(state.dwTargetVID) : NULL;
+			const bool wantMelee = target && target->IsStone() && !target->IsDead() &&
+					FindPlayerBotStoneWeapon(ch, true) != NULL;
+			if (wantMelee != state.bMeleeForStone)
+			{
+				state.bMeleeForStone = wantMelee;
+				state.dwNextEquipmentCheckTime = dwNow;
+				sys_log(0, "PLAYERBOT_GEAR: archer %s pid=%u name=%s target_vid=%u",
+						wantMelee ? "draws the stone weapon" : "takes the bow back",
+						ch->GetPlayerID(), ch->GetName(), (unsigned int)state.dwTargetVID);
+			}
+		}
 
 		if (dwNow < state.dwNextEquipmentCheckTime && !state.bEquipPending)
 			return false;
@@ -560,10 +646,20 @@ namespace
 		long long bestImprovement = 0;
 		long long bestScore = 0;
 
+		const bool stoneMode = IsPlayerBotArcherBuild(ch) && state.bMeleeForStone;
+		// The one stone weapon the bot has chosen (dagger first), not any
+		// blade in the bag: the score alone would put a heavier sword ahead.
+		LPITEM chosenStoneWeapon = stoneMode ? FindPlayerBotStoneWeapon(ch, false) : NULL;
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
-			if (!IsPlayerBotEquipmentCandidate(ch, item))
+			if (!item)
+				continue;
+			const bool stoneWeapon = stoneMode && item == chosenStoneWeapon &&
+					!item->IsExchanging();
+			if (!stoneWeapon && !IsPlayerBotEquipmentCandidate(ch, item))
+				continue;
+			if (item->GetType() == ITEM_WEAPON && !PlayerBotWeaponFitsNow(ch, state, item))
 				continue;
 
 			const int wearCell = item->FindEquipCell(ch);
@@ -578,7 +674,13 @@ namespace
 				continue;
 
 			const long long itemScore = GetPlayerBotEquipmentScore(item, ch);
-			const long long oldScore = oldItem ? GetPlayerBotEquipmentScore(oldItem, ch) : 0;
+			// A weapon in the hand that does not fit the moment - the bow while
+			// the Archer is on a stone, the dagger once the stone is gone - is
+			// worth nothing against the one that does.
+			const long long oldScore = oldItem
+					? ((wearCell == WEAR_WEAPON && !PlayerBotWeaponFitsNow(ch, state, oldItem))
+						? 0 : GetPlayerBotEquipmentScore(oldItem, ch))
+					: 0;
 			if (oldItem && itemScore <= oldScore)
 				continue;
 
@@ -766,6 +868,30 @@ namespace
 			const int reqLevel = GetPlayerBotProtoLevelLimit(proto);
 			// Strictly higher, so a level-0 starter belonging to the next class
 			// can never displace a piece this character actually qualifies for.
+			if (reqLevel <= (int)ch->GetLevel() && reqLevel > bestLevel)
+			{
+				bestVnum = candidateVnum;
+				bestLevel = reqLevel;
+			}
+		}
+		return bestVnum;
+	}
+
+	// The dagger ladder, for the Archer's stone weapon.
+	DWORD GetPlayerBotProgressionStoneWeaponVnum(LPCHARACTER ch)
+	{
+		if (!ch)
+			return 0;
+		const DWORD familyBase = 1000;
+		DWORD bestVnum = familyBase;
+		int bestLevel = -1;
+		for (int tier = 0; tier < 20; ++tier)
+		{
+			const DWORD candidateVnum = familyBase + tier * 10;
+			TItemTable* proto = ITEM_MANAGER::instance().GetTable(candidateVnum);
+			if (!proto)
+				continue;
+			const int reqLevel = GetPlayerBotProtoLevelLimit(proto);
 			if (reqLevel <= (int)ch->GetLevel() && reqLevel > bestLevel)
 			{
 				bestVnum = candidateVnum;
@@ -1821,7 +1947,10 @@ namespace
 	bool PrepareWeapon(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		LPITEM equippedWeapon = ch->GetWear(WEAR_WEAPON);
-		if (equippedWeapon && IsPlayerBotWeapon(ch, equippedWeapon))
+		// PlayerBotWeaponFitsNow and not IsPlayerBotWeapon: the Archer's dagger
+		// on a stone is the right weapon for the moment, not a profession
+		// mismatch to be taken off.
+		if (equippedWeapon && PlayerBotWeaponFitsNow(ch, state, equippedWeapon))
 		{
 			state.dwEmergencyScavengeUntil = 0;
 			if (equippedWeapon->GetSubType() == WEAPON_BOW)

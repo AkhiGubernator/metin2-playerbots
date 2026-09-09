@@ -518,6 +518,11 @@ namespace
 		if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
 			return false;
 
+		// The Archer's one stone weapon (playerbot_gear.h) is kept.
+		if (IsPlayerBotArcherBuild(ch) && IsPlayerBotStoneMeleeWeapon(ch, item) &&
+				FindPlayerBotStoneWeapon(ch, false) == item)
+			return false;
+
 		// A scrap keeper's low refines are its stock, not its junk - until the
 		// bag runs short, and then the merchant gets them like anyone else's.
 		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
@@ -1265,6 +1270,10 @@ namespace
 			bought = BuyPlayerBotEmergencyWeapon(ch) || bought;
 		if (isArcher)
 			bought = BuyPlayerBotArrowsAtMerchant(ch) || bought;
+		// ...and a stone weapon, the dagger of its level, when the bag has none.
+		if (isArcher && !FindPlayerBotStoneWeapon(ch, true))
+			bought = BuyPlayerBotProgressionGear(ch,
+					GetPlayerBotProgressionStoneWeaponVnum(ch), "stone dagger") || bought;
 		if (NeedsPlayerBotProgressionWeapon(ch) &&
 				(!isArcher || CountPlayerBotArrows(ch) >= PLAYERBOT_ARROW_RESTOCK_THRESHOLD))
 			bought = BuyPlayerBotProgressionGear(ch,

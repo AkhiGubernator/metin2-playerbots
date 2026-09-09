@@ -170,7 +170,16 @@ namespace
 			return false;
 		if (ch->GetMapIndex() != PLAYERBOT_MAP_CHUNJO_M2)
 			return true;
-		return !IsPlayerBotPastM2Ceiling(ch);
+		if (!IsPlayerBotPastM2Ceiling(ch))
+			return true;
+		// Past the ceiling, one exception: the bot cannot pay the Teleporter
+		// that would take it where it belongs. Refusing the hunt as well left
+		// it asking the Teleporter every tick for ever ("Zbieram yang na
+		// Teleporter" over a bot that could not gather any); it hunts here
+		// until it holds a few fares and then goes.
+		return GetPlayerBotFrontierMapForLevel(ch) != 0 &&
+				ch->GetGold() < GetPlayerBotTeleporterFareEstimate(ch) *
+					PLAYERBOT_TELEPORTER_FARE_RESERVE_COUNT;
 	}
 
 	bool IsPlayerBotM2LevelingCohort(LPCHARACTER ch)
@@ -1287,6 +1296,10 @@ namespace
 
 			if (wantsM3 && !needsCriticalTownServices)
 			{
+				// The same Teleporter, the same wait and the same fare.
+				if (playerbot_world_rules::IsTravelCooldownActive(dwNow, state.dwNextWorldTravelTime) ||
+						ch->GetGold() < GetPlayerBotTeleporterFee(ch))
+					return false;
 				return MovePlayerBotToWorldPortal(ch, state,
 						PLAYERBOT_M2_TO_M3_TELEPORTER_X, PLAYERBOT_M2_TO_M3_TELEPORTER_Y,
 						PLAYERBOT_MAP_CHUNJO_M3, PLAYERBOT_M3_ARRIVAL_X,
@@ -1312,6 +1325,14 @@ namespace
 					? GetPlayerBotFrontierMapForLevel(ch) : 0;
 			if (frontierMap != 0)
 			{
+				// The Teleporter's refusal sets dwNextWorldTravelTime and this
+				// branch never read it: 1.30.42 announced a five-minute wait and
+				// the bot asked again on the next tick, 26 000 times a minute
+				// across the cohort. A bot short of the fare is not sent either;
+				// the grind rule above lets it earn the fare where it stands.
+				if (playerbot_world_rules::IsTravelCooldownActive(dwNow, state.dwNextWorldTravelTime) ||
+						ch->GetGold() < GetPlayerBotTeleporterFee(ch))
+					return false;
 				long arriveX = 0, arriveY = 0;
 				GetPlayerBotFrontierArrival(frontierMap, arriveX, arriveY);
 				char reason[48];

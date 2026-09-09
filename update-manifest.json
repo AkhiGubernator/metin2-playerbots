@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T08:26:00Z",
-  "statusMessage": "Aktualizacja 1.30.32. Propozycje z Discorda: stragany nazwane wg zawartosci (ksiegi, ulepki, okrzyki z 2009), nadmiar okazow biologa na stragan, biedny bot robi wyprzedaz z jedna linia i znizka 30%.",
+  "publishedAt": "2026-09-09T10:03:00Z",
+  "statusMessage": "Aktualizacja 1.30.33. Lucznicy nie zamarzaja juz na punktach przybycia (strzaly ponad poziom nie liczyly sie jako brak), tarcza nie jest brakujacym slotem dla luku, dropek metinow z pelnym plecakiem ksiag otwiera stragan i sprzedaje nadmiar handlarzowi. Status stajennego nie klamie o medalu, ktorego bot nie moze oddac. Nowosc: noc na serwerze 22:00-05:59 (flaga xmas_snow, przelacznik w panelu).",
   "server": {
-    "version": "1.30.32",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.32/metin2-server-update-1.30.32.zip",
-    "sha256": "E5572BF9A6D3DE6EB1A2122F55ED44B6BFF64BED87CBFA5EC4C0075A3BFC41F1"
+    "version": "1.30.33",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.33/metin2-server-update-1.30.33.zip",
+    "sha256": "0ACBB813B7EEB13DFC5204A4585469E14B417477F8506535063F85F24419D2F2"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

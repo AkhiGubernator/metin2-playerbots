@@ -17,6 +17,69 @@ every version here.
 
 ---
 
+## 1.30.33 — 2026-09-09
+
+### Naprawione
+
+- **Łucznicy zamarzali na punktach przybycia — na pustyni, w M3, w Dolinie
+  Orków — na dwadzieścia minut i dłużej.** Znalezione w obserwacji po 1.30.32:
+  dwanaście botów resetowanych przez watchdoga co 90 s, wszystkie łuczniczki.
+  Każda miała w plecaku wyłącznie strzały ponad swój poziom (skrzynia
+  postępu daje 8003 na 40 poziom botowi na 34, 8004 na 45 botowi na 41) i
+  nic w slocie strzał. Licznik strzał liczył je jako zapas („sto strzał, nie
+  trzeba kupować”), a łuk nie miał czym strzelać: przygotowanie broni
+  zawodziło co tick i tick wychodził przez wizytę w mieście, której na mapie
+  bez handlarza nie da się zacząć. Strzały ponad poziom nie liczą się do
+  zapasu; bot bez strzał na mapie bez handlarza rusza do miasta przez zwykłą
+  podróż między mapami, a gdy ta nie ma nic do powiedzenia — przynajmniej
+  wędruje. Linia watchdoga mówi teraz, na czym tick stanął
+  (`equip_pending`, `service`, `riding`, `nav_out`, `wander_in`).
+
+- **Slot tarczy nie jest „brakującym slotem” dla łuku ani broni dwuręcznej.**
+  Ta sama obserwacja: każdy łucznik był na stałe „w krytycznej potrzebie
+  usług miasta”, więc z M3 wychodził w chwili przyjścia, a polowanie na broń
+  30 odsyłało go z powrotem — piętnaście sekund na okrążenie. Do tego pauza
+  „czekam na okno ekwipunku” dostała limit 5 s zamiast nieskończoności.
+
+- **„Dropek metinów” z plecakiem pełnym ksiąg nie sprzedaje ich i nic nie
+  podnosi (Sekuras).** Osobowość trzyma każdą księgę dla swojego straganu, a
+  gdy los na stragan nie wypadł, trzymała je w nieskończoność: 80 ksiąg, brak
+  miejsca na łup, bot dalej rozbija metiny. Pod presją plecaka dropek otwiera
+  stragan niezależnie od losu, a to, co i tak nie mieści się ponad dwadzieścia
+  ksiąg, sprzedaje handlarzowi. Księgi cudzych klas u każdego bota pod presją
+  plecaka też idą do handlarza zamiast blokować łup.
+
+- **„Bot z koniem na 10 poziomie krzyczy »idę do stajennego« i jeździ w kółko
+  godzinę” (CarloMontana).** Bot nie jechał do stajennego — napis kłamał.
+  Każdy bot w podróży z medalem w plecaku ogłaszał stajennego, a medal, którego
+  nie da się oddać, zostaje w plecaku na długo: koń na 10 czeka na 35 poziom
+  postaci, dropek medali nosi je na stragan. Napis mówi teraz o stajennym tylko
+  wtedy, gdy bot naprawdę może oddać medal; bot w próbie konia bojowego pisze
+  „Zdobywam konia bojowego na pustyni (x/100)”, a odbiór konia bojowego ma
+  własne linie. Status u stajennego w Bokjung mierzył odległość do stajennego
+  w Joan, więc oddawanie medalu w Bokjung wyglądało jak marsz. Przy okazji
+  marsz do stajennego dostał przyciąganie celu w promieniu przybycia (6 pól
+  zamiast 20), tak jak wcześniej wizyta w mieście i marsz do portalu.
+
+### Z kanału propozycji
+
+- **Noc na serwerze (Oskar).** Rdzeń między 22:00 a 05:59 czasu serwera
+  (`M2_TZ` z `.env`) podnosi flagę `xmas_snow` — tę samą, którą GM ustawia
+  komendą `/xmas_snow 1` — i rano ją opuszcza; klient pokazuje wtedy nocne
+  niebo i, bo to flaga świąteczna, śnieg. Flaga idzie przez rdzeń bazy i wraca
+  rozgłoszona do wszystkich klientów, sprawdzana raz na minutę. Przełącznik
+  „Noc na serwerze” jest w obu panelach (Boty → Zachowanie na żywo; domyślnie
+  włączony); po wyłączeniu w środku nocy rdzeń opuszcza flagę sam. Ręczne
+  `/xmas_snow` GM-a działa jak dotąd, gdy przełącznik jest wyłączony.
+
+### Obserwacja po 1.30.32 (serwer testowy, 970 botów)
+
+Portale: 0 zablokowanych marszów, 0 nieudanych przejść, 1 400 przejść między
+mapami w 36 minut. Cel bez migotania, tick 7–11 s z każdych 60. Jedyny
+problem to zamrożeni łucznicy wyżej.
+
+---
+
 ## 1.30.32 — 2026-09-09
 
 ### Z kanału propozycji

@@ -17,6 +17,72 @@ every version here.
 
 ---
 
+## 1.30.31 — 2026-09-09
+
+### Naprawione
+
+- **Boty na mapach frontowych zmieniały cel co pięć sekund: „zapasy” ↔
+  „poziom”.** Zgłaszane jako „boty w M2 / na pustyni nie wiedzą, co robić”.
+  Dziewięć miejsc w kodzie podróży (przejście przez pustynię, wyjścia z M3
+  i z frontu, wyjścia na front, powrót do Joan, wyjścia po biologa, konia,
+  sprzęt i polowanie) wpisywało cel w każdym ticku, a planer pięć sekund
+  później przywracał swój — zmierzone: **350 botów, 12 000 z
+  20 000 linii zmiany celu** w oknie pomiaru, status „Ide do miasta po
+  zapasy” i „Ide do Lochu Pajakow” na zmianę u tego samego bota. Podróż nie
+  dotyka już celu; decyduje planer. Po poprawce, w takim samym
+  oknie na serwerze testowym (970 botów): par „zapasy↔poziom” **0** (było
+  5 828), wszystkich linii zmiany celu 1 988 (było 13 766); zostało tylko
+  naturalne „przeżyć↔zapasy” przy niskim PŻ.
+
+- **„Boty 30+ zrobiły wymarsz na M3” — 60% serwera na jednej mapie.**
+  Zgłoszone ze zrzutem mapy. Reguła z 1.30.29 („każdy powyżej 35 bez broni
+  na 30 idzie ją wyfarmić”) była dobra dla świata, którego boty mają
+  głównie 50 lv, i katastrofalna dla świata z botami 36–40. M3 przyjmuje
+  najwyżej **15% żywej populacji** (nie mniej niż 30), a bot, który już tam
+  jest, zostaje, dopóki tłum nie przekroczy półtorakrotności tego progu —
+  drzwi nie migają.
+
+- **Bot wracający do Bokjung po sprzęt krążył po spotach za materiałem.**
+  Zgłoszone z logiem (Kuszaa): metinowiec 61 lv po zakupach w M2 przez
+  siedem minut gonił Jak-To Czarnego Wiatru po materiał do ulepszania,
+  zbierając przy okazji przedmioty po innych botach, zanim poszedł do
+  teleportera. Wyprawa po materiał nie startuje na mapie, na której bot nie
+  ma prawa grindować, ani gdy ma już zaplanowane wyjście.
+
+- **Wędkarze: „zapasy” ↔ „wędkowanie” co pięć sekund.** Ta sama choroba
+  w innym miejscu: sesja wędkarska wpisywała cel co tick, planer „zapasy”
+  co pięć sekund — 43 wędkarzy, 6 000 linii w 12 minut. Planer respektuje
+  trwającą sesję wędkarską. Podobnie wyjście z frontu po zakupy przestało
+  wpisywać „poziom”.
+
+- **Bonowanie broni na 30 poziom: aż do średnich ≥ 20%.** Zgłoszone z
+  Discorda („boty za rzadko bonują”, „broń 30 z ŚR niżej 20% niech mixują
+  aż się uda”). Próg „skończona” dla broni 30 spadł z 30% do 20% średnich,
+  a bot przebija ją dopóki tego nie osiągnie — niezależnie od sumy
+  pozostałych linii, która wcześniej mówiła „wystarczy” przy 12% średnich.
+  Bronie 30 w plecaku (towar na stragan) też są bonowane do tego progu —
+  kamień kosztuje czterdziestą część ceny gotowej sztuki. Zwoje z plecaka
+  idą pierwsze, dokupywane są dopiero, gdy ich nie ma. Zmierzone przed:
+  580 zmian i 123 dodania w 3 godziny na 970 botów.
+
+- **Panel zaawansowany, ranking „Broń 30 lv”: ŚR i UM.** Zgłoszone
+  dwukrotnie. Sprawdzone na surowych wierszach bazy: typ 72 niesie średnie
+  (do +46), typ 71 obrażenia umiejętności (broń 30 ma je w parze, ujemne —
+  stąd „−5%” na zrzutach). Zapytanie nazywa kolumny wprost, bez zamiany po
+  fakcie, a sortowanie „według średnich” sortuje według średnich.
+
+### Sprawdzone i nie jest błędem
+
+- **„Wojownicy nie kupują mikstur”.** Zmierzone na 970 botach: wojownicy
+  kupują **najwięcej** czerwonych ze wszystkich klas (529 zakupów, 345 tys.
+  sztuk, ~650 na wizytę, przychodzą do handlarki ze średnio 130) — i wypijają
+  18,8 tys. dziennie. Mają ich mało w plecaku, bo je zużywają, nie dlatego,
+  że nie kupują. Sury trzymają 650–740, bo prawie ich nie piją.
+- **Pętla konia w M2 i na pustyni (1.30.29)** — to regresja naprawiona w
+  1.30.30; logi Kordyla i Kuszaa pochodzą sprzed tej wersji.
+
+---
+
 ## 1.30.30 — 2026-09-09
 
 ### Naprawione

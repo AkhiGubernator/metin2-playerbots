@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-08T22:25:00Z",
-  "statusMessage": "Aktualizacja 1.30.30. Boty nie migocza juz na koniu i znow chodza po mapach (regresja z 1.30.28), boss szukany na calej mapie, ksiegi ida na stragan zamiast lezec w plecaku, stosy w plecaku scalane, zwoje na straganie po sztuce, panel Sebana 1.38.5, w launcherze dane do bazy dla Navicat i naprawa hasla roota.",
+  "publishedAt": "2026-09-09T06:36:00Z",
+  "statusMessage": "Aktualizacja 1.30.31. Boty na mapach frontowych nie zmieniaja juz celu co 5 s (zapasy/poziom), M3 nie zbiera calego serwera (limit 15% populacji), bot wracajacy do Bokjung po sprzet nie krazy po spotach za materialem, bronie 30 bonowane do 20% srednich, ranking broni 30 w panelu Sebana pokazuje SR/UM poprawnie.",
   "server": {
-    "version": "1.30.30",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.30/metin2-server-update-1.30.30.zip",
-    "sha256": "357E5CFE603AE369F22DE7CCB917B2B1E632CE3653C72A894442B16F4ED80947"
+    "version": "1.30.31",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.31/metin2-server-update-1.30.31.zip",
+    "sha256": "295623FA01E9FE2E1D38D6986FAC512ABACD2AB7D95ADE7BA01B0222875C36C0"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

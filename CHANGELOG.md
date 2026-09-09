@@ -17,6 +17,98 @@ every version here.
 
 ---
 
+## 1.30.42 — 2026-09-09
+
+### Loch Pająków 2
+
+- **Boty od 54 poziomu chodzą do Lochu Pająków 2** (mapa 71,
+  `metin2_map_spiderdungeon_02`). Z wiki i plików serwera: trujące pająki
+  60–68 poziomu, które nie atakują pierwsze, bez metinów, na końcu warp do
+  V3 i Elitarna Królowa Pająków (97 lvl, 2,6 mln HP — bez hubu, za silna).
+  Do lochu wchodzi się u Chuk-Sala na końcu V1 za Przepustkę; boty na razie
+  wchodzą bez przepustki, tą samą drogą co do V1: przez pustynię do bramy
+  Kuahlo Dong i dalej po stronie serwera. Losowanie pogranicza od 54 poziomu:
+  V2, Sohan albo Świątynia Hwang (łowca metinów zamiast V2 idzie na Sohan,
+  bo w lochach nie ma kamieni). 11 hubów na prawdziwych punktach spawnu z
+  `regen.txt` (668 punktów przez `group.txt` i `group_group.txt`), punkty
+  przybycia (384,273) i wyjścia sprawdzone na `server_attr` (81/81 wolnych
+  komórek, cała mapa to jeden spójny obszar). Mapa 71 przeniesiona na rdzeń
+  game1, dodana do listy dozwolonych w `apply.sh`, do obu paneli (nazwa,
+  granice, kafelek terenu).
+
+### Ekonomia
+
+- **Bot nie ulepsza tego, co za chwilę sprzeda handlarzowi** (jaksiezabic:
+  Ametystowy Naszyjnik+0 → +1 o 17:58, sprzedany handlarzowi o 18:19; u nas
+  w 6 godzin 12 534 przedmioty ulepszone w plecaku i potem sprzedane).
+  Przejście ulepszania brało z plecaka każdy przedmiot, który bot może
+  założyć, a reguła złomu sprzedawała każdy, który nie jest lepszy od
+  noszonego i ma mniej niż +6. Teraz z plecaka ulepszane jest tylko to, co
+  bot zatrzyma: ulepszenie noszonego, przedmiot wyższego poziomu niż noszony
+  w tym slocie (nowa reguła — najlepszy taki zapas na slot zostaje w
+  plecaku, żeby kowal mógł go doprowadzić do stanu lepszego od noszonego),
+  rezerwa od +6.
+
+- **Przedmiot od +4 nie idzie do handlarza** — to towar na stragan (stragan
+  wystawia od +4), a handlarz brał każdy +4 i +5 (gregory: Szata Zach.
+  Nieba+4, Złote Buty+4 sprzedane zaraz po ulepszeniu).
+
+- **Materiał, na który jest popyt, nie idzie do handlarza** (gregory: Ogon
+  Skorpiona, Worek z Pajęczymi Jajami, Igła Skorpiona sprzedane handlarzowi,
+  podczas gdy boty kupują Ogon Skorpiona na straganach po 58 894). Reguła
+  złomu pyta ledger rynku: materiał z popytem to towar na stragan; do
+  handlarza idzie tylko taki, którego nikt nie potrzebuje, i tylko pod
+  presją plecaka.
+
+### Panel
+
+- **Ranking botów pokazuje do 1000 pozycji** (Iwakura: „poproszę żeby mogło
+  pokazywać więcej niż 100”). Selektor ma 200/500/1000, a API przestało
+  ucinać do 100.
+
+### Podróże
+
+- **30% botów wraca z pogranicza po usługi do Joan, nie do Bokjung**
+  (jaksiezabic: „M1 przy 1000 botów wygląda jak Balmora, a M2 jak Baerim”).
+  Dotąd każdy powrót po zapasy, do kowala czy handlarza szedł do Bokjung.
+  Udział wybierany raz na bota (po pid); Joan ma wszystkie usługi, kosztem
+  jest powrót przez Bokjung do Teleportera. Medal, polowanie na broń i
+  wyrośnięcie z mapy nadal prowadzą do Bokjung. W logu:
+  `frontier_services_to_m1`.
+
+---
+
+## 1.30.41 — 2026-09-09
+
+### Stragany i podróże
+
+- **Limit straganów na Bokjung rośnie z liczbą botów.** Poprawka z 1.30.40
+  trzymała tylko pierwszą serię: po restarcie wszyscy straganiarze otwierali
+  w tym samym ticku (licznik odświeża się co minutę), a potem każde ponowne
+  otwarcie odbijało się o limit 7 straganów na Bokjung — 229 odmów na minutę
+  — i bot szedł z towarem do Joan, gdzie planista wysyłał go po zakupy
+  zamiast na plac. Z 90 straganów po półtorej godziny zostało 28 (6 na
+  Bokjung, 21 w Joan). Limit to teraz 8% żywych botów, nigdy mniej niż 7:
+  80 dla tysiąca, 28 dla 350.
+
+- **Bot bez yangów na Teleporter nie pyta go co tick.** Bot 58 poziomu z 799
+  yang wobec opłaty 11 000 był odrzucany 24 000 razy na minutę, a jego status
+  brzmiał „Ide na Gore Sohan” (Kuszaa: boty, które chcą na Sohan, kręcą się
+  po Bokjung). Po odmowie podróż czeka 5 minut, w tym czasie działa wizyta w
+  mieście i stragan, które zarabiają opłatę; status mówi „Zbieram yang na
+  Teleporter na Gore Sohan (799/11000)”.
+
+### Launcher
+
+- **`playerbot-syslog.txt` w paczce diagnostycznej nie jest już pusty** (Kuszaa,
+  1.30.40). Windows PowerShell 5.1 owija argument natywnego polecenia w
+  cudzysłowy, nie escapując tych, które już w nim są — pierwszy cudzysłów
+  wewnątrz polecenia `sh -c` kończył argument i wycinek wychodził pusty.
+  Polecenie nie ma już żadnego cudzysłowu w środku (wzorce przez `grep -e`).
+  Sprawdzone u nas: 60 000 linii, ~6 MB.
+
+---
+
 ## 1.30.40 — 2026-09-09
 
 ### Stragany

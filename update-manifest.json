@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T16:31:00Z",
-  "statusMessage": "Aktualizacja 1.30.40. Stragany nie znikaja godzine po restarcie: wygasly stragan otwiera sie ponownie na tym samym miejscu, do trzech stanowisk z rzedu.",
+  "publishedAt": "2026-09-09T18:24:00Z",
+  "statusMessage": "Aktualizacja 1.30.42. Loch Pajakow 2 dla botow 54+, koniec sprzedawania handlarzowi ulepszonych przedmiotow i materialow z popytem, 30% botow wraca po uslugi do Joan, limit straganow rosnie z liczba botow, poprawka paczki diagnostycznej.",
   "server": {
-    "version": "1.30.40",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.40/metin2-server-update-1.30.40.zip",
-    "sha256": "FADAFBDF5C719E04D3A819FA1786044D1BE225302640768DDA595AE43F3EFF9E"
+    "version": "1.30.42",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.42/metin2-server-update-1.30.42.zip",
+    "sha256": "5D9AA568FAF7A655B868C93ACBAF5CFBF24F1E28AEB2BD239A83E6CD50342AC2"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

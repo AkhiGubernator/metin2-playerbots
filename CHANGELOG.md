@@ -17,6 +17,25 @@ every version here.
 
 ---
 
+## 1.30.38 — 2026-09-09
+
+### Z kanału propozycji
+
+- **Historia ekwipunku bota w panelu klasycznym** (Iwakura: „czemu moja top1
+  sura nagle nie ma FMS-a +8, tylko lata z useless bronią”). Na stronie
+  postaci, nad dziennikiem na żywo, sekcja „Historia ekwipunku” czytana z
+  `log.log`: ulepszenia udane i nieudane, spalone przedmioty, założenia (co
+  i zamiast czego), prezenty dla innych botów i od nich, sprzedaż na
+  straganie (ile i za ile), zakupy na straganach, sprzedaż handlarzowi,
+  kamienie zużyte na przemianę bonusów, depozyty do magazynu, Szkatułki
+  Blasku. Domyślnie 60 ostatnich wpisów, przycisk „Pokaż starsze” — 400.
+  Rdzeń dopisuje do `log.log` to, czego silnik sam nie zapisywał: założenie
+  (`PLAYERBOT_EQUIP`), obie strony prezentu (`PLAYERBOT_GIFT_OUT/IN`),
+  sprzedaż na straganie po stronie sprzedawcy (`PLAYERBOT_STALL_SOLD`) i
+  depozyt u Dozorcy (`SAFEBOX PUT`, jak silnik dla gracza).
+
+---
+
 ## 1.30.37 — 2026-09-09
 
 ### Zmienione

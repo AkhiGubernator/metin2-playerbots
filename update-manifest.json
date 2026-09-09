@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T14:22:00Z",
-  "statusMessage": "Aktualizacja 1.30.37. Plecak pelny w 80% to sprawa do zalatwienia: zadna wyprawa po medal ani bron 30 nie rusza, a w miescie bot otwiera stragan, niesie ksiegi do Dozorcy i zlom do handlarza.",
+  "publishedAt": "2026-09-09T14:40:00Z",
+  "statusMessage": "Aktualizacja 1.30.38. Historia ekwipunku bota w panelu klasycznym: ulepszenia, spalenia, zalozenia, prezenty, sprzedaz na straganie, magazyn.",
   "server": {
-    "version": "1.30.37",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.37/metin2-server-update-1.30.37.zip",
-    "sha256": "6E21948192B9A1068D152395C53B869718701029333F5A50FD75F15D156D5994"
+    "version": "1.30.38",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.38/metin2-server-update-1.30.38.zip",
+    "sha256": "3003CB1DDF83112EF5E7246D1BC11233A263349056604D67FD5F91FFBF1440F7"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -1,15 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T18:24:00Z",
-  "statusMessage": "Aktualizacja 1.30.42. Loch Pajakow 2 dla botow 54+, koniec sprzedawania handlarzowi ulepszonych przedmiotow i materialow z popytem, 30% botow wraca po uslugi do Joan, limit straganow rosnie z liczba botow, poprawka paczki diagnostycznej.",
+  "publishedAt": "2026-09-09T20:17:00Z",
+  "statusMessage": "Aktualizacja 1.31.1. Panel GM na F9 (klient + serwer), wiecej wypraw po Medal Konny, Zwoj Boga Smokow od +7.",
   "server": {
-    "version": "1.30.42",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.42/metin2-server-update-1.30.42.zip",
-    "sha256": "5D9AA568FAF7A655B868C93ACBAF5CFBF24F1E28AEB2BD239A83E6CD50342AC2"
+    "version": "1.31.1",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.1/metin2-server-update-1.31.1.zip",
+    "sha256": "3BCE27515CCF4F88592E8478C55A34AFD47458974E8AADA40BF767377CE78EB4"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
+  },
+  "client": {
+    "version": "1.31.1",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.1/metin2-client-update-1.31.1.zip",
+    "sha256": "53C419421C9DA9F20C166C701932AFDD59C5EF5B5392C139766DE0086E6C13D4"
   }
 }

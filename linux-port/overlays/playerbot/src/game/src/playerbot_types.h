@@ -196,6 +196,13 @@ namespace
 	// carried four of them in two hours. A skill already at Grand Master
 	// keeps none; a book cannot take it further.
 	const int PLAYERBOT_BOOK_KEEP_UNREADABLE = 3;
+	// The Metin dropper keeps every book for its counter - and a dropper whose
+	// stall roll never came kept them for good: a bag of eighty books, the
+	// loot pass with nowhere to put a drop, and the bot farming stones it
+	// could not pick up ("chlop biega z calym eq i dalej farmi metiny nie
+	// podnoszac nic"). Under bag pressure it opens a stall whatever the roll,
+	// and what is still beyond this many books goes to the merchant.
+	const int PLAYERBOT_DROPPER_BOOK_KEEP = 20;
 	// A bag this short of cells is under pressure: what was worth keeping on
 	// the chance of a key or a buyer goes to the merchant, so the chests and
 	// the loot still have somewhere to land.
@@ -209,6 +216,12 @@ namespace
 	// of the goods a player buys one at a time - scrolls, soul stones - on
 	// lines of their own, because a private shop sells a line whole.
 	const DWORD PLAYERBOT_STACK_MERGE_INTERVAL = 300000;
+	// How long a bot may stand waiting for the engine's equip window before
+	// the wait is abandoned. Twelve archers stood at arrival points for
+	// twenty minutes, reset by the watchdog every ninety seconds, ticked and
+	// silent: the tick left through the "core slot empty and an equip
+	// pending" pause, and an archer's shield slot is empty for life.
+	const DWORD PLAYERBOT_EQUIP_PENDING_MAX_MS = 5000;
 	const int PLAYERBOT_STACK_MERGES_PER_PASS = 4;
 	const int PLAYERBOT_STACK_MAX = 200;
 	const int PLAYERBOT_SHOP_SINGLE_UNITS = 4;
@@ -647,6 +660,12 @@ namespace
 	const long PLAYERBOT_BIOLOGIST_Y = 182100;
 	const long PLAYERBOT_STABLE_BOY_X = 54900;
 	const long PLAYERBOT_STABLE_BOY_Y = 163400;
+	// How close to the stable keeper's approach point the walk has to end, and
+	// the goal snap that stays inside it: a snap wider than the arrival test
+	// is a bot that walks its route, arrives at nothing and plans the same
+	// route again - the town leg and the portal walk both sprang this.
+	const int PLAYERBOT_STABLE_ARRIVE_DISTANCE = 650;
+	const int PLAYERBOT_STABLE_SNAP_CELLS = PLAYERBOT_STABLE_ARRIVE_DISTANCE / 100;
 	// Verified against locale/english/map/{index,Setting.txt,npc.txt,Town.txt} and
 	// share/conf/mob_names.txt. Chunjo uses the empire-specific easy monkey
 	// dungeon (map 25); map 107 is a different global dungeon whose coordinates
@@ -2353,6 +2372,7 @@ namespace
 			dwNextShopCheckTime(0),
 			dwNextSkillResetTime(0),
 			dwNextStackMergeTime(0),
+			dwEquipPendingSince(0),
 			dwEmergencyScavengeUntil(0),
 			dwTownWaitUntil(0),
 			dwStoneFightStartTime(0),
@@ -2599,6 +2619,7 @@ namespace
 		// When this bot may next pay the old woman to forget its skills.
 		DWORD dwNextSkillResetTime;
 		DWORD dwNextStackMergeTime;
+		DWORD dwEquipPendingSince;
 		DWORD dwEmergencyScavengeUntil;
 		DWORD dwTownWaitUntil;
 		DWORD dwStoneFightStartTime;

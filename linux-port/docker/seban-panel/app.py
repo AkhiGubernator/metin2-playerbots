@@ -76,7 +76,7 @@ AI_WEIGHT_KEYS = (
 AI_WEIGHT_MIN, AI_WEIGHT_MAX, AI_WEIGHT_NEUTRAL = 25, 250, 100
 # These values share the live weight file with goal weights, but the core treats
 # them as switches or direct settings rather than 25–250% goal weights.
-AI_LIVE_DEFAULTS = {"CHAT": 1, "BOOKS": 1, "SCRAP": 0, "CHEST": None, "CHEST_STONE": None}
+AI_LIVE_DEFAULTS = {"CHAT": 1, "BOOKS": 1, "NIGHT": 1, "SCRAP": 0, "CHEST": None, "CHEST_STONE": None}
 AI_SPECIAL_WEIGHT_KEYS = frozenset(AI_LIVE_DEFAULTS)
 BIOLOGIST_COMPLETE_STATE = 557528158
 # Tieru 1.29.10 adds the Orc Tooth task after the six classic Biologist
@@ -632,7 +632,7 @@ def read_ai_weights():
             if len(fields) >= 2 and fields[0].upper() in values:
                 try:
                     key, raw_value = fields[0].upper(), fields[1]
-                    if key in ("CHAT", "BOOKS"):
+                    if key in ("CHAT", "BOOKS", "NIGHT"):
                         values[key] = 0 if raw_value.lower() in ("0", "off", "no") else 1
                     elif key == "SCRAP":
                         values[key] = max(0, min(100, int(raw_value)))
@@ -675,6 +675,7 @@ def write_ai_weights(values):
     content.extend(f"{key}\t{values[key]}" for key, _, _ in AI_WEIGHT_KEYS)
     content.append(f"CHAT\t{1 if values.get('CHAT', 1) else 0}")
     content.append(f"BOOKS\t{1 if values.get('BOOKS', 1) else 0}")
+    content.append(f"NIGHT\t{1 if values.get('NIGHT', 1) else 0}")
     content.append(f"SCRAP\t{max(0, min(100, int(values.get('SCRAP', 0))))}")
     for key in ("CHEST", "CHEST_STONE"):
         if values.get(key) is not None:
@@ -1639,6 +1640,7 @@ def manage_behavior():
     values["CHAT"] = 1 if "1" in request.form.getlist("CHAT") else 0
     # Preserve the existing switch for a form opened before this field existed.
     values["BOOKS"] = 1 if "BOOKS" not in request.form else (1 if "1" in request.form.getlist("BOOKS") else 0)
+    values["NIGHT"] = values.get("NIGHT", 1) if "NIGHT" not in request.form else (1 if "1" in request.form.getlist("NIGHT") else 0)
     try:
         values["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", values.get("SCRAP", 0)))))
     except (TypeError, ValueError):

@@ -65,6 +65,19 @@ namespace
 		return false;
 	}
 
+	// Every skill book in the bag, whatever the skill.
+	int CountPlayerBotSkillBooks(LPCHARACTER ch)
+	{
+		int books = 0;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item && item->GetType() == ITEM_SKILLBOOK)
+				books += item->GetCount();
+		}
+		return books;
+	}
+
 	// How many books of one of its own skills a bot keeps in the bag: the
 	// working stock while the skill is readable, a few before that, none once
 	// a book can do nothing more for it. Every rule that keeps, lists or buys
@@ -482,9 +495,12 @@ namespace
 		if (item->GetType() == ITEM_SKILLBOOK)
 		{
 			// The Metin dropper keeps every book: the ones it cannot read are what
-			// it puts on the counter.
+			// it puts on the counter - up to the bag's patience. Beyond
+			// PLAYERBOT_DROPPER_BOOK_KEEP with the bag under pressure, the
+			// merchant takes the rest, or the loot stops.
 			if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER)
-				return false;
+				return CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS &&
+						CountPlayerBotSkillBooks(ch) > PLAYERBOT_DROPPER_BOOK_KEEP;
 			// Keep books for the selected build (also before profession selection).
 			// Books for another class/build may first be handed to a party member;
 			// if nobody needs them they become normal miscellaneous loot.
@@ -495,8 +511,11 @@ namespace
 			// was going to the merchant for a fraction of what the warrior three
 			// stalls away would pay for it - the stall pass takes these, and
 			// only a book nobody in the world could want is loot.
+			// Somebody else's book is goods for the counter - until the bag is
+			// choking on them, when the merchant is better than no loot.
 			if (!IsPlayerBotOwnSkill(ch, skillVnum))
-				return skillVnum == 0;
+				return skillVnum == 0 ||
+						CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS;
 			// Its own, and only so many of them - GetPlayerBotBookKeepLimit. The
 			// surplus is goods for the counter like anybody else's book, and
 			// scrap for the merchant only once the bag is under pressure: a

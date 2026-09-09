@@ -479,9 +479,16 @@ namespace
 		if (IsPlayerBotMerchant(state))
 			return true;
 		if (IsPlayerBotDropper(state.bPersonality))
+		{
+			// A dropper whose bag is under pressure sells whatever the roll said:
+			// the goods are the point of the personality, and a dropper that lost
+			// the roll carried eighty books and picked up nothing.
+			if (CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS)
+				return true;
 			return PlayerBotWeightedRoll(
 					PlayerBotNavHash(ch->GetPlayerID() ^ 0x44524f50U) % 1000U,
 					PLAYERBOT_DROPPER_SHOP_ROLL, PLAYERBOT_WEIGHT_TRADE);
+		}
 		// One bot in ten, stretched or shrunk by the TRADE weight. Drawn against a
 		// thousand rather than ten so that the weight has somewhere to move: the
 		// odds at the neutral 100 are the same one in ten as before, over a

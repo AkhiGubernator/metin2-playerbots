@@ -342,13 +342,24 @@ namespace
 				break;
 			}
 			case BOT_ACTION_STABLE:
-				if (DISTANCE_APPROX(ch->GetX() - PLAYERBOT_STABLE_BOY_X,
-						ch->GetY() - PLAYERBOT_STABLE_BOY_Y) > 850)
+			{
+				// The stable keeper of the map the bot is on: measured against
+				// Joan's alone, a bot handing its medal over in Bokjung was
+				// "on its way" for the whole visit.
+				const bool inM2 = ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2;
+				const long stableX = inM2 ? PLAYERBOT_M2_STABLE_BOY_X : PLAYERBOT_STABLE_BOY_X;
+				const long stableY = inM2 ? PLAYERBOT_M2_STABLE_BOY_Y : PLAYERBOT_STABLE_BOY_Y;
+				const bool bFar = DISTANCE_APPROX(ch->GetX() - stableX, ch->GetY() - stableY) > 850;
+				if (IsPlayerBotBattleHorseEarned(ch))
+					snprintf(status, statusSize, bFar ? "%sIde do Stajennego po konia bojowego"
+							: "%sOdbieram konia bojowego u Stajennego", prefix);
+				else if (bFar)
 					snprintf(status, statusSize, "%sIde do Stajennego z medalem", prefix);
 				else
 					snprintf(status, statusSize, "%sOddaje medal konny (%u/21)", prefix,
 							(unsigned int)ch->GetHorseLevel());
 				break;
+			}
 			case BOT_ACTION_FISHING:
 				if (ch->CountSpecifyItem(PLAYERBOT_FISHING_BAIT_VNUM) <
 						PLAYERBOT_FISHING_BAIT_RESTOCK)
@@ -386,7 +397,15 @@ namespace
 						ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) == 0 &&
 						state.bLongTermGoal == BOT_GOAL_HORSE)
 					snprintf(status, statusSize, "%sIde do Lochu Malp po Medal Konny", prefix);
-				else if (ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) > 0)
+				else if (IsPlayerBotOnBattleHorseTrial(ch))
+					snprintf(status, statusSize, "%sZdobywam konia bojowego na pustyni (%d/%d)", prefix,
+							GetPlayerBotBattleHorseKills(ch), PLAYERBOT_BATTLE_HORSE_KILLS);
+				// Only a medal the bot can hand in. A horse at ten waits for
+				// level thirty-five, a medal dropper carries them for its
+				// counter, and both used to announce the stable keeper on every
+				// leg they rode - "idzie do stajennego przez godzine".
+				else if (ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) > 0 &&
+						CanPlayerBotAdvanceHorse(ch))
 					snprintf(status, statusSize, "%sIde do najblizszego Stajennego z Medalem", prefix);
 				else if (IsPlayerBotMonkeyMap(ch->GetMapIndex()))
 				{

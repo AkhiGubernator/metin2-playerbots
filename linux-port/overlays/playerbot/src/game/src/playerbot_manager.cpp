@@ -787,13 +787,16 @@ namespace
 			return false;
 
 		++s_uPlayerBotLoadWatchdog;
-		sys_err("PLAYERBOT_WATCHDOG: resetting inactive bot pid=%u name=%s pos=(%ld,%ld) action=%u goal=%u target=%u shop=%d phase=%u bio=%d stable=%d route=%u/%u",
+		sys_err("PLAYERBOT_WATCHDOG: resetting inactive bot pid=%u name=%s pos=(%ld,%ld) action=%u goal=%u target=%u shop=%d phase=%u bio=%d stable=%d route=%u/%u equip_pending=%d service=%d riding=%d nav_out=%u wander_in=%d",
 				ch->GetPlayerID(), ch->GetName(), ch->GetX(), ch->GetY(),
 				(unsigned int)state.bCurrentAction, (unsigned int)state.bLongTermGoal,
 				state.dwTargetVID, state.bVisitingShop ? 1 : 0,
 				(unsigned int)state.bTownVisitPhase, state.bVisitingBiologist ? 1 : 0,
 				state.bVisitingStable ? 1 : 0, (unsigned int)state.uRouteIndex,
-				(unsigned int)state.vecRoute.size());
+				(unsigned int)state.vecRoute.size(), state.bEquipPending ? 1 : 0,
+				state.bServicePending ? 1 : 0, ch->IsRiding() ? 1 : 0,
+				(unsigned int)state.bLastNavOutcome,
+				state.dwNextWanderTime > dwNow ? (int)(state.dwNextWanderTime - dwNow) : 0);
 
 		// The errand survives the reset. FinishPlayerBotTownVisit clears the
 		// phase and the stuck route - which is what the watchdog is for - but
@@ -1335,6 +1338,7 @@ void CPlayerBotManager::Update()
 	// Once for the whole population: the panel may have moved a weight since
 	// the last tick, and every bot planned below must see the same numbers.
 	RefreshPlayerBotWeights(dwNow);
+	ManagePlayerBotNight(dwNow);
 
 	static DWORD s_dwTick = 0;
 	++s_dwTick;
@@ -1814,11 +1818,23 @@ void CPlayerBotManager::Update()
 				SetPlayerBotGoal(ch, state, BOT_GOAL_GET_EQUIPMENT, dwNow);
 				ManagePlayerBotWandering(ch, state, dwNow);
 			}
-			else
+			else if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 ||
+					ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
 			{
 				state.dwEmergencyScavengeUntil = 0;
 				StartPlayerBotTownVisit(ch, state, dwNow);
 				ch->Stop();
+			}
+			else
+			{
+				// No merchant on this map, so a town visit cannot start here and
+				// "start it and stop" was a bot standing at an arrival point for
+				// as long as the map lasted. The world travel knows the way to
+				// town (BlocksPlayerBotTravel names the empty bow), and failing
+				// that the wander at least walks.
+				state.dwEmergencyScavengeUntil = 0;
+				if (!ManagePlayerBotWorldTravel(ch, state, dwNow))
+					ManagePlayerBotWandering(ch, state, dwNow);
 			}
 			continue;
 		}
@@ -1872,8 +1888,14 @@ void CPlayerBotManager::Update()
 		if (HandlePlayerBotTacticalRetreat(ch, state, dwNow))
 			continue;
 
+		// A shield slot is not a core slot for a bow or a two-handed weapon: the
+		// engine never fills it, and counting it kept every archer "missing a
+		// core slot" for life - which is what armed the pause below for the
+		// twelve archers found standing at arrival points, silent, for twenty
+		// minutes at a time.
 		const bool bMissingCoreWearSlot = ch->GetWear(WEAR_WEAPON) == NULL ||
-				ch->GetWear(WEAR_BODY) == NULL || ch->GetWear(WEAR_SHIELD) == NULL ||
+				ch->GetWear(WEAR_BODY) == NULL ||
+				(PlayerBotWantsShield(ch) && ch->GetWear(WEAR_SHIELD) == NULL) ||
 				ch->GetWear(WEAR_HEAD) == NULL || ch->GetWear(WEAR_FOOTS) == NULL;
 		if (ManagePlayerBotEquipment(ch, state, dwNow))
 			continue;
@@ -1881,12 +1903,31 @@ void CPlayerBotManager::Update()
 		{
 			// A continuous attack cadence never left the 1.7 s native equipment
 			// window open. Pause only when a usable item for a missing core slot is
-			// already waiting in the inventory, then equip it on the next update.
-			state.dwTargetVID = 0;
-			ch->SetVictim(NULL);
-			ch->Stop();
-			continue;
+			// already waiting in the inventory, then equip it on the next update -
+			// and never for longer than PLAYERBOT_EQUIP_PENDING_MAX_MS: a pause
+			// that claims the tick without a bound is a bot that stands for good.
+			if (state.dwEquipPendingSince == 0)
+				state.dwEquipPendingSince = dwNow;
+			if (dwNow - state.dwEquipPendingSince > PLAYERBOT_EQUIP_PENDING_MAX_MS)
+			{
+				PlayerBotLogThrottled("equip_pending_abandoned", dwNow,
+						"PLAYERBOT_GEAR: equip window never came pid=%u name=%s map=%ld pos=(%ld,%ld) waited_ms=%u last_attack_ms=%u",
+						ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(), ch->GetX(), ch->GetY(),
+						dwNow - state.dwEquipPendingSince, dwNow - ch->GetLastAttackTime());
+				state.bEquipPending = false;
+				state.dwEquipPendingSince = 0;
+				state.dwNextEquipmentCheckTime = dwNow + PLAYERBOT_EQUIPMENT_CHECK_INTERVAL;
+			}
+			else
+			{
+				state.dwTargetVID = 0;
+				ch->SetVictim(NULL);
+				ch->Stop();
+				continue;
+			}
 		}
+		else
+			state.dwEquipPendingSince = 0;
 
 		// A buff is a complete action for this AI update.  Continuing into the
 		// attack code used to emit a second skill packet in the very same tick.

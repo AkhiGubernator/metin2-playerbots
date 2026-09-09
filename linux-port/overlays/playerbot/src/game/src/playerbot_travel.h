@@ -83,7 +83,8 @@ namespace
 		// These problems can make continued combat impossible or waste most future
 		// drops, so they justify an immediate cross-map return.
 		if (ch->GetWear(WEAR_WEAPON) == NULL || ch->GetWear(WEAR_BODY) == NULL ||
-				ch->GetWear(WEAR_SHIELD) == NULL || ch->GetWear(WEAR_HEAD) == NULL ||
+				(PlayerBotWantsShield(ch) && ch->GetWear(WEAR_SHIELD) == NULL) ||
+				ch->GetWear(WEAR_HEAD) == NULL ||
 				ch->GetWear(WEAR_FOOTS) == NULL || NeedsPlayerBotEmergencyPotions(ch) ||
 				NeedsPlayerBotArrows(ch) ||
 				ch->GetEmptyInventory(3) < 0)

@@ -976,6 +976,31 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   the panel and an operator see, and thirty-nine keepers at the Joan ring
   read as thirty-nine idle bots in the safe zone.
 
+- **A silent `continue` in the tick is a bot that stands for good.** Twelve
+  archers stood at arrival points for twenty minutes, reset by the watchdog
+  every ninety seconds, ticked and logging nothing. The tick left through
+  `!PrepareWeapon` -> `StartPlayerBotTownVisit` -> `continue`, and a town
+  visit cannot start on a frontier map. Underneath: `CountPlayerBotArrows`
+  counted arrows the bot could not nock (a progression chest hands 8003 -
+  level forty - to a bot of thirty-four), so `NeedsPlayerBotArrows` said no,
+  `BlocksPlayerBotTravel` said no, and nothing ever sent it to town.
+  `IsPlayerBotUsableArrow` counts by level limit now, and off Joan/Bokjung
+  that branch hands the tick to the world travel and then the wander. The
+  watchdog line carries `equip_pending/service/riding/nav_out/wander_in` so
+  the next silent exit can be named from the log; `nav_out=0` means the walk
+  was never even asked.
+- **A shield slot is not a slot for a bow.** `NeedsPlayerBotCriticalTownServices`
+  and the manager's `bMissingCoreWearSlot` counted `WEAR_SHIELD == NULL` for
+  every archer, so an archer was critically short of town services for life:
+  out of M3 the moment it arrived, back by the weapon hunt fifteen seconds
+  later. `PlayerBotWantsShield` is false for a bow or a two-handed weapon.
+- **A dropper's counter is not a bag without a bottom.** The Metin dropper
+  kept every book for its stall, and a dropper whose stall roll never came
+  kept eighty of them and picked up nothing. Under bag pressure a dropper
+  opens a stall whatever the roll, and past `PLAYERBOT_DROPPER_BOOK_KEEP`
+  the merchant takes the rest; another class's books go to the merchant
+  under pressure for everybody.
+
 - **The market is a ledger, not a shelf.** `RefreshPlayerBotMarketLedger`
   (`playerbot_market.h`, once a minute from the tick) counts the units on
   every open counter and the bots short of each material with money to buy
@@ -1041,6 +1066,28 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `playerbot_planner.h`: an hourly roll, `PLAYERBOT_METIN_EXPEDITION_*`, the
   METIN weight scales the chance). A rule that tests `bBotRole ==
   BOT_ROLE_METIN_HUNTER` directly is a rule the expedition does not reach.
+
+- **A status line that names an errand must ask whether the errand is
+  possible.** "Ide do najblizszego Stajennego z Medalem" fired for any
+  travelling bot with a medal in the bag, and a medal a bot cannot hand in
+  stays there for hours: a horse at ten waits for level thirty-five
+  (`GetPlayerBotNextHorseRequiredLevel`), and the medal dropper carries them
+  for its counter. Reported as "a bot at horse ten shouts »ide do stajennego«
+  and rides in circles for an hour"; it was riding its ordinary legs. The
+  line asks `CanPlayerBotAdvanceHorse` now, the battle-horse trial has its
+  own words, and the stable status measures against the stable of the map
+  the bot is on - Bokjung's hand-in used to read as a walk to Joan.
+- **Night is the Christmas flag on a clock.** The engine has no day cycle;
+  `xmas_snow` is what a GM raises with `/xmas_snow 1`, and the client
+  answers it with the night sky and snow. `ManagePlayerBotNight` in
+  `playerbot_config.h` raises it between `PLAYERBOT_NIGHT_START_HOUR` and
+  `PLAYERBOT_NIGHT_END_HOUR` of the container's local time (`M2_TZ`) and
+  lowers it outside them, once a minute and only when the flag disagrees,
+  while the `NIGHT` key in the weights file is on. `RequestSetEventFlag` is
+  a round trip through the DB core - the game's own `GetEventFlag` moves
+  only when the broadcast comes back - so the check compares intent with
+  the flag, never with what it last asked for. With the switch off the flag
+  is left to the GM, except a night this clock raised, which it lowers once.
 
 ## Engine facts worth not re-deriving
 

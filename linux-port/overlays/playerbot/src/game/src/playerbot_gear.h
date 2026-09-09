@@ -1211,18 +1211,30 @@ namespace
 		return true;
 	}
 
+	// Arrows this bot can nock now. A progression chest hands an archer the
+	// next tier early - 8003 wants level forty, 8004 forty-five - and counting
+	// those said "a hundred arrows, no need to buy" to a bot of thirty-four
+	// whose bow had nothing to fire: PrepareWeapon failed on every tick, the
+	// tick left through a town visit no frontier map can start, and twelve
+	// archers stood at arrival points for twenty minutes at a time.
+	bool IsPlayerBotUsableArrow(LPCHARACTER ch, LPITEM item)
+	{
+		return item && item->GetType() == ITEM_WEAPON && item->GetSubType() == WEAPON_ARROW &&
+				item->GetCount() > 0 && item->GetLevelLimit() <= ch->GetLevel();
+	}
+
 	int CountPlayerBotArrows(LPCHARACTER ch)
 	{
 		if (!ch)
 			return 0;
 		int count = 0;
 		LPITEM worn = ch->GetWear(WEAR_ARROW);
-		if (worn && worn->GetType() == ITEM_WEAPON && worn->GetSubType() == WEAPON_ARROW)
+		if (IsPlayerBotUsableArrow(ch, worn))
 			count += worn->GetCount();
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
-			if (item && item->GetType() == ITEM_WEAPON && item->GetSubType() == WEAPON_ARROW)
+			if (IsPlayerBotUsableArrow(ch, item))
 				count += item->GetCount();
 		}
 		return count;
@@ -1239,11 +1251,22 @@ namespace
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
-			if (item && item->GetType() == ITEM_WEAPON && item->GetSubType() == WEAPON_ARROW &&
-					item->GetCount() > 0 && ch->EquipItem(item, WEAR_ARROW))
+			if (IsPlayerBotUsableArrow(ch, item) && ch->EquipItem(item, WEAR_ARROW))
 				return true;
 		}
 		return false;
+	}
+
+	// Whether a shield slot is a slot this bot can fill at all: never with a
+	// bow or a two-handed weapon in hand. Counting it as "missing" for an
+	// archer made every archer critically short of town services for life -
+	// sent out of M3 the moment it arrived and straight back by the weapon
+	// hunt, fifteen seconds a round trip.
+	bool PlayerBotWantsShield(LPCHARACTER ch)
+	{
+		LPITEM weapon = ch ? ch->GetWear(WEAR_WEAPON) : NULL;
+		return !(weapon && weapon->GetType() == ITEM_WEAPON &&
+				(weapon->GetSubType() == WEAPON_BOW || weapon->GetSubType() == WEAPON_TWO_HANDED));
 	}
 
 	bool NeedsPlayerBotArrows(LPCHARACTER ch)

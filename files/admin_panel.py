@@ -889,6 +889,7 @@ def read_ai_weights():
     vals = {k: AI_W_NEUTRAL for k, _ in AI_WEIGHT_KEYS}
     vals["CHAT"] = 1
     vals["BOOKS"] = 1
+    vals["NIGHT"] = 1
     vals["SCRAP"] = 0
     # The chest event's two figures. None until the file says: the panel does
     # not know what CONFIG holds, and must not write a guess over it.
@@ -909,6 +910,9 @@ def read_ai_weights():
                     continue
                 if name == "BOOKS":
                     vals["BOOKS"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                    continue
+                if name == "NIGHT":
+                    vals["NIGHT"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
                     continue
                 if name == "SCRAP":
                     try:
@@ -951,6 +955,9 @@ def write_ai_weights(vals):
     # Not a weight: whether a bot reads its skill books without the engine's
     # day between two reads of the same skill.
     body.append("BOOKS\t%d" % (1 if vals.get("BOOKS", 1) else 0))
+    # Not a weight: whether the core raises the night flag (xmas_snow) between
+    # 22:00 and 05:59 of the server's local time.
+    body.append("NIGHT\t%d" % (1 if vals.get("NIGHT", 1) else 0))
     # Percent of stall keepers that sell scrap gear; 0 is off.
     body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
     # The Moonlight chest: thousandths per kill and per Metin. Written only once
@@ -2692,6 +2699,12 @@ T.update({
                   "de":"Das Spiel lässt zwischen zwei Lesungen derselben Fertigkeit etwa einen Tag warten, also braucht ein Bot einen Monat, um eine Fertigkeit von M1 auf G1 zu lesen, und die Bücher stapeln sich derweil. An: der Bot liest nach einer halben Stunde erneut, wie ein Spieler mit Exorzismus-Rollen. Aus: das Tempo des Spiels.",
                   "tr":"Oyun aynı becerinin iki okuması arasında yaklaşık bir gün bekletir; bot bir beceriyi M1'den G1'e çıkarmak için bir ay kitap okur ve kitaplar bu arada çantada birikir. Açık: bot yarım saat sonra tekrar okur, Ayin Parşömeni kullanan bir oyuncu gibi. Kapalı: oyunun kendi temposu."},
  "ai_books_on":  {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
+ "ai_night":     {"en":"Night on the server","pl":"Noc na serwerze","de":"Nacht auf dem Server","tr":"Sunucuda gece"},
+ "ai_night_help":{"en":"Between 22:00 and 05:59 of the server's clock (M2_TZ) the core raises the night flag - the same one a GM sets with /xmas_snow 1 - and lowers it in the morning. The client shows the night sky and, as the flag is the Christmas one, snow.",
+                  "pl":"Między 22:00 a 05:59 czasu serwera (M2_TZ) rdzeń podnosi flagę nocy - tę samą, którą GM ustawia komendą /xmas_snow 1 - a rano ją opuszcza. Klient pokazuje nocne niebo i, bo to flaga świąteczna, śnieg.",
+                  "de":"Zwischen 22:00 und 05:59 Serverzeit (M2_TZ) setzt der Kern die Nacht-Flagge - dieselbe, die ein GM mit /xmas_snow 1 setzt - und nimmt sie morgens zurück. Der Client zeigt den Nachthimmel und, weil es die Weihnachtsflagge ist, Schnee.",
+                  "tr":"Sunucu saatine göre (M2_TZ) 22:00-05:59 arasında çekirdek gece bayrağını kaldırır - GM'in /xmas_snow 1 ile ayarladığı bayrağın aynısı - ve sabah indirir. İstemci gece gökyüzünü ve, bayrak Noel bayrağı olduğu için, kar gösterir."},
+ "ai_night_on":  {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
  "ai_scrap":     {"en":"Scrap keepers","pl":"Boty złomiarze","de":"Schrotthändler-Bots","tr":"Hurdacı botlar"},
  "ai_scrap_help":{"en":"The share of stall keepers that put their low refines (+0 to +3) on the counter, cheaply, instead of vendoring them - fodder for burning at the blacksmith, the way the hard servers play. Off by default.",
                   "pl":"Udział straganiarzy, którzy wystawiają na ladę swoje słabe ulepszenia (+0 do +3) za grosze zamiast sprzedawać je NPC - złom do palenia u kowala, jak na serwerach hard. Domyślnie wyłączone.",
@@ -4273,6 +4286,11 @@ TPL_AI = BASE.replace("__BODY__", """
   <h3 style="margin:0 0 2px">📚 {{t('ai_books')}}</h3>
   <p class="muted" style="margin:0 0 6px">{{t('ai_books_help')}}</p>
   <label><input type="checkbox" name="BOOKS" value="1" {% if cur.get('BOOKS', 1) %}checked{% endif %}> {{t('ai_books_on')}}</label>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">🌙 {{t('ai_night')}}</h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_night_help')}}</p>
+  <label><input type="checkbox" name="NIGHT" value="1" {% if cur.get('NIGHT', 1) %}checked{% endif %}> {{t('ai_night_on')}}</label>
 </div>
 <div style="margin-bottom:18px">
   <h3 style="margin:0 0 2px">♻️ {{t('ai_scrap')}}
@@ -8852,6 +8870,7 @@ def ai_weights():
             vals[name] = max(AI_W_MIN, min(AI_W_MAX, v))
         vals["CHAT"] = 1 if request.form.get("CHAT") else 0
         vals["BOOKS"] = 1 if request.form.get("BOOKS") else 0
+        vals["NIGHT"] = 1 if request.form.get("NIGHT") else 0
         try:
             vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
         except (TypeError, ValueError):

@@ -104,9 +104,9 @@ namespace
 		long approachX = 0, approachY = 0;
 		GetPlayerBotNpcApproach(ch->GetPlayerID(), stableX, stableY,
 				inM2 ? 0x4d324853U : 0x484f5253U, approachX, approachY);
-		if (DISTANCE_APPROX(ch->GetX() - approachX, ch->GetY() - approachY) > 650)
+		if (DISTANCE_APPROX(ch->GetX() - approachX, ch->GetY() - approachY) > PLAYERBOT_STABLE_ARRIVE_DISTANCE)
 		{
-			if (!MovePlayerBot(ch, approachX, approachY, dwNow, 20, true, true) &&
+			if (!MovePlayerBot(ch, approachX, approachY, dwNow, PLAYERBOT_STABLE_SNAP_CELLS, true, true) &&
 					state.bStuckCounter >= 6)
 			{
 				state.bVisitingStable = false;

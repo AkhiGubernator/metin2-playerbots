@@ -17,6 +17,57 @@ every version here.
 
 ---
 
+## 1.31.3 — 2026-09-09
+
+### Łucznik kontra Metin
+
+- **Łucznik bije kamienie Metin sztyletem albo mieczem, nie łukiem** (Kuszaa,
+  „Archer vs metin”: łucznik przewracał się przy kamieniu kilka razy i
+  odpuszczał). Kamień nie rusza się z miejsca, strzały się kończą, a strzał z
+  łuku to ułamek uderzenia wręcz. Łucznik trzyma teraz w torbie jedną broń na
+  kamienie — sztylet przed mieczem, bo jest szybszy i tańszy; miecz tylko
+  gdy sztyletu brak — dobiera ją, gdy celem jest Metin, i wraca do łuku,
+  gdy kamień pęknie. Bez łuku w ręce nie
+  rzuca umiejętności (silnik liczy je ze strzały: bez łuku dają 0), tylko
+  zwykłe ciosy. Kupiec broni sprzedaje mu sztylet na jego poziom, gdy w
+  torbie nie ma żadnego; ani stragan, ani sprzedawca tej broni nie zabierają.
+  Panel klasyczny: pod znacznikami `PLAYERBOT_GEAR: archer draws the stone
+  weapon` / `takes the bow back` w logu.
+
+### Boty przy bramie do Joan w Bokjung
+
+- **Boty nie kotłują się już przy bramie do Joan** (Kuszaa, nagranie z
+  1.31.1: boty ze statusem „Ide na Gore Sohan”, „Ide do Lochu Malp”, „Ide do
+  kowala” dojeżdżają do bramy, zsiadają z konia, po chwili wsiadają i
+  odjeżdżają, a po kilku minutach wracają). Diagnostyka na naszym serwerze:
+  152 ze 160 marszów pod tę bramę w dziesięć minut to targ — bot bez
+  straganu w zasięgu miał „najpierw zajrzeć do Joan”, ale pass targu prosił
+  o portal raz na dwie–pięć minut, więc trasę do bramy dokańczały zwykłe
+  passy ruchu, a przy samej bramie nikt już o przejście nie prosił; bot
+  oddawał tick wędrówce i odjeżdżał, a po następnym pytaniu targu wracał.
+  Teraz marsz na targ w Joan jest zobowiązaniem: bot prosi o portal co tick,
+  aż zmieni mapę, a bot, którego miejsce jest na pograniczu (albo którego
+  wyjazd wstrzymał sprawunek), w ogóle tam nie idzie — kupuje w zasięgu w
+  Bokjung. Do tego passy, które tylko kontynuują trasę do portalu, nie
+  zsiadają już z konia kilometr przed bramą.
+
+### Bot bez yangów na Teleporter
+
+- **Bot, którego nie stać na Teleporter, poluje w Bokjung na opłatę, zamiast
+  pytać Teleportera co tick.** Pomiar u nas: 268 z 362 botów 40+ w Bokjung
+  miało mniej yangów niż jedna opłata (najbiedniejszy 79), a Teleporter
+  odpowiadał odmową 26 000 razy na minutę — bo odczekanie z 1.30.42 ustawiało
+  zegar, którego gałąź wyjazdu na pogranicze nigdy nie czytała, a powyżej
+  pułapu Bokjung bot nie miał prawa polować, więc nie miał z czego zapłacić.
+  Teraz: (1) po odmowie bot naprawdę czeka pięć minut; (2) bot bez opłaty
+  nie idzie do Teleportera, tylko poluje w Bokjung, aż uzbiera trzy opłaty
+  (status „Zbieram yang na Teleporter”); (3) kowal, zmiana bonusów, targ,
+  reset umiejętności i Zwój Zapomnienia zostawiają w sakiewce trzy opłaty
+  dla bota, którego łowisko leży za Teleporterem — to wydawanie wszystkiego u
+  kowala po powrocie z pogranicza robiło z botów nędzarzy.
+
+---
+
 ## 1.31.2 — 2026-09-09
 
 ### Panel zaawansowany

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T20:32:00Z",
-  "statusMessage": "Aktualizacja 1.31.2. Panel zaawansowany 1.40.0 (motywy, portrety klas, flagi krolestw), poprawiony opis czytania ksiag.",
+  "publishedAt": "2026-09-09T21:33:00Z",
+  "statusMessage": "Aktualizacja 1.31.3. Lucznik bije Metiny sztyletem, bot bez yangow na Teleporter poluje w Bokjung na oplate zamiast pytac go co tick.",
   "server": {
-    "version": "1.31.2",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.2/metin2-server-update-1.31.2.zip",
-    "sha256": "1510D738CA2C112780836C4494EDFDD8CA2896A0BB700B7F221C830E9A9A9C81"
+    "version": "1.31.3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.3/metin2-server-update-1.31.3.zip",
+    "sha256": "520EF675A64DD07D41C188566BDAC5A07D6A468522FF9082B3F5D2F4663C7F6E"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

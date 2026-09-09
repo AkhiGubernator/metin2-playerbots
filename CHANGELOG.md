@@ -17,6 +17,66 @@ every version here.
 
 ---
 
+## 1.30.32 — 2026-09-09
+
+### Z kanału propozycji
+
+- **Przejrzyste nazwy sklepów (Xewi, Mat).** Szyld mówi, jaki to sklep,
+  zamiast wypisywać nazwę pierwszego przedmiotu. Stragan, na którym
+  większość to księgi, nazywa się np. „Ksiegi umiejetnosci”, „KU dla kazdej
+  klasy”, „Biblioteka - ksiegi”; z przewagą materiałów — „Ulepki z M1/M2”,
+  „Materialy do kowala”, „Skory, zeby i kly”; mieszany — jeden z ośmiu
+  okrzyków targowych losowanych po bocie: „Zobacz kotku co mam w srodku”,
+  „Zaczynam gre, kup cos”, „<nazwa> - najnizsze ceny”, „Wszystko za grosze”,
+  „Tanio jak barszcz”… Szyldy z nazwą przedmiotu zostają tam, gdzie po ten
+  przedmiot idzie się przez cały rynek: broń na 30 poziom, wysokie ulepszenie.
+
+- **Nadmiar okazów biologa na stragan (Xewi, Oskar).** Okaz, którego
+  zadanie bot już oddał, przestaje być „postępem zadania” i staje się
+  towarem — kwiaty, korzenie, bez, grzyby idą na ladę. Zęby orka to także
+  materiał do ulepszania, więc — jak zauważył Oskar — trafiają na rynek
+  przez zwykłą regułę materiałów i księgę popytu, a nie pod biologa.
+  Kamień duszy nigdy nie jest nadmiarem (klucz do drugiej połowy zadania).
+
+- **Wyprzedaż biednego bota (Oskar, dziewięć głosów).** Bot od 20 poziomu,
+  którego nie stać na wyprawę po mikstury (300 czerwonych i 200
+  niebieskich po cenach handlarki — ok. 12 tys. yang, od 40 lv ok. 25 tys.),
+  otwiera stragan niezależnie od losu osobowości, nawet z jedną linią, po
+  70% ceny wywoławczej, pod szyldem „Wyprzedaz: …”. W danej godzinie robi
+  to jedna czwarta takich botów (losowanie po bocie), więc rynek nie
+  zamienia się w tłum biedaków — pierwsza wersja z progiem 30 tys. yang
+  postawiła 36 botów 16–19 lv na ringu w Joan w pierwszej minucie.
+  Zniżka jest nakładana po wycenie, więc pamięć sprzedaży dalej uczy się
+  cen rynku, nie wyprzedaży.
+
+### Naprawione
+
+- **„Za dużo botów kręci się w strefie bezpiecznej” (Dixdros).** Stragan
+  w panelu opisywał się „Planuje: poziom” — dla operatora to wyglądało jak
+  bezczynny tłum na placu; w świecie bot i tak nosi szyld. Status mówi
+  teraz „Prowadze stragan”. Reszta tłumu w Joan to wędkarze, zakupy,
+  biolog — z celem, nie bez.
+
+- **„Boty na 9–10 lv biją psy, na 19–20 wilki” (DavidS).** 32 huby
+  łowieckie Joan były losowane po numerze bota, bez patrzenia na poziom:
+  bot na dziesiątce trafiał do tygrysów na południowym wschodzie, a bot
+  na dwudziestce do psów na wschodzie. Zmierzono medianę poziomu potworów
+  w promieniu 2500 j. od każdego huba (regen.txt przez group.txt i
+  group_group.txt, poziomy z mob_proto — od 1 do 21) i bot wybiera hub,
+  którego pasmo (mediana −2 … +7) mieści jego poziom; numer bota dalej
+  rozrzuca populację po hubach z pasma. To samo dla ośmiu obozów grup.
+
+### Nie w tym wydaniu
+
+- **Noc na serwerze 22–5:59 (Oskar).** To ustawienie klienta (środowisko
+  mapy), nie serwera ani botów — Oskar wprowadził je u siebie po stronie
+  klienta. Serwer nie ma czego przełączyć; paczka klienta to osobny temat.
+- Suwak respawnów spotów/metinów/bossów (U4NT) — wymaga helpera
+  gry z integracji Sebana; grupy z botami, PvP, królestwa (dixdros,
+  Remigiusz) — zanotowane na później.
+
+---
+
 ## 1.30.31 — 2026-09-09
 
 ### Naprawione

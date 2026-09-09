@@ -53,6 +53,20 @@ namespace
 
 	// The Orc Tooth quest has a second half: the teeth are in, and the quest
 	// waits in key_item for Jinunggyi's Soul Stone from the Elite Orcs.
+	// A specimen the bot has no mission left for: the row that wants it is
+	// handed in. Those used to stay in the bag for good ("niech dadza sklepik
+	// z zebami jesli maja nadmiar"); now they are goods. The soul stone is
+	// never surplus - it is the key to the second half of the Orc Tooth row.
+	bool IsPlayerBotBiologistSpecimenSurplus(LPCHARACTER ch, DWORD vnum)
+	{
+		if (!ch || vnum == PLAYERBOT_JINUNGGYI_STONE_VNUM)
+			return false;
+		for (size_t i = 0; i < PLAYERBOT_BIOLOGIST_MISSION_COUNT; ++i)
+			if (PLAYERBOT_BIOLOGIST_MISSIONS[i].itemVnum == vnum)
+				return IsPlayerBotBiologistMissionComplete(ch, i);
+		return false;
+	}
+
 	bool IsPlayerBotBiologistKeyPhase(LPCHARACTER ch, size_t missionIndex)
 	{
 		if (!ch || missionIndex != PLAYERBOT_BIOLOGIST_ORC_TOOTH_INDEX)

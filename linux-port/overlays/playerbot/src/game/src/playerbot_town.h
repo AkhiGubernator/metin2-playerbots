@@ -451,10 +451,29 @@ namespace
 		return IsPlayerBotMerchant(state) || IsPlayerBotDropper(state.bPersonality);
 	}
 
+	// Too poor for its own potions: see PLAYERBOT_SHOP_POOR_MIN_LEVEL.
+	bool IsPlayerBotPoorKeeper(LPCHARACTER ch)
+	{
+		if (!ch || ch->GetLevel() < PLAYERBOT_SHOP_POOR_MIN_LEVEL)
+			return false;
+		const bool bBig = ch->GetLevel() >= PLAYERBOT_BIG_POTION_MIN_LEVEL;
+		const int tripCost = PLAYERBOT_POTION_TRIP_RED * (bBig ? 40 : 20) +
+				PLAYERBOT_POTION_TRIP_BLUE * (bBig ? 64 : 32);
+		if (ch->GetGold() >= tripCost)
+			return false;
+		return PlayerBotNavHash(ch->GetPlayerID() ^
+				(DWORD)(get_dword_time() / PLAYERBOT_SHOP_POOR_ROTATION_MS) ^ 0x504f4f52U) %
+				PLAYERBOT_SHOP_POOR_ROTATION_SHARE == 0;
+	}
+
 	bool ShouldPlayerBotKeepShop(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
 		if (!ch || ch->GetLevel() < PLAYERBOT_SHOP_MIN_LEVEL)
 			return false;
+		// A bot that cannot afford its potions sells what it has, whatever its
+		// personality rolled.
+		if (IsPlayerBotPoorKeeper(ch))
+			return true;
 		// A trader always has the stall open when it can. For everyone else it
 		// stays what it was: an occasional thing one bot in ten does with a spare.
 		if (IsPlayerBotMerchant(state))
@@ -857,6 +876,11 @@ namespace
 		// is a gamble somebody might want, not a thing anybody came for.
 		if (IsPlayerBotSurplusChest(item))
 			return 350;
+		// A specimen of a mission already handed in. The Orc Tooth never gets
+		// here: it is a refine material and the material branch above priced
+		// it, ledger and all.
+		if (IsPlayerBotBiologistSpecimenSurplus(ch, item->GetVnum()))
+			return PLAYERBOT_SHOP_SPECIMEN_SCORE;
 
 		// Whatever is left is the bot's own business, not goods. A stall with two
 		// things worth buying beats one padded out to eight.
@@ -944,11 +968,12 @@ namespace
 	// it - a level-30 weapon, a big bonus roll, anything at +6, a horse medal.
 	// The caller passes the best score it has, because that is exactly what
 	// ScorePlayerBotShopStock spent its time working out.
-	bool IsPlayerBotStallWorthOpening(size_t lines, int bestScore)
+	bool IsPlayerBotStallWorthOpening(size_t lines, int bestScore, bool poor = false)
 	{
 		if (lines == 0)
 			return false;
-		return lines >= PLAYERBOT_SHOP_MIN_ITEMS ||
+		// A clearance sale is worth a sign with one line on it.
+		return poor || lines >= PLAYERBOT_SHOP_MIN_ITEMS ||
 				bestScore >= PLAYERBOT_SHOP_PRIZE_SCORE;
 	}
 
@@ -986,8 +1011,9 @@ namespace
 			// Biologist specimens stay: they are quest progress, not goods. Horse
 			// medals used to be excluded here as well, which meant nobody could
 			// ever buy one; whether they are for sale is now the scoring's call.
-			if ((vnum >= 50701 && vnum <= 50706) || vnum == PLAYERBOT_ORC_TOOTH_VNUM ||
-					vnum == PLAYERBOT_JINUNGGYI_STONE_VNUM)
+			if (((vnum >= 50701 && vnum <= 50706) || vnum == PLAYERBOT_ORC_TOOTH_VNUM ||
+					vnum == PLAYERBOT_JINUNGGYI_STONE_VNUM) &&
+					!IsPlayerBotBiologistSpecimenSurplus(ch, vnum))
 				continue;
 			// Spare gear is the most interesting thing a stall can offer, but the
 			// bot must never put up the only weapon or armour it owns for a slot
@@ -1428,7 +1454,7 @@ namespace
 			std::vector<std::pair<int, WORD> > worthTaking;
 			CollectPlayerBotShopItems(ch, worthTaking, IsPlayerBotStallKeeper(state));
 			if (!IsPlayerBotStallWorthOpening(worthTaking.size(),
-					worthTaking.empty() ? 0 : worthTaking[0].first))
+					worthTaking.empty() ? 0 : worthTaking[0].first, IsPlayerBotPoorKeeper(ch)))
 				return false;
 			PlayerBotLogThrottled("stall_overflow", dwNow,
 					"PLAYERBOT_SHOP: Bokjung full, taking the stall to Joan pid=%u name=%s stalls=%d lines=%u",
@@ -1462,7 +1488,7 @@ namespace
 			CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state));
 		}
 		if (!IsPlayerBotStallWorthOpening(scored.size(),
-				scored.empty() ? 0 : scored[0].first))
+				scored.empty() ? 0 : scored[0].first, IsPlayerBotPoorKeeper(ch)))
 		{
 			// Nothing worth a stall right now; look again after a hunt rather than
 			// re-scanning the whole inventory every tick. A bot that is merely a
@@ -1508,6 +1534,8 @@ namespace
 		// scan above and this point - a town errand happens in between.
 		TShopItemTable table[PLAYERBOT_SHOP_MERCHANT_ITEMS];
 		memset(table, 0, sizeof(table));
+		// Decided once, here: the prices below and the sign both read it.
+		const bool bPoor = IsPlayerBotPoorKeeper(ch);
 		std::vector<TPlayerBotShopOffer> offers;
 		const BYTE tableLimit = IsPlayerBotStallKeeper(state)
 				? PLAYERBOT_SHOP_MERCHANT_ITEMS : PLAYERBOT_SHOP_MAX_ITEMS;
@@ -1543,7 +1571,11 @@ namespace
 			if (slot < 0)
 				continue;
 			PutPlayerBotShopSlot(grid, slot, height);
-			const DWORD price = GetPlayerBotShopAskingPrice(item);
+			DWORD price = GetPlayerBotShopAskingPrice(item);
+			// The clearance discount. Applied to the price as asked, so the sale
+			// memory still learns the real price the market would have paid.
+			if (bPoor)
+				price = std::max<DWORD>(1, price * PLAYERBOT_SHOP_POOR_DISCOUNT_PERCENT / 100);
 			table[tableCount].vnum = item->GetVnum();
 			table[tableCount].count = item->GetCount();
 			table[tableCount].pos = TItemPos(INVENTORY, cell);
@@ -1594,7 +1626,7 @@ namespace
 		// moves between the two - a town errand happens in between - and a stall
 		// that loses two of its three lines on the way to the pitch should stay
 		// packed up rather than open with what is left.
-		if (!IsPlayerBotStallWorthOpening(tableCount, bestScore))
+		if (!IsPlayerBotStallWorthOpening(tableCount, bestScore, bPoor))
 		{
 			state.dwNextShopKeepTime = dwNow + (tableCount == 0
 					? number(300000, 600000) : number(120000, 240000));
@@ -1608,25 +1640,61 @@ namespace
 		// is; a short prefix by pid keeps neighbours from matching word for word.
 		char sign[SHOP_SIGN_MAX_LEN + 1];
 		{
+			// Named for what is on the counter, in words a player reads at a
+			// glance - "przejrzyste nazwy sklepow", the Discord's request. A
+			// counter that is mostly books is a bookshop and says so; mostly
+			// materials, a smith's supplier; a mixed one takes a market cry
+			// drawn by pid ("zobacz kotku co mam w srodku, aka 2009 gameplay").
+			// The item-name signs stay for the goods people cross a market for:
+			// a level-30 weapon, a big refine. A poor keeper's counter is a
+			// clearance sale and the sign says that first.
+			const DWORD draw = PlayerBotNavHash(ch->GetPlayerID() ^ 0x5349474eU);
 			static const char* const s_apszPrefixes[] = { "", "Tanio: ", "Okazja: ", "Sprzedam " };
-			const char* pszPrefix = s_apszPrefixes[(ch->GetPlayerID() * 2654435761U >> 8) % 4U];
+			static const char* const s_apszBookShops[] = {
+				"Ksiegi umiejetnosci", "KU dla kazdej klasy", "Biblioteka - ksiegi", "Ksiegi: %s i inne" };
+			static const char* const s_apszMaterialShops[] = {
+				"Ulepki z %s", "Materialy do kowala", "Skory, zeby i kly", "Ulepszacze, tanio" };
+			static const char* const s_apszMarketCries[] = {
+				"Zobacz kotku co mam w srodku", "Zaczynam gre, kup cos", "%s - najnizsze ceny",
+				"Wszystko za grosze", "Tanio jak barszcz", "Rozne rozczne, zapraszam",
+				"Czego szukasz, to mam", "Sprzedam, bez targow" };
+			const char* pszPrefix = bPoor ? "Wyprzedaz: "
+					: s_apszPrefixes[(ch->GetPlayerID() * 2654435761U >> 8) % 4U];
 			char body[SHOP_SIGN_MAX_LEN * 2 + 1];
+			const char* pszTemplate = NULL;
+			const char* pszArg = "";
 			if (pszWeapon30)
 				snprintf(body, sizeof(body), "Bron 30: %s", pszWeapon30);
 			else if (pszPrecious)
 				snprintf(body, sizeof(body), "%s", pszPrecious); // the name carries its +N
-			else if (iMaterials >= 2)
-				snprintf(body, sizeof(body), "%s, %s", apszMaterials[0], apszMaterials[1]);
-			else if (iBooks > 1 && iBooks >= tableCount / 2)
-				snprintf(body, sizeof(body), "Ksiegi: %s i inne", pszBook);
-			else if (iBooks == 1 && tableCount == 1)
-				snprintf(body, sizeof(body), "Ksiega: %s", pszBook);
-			else if (iScrap > 0 && iScrap >= tableCount / 2)
+			else if (iBooks > 0 && iBooks * 2 >= (int)tableCount)
+			{
+				pszTemplate = s_apszBookShops[draw % 4U];
+				pszArg = pszBook ? pszBook : "";
+			}
+			else if (iMaterials > 0 && iMaterials * 2 >= (int)tableCount)
+			{
+				pszTemplate = s_apszMaterialShops[draw % 4U];
+				pszArg = ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 ? "M1" : "M2";
+			}
+			else if (iScrap > 0 && iScrap >= (int)tableCount / 2)
 				snprintf(body, sizeof(body), "Zlom do palenia +0..+3");
-			else if (pszBestName && tableCount > 1)
+			else if (pszBestName && tableCount > 1 && (draw & 8U) != 0)
 				snprintf(body, sizeof(body), "%s i inne", pszBestName);
+			else if (tableCount > 1)
+			{
+				pszTemplate = s_apszMarketCries[draw % 8U];
+				pszArg = ch->GetName();
+			}
 			else
 				snprintf(body, sizeof(body), "%s", pszBestName ? pszBestName : ch->GetName());
+			if (pszTemplate)
+			{
+				if (strstr(pszTemplate, "%s"))
+					snprintf(body, sizeof(body), pszTemplate, pszArg);
+				else
+					snprintf(body, sizeof(body), "%s", pszTemplate);
+			}
 			// The prefix goes only where the whole line still fits: the goods are
 			// the point, the flourish is not.
 			if (strlen(pszPrefix) + strlen(body) <= SHOP_SIGN_MAX_LEN)

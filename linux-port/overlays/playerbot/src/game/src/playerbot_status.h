@@ -439,6 +439,12 @@ namespace
 								prefix, goal);
 				}
 				break;
+			case BOT_ACTION_STALL:
+				// The head carries the sign in the world; the panel read
+				// "Planuje: poziom" for a keeper at its counter and an operator
+				// counted thirty-nine idle bots in the Joan square.
+				snprintf(status, statusSize, "%sProwadze stragan", prefix);
+				break;
 			default:
 				snprintf(status, statusSize, "%sPlanuje: %s", prefix, goal);
 				break;

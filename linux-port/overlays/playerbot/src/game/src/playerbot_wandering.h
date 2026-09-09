@@ -305,6 +305,16 @@ namespace
 		return bFound;
 	}
 
+	// Whether a Joan hub whose monsters sit at mobLevel is ground for a bot of
+	// this level: the target scorer's sweet spot is a monster within -2..+5
+	// of the bot, so a hub is taken from two levels under its median up to
+	// seven over it. Above the map's top band every hub of the top band is
+	// open, and the frontier gates take the bot off the map soon anyway.
+	bool IsPlayerBotM1HubForLevel(int botLevel, int mobLevel)
+	{
+		return botLevel >= mobLevel - 2 && botLevel <= mobLevel + 7;
+	}
+
 	void ManagePlayerBotWandering(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow);
 
 	// A frontier map is worked, not squatted on.
@@ -505,18 +515,30 @@ namespace
 			{
 				// Centres of group-spawn rectangles from metin2_map_b1/regen.txt.
 				// The final point is still validated and snapped through server_attr.
-				const struct { long x; long y; } partyCamps[8] = {
-					{ 39000, 200200 }, // South-West White Oath Camp
-					{ 37000, 168400 }, // West White Oath Camp
-					{ 84600, 197500 }, // South-East Bear / Tiger Camp
-					{ 61000, 203600 }, // South Dense Boar / Wolf Plains
-					{ 80300, 135700 }, // North-East Plateau Camp
-					{ 61600, 133500 }, // North Meadow Camp
-					{ 35000, 135500 }, // North-West Lykos Territory
-					{ 85800, 169700 }  // East Cursed Beast Camp
+				// The third number is the median monster level within 2500
+				// units, measured from regen.txt through group.txt: a camp is
+				// picked among those whose band holds the bot's level, so a
+				// level-twenty party is not sent to the East beasts of three.
+				const struct { long x; long y; int mobLevel; } partyCamps[8] = {
+					{ 39000, 200200, 9 },  // South-West White Oath Camp
+					{ 37000, 168400, 10 }, // West White Oath Camp
+					{ 84600, 197500, 12 }, // South-East Bear / Tiger Camp
+					{ 61000, 203600, 6 },  // South Dense Boar / Wolf Plains
+					{ 80300, 135700, 9 },  // North-East Plateau Camp
+					{ 61600, 133500, 12 }, // North Meadow Camp
+					{ 35000, 135500, 21 }, // North-West Lykos Territory
+					{ 85800, 169700, 3 }   // East Cursed Beast Camp
 				};
+				int campChoices[8];
+				int campCount = 0;
+				for (int c = 0; c < 8; ++c)
+					if (IsPlayerBotM1HubForLevel(ch->GetLevel(), partyCamps[c].mobLevel))
+						campChoices[campCount++] = c;
+				if (campCount == 0)
+					for (int c = 0; c < 8; ++c)
+						campChoices[campCount++] = c;
 
-				int campIdx = ((pid / 4) + state.uMetinHotspotIndex) % 8;
+				int campIdx = campChoices[((pid / 4) + state.uMetinHotspotIndex) % campCount];
 				long cx = partyCamps[campIdx].x;
 				long cy = partyCamps[campIdx].y;
 				long campOffsetX = 0, campOffsetY = 0;
@@ -545,26 +567,44 @@ namespace
 				// Each hub is the centre of a real group-spawn rectangle from
 				// regen.txt, rather than a guessed coordinate.  Rectangle centres
 				// still pass through the live attr/same-component validation.
-				const struct { long x; long y; } hubs[32] = {
+				// Each hub is the centre of a real group-spawn rectangle from
+				// regen.txt, rather than a guessed coordinate, and the third
+				// number is the median monster level within 2500 units of it
+				// (regen.txt through group.txt and group_group.txt, mob_proto
+				// for the levels). The choice used to be by pid alone, so a bot
+				// of ten hunted the tigers of the South-East and a bot of twenty
+				// the dogs of the East - "boty bija na 9/10 lvlach nadal psy,
+				// kolo 19/20 wciaz bija wilki". A bot picks among the hubs whose
+				// band holds its level; the pid still spreads the population
+				// over them. Rectangle centres still pass through the live
+				// attr/same-component validation.
+				const struct { long x; long y; int mobLevel; } hubs[32] = {
 					// 1. North Quadrant (Meadows & North Road)
-					{ 61600, 133500 }, { 55600, 135200 }, { 70600, 135800 }, { 59500, 123600 },
+					{ 61600, 133500, 12 }, { 55600, 135200, 12 }, { 70600, 135800, 9 }, { 59500, 123600, 18 },
 					// 2. North-East Quadrant (Plateaus & Hills)
-					{ 80300, 135700 }, { 83500, 130000 }, { 75500, 143600 }, { 87200, 147300 },
+					{ 80300, 135700, 9 }, { 83500, 130000, 12 }, { 75500, 143600, 6 }, { 87200, 147300, 12 },
 					// 3. East Quadrant (Cursed Animals & Tigers)
-					{ 85800, 169700 }, { 80300, 165800 }, { 88600, 162800 }, { 82900, 178300 },
+					{ 85800, 169700, 3 }, { 80300, 165800, 1 }, { 88600, 162800, 9 }, { 82900, 178300, 3 },
 					// 4. South-East Quadrant (Brown Bears & Tiger Groves)
-					{ 84600, 197500 }, { 78300, 191000 }, { 89800, 195300 }, { 86700, 209800 },
+					{ 84600, 197500, 12 }, { 78300, 191000, 3 }, { 89800, 195300, 12 }, { 86700, 209800, 20 },
 					// 5. South Quadrant (Wild Boars, Grey Wolves, Tigers)
-					{ 61000, 203600 }, { 52700, 194700 }, { 67400, 194700 }, { 61100, 214300 },
+					{ 61000, 203600, 6 }, { 52700, 194700, 4 }, { 67400, 194700, 3 }, { 61100, 214300, 21 },
 					// 6. South-West Quadrant (White Oath Camps & Black Bears)
-					{ 39000, 200200 }, { 29900, 196400 }, { 46200, 206200 }, { 33500, 209800 },
+					{ 39000, 200200, 9 }, { 29900, 196400, 16 }, { 46200, 206200, 10 }, { 33500, 209800, 18 },
 					// 7. West Quadrant (Valley of Mi-Jung, White Oath)
-					{ 37000, 168400 }, { 30200, 164500 }, { 44700, 165800 }, { 32600, 178200 },
+					{ 37000, 168400, 10 }, { 30200, 164500, 12 }, { 44700, 165800, 3 }, { 32600, 178200, 12 },
 					// 8. North-West Quadrant (Lykos territory, Cursed Wolves)
-					{ 35000, 135500 }, { 40600, 145000 }, { 28500, 146900 }, { 42100, 129300 }
+					{ 35000, 135500, 21 }, { 40600, 145000, 9 }, { 28500, 146900, 12 }, { 42100, 129300, 18 }
 				};
-
-				int hubIdx = ((pid / 2) + state.uMetinHotspotIndex) % 32;
+				int hubChoices[32];
+				int hubCount = 0;
+				for (int h = 0; h < 32; ++h)
+					if (IsPlayerBotM1HubForLevel(ch->GetLevel(), hubs[h].mobLevel))
+						hubChoices[hubCount++] = h;
+				if (hubCount == 0)
+					for (int h = 0; h < 32; ++h)
+						hubChoices[hubCount++] = h;
+				int hubIdx = hubChoices[((pid / 2) + state.uMetinHotspotIndex) % hubCount];
 				long hubX = hubs[hubIdx].x;
 				long hubY = hubs[hubIdx].y;
 				long hubOffsetX = 0, hubOffsetY = 0;

@@ -947,6 +947,35 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   minutes circling the spawns behind other bots before the Teleporter.
   It asks `IsPlayerBotGrindAllowedHere` and `lDepartureMap` first now.
 
+- **A sign says what kind of counter it is.** Mostly books is a bookshop,
+  mostly materials a smith's supplier, a mixed counter takes a market cry
+  drawn by pid (`s_apszMarketCries`, "zobacz kotku co mam w srodku");
+  the item-name signs stay for the goods people cross a market for. A
+  poor keeper - under `PLAYERBOT_SHOP_POOR_GOLD` - opens with one line,
+  at `PLAYERBOT_SHOP_POOR_DISCOUNT_PERCENT` of the asking price, under a
+  "Wyprzedaz:" prefix; the discount is applied after the price is asked so
+  the sale memory keeps learning the market's price, not the sale's.
+- **A specimen is quest progress until its row is handed in, then goods.**
+  `IsPlayerBotBiologistSpecimenSurplus` in `playerbot_missions.h`; the
+  stall collector and the scorer both ask it. The Orc Tooth is also a refine
+  material and takes the material branch and the ledger - the market, not
+  the Biologist's doorstep, which is where the Discord wanted the surplus
+  and where the buyers are. The soul stone is never surplus.
+
+- **Joan's hubs are banded by measured monster level.** The 32 grinder hubs
+  and 8 party camps in `playerbot_wandering.h` were picked by pid alone, so
+  a bot of ten hunted tigers and a bot of twenty hunted dogs ("boty bija na
+  9/10 lvlach nadal psy"). Each carries the median monster level within
+  2500 units, measured from `regen.txt` through `group.txt` and
+  `group_group.txt` with `mob_proto` levels (the parser shapes in "Engine
+  facts" apply); `IsPlayerBotM1HubForLevel` admits a hub from two under its
+  median to seven over, and the pid spreads the bot over the admitted ones.
+  Re-measure before moving a hub; do not guess a band.
+- **A keeper's status is "Prowadze stragan", never "Planuje: poziom".** The
+  overhead sign is what the world sees, but `playerbot_status.tsv` is what
+  the panel and an operator see, and thirty-nine keepers at the Joan ring
+  read as thirty-nine idle bots in the safe zone.
+
 - **The market is a ledger, not a shelf.** `RefreshPlayerBotMarketLedger`
   (`playerbot_market.h`, once a minute from the tick) counts the units on
   every open counter and the bots short of each material with money to buy

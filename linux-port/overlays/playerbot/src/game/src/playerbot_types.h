@@ -364,6 +364,27 @@ namespace
 	// weapon, anything at +6, a big bonus roll, a horse medal - a material never
 	// scores that high.
 	const size_t PLAYERBOT_SHOP_MIN_ITEMS = 3;
+	// A bot that cannot afford its potions sells what it has, at a discount,
+	// with one line if that is all it has - "wystawianie sklepu przez bota
+	// jak ma malo yang", nine votes on the Discord. Below this much gold the
+	// stall gate opens for anybody, and the asking prices come down.
+	// "Too poor" is measured against what a potion trip costs at the bot's
+	// level (PLAYERBOT_POTION_TRIP_RED/BLUE at the merchant's unit prices),
+	// not a flat number: a flat thirty thousand made every bot under twenty
+	// a keeper, and thirty-six of them stood at the Joan ring at level
+	// seventeen on the first pass - which is what "too many bots wandering
+	// at the safe zone and not levelling" looks like from a player's chair.
+	// Under twenty a bot earns faster by levelling than by selling, and of
+	// the poor only a share is at the ring in any hour, by pid.
+	const BYTE PLAYERBOT_SHOP_POOR_MIN_LEVEL = 20;
+	const DWORD PLAYERBOT_SHOP_POOR_ROTATION_MS = 3600000;
+	const DWORD PLAYERBOT_SHOP_POOR_ROTATION_SHARE = 4;
+	const int PLAYERBOT_SHOP_POOR_DISCOUNT_PERCENT = 70;
+	// A Biologist specimen the bot no longer needs - its mission is handed in
+	// - is goods for the counter, priced like a book. The Orc Tooth is also a
+	// refine material and goes through the material rules and the ledger,
+	// which is the market, not the Biologist's doorstep.
+	const int PLAYERBOT_SHOP_SPECIMEN_SCORE = 350;
 	// Unless that one line is the reason somebody would cross the market: a
 	// level-30 weapon, a horse medal, a big bonus roll, anything at +6 or better.
 	// This is the score at which a single item carries a stall on its own.

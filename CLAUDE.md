@@ -1160,6 +1160,33 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   twenty-one stalls with a few books between them while the roll picked
   one in ten and the books rode round the stones with the other nine.
 
+- **The stall pass runs before the world travel, so what it walks to
+  pre-empts where the bot was going.** With Bokjung's ring full
+  (`PLAYERBOT_SHOP_M2_MAX_STALLS`, seven) it walked every keeper with goods
+  to the M1 portal to open in Joan - harmless while a keeper was one bot
+  in ten, and a loop for hundreds once every bot with six surplus books
+  became one: "a bot that wants Sohan heads for the M1 portal, turns back,
+  circles M2". Only `IsPlayerBotStallKeeper` personalities with no
+  `lDepartureMap` take that walk; everyone else backs off for
+  `PLAYERBOT_SHOP_RING_FULL_RETRY`. A rule that makes more bots eligible
+  for a pass has to be checked against everything that pass does.
+- **A grazed corner is walked, not replanned.** When the bot stands on a
+  cell centre, the next waypoint is a cell centre, the corner after it is
+  not in reach, and the live supercover still calls the segment blocked,
+  no replan will ever answer differently. The third rescue in the
+  blocked-segment branch issues the Goto anyway (`PLAYERBOT_NAV_OUT_FORCED`,
+  "forced through a grazed corner"): the server moves a bot in a straight
+  line with no collision. Consuming the own-cell waypoint (1.30.34) turned
+  the silent stand at these corners into a visible turn-back at the Monkey
+  Dungeon exit; this is the other half of that fix.
+
+- **A rod is not one vnum.** `fishing.cpp` rolls on every catch and turns
+  the rod into its `GetRefinedVnum` - a new item - so `CountSpecifyItem(27400)`
+  said "no rod" to a bot whose Wedka+2 lay in the bag, and it bought one per
+  session until the bag was full of them. `CountPlayerBotRods` counts
+  `ITEM_ROD`; `EquipPlayerBotRod` takes the highest vnum; a rod that another
+  rod matches or beats is junk.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

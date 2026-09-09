@@ -321,6 +321,23 @@ namespace
 	static_assert(PLAYERBOT_FISHING_ARRIVE >= PLAYERBOT_NAV_ARRIVAL_DISTANCE,
 			"an arrival radius below the navigation's own strands the bot short of it");
 
+	// Rods in the bag, whatever their grade. The engine refines a rod as it
+	// is fished with (fishing.cpp: a roll per catch, and the rod becomes its
+	// GetRefinedVnum, a new item), so a bot's Wedka+1 is a Wedka+2 after a
+	// session and CountSpecifyItem(27400) says none: three of five anglers in
+	// Joan had bought rods until the bag was full of them.
+	int CountPlayerBotRods(LPCHARACTER ch)
+	{
+		int rods = 0;
+		for (WORD cell = 0; ch && cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item && item->GetType() == ITEM_ROD)
+				++rods;
+		}
+		return rods;
+	}
+
 	bool EquipPlayerBotRod(LPCHARACTER ch)
 	{
 		if (!ch)
@@ -328,21 +345,25 @@ namespace
 		if (IsPlayerBotHoldingRod(ch))
 			return true;
 
+		// The best rod in the bag: the grades are consecutive vnums, so the
+		// highest vnum is the most refined one.
+		LPITEM best = NULL;
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
-			if (!item || item->GetType() != ITEM_ROD)
-				continue;
-
-			LPITEM worn = ch->GetWear(WEAR_WEAPON);
-			if (worn && !ch->UnequipItem(worn))
-				return false;
-			if (ch->EquipItem(item))
-			{
-				sys_log(0, "PLAYERBOT_FISHING: rod equipped pid=%u name=%s vnum=%u",
-						ch->GetPlayerID(), ch->GetName(), item->GetVnum());
-				return true;
-			}
+			if (item && item->GetType() == ITEM_ROD && (!best || item->GetVnum() > best->GetVnum()))
+				best = item;
+		}
+		if (!best)
+			return false;
+		LPITEM worn = ch->GetWear(WEAR_WEAPON);
+		if (worn && !ch->UnequipItem(worn))
+			return false;
+		if (ch->EquipItem(best))
+		{
+			sys_log(0, "PLAYERBOT_FISHING: rod equipped pid=%u name=%s vnum=%u",
+					ch->GetPlayerID(), ch->GetName(), best->GetVnum());
+			return true;
 		}
 		return false;
 	}
@@ -742,7 +763,7 @@ namespace
 		// and returning the same false for both ended the session of every bot
 		// that was already carrying what it came for.
 		bool refused = false;
-		if (!IsPlayerBotHoldingRod(ch) && ch->CountSpecifyItem(PLAYERBOT_FISHING_ROD_VNUM) <= 0)
+		if (!IsPlayerBotHoldingRod(ch) && CountPlayerBotRods(ch) <= 0)
 		{
 			if (!BuyPlayerBotTackleItem(ch, PLAYERBOT_FISHING_ROD_VNUM, 1, "fishing_rod", dwNow))
 				refused = true;
@@ -847,8 +868,7 @@ namespace
 		// Rod first, then worms: both come from the Rybak, who stands a short walk
 		// upstream of the bank. Running out of bait sends the bot back to him.
 		const bool needsTackle =
-				(!IsPlayerBotHoldingRod(ch) &&
-					ch->CountSpecifyItem(PLAYERBOT_FISHING_ROD_VNUM) <= 0) ||
+				(!IsPlayerBotHoldingRod(ch) && CountPlayerBotRods(ch) <= 0) ||
 				ch->CountSpecifyItem(PLAYERBOT_FISHING_BAIT_VNUM) <
 					PLAYERBOT_FISHING_BAIT_RESTOCK;
 

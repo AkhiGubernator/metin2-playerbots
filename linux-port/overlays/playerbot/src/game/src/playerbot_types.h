@@ -1111,7 +1111,8 @@ namespace
 		PLAYERBOT_NAV_OUT_ALIGNED = 8,      // stepped to the cell centre to clear a corner
 		PLAYERBOT_NAV_OUT_CORNERED = 9,     // skipped a grazed corner waypoint
 		PLAYERBOT_NAV_OUT_ESCAPED = 10,     // stepped off ground nothing can leave
-		PLAYERBOT_NAV_OUT_REFUSED = 11      // Goto itself would not take the order
+		PLAYERBOT_NAV_OUT_REFUSED = 11,     // Goto itself would not take the order
+		PLAYERBOT_NAV_OUT_FORCED = 12       // walked a segment the live world called blocked
 	};
 	const DWORD PLAYERBOT_CROSSING_STONE_CHECK_INTERVAL = 3000;
 	// map_n_snowm_01, base (358400,153600), 153600 square; the town spawn from
@@ -1495,6 +1496,13 @@ namespace
 	// opens there and the other town's market never happens; a cap is what
 	// pushes the overflow somewhere it is worth walking to.
 	const int PLAYERBOT_SHOP_M2_MAX_STALLS = 7;
+	// How long a keeper that found Bokjung's ring full waits before asking
+	// again. Only a merchant or a dropper carries its goods to Joan when the
+	// ring is full; with every bot holding six surplus books a keeper, that
+	// walk pre-empted the world travel of hundreds of bots - "a bot that
+	// wants Sohan heads for the portal to M1, turns back, circles M2 and
+	// tries again" - on the tick before their own travel could run.
+	const DWORD PLAYERBOT_SHOP_RING_FULL_RETRY = 600000;
 	// How long Bokjung's counters are worth a look after Joan had nothing. Long
 	// enough that a bot which crossed for nothing is not sent straight back,
 	// short enough that Joan stays the first stop.

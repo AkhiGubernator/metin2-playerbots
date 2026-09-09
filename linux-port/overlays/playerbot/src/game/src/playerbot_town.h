@@ -1563,6 +1563,15 @@ namespace
 		if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 &&
 				s_iPlayerBotStallsInM2 >= PLAYERBOT_SHOP_M2_MAX_STALLS)
 		{
+			// Only a keeper by personality, and only one with nowhere else to
+			// be. This pass runs ahead of the world travel, so a bot bound for
+			// the frontier was walked to the M1 portal instead - every tick,
+			// for as long as it held six surplus books.
+			if (!IsPlayerBotStallKeeper(state) || state.lDepartureMap != 0)
+			{
+				state.dwNextShopKeepTime = dwNow + PLAYERBOT_SHOP_RING_FULL_RETRY;
+				return false;
+			}
 			std::vector<std::pair<int, WORD> > worthTaking;
 			CollectPlayerBotShopItems(ch, worthTaking, IsPlayerBotStallKeeper(state));
 			if (!IsPlayerBotStallWorthOpening(worthTaking.size(),

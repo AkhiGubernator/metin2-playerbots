@@ -484,7 +484,25 @@ namespace
 		// of a fishing trip -- they are what carries equipment to +7/+8/+9 -- and a
 		// vendored rod would simply have to be bought again for the next session.
 		// Ordinary fish and bones stay sellable: that is the angler's pocket money.
-		if (item->GetType() == ITEM_ROD || vnum == PLAYERBOT_FISHING_BAIT_VNUM ||
+		// One rod is tackle; a second one is scrap. The bots that bought a rod
+		// per session (see CountPlayerBotRods) are carrying fifteen, and the
+		// worst of them go to the merchant: a rod that another rod - worn or in
+		// the bag - matches or beats in grade.
+		if (item->GetType() == ITEM_ROD)
+		{
+			LPITEM worn = ch->GetWear(WEAR_WEAPON);
+			if (worn && worn != item && worn->GetType() == ITEM_ROD && worn->GetVnum() >= vnum)
+				return true;
+			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			{
+				LPITEM other = ch->GetInventoryItem(cell);
+				if (other && other != item && other->GetType() == ITEM_ROD &&
+						(other->GetVnum() > vnum || (other->GetVnum() == vnum && other->GetID() < item->GetID())))
+					return true;
+			}
+			return false;
+		}
+		if (vnum == PLAYERBOT_FISHING_BAIT_VNUM ||
 				vnum == PLAYERBOT_SHELLFISH_VNUM || vnum == PLAYERBOT_CAMPFIRE_VNUM ||
 				(vnum >= PLAYERBOT_PEARL_FIRST_VNUM && vnum <= PLAYERBOT_PEARL_LAST_VNUM))
 			return false;

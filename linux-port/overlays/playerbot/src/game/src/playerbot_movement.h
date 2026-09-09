@@ -1267,6 +1267,32 @@ namespace
 					return true;
 				}
 			}
+			// Third rescue: both ends are cell centres already, so neither
+			// alignment can change the answer, and the corner after this one is
+			// not in reach either. The static grid planned this segment; the
+			// live supercover test disagrees at a grazed corner, and it will
+			// disagree identically on every replan. Walk it: the server moves a
+			// bot along a straight line with no collision, so the worst case is
+			// a shoulder through a decorative corner - the alternative, measured
+			// at the Monkey Dungeon exit, was a bot stopping short of the portal
+			// and turning back for good.
+			if (!movedSelf && !movedTarget)
+			{
+				ch->SetRotationToXY(waypoint.x, waypoint.y);
+				if (ch->Goto(waypoint.x, waypoint.y))
+				{
+					ch->SendMovePacket(FUNC_MOVE, 0, waypoint.x, waypoint.y,
+							ch->GetCurrentMoveDuration(), dwNow);
+					state.lIssuedWaypointX = waypoint.x;
+					state.lIssuedWaypointY = waypoint.y;
+					state.bLastNavOutcome = PLAYERBOT_NAV_OUT_FORCED;
+					PlayerBotLogThrottled("nav_forced_corner", dwNow,
+							"PLAYERBOT_NAV: forced through a grazed corner pid=%u name=%s map=%ld pos=(%ld,%ld) waypoint=(%ld,%ld) dest=(%ld,%ld)",
+							ch->GetPlayerID(), ch->GetName(), mapIndex,
+							ch->GetX(), ch->GetY(), waypoint.x, waypoint.y, destX, destY);
+					return true;
+				}
+			}
 			if (state.bStuckCounter == 4 || (state.bStuckCounter % 32) == 0)
 				PlayerBotLogThrottled("nav_segment_blocked", dwNow,
 						"PLAYERBOT_NAV: waypoint blocked by the live world pid=%u name=%s map=%ld pos=(%ld,%ld) waypoint=(%ld,%ld) dest=(%ld,%ld) failures=%u",

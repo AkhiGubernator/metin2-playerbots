@@ -443,22 +443,27 @@ namespace
 		BYTE chance = 10;
 		switch (ch->GetJob())
 		{
+			// The medal is the market's short: a battle horse used to end a
+			// bot's trips almost for good (4% a window), and the cohort past
+			// forty-six has one, so the hard dungeon - the only place a medal
+			// drops at full odds for them - saw a few bots an hour. Three
+			// times the after-horse chance, the before-horse ones unchanged.
 			case JOB_WARRIOR:
-				chance = hasCombatHorse ? 4 : (ch->GetHorseLevel() == 0 ? 34 : 26);
+				chance = hasCombatHorse ? 12 : (ch->GetHorseLevel() == 0 ? 34 : 26);
 				break;
 			case JOB_SURA:
 				// Skill group 1 is Weaponry (WP); group 2 is Black Magic.
 				chance = ch->GetSkillGroup() == 1
-						? (hasCombatHorse ? 4 : (ch->GetHorseLevel() == 0 ? 32 : 25))
-						: (hasCombatHorse ? 2 : (ch->GetHorseLevel() == 0 ? 14 : 9));
+						? (hasCombatHorse ? 12 : (ch->GetHorseLevel() == 0 ? 32 : 25))
+						: (hasCombatHorse ? 6 : (ch->GetHorseLevel() == 0 ? 14 : 9));
 				break;
 			case JOB_ASSASSIN:
 				chance = ch->GetSkillGroup() == 2
-						? (hasCombatHorse ? 1 : (ch->GetHorseLevel() == 0 ? 6 : 4))
-						: (hasCombatHorse ? 2 : (ch->GetHorseLevel() == 0 ? 18 : 14));
+						? (hasCombatHorse ? 3 : (ch->GetHorseLevel() == 0 ? 6 : 4))
+						: (hasCombatHorse ? 6 : (ch->GetHorseLevel() == 0 ? 18 : 14));
 				break;
 			case JOB_SHAMAN:
-				chance = hasCombatHorse ? 2 : (ch->GetHorseLevel() == 0 ? 15 : 10);
+				chance = hasCombatHorse ? 6 : (ch->GetHorseLevel() == 0 ? 15 : 10);
 				break;
 		}
 		TPlayerBotAIStateMap::const_iterator stateIt =

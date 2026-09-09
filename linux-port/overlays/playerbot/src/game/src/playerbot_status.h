@@ -205,6 +205,14 @@ namespace
 		// leave for. The audit asked for exactly this pair - "Uzupelniam
 		// mikstury; potem Sohan" - because an observer cannot otherwise tell a
 		// bot that is stuck from one that is waiting.
+		// A keeper carrying its goods to the other town because this ring
+		// is full: the walk, not the goal, is what a player sees.
+		if (state.dwStallWalkUntil != 0 && get_dword_time() < state.dwStallWalkUntil &&
+				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 && !ch->GetMyShop())
+		{
+			snprintf(status, statusSize, "%sIde z towarem na targ w Joan", prefix);
+			return;
+		}
 		if (state.bServicePending)
 		{
 			const char* where = state.lDepartureMap != 0

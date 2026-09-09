@@ -1529,6 +1529,14 @@ namespace
 	// failure - 1584 pieces in one afternoon. Scrolls come from the chest and
 	// are scarce, so they are spent where a failure costs most: from +6 up.
 	const DWORD PLAYERBOT_BLESSING_SCROLL_VNUM = 25040;
+	// Zwoj Boga Smokow (YONGSIN_SCROLL, value0 = 2): three vnums carry it in
+	// this world. The operator wants it used ahead of the Blessing Scroll
+	// from this plus up. For the record, the engine's table for it
+	// (char_item.cpp, hyuniron_prob) is 25% at +7 and 20% at +8 against the
+	// blacksmith's 40 and 30, which the Blessing Scroll keeps; both hand the
+	// piece back a level down on failure. Measured, not assumed.
+	const DWORD PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[] = { 39022, 71032, 76009 };
+	const BYTE PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS = 7;
 	const BYTE PLAYERBOT_SCROLL_REFINE_MIN_PLUS = 6;
 	const DWORD PLAYERBOT_SCROLL_REFINE_INTERVAL = 45000;
 	// Neither map sells anything, so a visit is bounded and ends in Bokjung.
@@ -2628,6 +2636,7 @@ namespace
 			dwNextMaterialScanTime(0),
 			dwMaterialHuntVnum(0),
 			dwShopSignClearUntil(0),
+			dwStallWalkUntil(0),
 			dwNextShopSignClearTime(0),
 			dwPortalWalkSince(0),
 			iPortalWalkBest(0),
@@ -2929,6 +2938,9 @@ namespace
 		DWORD dwNextMaterialScanTime;
 		DWORD dwMaterialHuntVnum;
 		DWORD dwShopSignClearUntil;
+		// While set, the bot is carrying its goods to the other town's ring
+		// because this one is full - the status says so instead of the goal.
+		DWORD dwStallWalkUntil;
 		DWORD dwNextShopSignClearTime;
 		DWORD dwPortalWalkSince;
 		int iPortalWalkBest;

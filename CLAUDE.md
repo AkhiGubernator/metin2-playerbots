@@ -490,6 +490,49 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   into the "under +4" scrap branch at merchant x2; `PLAYERBOT_PRIOR_LEVEL30_WEAPON`
   floors it at 250 000 and a damage line in the upper half of what rolls
   (average >= 24, skill >= 15) adds `PLAYERBOT_SHOP_BONUS_PRIZE_LINE`.
+- **The ItemShop is a service beside the game, not a patch to it.** The
+  r40250 core already sends `mall http://<MALL_URL>/ishop?pid=..&sas=..`
+  from `ACMD(do_in_game_mall)` with the literal key "GF9001", and the
+  client already maps "mall" to its `WebWindow` (checked against the
+  unpacked root under the client's Eternexus folder: uiweb, uishop,
+  uisafebox, localeinfo identical to Oskar's). What ships is
+  `linux-port/docker/itemshop/` (his PHP app, 17 MB of it icons, password
+  and key from the environment), `mariadb/playerbot/itemshop_schema.sql`
+  (the schema the package never had, derived from what the PHP reads, plus
+  `player.item_award` and a seed that only fills an empty shop) applied by
+  `apply.sh` as root - the metin2 user cannot create a database - and the
+  `M2_MALL_URL` default in compose. A purchase is a row in
+  `player.item_award`; the db core's ItemAwardManager delivers it. Test it
+  with the signed link: `md5(pid . account_id . "GF9001")`.
+- **The client's scripts live in `pack/root.epk`, and `tools/eterpack.py`
+  rewrites it.** The index (`root.eix`) is one LZO object under XTEA with
+  the stock r40250 index key, and each file is an LZO object: in this
+  client type 1 is plain ("MCOZ" + stream, no key), the encrypted form is
+  "MCOZ" + stream padded to eight under the key. The stock TEA variant is
+  XTEA, not TEA, and the first four bytes of a decrypted region are the
+  fourcc again - the two things that cost an hour. `repack` keeps every
+  file and type, swaps in what `linux-port/client-root/` holds, and the round trip
+  is checked by extracting both archives and diffing (only the swapped
+  files may differ). A client change ships as `pack/root.eix`+`.epk` in
+  a `-Type client` package and the `client` component of the manifest,
+  which the launcher applies over the client folder; never the loose .py
+  files, which the client does not read.
+- **The F9 GM panel is Oskar's, merged as text.** His `cmd_gm.cpp` and
+  `cmd.cpp` are our files re-encoded by an editor (the Korean comments no
+  longer round-trip), so they could not be diffed or copied whole; the
+  twenty-one `gmpanel_*` commands and their two helpers are pure ASCII and
+  were appended (`0009-gm-panel-commands.patch`, dry-run clean against
+  `m2src-cache`; both files ship staged too). His `botadmin_*` commands
+  were left out - they call manager methods of his fork. `GetAvailableBots`
+  is the one thing the panel needed from ours.
+- **Scroll odds are the engine's, not the wiki's.** `DoRefineWithScroll`:
+  Blessing Scroll (25040) keeps `refine_proto` prob (40/30 at +7/+8) and
+  hands the piece back a level down; Zwoj Boga Smokow (39022/71032/76009,
+  YONGSIN) 25/20; Podrecznik Kowala (39007/70039, YAGONG) 30/20; Magiczny
+  Kamien (25041/39001, HYUNIRON) destroys on failure. None needs a
+  blacksmith, which is why the scroll pass runs anywhere. The operator
+  asked for the Dragon God scroll from +7 (`FindPlayerBotRefineScrollCell`)
+  and got it, with these numbers on record.
 - **The panel's VERSION is staged on the path the click never runs.**
   `start-server.ps1` copies VERSION, CHANGELOG.md and the panel sources into
   `linux-port/docker/panel/app/` - below its `-IdentityOnly` return, which is

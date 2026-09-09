@@ -17,6 +17,96 @@ every version here.
 
 ---
 
+## 1.31.1 — 2026-09-09
+
+> **Ta aktualizacja jest mocno eksperymentalna.** ItemShop i panel GM to
+> nowe, obce nam systemy (autor: OskarPWA) spięte z naszym stosem w jeden
+> wieczór. ItemShop jedzie do każdego w zwykłej aktualizacji serwera (bez
+> zmian w kliencie). Panel GM na F9 wymaga podmiany plików klienta i jest
+> **opcjonalny**: instaluje go osobny przycisk launchera „PANEL GM F9
+> (TEST)”, po ostrzeżeniu, z kopią zapasową poprzednich plików. Zwykła
+> aktualizacja („SPRAWDŹ AKTUALIZACJE”) nie dotyka klienta.
+
+### Panel GM (F9) i klient
+
+- **Panel GM na F9 oraz przyciski EQ/Sprawdź w menu postaci** (autor:
+  OskarPWA). Serwer: 21 komend `gmpanel_*` scalonych z naszym rdzeniem
+  (`cmd_gm.cpp`, `cmd.cpp`, łatka 0009 dla instalacji linuksowych), każda
+  sprawdza poziom GM po stronie serwera; „Spawn Botów” korzysta z naszego
+  `CPlayerBotManager` (nowa metoda `GetAvailableBots`). Klient: cztery pliki
+  (`game.py`, `interfacemodule.py`, `uitarget.py`, `constinfo.py`) w
+  `pack/root.epk` — przepakowane narzędziem `tools/eterpack.py` (własny
+  czytnik i zapis archiwów `.eix/.epk`, klucze stockowe r40250, weryfikacja
+  obiegu: 90 plików, różnią się dokładnie 4 podmienione). Aktualizacja
+  klienta jedzie jako składnik `client` manifestu i launcher nakłada ją na
+  folder klienta. Panel otwiera się klawiszem F9 tylko postacią GM.
+
+### Loch Małp i medale
+
+- **Więcej wypraw po Medal Konny** (na rynku jest ich za mało). Bot z koniem
+  bojowym miał 1–4% szansy na wyprawę w każdym półgodzinnym oknie, a to
+  właśnie boty 46+ z takim koniem chodzą do trudnego lochu, gdzie medal
+  wypada im z pełną szansą. Szansa po koniu bojowym potrojona (wojownik i
+  sura broni 12%, sura magii, ninja sztylet i szaman 6%, łucznik 3%);
+  przed koniem bez zmian. Pasma bez zmian: łatwy do 32, średni 33–45,
+  trudny od 46.
+
+### Naprawy z paczek graczy
+
+- **Koń nie jest dosiadany i zsiadany co sekundę przy Metinie** (Kuszaa,
+  botgrom2 w Lochu Pająków: „mounted_combat” i „near_destination” na zmianę,
+  sto par na minutę). Przejście celowania dosiada konia bojowego do walki, a
+  marsz, który przyprowadził bota pod kamień, zsiadał, bo koniec trasy był
+  blisko. Marsz nie zsiada, gdy bot ma cel, z którym może walczyć z siodła.
+
+- **Straganiarz z pogranicza nie jedzie z towarem do Joan** i spacer z
+  towarem ma własny status „Ide z towarem na targ w Joan” (Kuszaa: botgrom2
+  ze statusem „Ide na Gore Sohan” jechał do bramy M1). Bot, którego miejsce
+  jest na pograniczu, przy pełnym Bokjung czeka zamiast iść do Joan.
+
+- **Launcher GUI nie wysypuje się przy „Zainstaluj/Przygotuj”** (Uxie:
+  „The property 'Count' cannot be found on this object”). Przy niekompletnej
+  paczce lista brakujących plików była pojedynczym tekstem, a tryb ścisły
+  PowerShella nie zna `.Count` na tekście. Teraz pokazuje komunikat
+  o niekompletnej paczce, tak jak miał.
+
+### Ulepszanie
+
+- **Od +7 bot używa Zwoju Boga Smoków, gdy go ma**, zamiast Zwoju
+  Błogosławieństwa (oba działają bez kowala — przejście ze zwojem chodzi
+  tam, gdzie bot stoi). Uwaga do faktów silnika (`char_item.cpp`): Zwój
+  Boga Smoków ma tu 25% przy +7→+8 i 20% przy +8→+9, Zwój Błogosławieństwa
+  40% i 30% (jak u kowala), oba przy porażce cofają o poziom; Podręcznik
+  Kowala 30% i 20%. Wybór zgodnie z prośbą, liczby do wiadomości.
+
+---
+
+## 1.31.0 — 2026-09-09
+
+### ItemShop
+
+- **ItemShop w grze** (autor: OskarPWA; wdrożenie jako usługa w naszym
+  stosie). Kliknięcie monety na pasku otwiera w wbudowanej przeglądarce
+  klienta sklep za Smocze Monety (`account.cash`) i Smocze Znaki
+  (`account.mileage`): kategorie Ulepszanie, Bonusy, Koń i pomoc, Za Smocze
+  Znaki (17 pozycji na start, do urządzenia przez operatora w bazie
+  `itemshop`) oraz koło szczęścia za 10 SM. Zakup trafia do
+  `player.item_award`, a rdzeń db dostarcza przedmiot przy najbliższym
+  logowaniu. Rdzeń r40250 i klient miały już potrzebne części (komenda
+  `in_game_mall` z podpisem, `WebWindow`, mapowanie „mall”) — dochodzi tylko
+  usługa `itemshop` (PHP, port `M2_ITEMSHOP_PUBLIC_PORT`, domyślnie 7791) i
+  schemat nakładany przez `playerbot-migrate` przy każdym starcie
+  (idempotentnie; zasiew tylko do pustego sklepu). Hasło bazy i sekret
+  podpisu idą ze środowiska, nie z plików. Adres sklepu (`MALL_URL`) rdzeń
+  dostaje z `M2_MALL_URL`, a gdy pusty — z `M2_PUBLIC_ADDRESS` i portu.
+  Sprawdzone u nas: podpisany link loguje automatycznie, zły podpis odsyła
+  do logowania. Nie ma jeszcze: panelu GM na F9 i przycisków EQ/Sprawdź z
+  paczki Oskara (wymagają przepakowania `root.epk` w kliencie), dropu
+  Smoczych Monet z metinów i bossów dla botów i graczy, zakupów botów w
+  sklepie — to następne kroki.
+
+---
+
 ## 1.30.42 — 2026-09-09
 
 ### Loch Pająków 2

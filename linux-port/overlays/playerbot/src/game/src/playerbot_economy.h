@@ -814,6 +814,33 @@ namespace
 		return false;
 	}
 
+	// The scroll a refine goes under: from PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS
+	// the Zwoj Boga Smokow when the bag has one, otherwise the Blessing
+	// Scroll. Both are read by DoRefineWithScroll from the cell SetRefineMode
+	// names, no blacksmith needed - which is also why the scroll pass runs
+	// wherever the bot stands. plusLevel 0 means "any scroll that is here".
+	int FindPlayerBotRefineScrollCell(LPCHARACTER ch, BYTE plusLevel)
+	{
+		if (!ch)
+			return -1;
+		int blessing = -1, dragonGod = -1;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM scroll = ch->GetInventoryItem(cell);
+			if (!scroll)
+				continue;
+			const DWORD vnum = scroll->GetVnum();
+			if (vnum == PLAYERBOT_BLESSING_SCROLL_VNUM && blessing < 0)
+				blessing = cell;
+			for (size_t i = 0; i < sizeof(PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS) / sizeof(PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[0]); ++i)
+				if (vnum == PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[i] && dragonGod < 0)
+					dragonGod = cell;
+		}
+		if (dragonGod >= 0 && (plusLevel >= PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS || blessing < 0))
+			return dragonGod;
+		return blessing;
+	}
+
 	bool ManagePlayerBotRefining(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !ch->IsItemLoaded() || dwNow < state.dwNextRefineCheckTime)
@@ -958,14 +985,7 @@ namespace
 			// level down rather than nothing.
 			int scrollCell = -1;
 			if (plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS)
-			{
-				for (WORD cell = 0; cell < INVENTORY_MAX_NUM && scrollCell < 0; ++cell)
-				{
-					LPITEM scroll = ch->GetInventoryItem(cell);
-					if (scroll && scroll->GetVnum() == PLAYERBOT_BLESSING_SCROLL_VNUM)
-						scrollCell = cell;
-				}
-			}
+				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel);
 			// No scroll, a roll that can fail, and a weapon worth more than the
 			// next plus: leave it. The blacksmith burns what he fails.
 			if (scrollCell < 0 && IsPlayerBotPrizeItem(item))
@@ -1026,13 +1046,7 @@ namespace
 			return false;
 		state.dwNextScrollRefineTime = dwNow + PLAYERBOT_SCROLL_REFINE_INTERVAL;
 
-		int scrollCell = -1;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM && scrollCell < 0; ++cell)
-		{
-			LPITEM scroll = ch->GetInventoryItem(cell);
-			if (scroll && scroll->GetVnum() == PLAYERBOT_BLESSING_SCROLL_VNUM)
-				scrollCell = cell;
-		}
+		int scrollCell = FindPlayerBotRefineScrollCell(ch, 0);
 		if (scrollCell < 0)
 			return false;
 

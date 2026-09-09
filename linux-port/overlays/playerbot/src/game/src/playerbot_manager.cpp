@@ -2283,6 +2283,17 @@ size_t CPlayerBotManager::GetCount() const
 	return m_mapBots.size();
 }
 
+void CPlayerBotManager::GetAvailableBots(std::vector<DWORD>& out, size_t limit)
+{
+	out.clear();
+	if (!LoadRegisteredBots())
+		return;
+	for (TRegisteredPlayerBotSet::const_iterator it = m_setRegisteredBots.begin();
+			it != m_setRegisteredBots.end() && out.size() < limit; ++it)
+		if (m_mapBots.find(*it) == m_mapBots.end())
+			out.push_back(*it);
+}
+
 void CPlayerBotManager::OnPlayerShout(LPCHARACTER ch, const char* szText)
 {
 	HandlePlayerShoutForTrade(ch, szText);

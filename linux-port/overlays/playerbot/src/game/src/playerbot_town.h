@@ -1622,7 +1622,12 @@ namespace
 			// be. This pass runs ahead of the world travel, so a bot bound for
 			// the frontier was walked to the M1 portal instead - every tick,
 			// for as long as it held six surplus books.
-			if (!IsPlayerBotStallKeeper(state) || state.lDepartureMap != 0)
+			// ...and not a bot whose place is the frontier: it stood in
+			// Bokjung on its way to Sohan with "Ide na Gore Sohan" over its
+			// head and rode to the Joan gate instead, which is what "the bots
+			// go to the wrong portal" looked like from the outside.
+			if (!IsPlayerBotStallKeeper(state) || state.lDepartureMap != 0 ||
+					GetPlayerBotFrontierMapForLevel(ch) != 0)
 			{
 				state.dwNextShopKeepTime = dwNow + PLAYERBOT_SHOP_RING_FULL_RETRY;
 				return false;
@@ -1637,6 +1642,7 @@ namespace
 					"PLAYERBOT_SHOP: Bokjung full, taking the stall to Joan pid=%u name=%s stalls=%d cap=%d lines=%u",
 					ch->GetPlayerID(), ch->GetName(), s_iPlayerBotStallsInM2, iM2StallCap,
 					(unsigned int)worthTaking.size());
+			state.dwStallWalkUntil = dwNow + PLAYERBOT_SHOP_RING_FULL_RETRY;
 			return MovePlayerBotToWorldPortal(ch, state,
 					PLAYERBOT_M2_TO_M1_PORTAL_X, PLAYERBOT_M2_TO_M1_PORTAL_Y,
 					PLAYERBOT_MAP_CHUNJO_M1, PLAYERBOT_M1_GUARD_X,

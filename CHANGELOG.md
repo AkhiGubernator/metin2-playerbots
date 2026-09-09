@@ -17,6 +17,34 @@ every version here.
 
 ---
 
+## 1.30.40 — 2026-09-09
+
+### Stragany
+
+- **Stragany nie znikają godzinę po restarcie** (jaksiezabic: „na 1000 botów
+  11 sklepów 1 h po restarcie, 5 min po restarcie 50–100”; Oskar: liczba
+  sklepów co jakiś czas spada do zera). Odtworzone u nas: 94 straganiarzy
+  10 minut po restarcie, 33 po 25 minutach, bez żadnego restartu. Mechanizm:
+  stragan stał 10–25 minut, po zamknięciu bot dostawał 30–90 minut przerwy,
+  a ponownie otwierał dopiero po zakończeniu następnej wizyty w mieście —
+  więc po restarcie (każdy straganiarz stoi tam, gdzie miał stragan) otwierali
+  wszyscy naraz, a potem wygasali szybciej, niż wracali. Teraz stragan, który
+  wygasł, otwiera się ponownie na tym samym miejscu (nowa wycena, nowy szyld,
+  towar z plecaka), do 3 stanowisk z rzędu; dwa stanowiska z rzędu bez żadnej
+  sprzedaży kończą serię wcześniej. Dopiero po serii bot bierze 30–90 minut
+  przerwy i idzie grać. W logu: `PLAYERBOT_SHOP: another stand`.
+
+### Launcher
+
+- **Paczka diagnostyczna niesie log podróży botów.** Do kontenera trafia
+  tylko syserr, więc paczka wysłana o „boty idą do złego portalu” (Kuszaa)
+  nie miała ani jednej linii o tym, dokąd bot chciał iść. DIAGNOSTYKA dokłada
+  teraz `playerbot-syslog.txt` (przejścia między mapami, portale, nawigacja,
+  watchdog, cele, stragany, miasto, koń, Loch Małp — tylko linie botów, bez
+  czatu graczy) i `playerbot-status.tsv` (aktualny status każdego bota).
+
+---
+
 ## 1.30.39 — 2026-09-09
 
 ### Broń

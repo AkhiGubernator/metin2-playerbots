@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T15:32:00Z",
-  "statusMessage": "Aktualizacja 1.30.39. Pomiar broni per klasa (procenty srednich i umiejetnosci mnoza obrazenia broni), lepsza bron zakladana takze w ciaglej walce, bron z linia nagrody ulepszana tylko pod Zwojem Blogoslawienstwa. Oba panele pokazuja wersje, ktora naprawde maja; logi na zywo bota bez linii innych botow.",
+  "publishedAt": "2026-09-09T16:31:00Z",
+  "statusMessage": "Aktualizacja 1.30.40. Stragany nie znikaja godzine po restarcie: wygasly stragan otwiera sie ponownie na tym samym miejscu, do trzech stanowisk z rzedu.",
   "server": {
-    "version": "1.30.39",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.39/metin2-server-update-1.30.39.zip",
-    "sha256": "DCFC11503E7419116CF746865562BB912E9BC242D89A852E1CAE29F1BC1AAD42"
+    "version": "1.30.40",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.40/metin2-server-update-1.30.40.zip",
+    "sha256": "FADAFBDF5C719E04D3A819FA1786044D1BE225302640768DDA595AE43F3EFF9E"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -157,6 +157,8 @@ namespace
 			case BOT_TOWN_PHASE_MISC_WAIT: return "Kupuje potki i sprzedaje lup";
 			case BOT_TOWN_PHASE_BLACKSMITH: return "Ide do kowala";
 			case BOT_TOWN_PHASE_BLACKSMITH_WAIT: return "Ulepszam ekwipunek";
+			case BOT_TOWN_PHASE_SAFEBOX: return "Ide do magazynu z ksiegami";
+			case BOT_TOWN_PHASE_SAFEBOX_WAIT: return "Oddaje ksiegi do magazynu";
 			case BOT_TOWN_PHASE_GATE_IN:
 			case BOT_TOWN_PHASE_GATE_CROSS_IN: return "Ide do miasta";
 			case BOT_TOWN_PHASE_GATE_OUT:

@@ -86,6 +86,12 @@ namespace
 		// find the book yourself. What a bot wants is a small working stock of
 		// its own build's skills - two or three, not every book to Grand Master
 		// - and only while the skill can still be read up.
+		// A Forgetting Scroll on somebody's counter is what a bot past the old
+		// woman's thirty with a skill stuck at seventeen came to market for.
+		if (offer->GetVnum() == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+			return GetPlayerBotStuckSkill(ch) != 0 &&
+					ch->GetLevel() > PLAYERBOT_SKILL_RESET_MAX_LEVEL &&
+					ch->CountSpecifyItem(PLAYERBOT_SKILL_FORGET_SCROLL_VNUM) == 0;
 		if (offer->GetType() == ITEM_SKILLBOOK)
 		{
 			const DWORD skillVnum = GetPlayerBotSkillBookSkillVnum(offer);

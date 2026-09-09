@@ -1089,6 +1089,77 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   the flag, never with what it last asked for. With the switch off the flag
   is left to the GM, except a night this clock raised, which it lowers once.
 
+- **A waypoint the bot is standing on cannot be walked to.** The
+  consumption loop kept the current waypoint when the segment to the next
+  one was obstructed from the bot's exact point - right when the bot is
+  near the waypoint, wrong when it is *on* it: `CHARACTER::Goto` refuses a
+  destination equal to the position, the walk called a refused Goto within
+  arrival distance "moved", and the bot stood on its own first waypoint
+  for good. Sixteen of eighteen watchdog resets in an afternoon were
+  `nav_out=11 route=0/2` on a cell centre, one of them twenty minutes at
+  the Joan blacksmith. A waypoint under the bot's feet is consumed; the
+  obstructed segment then goes through the blocked-segment branch, which
+  has the rescues and counts the failure. `nav_out=11` in a watchdog line
+  means exactly this shape.
+- **A skill book never goes to the merchant.** `IsPlayerBotJunkItem` says
+  so outright now; the surplus (`IsPlayerBotSurplusSkillBook`: another
+  class's, or its own past `GetPlayerBotBookKeepLimit`) is counter goods,
+  and what the bag cannot hold past `PLAYERBOT_SAFEBOX_BOOK_KEEP` of those
+  goes to the storekeeper. The safebox is opened the way the Dozorca's
+  quest does it - `SetSafeboxOpenPosition`, `ReqSafeboxLoad("000000")`
+  (the DB accepts that for an account that never set a password) - and
+  the answer comes back from the DB core on a later tick, so
+  `BOT_TOWN_PHASE_SAFEBOX_WAIT` deposits when `GetSafebox()` is set and
+  `CancelSafeboxLoad`s after `PLAYERBOT_SAFEBOX_LOAD_WAIT_MS`, or the next
+  request is refused as overlapped for ever. Books put in are never taken
+  out; a full page leaves the rest in the bag as goods. **The safebox is
+  keyed by the descriptor's account id**, and `CreateBotDesc` left it at
+  zero: the first test put every bot's books into one box under account 0.
+  `LoadRegisteredBots` now reads `a.id, a.login` with the pid and
+  `SpawnBot` writes them into the bot's `TAccountTable` - anything else
+  the engine keys by account (the login log, `safebox.account_id`) had
+  been seeing zero too.
+- **The Forgetting Scroll has no source in this world.** No shop row, no
+  drop table carries 70037, so "a scroll from the market" past the old
+  woman's thirty meant a skill at seventeen for life - 81 bots carried
+  eighteens and nineteens from before the cap and nothing could move them.
+  `BuyPlayerBotForgetScroll` creates one for `PLAYERBOT_SKILL_FORGET_SCROLL_PRICE`
+  above `PLAYERBOT_SKILL_RESET_MAX_LEVEL`, socketed with the skill, and it
+  is read on the spot; the engine's roll is `1/(21-level)` at every point
+  from seventeen, so a point at seventeen is a quarter, at twenty a
+  certainty.
+- **Hwang's boss is a party's raid twenty levels up.** boss.txt group 2110
+  at cell (374,420), every two hours: the Yellow Tiger Spectre (1304, level
+  75, 178 040 hp) with two Frog Generals and two Tree Frog Chiefs. A solo
+  target is capped at `PLAYERBOT_MAX_TARGET_LEVEL_DELTA` over the bot;
+  only a party leader's `iChallengeMaxLevel` (highest + 5 per member,
+  capped by half the total) reaches him, so the hub row is `bNeedsParty`
+  like the Queen's and Nine Tails'. The Demon Tower entrance has no spawn
+  within 2500 units and gets no hub; the middle, the south-east corner and
+  the frog field north of the entrance do, from a regen measurement that
+  found 800-1200 spawn points nineteen kilometres from any hub.
+
+- **A town goal on ground the bot's terrain does not join is walked to
+  nowhere.** Bokjung's misc merchant approach point sits on a strip of
+  `server_attr` cut off from the square; every bot coming from the armour
+  merchant planned it, was told "unreachable" three times, and was
+  relocated by the service rescue on the sixth failure - 260 rescues in a
+  morning. `MovePlayerBotTownLeg` asks `CanReach` first and walks to the
+  nearest cell of the bot's own component inside the arrival radius
+  (`PLAYERBOT_TOWN: goal moved onto reachable ground`). The rescue stays
+  as the net for the cases a component lookup cannot see.
+- **A counter line is a pack, and the keeper is whoever has the books.**
+  `GetPlayerBotStallLineUnits` says how many units of a stackable make a
+  line - one for what a player buys singly (USE, METIN, the pearls), two
+  for a material - and `SplitPlayerBotStallSingles` cuts up to
+  `PLAYERBOT_SHOP_PACK_LINES` of them before the lines are chosen. Closing
+  the counter schedules a merge in seconds, and a merge pass that used
+  its whole budget comes straight back. `ShouldPlayerBotKeepShop` is true
+  for any bot holding `PLAYERBOT_SHOP_BOOK_PRESSURE_MIN` surplus books,
+  bag pressure or not: a thousand bots made
+  twenty-one stalls with a few books between them while the roll picked
+  one in ten and the books rode round the stones with the other nine.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

@@ -812,20 +812,43 @@ namespace
 			// inside a wall and a river and were moved to the nearest free cell,
 			// which is what the odd numbers are.
 			//
-			// No boss hub. Its two boss points roll among three races - the
-			// Esoteric Summoner at 54, the Frog General at 61 and the Yellow
-			// Tiger Spectre at 75 - and a boss hub names one race and asks the
-			// sector whether that one is standing.
+			//
+			// Measured again on 9 September against the whole regen: three
+			// cells of 800-1200 spawn points had no hub within nineteen
+			// kilometres - the south-east corner (627200,57600), the ground
+			// east of the middle (620800,64000) and the frog field north of the
+			// entrance (582400,128000) - so the population walked the west and
+			// the east bands and never the middle or the corner. The rows below
+			// cover them, each probed standable in milgyo's server_attr.
+			//
+			// The boss: boss.txt puts group 2110 at cell (374,420) every two
+			// hours - the Yellow Tiger Spectre (1304, level 75, 178 040 hit
+			// points, boss rank) with two Frog Generals and two Tree Frog
+			// Chiefs beside him. Twenty levels over the band's bots, so the
+			// hub is a party's raid like the Queen's and Nine Tails': a full
+			// party of fifty-fives may challenge seventy-five
+			// (PLAYERBOT_PARTY_LEVEL_BONUS_PER_MEMBER), and the raid swarm
+			// bonus puts him above the frogs round him once three have set
+			// out. The other boss point, group 727 at (910,847), is an Elite
+			// Esoteric Summoner pack of 57 and needs no hub of its own - the
+			// east band hunts through it. The Demon Tower entrance (the
+			// Guardian, 20348, at (590800,110800)) stands on ground with no
+			// spawn within 2500 units; a hub there would be a hub for nothing.
 			const TPlayerBotHuntingHub hwangHubs[] = {
 				{ 553600, 118400, PLAYERBOT_HWANG_MIN_LEVEL, 255, false, 0 },
 				{ 553600,  92800, PLAYERBOT_HWANG_MIN_LEVEL, 255, false, 0 },
 				{ 553600,  67200, PLAYERBOT_HWANG_MIN_LEVEL, 255, false, 0 },
 				{ 585600,  66950, PLAYERBOT_HWANG_MIN_LEVEL, 255, false, 0 },
+				{ 585600, 131200, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
+				{ 588800,  96000, PLAYERBOT_HWANG_MIN_LEVEL, 255, false, 0 },
 				{ 630500, 137600, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
 				{ 630400, 118400, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
 				{ 624000, 112000, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
 				{ 630400,  86400, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
-				{ 604800,  67200, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 }
+				{ 624000,  67200, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
+				{ 630400,  60800, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
+				{ 604800,  67200, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, false, 0 },
+				{ 575000,  93200, PLAYERBOT_HWANG_EAST_MIN_LEVEL, 255, true, 1304 }
 			};
 			const bool inDesert = ch->GetMapIndex() == PLAYERBOT_MAP_DESERT;
 			const TPlayerBotHuntingHub* hubs = orcValleyHubs;

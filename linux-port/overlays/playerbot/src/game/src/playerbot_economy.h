@@ -78,6 +78,11 @@ namespace
 		return books;
 	}
 
+	// Whether a book is beyond the bag's working stock: somebody else's skill,
+	// or one of its own past GetPlayerBotBookKeepLimit. What the counter
+	// sells, and what the safebox takes when the counter has not.
+	bool IsPlayerBotSurplusSkillBook(LPCHARACTER ch, LPITEM item);
+
 	// How many books of one of its own skills a bot keeps in the bag: the
 	// working stock while the skill is readable, a few before that, none once
 	// a book can do nothing more for it. Every rule that keeps, lists or buys
@@ -150,16 +155,32 @@ namespace
 		if (merged > 0)
 			sys_log(0, "PLAYERBOT_BAG: merged stacks pid=%u name=%s merges=%d",
 					ch->GetPlayerID(), ch->GetName(), merged);
+		// A pass that used its whole budget has more to do: back soon, not in
+		// five minutes - a closed counter leaves eight packs of one material.
+		if (merged >= PLAYERBOT_STACK_MERGES_PER_PASS)
+			state.dwNextStackMergeTime = dwNow + PLAYERBOT_STACK_MERGE_AFTER_SHOP_MS;
 	}
 
-	// Goods a player buys one at a time. A private shop sells a line whole,
-	// so a stack of twenty scrolls on one line is twenty scrolls or nothing;
-	// materials stay stacked because the bots that buy them buy the stack.
+	// How many units of a stackable go on one counter line. A private shop
+	// sells a line whole, so a stack of twenty scrolls on one line is twenty
+	// scrolls or nothing: what a player buys one at a time - potions,
+	// scrolls, stones, the shell and the pearls - is a single; a material is
+	// a pack of PLAYERBOT_SHOP_PACK_UNITS, small enough to buy for one refine
+	// and few enough lines to leave room on the counter. Zero for anything
+	// that does not stack.
+	int GetPlayerBotStallLineUnits(LPITEM item)
+	{
+		if (!item || !item->IsStackable() || IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
+			return 0;
+		if (item->GetType() == ITEM_USE || item->GetType() == ITEM_METIN ||
+				(item->GetVnum() >= 27992 && item->GetVnum() <= 27994))
+			return 1;
+		return PLAYERBOT_SHOP_PACK_UNITS;
+	}
+
 	bool IsPlayerBotSinglyTradedGoods(LPITEM item)
 	{
-		return item && item->IsStackable() &&
-				!IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK) &&
-				(item->GetType() == ITEM_USE || item->GetType() == ITEM_METIN);
+		return GetPlayerBotStallLineUnits(item) == 1;
 	}
 
 	// Everything this bot wears or carries that is still below its refine target,
@@ -492,39 +513,16 @@ namespace
 			return !isOrWillBeArcher;
 		}
 
+		// A skill book never goes to the merchant. Its own working stock stays
+		// in the bag (GetPlayerBotBookKeepLimit), the surplus - somebody else's
+		// skill, or more of its own than it can read - is goods for the counter,
+		// and what the bag cannot hold beyond PLAYERBOT_SAFEBOX_BOOK_KEEP of
+		// those goes to the storekeeper's safebox on the next town visit
+		// (IsPlayerBotSafeboxBook). The merchant paid pennies for Aura Miecza
+		// while the warrior three stalls away would have paid a fortune, and
+		// "under bag pressure" turned out to be most of a dropper's life.
 		if (item->GetType() == ITEM_SKILLBOOK)
-		{
-			// The Metin dropper keeps every book: the ones it cannot read are what
-			// it puts on the counter - up to the bag's patience. Beyond
-			// PLAYERBOT_DROPPER_BOOK_KEEP with the bag under pressure, the
-			// merchant takes the rest, or the loot stops.
-			if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER)
-				return CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS &&
-						CountPlayerBotSkillBooks(ch) > PLAYERBOT_DROPPER_BOOK_KEEP;
-			// Keep books for the selected build (also before profession selection).
-			// Books for another class/build may first be handed to a party member;
-			// if nobody needs them they become normal miscellaneous loot.
-			if (ch->GetSkillGroup() == 0)
-				return false;
-			const DWORD skillVnum = GetPlayerBotSkillBookSkillVnum(item);
-			// Somebody else's skill is not scrap. Aura Miecza found by a ninja
-			// was going to the merchant for a fraction of what the warrior three
-			// stalls away would pay for it - the stall pass takes these, and
-			// only a book nobody in the world could want is loot.
-			// Somebody else's book is goods for the counter - until the bag is
-			// choking on them, when the merchant is better than no loot.
-			if (!IsPlayerBotOwnSkill(ch, skillVnum))
-				return skillVnum == 0 ||
-						CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS;
-			// Its own, and only so many of them - GetPlayerBotBookKeepLimit. The
-			// surplus is goods for the counter like anybody else's book, and
-			// scrap for the merchant only once the bag is under pressure: a
-			// warrior's spare Aura is worth more three stalls away than at
-			// the merchant, but not more than the loot it would block.
-			return CountPlayerBotSkillBooksAhead(ch, item, skillVnum) >=
-						GetPlayerBotBookKeepLimit(ch, skillVnum) &&
-					CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS;
-		}
+			return false;
 
 		// Preserve health, mana, green and purple speed potions
 		if (vnum == 27051 || vnum == 27001 || vnum == 27002 || vnum == 27003 ||

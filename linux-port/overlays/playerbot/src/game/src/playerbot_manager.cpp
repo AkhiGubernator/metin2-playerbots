@@ -24,6 +24,7 @@
 #include "motion.h"
 #include "party.h"
 #include "questmanager.h"
+#include "safebox.h"
 #include "questpc.h"
 #include "refine.h"
 #include "sectree.h"
@@ -929,6 +930,16 @@ bool CPlayerBotManager::Spawn(DWORD dwPlayerID, BYTE bEmpire)
 	if (!d)
 		return false;
 
+	// The descriptor's account: what the safebox, the login log and the
+	// account-keyed packets read. Zero here meant one safebox for every bot.
+	TPlayerBotAccountMap::const_iterator account = m_mapBotAccounts.find(dwPlayerID);
+	if (account != m_mapBotAccounts.end())
+	{
+		TAccountTable& table = d->GetAccountTable();
+		table.id = account->second.dwID;
+		strlcpy(table.login, account->second.strLogin.c_str(), sizeof(table.login));
+	}
+
 	m_mapBots.insert(TPlayerBotMap::value_type(dwPlayerID, d));
 	m_mapHandles.insert(THandleToPlayerMap::value_type(d->GetHandle(), dwPlayerID));
 
@@ -952,9 +963,10 @@ bool CPlayerBotManager::LoadRegisteredBots()
 	m_bRegistryLoaded = true;
 	m_bRegistryAvailable = false;
 	m_setRegisteredBots.clear();
+	m_mapBotAccounts.clear();
 
 	const char* query =
-			"SELECT l.pid "
+			"SELECT l.pid, a.id, a.login "
 			"FROM common.playerbot_seed_state AS l "
 			"JOIN player.player AS p ON p.id=l.pid "
 			"JOIN account.account AS a ON a.id=p.account_id "
@@ -1003,7 +1015,16 @@ bool CPlayerBotManager::LoadRegisteredBots()
 		if (row[0])
 			str_to_number(pid, row[0]);
 		if (pid != 0)
+		{
 			m_setRegisteredBots.insert(pid);
+			TPlayerBotAccount account;
+			account.dwID = 0;
+			if (row[1])
+				str_to_number(account.dwID, row[1]);
+			if (row[2])
+				account.strLogin = row[2];
+			m_mapBotAccounts[pid] = account;
+		}
 	}
 
 	m_bRegistryAvailable = !m_setRegisteredBots.empty();

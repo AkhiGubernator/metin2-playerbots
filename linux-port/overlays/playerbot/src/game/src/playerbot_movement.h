@@ -1117,7 +1117,17 @@ namespace
 			// is still obstructed from the character's exact interpolated point.
 			// Moving those few centimetres to the cell centre is what makes the
 			// next corner safe; skipping it caused route=0/0 retry loops.
-			if (state.uRouteIndex + 1 < state.vecRoute.size())
+			//
+			// Unless the character is already standing on it. Then there is
+			// nothing left to move by: Goto refuses a destination equal to the
+			// position, the walk reported that as "moved" because the waypoint
+			// was within arrival distance, and the bot stood on its own first
+			// waypoint for good - sixteen of eighteen watchdog resets in an
+			// afternoon were nav_out=11 at route=0/2 on a cell centre. Consumed,
+			// the obstructed segment goes through the blocked-segment branch
+			// below, which has the rescues and counts the failure.
+			if (state.uRouteIndex + 1 < state.vecRoute.size() &&
+					(ch->GetX() != waypoint.x || ch->GetY() != waypoint.y))
 			{
 				const PIXEL_POSITION& nextWaypoint = state.vecRoute[state.uRouteIndex + 1];
 				if (!navigation.SegmentClearWorld(ch->GetX(), ch->GetY(),

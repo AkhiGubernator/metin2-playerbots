@@ -207,6 +207,26 @@ namespace
 	// the chance of a key or a buyer goes to the merchant, so the chests and
 	// the loot still have somewhere to land.
 	const int PLAYERBOT_BAG_PRESSURE_FREE_CELLS = 8;
+	// The storekeeper (Dozorca, 9005): npc.txt cell (609,596) on map 21, base
+	// (0,102400); cell (471,347) on map 23, base (102400,204800). A bot's
+	// safebox is one page of forty-five cells behind the default password -
+	// the DB accepts "000000" for an account that never set one - and it is
+	// where the skill books go that the bag cannot hold and the counter has
+	// not sold: a book never goes to the merchant. PLAYERBOT_SAFEBOX_BOOK_KEEP
+	// surplus books stay in the bag as goods for the counter; the rest are
+	// deposited once the bag is under pressure.
+	const long PLAYERBOT_STOREKEEPER_X = 60900;
+	const long PLAYERBOT_STOREKEEPER_Y = 162000;
+	const long PLAYERBOT_M2_STOREKEEPER_X = 149500;
+	const long PLAYERBOT_M2_STOREKEEPER_Y = 239500;
+	const char* const PLAYERBOT_SAFEBOX_PASSWORD = "000000";
+	// What the storekeeper's quest charges once for the first page
+	// (warehouse.quest: 500 yang, then set_safebox_level(1)), remembered in
+	// the bot's own flag because the quest's state is not ours to set.
+	const int PLAYERBOT_SAFEBOX_FEE = 500;
+	const char* const PLAYERBOT_SAFEBOX_PAID_FLAG = "playerbot.safebox_paid";
+	const DWORD PLAYERBOT_SAFEBOX_LOAD_WAIT_MS = 8000;
+	const int PLAYERBOT_SAFEBOX_BOOK_KEEP = 12;
 	// Two stacks of one thing in two cells is what a partial purchase, a
 	// partial sale and a pick-up into a full stack all leave behind, and the
 	// engine only merges when a hand drags one onto the other - which a bot
@@ -226,6 +246,23 @@ namespace
 	const int PLAYERBOT_STACK_MAX = 200;
 	const int PLAYERBOT_SHOP_SINGLE_UNITS = 4;
 	const int PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS = 3;
+	// A material goes on the counter in packs, not as the whole stack: sixteen
+	// fishbones on one line were sixteen or nothing ("moze dzielic na pakiety
+	// po 2 sztuki lub nawet sprzedawac detalicznie po 1"). Packs of this many,
+	// up to this many lines of one kind; the rest of the stack stays in the
+	// bag for the next opening. Pearls and the shell are singles.
+	const int PLAYERBOT_SHOP_PACK_UNITS = 2;
+	const int PLAYERBOT_SHOP_PACK_LINES = 8;
+	// How soon the bag is merged again after the counter closes: the singles
+	// and packs were split for the counter, and a bag of them is a bag with
+	// no room for loot until the five-minute clock came round.
+	const DWORD PLAYERBOT_STACK_MERGE_AFTER_SHOP_MS = 5000;
+	// At least this many surplus books opens a counter whatever the
+	// personality rolled. 21 stalls on a thousand bots,
+	// "a few KU on them", and bots flying round the stones with bags full of
+	// books: the roll picked one bot in ten and the books sat with the other
+	// nine.
+	const int PLAYERBOT_SHOP_BOOK_PRESSURE_MIN = 6;
 	const DWORD PLAYERBOT_SOUL_STONE_CHECK_INTERVAL = 10000;
 	// What UseItemEx leaves in the socket when the 30% roll fails. Defined as a
 	// file-local const in char_item.cpp, so it is repeated here.
@@ -1304,6 +1341,14 @@ namespace
 	// fifty to a dragon armour with seven more defence and nothing else.
 	const long long PLAYERBOT_ARMOR_OUTGROWN_PERCENT_PER_LEVEL = 5;
 	const DWORD PLAYERBOT_SKILL_FORGET_SCROLL_VNUM = 70037;
+	// No merchant in this world sells the scroll and nothing drops it, so a
+	// bot past the old woman's thirty bought it nowhere and a skill stuck at
+	// seventeen stayed there for life - 81 bots carried a skill at eighteen or
+	// nineteen from before the cap. Above PLAYERBOT_SKILL_RESET_MAX_LEVEL the
+	// bot buys one at the item shop's kind of price, straight into the bag,
+	// and reads it on the spot; below that level the old woman is cheaper.
+	const long long PLAYERBOT_SKILL_FORGET_SCROLL_PRICE = 200000;
+	const long long PLAYERBOT_SKILL_FORGET_SCROLL_GOLD_MARGIN = 300000;
 	// Scrap keepers: the share of stall keepers (percent, from the panel) that
 	// put their low refines on the counter instead of vendoring them, for the
 	// player who wants cheap fodder to burn at the blacksmith. A keeper stops
@@ -2156,7 +2201,9 @@ namespace
 		// Appended, never inserted: the panel's status file carries this value
 		// as a number and inserting one shifts every phase after it.
 		BOT_TOWN_PHASE_SKILL_RESET,
-		BOT_TOWN_PHASE_SKILL_RESET_WAIT
+		BOT_TOWN_PHASE_SKILL_RESET_WAIT,
+		BOT_TOWN_PHASE_SAFEBOX,
+		BOT_TOWN_PHASE_SAFEBOX_WAIT
 	};
 
 	enum EPlayerBotLongTermGoal
@@ -2416,6 +2463,7 @@ namespace
 			bTownNeedBlacksmith(false),
 			bTownNeedTrainer(false),
 			bTownNeedSkillReset(false),
+			bTownNeedSafebox(false),
 			bVisitingBiologist(false),
 			bVisitingStable(false),
 			bFishingSession(false),
@@ -2671,6 +2719,7 @@ namespace
 		bool bTownNeedBlacksmith;
 		bool bTownNeedTrainer;
 		bool bTownNeedSkillReset;
+		bool bTownNeedSafebox;
 		bool bVisitingBiologist;
 		bool bVisitingStable;
 		// The bot has committed to a fishing trip: it carries a rod in the weapon

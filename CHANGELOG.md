@@ -17,6 +17,45 @@ every version here.
 
 ---
 
+## 1.30.35 — 2026-09-09
+
+### Naprawione
+
+- **„Bot, który chce iść na Sohan, kieruje się do portalu M1, zawraca i
+  robi kółko wokół M2” (Kuszaa), „boty do łatwego lochu małp też jadą
+  najpierw do portalu M1”.** Skutek 1.30.34: straganiarzem stał się każdy
+  bot z ≥6 nadmiarowymi księgami, a pas straganu — który biegnie w ticku
+  przed podróżą między mapami — gdy ring w Bokjung jest pełny (7 straganów),
+  prowadził każdego straganiarza z towarem do portalu M1, „żeby otworzyć
+  stragan w Joan”. Na serwerze z pełnymi plecakami ring jest pełny zawsze,
+  więc setki botów z celem na pograniczu były co tick zawracane do portalu
+  M1. Do Joan z towarem idzie teraz tylko kupiec albo dropek z osobowości,
+  i tylko bez zaplanowanego wyjazdu; reszta czeka 10 minut na wolne miejsce
+  na ringu i podróżuje tam, gdzie chciała.
+
+- **„Boty nie wychodzą z lochu małp — zatrzymują się tuż przed portalem i
+  zawracają” (Sekuras).** Bot stojący dokładnie na środku pola, z którego
+  następny odcinek trasy „ociera się” o róg ściany: planer (siatka
+  statyczna) ten odcinek zaplanował, test na żywo (supercover) go odrzuca —
+  i odrzuci identycznie przy każdym ponownym planowaniu. Do 1.30.33 bot
+  stał tam po cichu (reset watchdoga co 90 s); od 1.30.34 zjadał punkt pod
+  nogami i przez gałąź „odcinek zasłonięty” planował w kółko, aż marsz do
+  portalu poddawał się i bot zawracał. Trzeci ratunek: gdy oba końce są już
+  środkami pól, a rogu nie da się ominąć, bot idzie tym odcinkiem — serwer
+  prowadzi bota po prostej bez kolizji, więc najwyżej otrze się ramieniem o
+  dekoracyjny róg. W logu `PLAYERBOT_NAV: forced through a grazed corner`,
+  w linii watchdoga `nav_out=12`.
+
+- **„Boty kupują więcej niż jedną wędkę — tyle, ile mają miejsca w eq”
+  (FanFar).** Silnik ulepsza wędkę w trakcie łowienia (rzut przy każdym
+  połowie, Wędka+1 staje się nowym przedmiotem Wędka+2 itd.), a warunek
+  „mam wędkę” liczył wyłącznie vnum Wędki+1 — po pierwszym ulepszeniu bot
+  kupował nową co sesję. Liczy się teraz każda wędka w plecaku, do ręki idzie
+  najlepsza, a wędki zapasowe (słabsze lub równe innej) bot sprzedaje
+  handlarzowi przy najbliższej wizycie.
+
+---
+
 ## 1.30.34 — 2026-09-09
 
 ### Zmienione

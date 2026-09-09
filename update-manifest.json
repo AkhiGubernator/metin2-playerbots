@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T11:53:00Z",
-  "statusMessage": "Aktualizacja 1.30.34. Ksiegi umiejetnosci nigdy nie ida do handlarza: nadmiar na stragan albo do magazynu u Dozorcy. Bot powyzej 30 lv kupuje Ksiege Zapomnienia dla skilla, ktory nie wszedl na M. Naprawiony marsz stojacy na wlasnym punkcie trasy (16 z 18 resetow watchdoga). Swiatynia Hwang: srodek, poludniowy wschod, polana zab i boss Zjawa Zoltego Tygrysa.",
+  "publishedAt": "2026-09-09T13:12:00Z",
+  "statusMessage": "Aktualizacja 1.30.35. Naprawa petli przy portalach z 1.30.34: straganiarze nie sa juz prowadzeni do portalu M1 zamiast na pograniczne mapy, a bot stojacy przed wyjsciem z lochu malp przechodzi otarty rog zamiast zawracac.",
   "server": {
-    "version": "1.30.34",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.34/metin2-server-update-1.30.34.zip",
-    "sha256": "0112C041A263047C7B85C250DF740B6D605B3E998BB9B63AE928F3A2A49D36C3"
+    "version": "1.30.35",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.30.35/metin2-server-update-1.30.35.zip",
+    "sha256": "8129FE52BC91995EFB9F3BA06069C1F359936084F751C78352927D85B4268330"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

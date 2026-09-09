@@ -17,6 +17,26 @@ every version here.
 
 ---
 
+## 1.31.2 — 2026-09-09
+
+### Panel zaawansowany
+
+- **Panel Sebana 1.40.0** (z 1.38.5): zwijany poradnik aktualizatora na
+  VPS w Zarządzaniu, motywy dziedziczone przez tabele i kafelki, ikony
+  przedmiotów w bazie, flagi i nazwy królestw, portrety klas w profilach,
+  listach i rankingach, kreator GM z wyborem płci. Nasze poprawki nałożone
+  na nowo: Świątynia Hwang i Loch Pająków V2 w nazwach, granicach i
+  respawnach, przełącznik „Noc na serwerze”, ranking broni z właściwymi
+  kolumnami średnich i umiejętności (71/72), restart bez helpera Sebana,
+  panel startowy bez błędu w pierwszych minutach świeżej bazy.
+
+- **Opis „Szybkie czytanie ksiąg” mówi to, co robi kod** (Kenny: „na stronie
+  jest co pół godziny, w kodzie czyta od razu”). Od 1.30.30 bot czyta księgę
+  od razu, gdy ją ma; jedyny hamulec to sama gra — 20 000 doświadczenia i
+  rzut przy każdej lekturze. Opis w obu panelach poprawiony.
+
+---
+
 ## 1.31.1 — 2026-09-09
 
 > **Ta aktualizacja jest mocno eksperymentalna.** ItemShop i panel GM to

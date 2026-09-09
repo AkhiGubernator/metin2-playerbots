@@ -17,6 +17,38 @@ every version here.
 
 ---
 
+## 1.30.37 — 2026-09-09
+
+### Zmienione
+
+- **Plecak zapełniony w 80% to sprawa do załatwienia, nie stan do polowania**
+  (Iwakura: „eq pełne od dawna, a on napierdala 2 godziny małpy po medal,
+  który nie mieści się do eq”). Od 72 z 90 pól: żadna wyprawa po drop nie
+  rusza — ani do Lochu Małp po medal (bot już w środku kończy medal i
+  wychodzi; dropek medali też), ani do M3 po broń — a w mieście bot ma co
+  robić: otwiera stragan niezależnie od osobowości (nawet z jedną linią, bez
+  wyprzedażowej zniżki), księgi ponad zapas niesie do Dozorcy, złom do
+  handlarza, materiały zużywa u kowala. Zbieracz ekwipunku, który nie odda
+  zapasowych +8 handlarzowi, wystawia je na ladę.
+
+- **Bramy brane z mapy, Teleporter za opłatą** (Kuszaa, nadal na 1.30.36:
+  bot dojeżdża pod portal M1, zawraca i krąży). Punkt bramy nie jest już
+  stałą z `npc.txt`: bot szuka na swojej mapie żywego NPC-warpa, którego
+  cel (z nazwy NPC, tak jak czyta ją silnik) leży na docelowej mapie, i
+  idzie do niego — więc gdy paczka serwera stawia bramę gdzie indziej, bot
+  trafia tam, gdzie brama stoi. Do M3 prowadzi teraz brama Waryong, nie
+  Teleporter. Teleporter (9012) działa jak dla gracza: od 11 poziomu, za
+  `floor(poziom/5)·1000` yang (min. 1000) — bot bez pieniędzy nie
+  teleportuje się. Zawieszony marsz do portalu trafia też do `syserr`, więc
+  będzie w paczce diagnostycznej.
+
+- **Stragan bez pola na pakiet scala stosy zamiast się poddawać.** Bot z
+  plecakiem 90/90 nosił 12 małży w 12 polach: skan straganu pociął je na
+  pojedyncze linie, stragan nie otworzył się z braku pola na pakiet, a
+  scalanie czekało na zamknięcie, które nigdy nie nastąpiło.
+
+---
+
 ## 1.30.36 — 2026-09-09
 
 ### Instalator i launcher (raport Sykesa)

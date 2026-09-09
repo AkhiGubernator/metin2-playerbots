@@ -249,6 +249,27 @@ namespace
 	// silent: the tick left through the "core slot empty and an equip
 	// pending" pause, and an archer's shield slot is empty for life.
 	const DWORD PLAYERBOT_EQUIP_PENDING_MAX_MS = 5000;
+	// After a pause that never got its window, how long before the next one.
+	// Without this the pass came back a second later and a bot in a fight
+	// that never ends stuttered for five seconds out of every six.
+	const DWORD PLAYERBOT_EQUIP_PENDING_RETRY_MS = 60000;
+	// A weapon's percent lines multiply the damage the weapon makes, so they
+	// are scored against that damage and not as a flat sum: a +47% average
+	// line on a bow of 151-244 is worth 47% of that bow, and nothing on a
+	// dagger of 10-12. How much of each line a build feels - a skill build
+	// lives on skill damage and still swings between casts, a normal-hit
+	// build the other way round.
+	const int PLAYERBOT_WEAPON_OWN_LINE_PERCENT = 100;
+	const int PLAYERBOT_WEAPON_OTHER_LINE_PERCENT = 35;
+	// A skill line this high on a weapon is a prize line too (the bonus pass
+	// keeps an average line from PLAYERBOT_BONUS_KEEP_AVERAGE).
+	const long PLAYERBOT_WEAPON_PRIZE_SKILL_PERCENT = 15;
+	// A stone is not spent on a piece under this refine: the piece is going
+	// to be refined first, and a burn on the way there takes the lines with
+	// it. And a piece carrying this many lines is finished in the only sense
+	// that matters at the anvil - it is refined under a scroll or not at all.
+	const BYTE PLAYERBOT_BONUS_MIN_REFINE = 4;
+	const int PLAYERBOT_PRIZE_LINES = 5;
 	const int PLAYERBOT_STACK_MERGES_PER_PASS = 4;
 	const int PLAYERBOT_STACK_MAX = 200;
 	const int PLAYERBOT_SHOP_SINGLE_UNITS = 4;

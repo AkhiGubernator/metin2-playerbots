@@ -65,6 +65,42 @@ namespace
 		return false;
 	}
 
+	// A weapon with a line a player stops rerolling at: average damage from
+	// PLAYERBOT_BONUS_KEEP_AVERAGE, or skill damage from
+	// PLAYERBOT_WEAPON_PRIZE_SKILL_PERCENT. In this engine every failed
+	// refine destroys the item - DoRefine has no grade that only drops a
+	// level - so a +8 bow with 51% average burned at the blacksmith on a
+	// forty-percent roll ("i spalil u kowala"). Such a weapon is refined only
+	// under a Blessing Scroll, which hands it back a level down instead.
+	bool IsPlayerBotPrizeWeapon(LPITEM item)
+	{
+		if (!item || item->GetType() != ITEM_WEAPON)
+			return false;
+		long avg = 0, skill = 0;
+		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+		{
+			const BYTE t = item->GetAttributeType(i);
+			if (t == APPLY_NORMAL_HIT_DAMAGE_BONUS) avg += item->GetAttributeValue(i);
+			else if (t == APPLY_SKILL_DAMAGE_BONUS) skill += item->GetAttributeValue(i);
+		}
+		return avg >= PLAYERBOT_BONUS_KEEP_AVERAGE || skill >= PLAYERBOT_WEAPON_PRIZE_SKILL_PERCENT;
+	}
+
+	// Anything a player would not put on the anvil without a scroll: a prize
+	// weapon, or a piece already carrying PLAYERBOT_PRIZE_LINES lines.
+	bool IsPlayerBotPrizeItem(LPITEM item)
+	{
+		if (!item)
+			return false;
+		if (IsPlayerBotPrizeWeapon(item))
+			return true;
+		int lines = 0;
+		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+			if (item->GetAttributeType(i) != 0 && item->GetAttributeValue(i) != 0)
+				++lines;
+		return lines >= PLAYERBOT_PRIZE_LINES;
+	}
+
 	// Every skill book in the bag, whatever the skill.
 	int CountPlayerBotSkillBooks(LPCHARACTER ch)
 	{
@@ -874,6 +910,19 @@ namespace
 					LPITEM scroll = ch->GetInventoryItem(cell);
 					if (scroll && scroll->GetVnum() == PLAYERBOT_BLESSING_SCROLL_VNUM)
 						scrollCell = cell;
+				}
+			}
+			// No scroll, a roll that can fail, and a weapon worth more than the
+			// next plus: leave it. The blacksmith burns what he fails.
+			if (scrollCell < 0 && IsPlayerBotPrizeItem(item))
+			{
+				const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+				if (prt && prt->prob < 100)
+				{
+					PlayerBotLogThrottled("refine_prize_no_scroll", dwNow,
+							"PLAYERBOT_AI: refine held, prize line and no blessing scroll pid=%u name=%s vnum=%u plus=%u prob=%d",
+							ch->GetPlayerID(), ch->GetName(), oldVnum, (unsigned int)plusLevel, prt->prob);
+					continue;
 				}
 			}
 			bool attempted = false;

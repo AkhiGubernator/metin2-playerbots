@@ -592,7 +592,81 @@ function Sync-M2PlayerbotOverlay {
         Write-Warning "Brak $seedSource - playerbots_seed.sql nie zostal odswiezony."
     }
 
+    # The panel's build context, the same way. start-server.ps1 stages these
+    # too, but below its -IdentityOnly return - and this function is what the
+    # launcher's own build path runs, so a player who only ever clicked GRAJ or
+    # AKTUALIZUJ had a panel built from whatever VERSION and CHANGELOG the
+    # installer left there: ten releases later the classic panel still said
+    # 1.29.0 and offered "Zobacz, co przynosi" for a version it was running.
+    # Rebuilding the image could not help, because the file it bakes in was
+    # the stale one.
+    foreach ($pair in @(
+            @{ From = 'VERSION';                    To = 'linux-port\docker\panel\app\VERSION' },
+            @{ From = 'CHANGELOG.md';               To = 'linux-port\docker\panel\app\CHANGELOG.md' },
+            @{ From = 'files\admin_panel.py';       To = 'linux-port\docker\panel\app\admin_panel.py' },
+            @{ From = 'files\items.json';           To = 'linux-port\docker\panel\app\items.json' },
+            @{ From = 'files\favicon.png';          To = 'linux-port\docker\panel\app\favicon.png' },
+            @{ From = 'files\web_admin_schema.sql'; To = 'linux-port\docker\panel\schema\web_admin_schema.sql' },
+            @{ From = 'files\web_admin.quest';      To = 'linux-port\docker\game\quest\web_admin.quest' },
+            @{ From = 'files\high_risk.quest';      To = 'linux-port\docker\game\quest\high_risk.quest' })) {
+        $panelSource = Join-Path $ServerRoot $pair.From
+        $panelStaged = Join-Path $ServerRoot $pair.To
+        if (-not (Test-Path -LiteralPath $panelSource -PathType Leaf)) { continue }
+        $panelParent = Split-Path -Parent $panelStaged
+        if (-not (Test-Path -LiteralPath $panelParent -PathType Container)) {
+            New-Item -ItemType Directory -Path $panelParent -Force | Out-Null
+        }
+        $panelStagedHash = $null
+        if (Test-Path -LiteralPath $panelStaged -PathType Leaf) {
+            $panelStagedHash = (Get-FileHash -LiteralPath $panelStaged -Algorithm SHA256).Hash
+        }
+        if ($panelStagedHash -ne (Get-FileHash -LiteralPath $panelSource -Algorithm SHA256).Hash) {
+            Copy-Item -LiteralPath $panelSource -Destination $panelStaged -Force
+            $copied++
+        }
+    }
+    $staticSource = Join-Path $ServerRoot 'files\static'
+    $staticStaged = Join-Path $ServerRoot 'linux-port\docker\panel\app\static'
+    if (Test-Path -LiteralPath $staticSource -PathType Container) {
+        foreach ($asset in Get-ChildItem -LiteralPath $staticSource -Recurse -File) {
+            $relative = $asset.FullName.Substring($staticSource.Length).TrimStart('\')
+            $assetStaged = Join-Path $staticStaged $relative
+            $assetParent = Split-Path -Parent $assetStaged
+            if (-not (Test-Path -LiteralPath $assetParent -PathType Container)) {
+                New-Item -ItemType Directory -Path $assetParent -Force | Out-Null
+            }
+            $assetHash = $null
+            if (Test-Path -LiteralPath $assetStaged -PathType Leaf) {
+                $assetHash = (Get-FileHash -LiteralPath $assetStaged -Algorithm SHA256).Hash
+            }
+            if ($assetHash -ne (Get-FileHash -LiteralPath $asset.FullName -Algorithm SHA256).Hash) {
+                Copy-Item -LiteralPath $asset.FullName -Destination $assetStaged -Force
+                $copied++
+            }
+        }
+    }
+
     return $copied
+}
+
+function Set-M2PlayerbotsVersionEnvironment {
+    <#
+        The advanced panel reports the Playerbots release it is looking at from
+        PLAYERBOTS_VERSION, which compose takes from M2_PLAYERBOTS_VERSION or a
+        default written into docker-compose.yml. Nothing on a player's machine
+        ever set the variable, so the panel reported whatever the default was
+        when that compose file was last touched - 1.30.29 for ten releases.
+        Compose reads the process environment before the .env file, so the
+        launcher can say what VERSION on disk says without touching a file
+        it must never rewrite. A value an operator set by hand is left alone.
+    #>
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
+
+    if ($env:M2_PLAYERBOTS_VERSION) { return }
+    $versionFile = Join-Path $ServerRoot 'VERSION'
+    if (-not (Test-Path -LiteralPath $versionFile -PathType Leaf)) { return }
+    $version = ([IO.File]::ReadAllText($versionFile)).Trim()
+    if ($version -match '^\d+\.\d+\.\d+$') { $env:M2_PLAYERBOTS_VERSION = $version }
 }
 
 function Get-M2SanitizedEnv {
@@ -1243,5 +1317,6 @@ Export-ModuleMember -Function @(
     'Get-M2MissingSqlDumps',
     'Test-M2DockerRunning',
     'Sync-M2PlayerbotOverlay',
+    'Set-M2PlayerbotsVersionEnvironment',
     'Invoke-M2EnginePatches'
 )

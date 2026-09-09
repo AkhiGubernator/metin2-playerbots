@@ -452,6 +452,21 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   into the "under +4" scrap branch at merchant x2; `PLAYERBOT_PRIOR_LEVEL30_WEAPON`
   floors it at 250 000 and a damage line in the upper half of what rolls
   (average >= 24, skill >= 15) adds `PLAYERBOT_SHOP_BONUS_PRIZE_LINE`.
+- **The panel's VERSION is staged on the path the click never runs.**
+  `start-server.ps1` copies VERSION, CHANGELOG.md and the panel sources into
+  `linux-port/docker/panel/app/` - below its `-IdentityOnly` return, which is
+  how the launcher calls it before building on its own. So a player who only
+  ever pressed GRAJ or AKTUALIZUJ had a panel image baked from the VERSION the
+  installer left, and a `--no-cache` rebuild could not help: "Masz uruchomiona
+  1.29.0. Dostepna jest 1.30.38", ten releases in. `Sync-M2PlayerbotOverlay`
+  stages the panel context now, next to the bot sources it always staged. The
+  advanced panel's number is a different pipe: `PLAYERBOTS_VERSION` from
+  compose, whose default nobody bumped after 1.30.29;
+  `Set-M2PlayerbotsVersionEnvironment` puts VERSION into the process
+  environment (compose reads it ahead of `.env`, which is never rewritten)
+  and the release still bumps the default. The live-log filter in the classic
+  panel is the same family of bug from the other side: `"botgrom" in line`
+  matched botgrom2..botgrom6, so one keeper's log was five bots' log.
 - **A guard belongs on the path that does the thing, not beside it.**
   The build-context check went into `start-server.ps1` and the report came back
   unchanged, because `Metin2-Launcher.ps1` calls that script with
@@ -1234,6 +1249,39 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `/api/bot_gear_history` reads them by `who` with an IN-list of `how`,
   because the table holds eighteen million rows and GET/SET_SOCKET/GET_GOLD
   are most of them.
+
+- **A weapon's percent lines multiply its own damage, and a better weapon
+  needs a window to go on.** `GetPlayerBotEquipmentScore` scaled attack at a
+  thousand a point and added `APPLY_NORMAL_HIT_DAMAGE_BONUS` at 250-500 a
+  point beside it - a +47% line on a 151-244 bow was worth two percent of
+  the bow. On a weapon those two lines now multiply the attack score by
+  `100 + avg*weight + skill*weight` (`PLAYERBOT_WEAPON_OWN_LINE_PERCENT` /
+  `_OTHER_LINE_PERCENT` by `GetPlayerBotSchoolStyle`), and the flat loop
+  skips them. Separately: `CHARACTER::EquipItem` refuses within 1.5 s of an
+  attack or a cast, the manager only paused combat for an *empty* core slot,
+  and 247 of 970 bots carried a weapon a third stronger than the one in
+  hand. The pause now covers any `bEquipPending`, bounded by
+  `PLAYERBOT_EQUIP_PENDING_MAX_MS` and retried after
+  `PLAYERBOT_EQUIP_PENDING_RETRY_MS`. And the pass itself had to move: at
+  the bottom of the tick it sat behind the stall, the loot, the horse, the
+  fishing, the travel, the town visit and the wander, each of which claims
+  the tick, so a bot always busy with one of them never read its bag at
+  all (a warrior of 28 swinging the level-one sword +6 with a Long Sword +4
+  beside it). It runs in the upkeep group now, the same shape as the chest
+  pass above, guarded against an open counter, a town visit, a rod in the
+  hand and the stable; `HoldPlayerBotForEquipWindow` is the shared wait.
+- **Every failed refine destroys the item.** `CHARACTER::DoRefine` has one
+  failure branch, `RemoveItem(item, "REMOVE (REFINE FAIL)")`, at every
+  grade; only `DoRefineWithScroll` under a Blessing Scroll (25040) hands
+  the item back a level down. `refine_proto` runs 90/90/90/90/80/60/50/40/30
+  from +1 to +9. `IsPlayerBotPrizeWeapon` (average from
+  `PLAYERBOT_BONUS_KEEP_AVERAGE`, skill from
+  `PLAYERBOT_WEAPON_PRIZE_SKILL_PERCENT`) is refined only under a scroll
+  when `prt->prob < 100`; no NPC shop sells the scroll, so it comes from
+  drops and chests and 222 sat in bags. `IsPlayerBotPrizeItem` widens that
+  to any piece with `PLAYERBOT_PRIZE_LINES` lines, and `CanPlayerBotRerollItem`
+  refuses a stone below `PLAYERBOT_BONUS_MIN_REFINE` - lines before the
+  refine are lines a burn takes with it.
 
 ## Engine facts worth not re-deriving
 

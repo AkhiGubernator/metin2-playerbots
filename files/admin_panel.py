@@ -6428,6 +6428,13 @@ def api_bot_logs(bot_name):
             "/opt/metin2/var/channel1/game2/syslog"
         ]
         matched_lines = []
+        # The whole name and not a prefix of one: "botgrom" used to match
+        # botgrom2..botgrom6 as well (reported as "mixed logs" by an operator
+        # watching one keeper's counter), because bot names are numbered
+        # suffixes of a shared stem. A name in the engine's log is bounded by
+        # a space, "=", ":", "[", a bracket or the line end, never by a letter
+        # or a digit of its own.
+        name_re = re.compile(r"(?<![A-Za-z0-9_])" + re.escape(bot_name) + r"(?![A-Za-z0-9_])", re.IGNORECASE)
         for log_path in log_files:
             if os.path.exists(log_path):
                 try:
@@ -6435,7 +6442,7 @@ def api_bot_logs(bot_name):
                         lines = f.readlines()
                         recent = lines[-800:] if len(lines) > 800 else lines
                         for line in recent:
-                            if bot_name.lower() in line.lower():
+                            if name_re.search(line):
                                 matched_lines.append(line.strip())
                 except Exception:
                     pass

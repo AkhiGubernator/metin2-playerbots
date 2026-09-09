@@ -85,6 +85,7 @@ namespace
 			case PLAYERBOT_MAP_ORC_VALLEY: return "do Doliny Orkow";
 			case PLAYERBOT_MAP_SOHAN: return "na Gore Sohan";
 			case PLAYERBOT_MAP_SPIDER_V1: return "do Lochu Pajakow";
+			case PLAYERBOT_MAP_SPIDER_V2: return "do Lochu Pajakow 2";
 			case PLAYERBOT_MAP_HWANG: return "do Swiatyni Hwang";
 			default: return "";
 		}
@@ -452,7 +453,16 @@ namespace
 					const long wantMap = GetPlayerBotFrontierMapForLevel(ch);
 					const char* where = wantMap != 0 && wantMap != ch->GetMapIndex()
 							? GetPlayerBotMapDestinationPl(wantMap) : "";
-					if (where[0])
+					// The frontier is reached from Bokjung through the
+					// Teleporter, at his price; a bot that cannot pay is not
+					// going anywhere, and "Ide na Gore Sohan" over a bot that
+					// has stood in Bokjung for an hour is what an operator
+					// reads as a bot that cannot find the portal.
+					if (where[0] && ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 &&
+							ch->GetGold() < GetPlayerBotTeleporterFee(ch))
+						snprintf(status, statusSize, "%sZbieram yang na Teleporter %s (%d/%d)",
+								prefix, where, ch->GetGold(), GetPlayerBotTeleporterFee(ch));
+					else if (where[0])
 						snprintf(status, statusSize, "%sIde %s (cel: %s)", prefix,
 								where, goal);
 					else

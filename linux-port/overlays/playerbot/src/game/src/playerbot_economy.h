@@ -457,6 +457,43 @@ namespace
 		return false;
 	}
 
+	// How many bots are short of a material and can pay for it, from the
+	// market ledger (playerbot_market.h, which comes after this fragment).
+	DWORD GetPlayerBotLedgerDemand(DWORD vnum);
+
+	// A spare of a higher tier than the piece worn in its slot: not an
+	// upgrade yet, but one the blacksmith can make into one, so neither the
+	// merchant nor the refine pass treats it as scrap. Only the best such
+	// spare per slot counts; the rest are still scrap.
+	bool IsPlayerBotHigherTierSpare(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item || !IsPlayerBotEquipmentCandidate(ch, item))
+			return false;
+		const int wearCell = item->FindEquipCell(ch);
+		if (wearCell < 0 || wearCell >= WEAR_MAX_NUM)
+			return false;
+		if (item->GetLevelLimit() > ch->GetLevel())
+			return false;
+		LPITEM worn = ch->GetWear(wearCell);
+		if (!worn || item->GetLevelLimit() <= worn->GetLevelLimit())
+			return false;
+		const long long itemScore = GetPlayerBotEquipmentScore(item, ch);
+		for (WORD otherCell = 0; otherCell < INVENTORY_MAX_NUM; ++otherCell)
+		{
+			LPITEM other = ch->GetInventoryItem(otherCell);
+			if (!other || other == item || !IsPlayerBotEquipmentCandidate(ch, other) ||
+					other->GetLevelLimit() > ch->GetLevel() ||
+					other->GetLevelLimit() <= worn->GetLevelLimit() ||
+					other->FindEquipCell(ch) != wearCell)
+				continue;
+			const long long otherScore = GetPlayerBotEquipmentScore(other, ch);
+			if (otherScore > itemScore ||
+					(otherScore == itemScore && other->GetID() < item->GetID()))
+				return false;
+		}
+		return true;
+	}
+
 	bool IsPlayerBotJunkItem(LPCHARACTER ch, LPITEM item)
 	{
 		if (!ch || !item || item->IsEquipped() || item->isLocked())
@@ -605,13 +642,20 @@ namespace
 		// IsPlayerBotSurplusMaterial for why that is worth eight cells. Judged by
 		// the recipe table, not by item type: that is what brings the fishbone
 		// and the blessing scroll in.
+		// A material somebody on this world is short of is counter goods,
+		// not merchant scrap: a Scorpion Tail went to the merchant for a
+		// few hundred yang while the next stall along sold one for 58 894.
+		// Only a material nobody wants, and only under bag pressure.
 		if (IsPlayerBotTradeableMaterial(item))
 			return !PlayerBotNeedsRefineMaterial(ch, vnum) &&
-					IsPlayerBotSurplusMaterial(ch, item);
+					IsPlayerBotSurplusMaterial(ch, item) &&
+					GetPlayerBotLedgerDemand(vnum) == 0;
 		// The rest of the 30000 block is eight gift boxes and two quest items.
 		// No counter would carry those, so there junk still means junk.
 		if (vnum >= 30000 && vnum <= 30200)
-			return !PlayerBotNeedsRefineMaterial(ch, vnum);
+			return !PlayerBotNeedsRefineMaterial(ch, vnum) &&
+					GetPlayerBotLedgerDemand(vnum) == 0 &&
+					CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS;
 		if (vnum >= 70038 && vnum <= 70060)
 			return false;
 
@@ -652,6 +696,9 @@ namespace
 				// still valuable to another bot.  Keep only the single best +6-or-higher
 				// reserve for this wear slot; the nearby sharing pass will hand the real
 				// item (including sockets/attributes) to a lower-level compatible build.
+				if (IsPlayerBotHigherTierSpare(ch, item))
+					return false;
+
 				if (item->GetRefineLevel() >= PLAYERBOT_RESERVE_GEAR_MIN_REFINE)
 				{
 					for (WORD otherCell = 0; otherCell < INVENTORY_MAX_NUM; ++otherCell)
@@ -813,6 +860,13 @@ namespace
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetRefinedVnum() == 0 || !IsPlayerBotEquipmentCandidate(ch, item))
+				continue;
+			// What the merchant would take on the next town visit is not
+			// worth a refine now: Ametystowy Naszyjnik+0 was raised to +1 at
+			// 17:58 and sold for scrap at 18:19. A spare that is kept - an
+			// upgrade, a higher tier than the worn piece, a reserve at +6 -
+			// is worth raising; the rest is scrap and stays at what it is.
+			if (IsPlayerBotJunkItem(ch, item))
 				continue;
 
 			const BYTE plusLevel = item->GetRefineLevel();

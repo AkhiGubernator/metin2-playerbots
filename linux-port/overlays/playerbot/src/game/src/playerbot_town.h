@@ -1613,8 +1613,10 @@ namespace
 		// to Joan rather than adding an eighth counter nobody can see past -
 		// which is the only way the second market ever gets stock, since this is
 		// where the bots with something to sell happen to be standing.
+		const int iM2StallCap = MAX(PLAYERBOT_SHOP_M2_MAX_STALLS,
+				GetPlayerBotsAlive() * PLAYERBOT_SHOP_M2_STALLS_PER_MILLE / 1000);
 		if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 &&
-				s_iPlayerBotStallsInM2 >= PLAYERBOT_SHOP_M2_MAX_STALLS)
+				s_iPlayerBotStallsInM2 >= iM2StallCap)
 		{
 			// Only a keeper by personality, and only one with nowhere else to
 			// be. This pass runs ahead of the world travel, so a bot bound for
@@ -1632,8 +1634,8 @@ namespace
 					IsPlayerBotPoorKeeper(ch) || IsPlayerBotBagFull(ch)))
 				return false;
 			PlayerBotLogThrottled("stall_overflow", dwNow,
-					"PLAYERBOT_SHOP: Bokjung full, taking the stall to Joan pid=%u name=%s stalls=%d lines=%u",
-					ch->GetPlayerID(), ch->GetName(), s_iPlayerBotStallsInM2,
+					"PLAYERBOT_SHOP: Bokjung full, taking the stall to Joan pid=%u name=%s stalls=%d cap=%d lines=%u",
+					ch->GetPlayerID(), ch->GetName(), s_iPlayerBotStallsInM2, iM2StallCap,
 					(unsigned int)worthTaking.size());
 			return MovePlayerBotToWorldPortal(ch, state,
 					PLAYERBOT_M2_TO_M1_PORTAL_X, PLAYERBOT_M2_TO_M1_PORTAL_Y,

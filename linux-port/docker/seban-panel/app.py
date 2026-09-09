@@ -30,7 +30,7 @@ MAP_NAMES = {
     1: "Shinsoo M1", 3: "Shinsoo M2", 21: "Chunjo M1", 23: "Chunjo M2",
     24: "Chunjo M3", 25: "Łatwy Loch Małp", 41: "Jinno M1", 43: "Jinno M2",
     61: "Góra Sohan", 63: "Pustynia Yongbi", 64: "Dolina Orków", 104: "Loch Pająków V1",
-    65: "Świątynia Hwang",
+    65: "Świątynia Hwang", 71: "Loch Pająków V2",
     108: "Loch Małp Normalny", 109: "Loch Małp Trudny",
 }
 MAP_BOUNDS = {
@@ -38,7 +38,7 @@ MAP_BOUNDS = {
     24: (179200, 0, 51200, 51200), 25: (844800, 435200, 76800, 76800),
     61: (358400, 153600, 153600, 153600), 63: (204800, 486400, 153600, 153600),
     64: (256000, 665600, 153600, 153600), 104: (51200, 486400, 76800, 76800),
-    65: (537600, 51200, 102400, 102400),
+    65: (537600, 51200, 102400, 102400), 71: (665600, 435200, 102400, 102400),
     108: (128000, 640000, 76800, 76800), 109: (128000, 716800, 76800, 76800),
 }
 TRACKED_MAP_OPTIONS = tuple((index, MAP_NAMES[index]) for index in MAP_BOUNDS)
@@ -46,11 +46,11 @@ MAP_RESPAWN_OPTIONS = (
     (1, "Shinsoo M1 — Yongan"), (3, "Shinsoo M2"), (21, "Chunjo M1 — Joan"),
     (23, "Chunjo M2"), (41, "Jinno M1"), (43, "Jinno M2"),
     (25, "Łatwy Loch Małp"), (61, "Góra Sohan"), (63, "Pustynia Yongbi"), (64, "Dolina Orków"),
-    (104, "Loch Pająków V1"), (108, "Loch Małp Normalny"), (109, "Loch Małp Trudny"),
+    (104, "Loch Pająków V1"), (71, "Loch Pająków V2"), (108, "Loch Małp Normalny"), (109, "Loch Małp Trudny"),
 )
 # Monkey Dungeons and Spider Dungeon V1 ship no stone.txt, so only their mob
 # respawns can be configured. The explicit allowlist also protects the helper.
-MAP_STONE_RESPAWN_IDS = frozenset(index for index, _name in MAP_RESPAWN_OPTIONS if index not in {25, 104, 108, 109})
+MAP_STONE_RESPAWN_IDS = frozenset(index for index, _name in MAP_RESPAWN_OPTIONS if index not in {25, 104, 71, 108, 109})
 STATUS_GLOBS = (os.environ.get("PLAYERBOTS_STATUS_GLOB", "/opt/metin2/var/channel1/*/playerbot_status.tsv"),)
 RATES_SPOOL = Path("/opt/m2spool")
 UPDATE_SPOOL = Path("/opt/m2update")

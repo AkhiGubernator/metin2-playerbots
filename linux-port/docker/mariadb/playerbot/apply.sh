@@ -135,7 +135,7 @@ stranded=$(db -e "
       FROM player.player p
       JOIN account.account a ON a.id = p.account_id
      WHERE LEFT(a.login, 10) = 'playerbot_'
-       AND p.map_index NOT IN (21, 23, 24, 25, 108, 109, 61, 63, 64, 104, 65);
+       AND p.map_index NOT IN (21, 23, 24, 25, 108, 109, 61, 63, 64, 104, 65, 71);
 ")
 if [ -n "$stranded" ] && [ "$stranded" -gt 0 ] 2>/dev/null; then
     db -e "
@@ -143,7 +143,7 @@ if [ -n "$stranded" ] && [ "$stranded" -gt 0 ] 2>/dev/null; then
           JOIN account.account a ON a.id = p.account_id
            SET p.map_index = 23, p.x = 145500, p.y = 240000
          WHERE LEFT(a.login, 10) = 'playerbot_'
-           AND p.map_index NOT IN (21, 23, 24, 25, 108, 109, 61, 63, 64, 104, 65);
+           AND p.map_index NOT IN (21, 23, 24, 25, 108, 109, 61, 63, 64, 104, 65, 71);
     "
     echo "[playerbot-migrate] moved $stranded bot(s) back to Bokjung"
 fi

@@ -799,9 +799,15 @@ function New-M2SupportBundle {
             # goal and status lines that say what each bot wanted, filtered
             # here rather than shipped whole (a busy day's syslog is hundreds
             # of megabytes). Bots only; a player's chat is not in it.
+            # No double quotes anywhere inside the sh command - not round $f,
+            # not round the grep pattern: Windows PowerShell 5.1 wraps a native
+            # argument in double quotes without escaping the ones it already
+            # holds, so the first embedded quote ended the argument and the
+            # file came back empty on the machine it was made for (1.30.40).
+            # Hence -e per pattern instead of one quoted alternation.
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'playerbot-syslog.txt') -Command {
                 docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
-                    'for f in /opt/metin2/var/channel1/game1/log/*/syslog.* /opt/metin2/var/channel1/game1/syslog; do [ -f "$f" ] && tail -n 400000 "$f"; done 2>/dev/null | grep -a "PLAYERBOT_WORLD\|PLAYERBOT_PORTAL\|PLAYERBOT_NAV\|PLAYERBOT_WATCHDOG\|PLAYERBOT_GOAL\|PLAYERBOT_LOAD\|PLAYERBOT_SHOP\|PLAYERBOT_TOWN\|PLAYERBOT_DEPARTURE\|PLAYERBOT_HORSE\|PLAYERBOT_MONKEY\|PLAYERBOT_AUTH\|PLAYERBOT: autospawn" | tail -n 60000'
+                    'for f in /opt/metin2/var/channel1/game1/log/*/syslog.* /opt/metin2/var/channel1/game1/syslog; do [ -f $f ] && tail -n 400000 $f; done 2>/dev/null | grep -a -e PLAYERBOT_WORLD -e PLAYERBOT_PORTAL -e PLAYERBOT_NAV -e PLAYERBOT_WATCHDOG -e PLAYERBOT_GOAL -e PLAYERBOT_LOAD -e PLAYERBOT_SHOP -e PLAYERBOT_TOWN -e PLAYERBOT_DEPARTURE -e PLAYERBOT_HORSE -e PLAYERBOT_MONKEY -e PLAYERBOT_AUTH -e autospawn | tail -n 60000'
             }
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'playerbot-status.tsv') -Command {
                 docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `

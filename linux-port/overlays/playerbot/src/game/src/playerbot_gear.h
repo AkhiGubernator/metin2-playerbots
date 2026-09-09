@@ -485,9 +485,16 @@ namespace
 		const WORD oldCell = oldItem->GetCell();
 		const DWORD vnum = oldItem->GetVnum();
 		const BYTE refine = oldItem->GetRefineLevel();
+		// Both ends of the gift, in log.log: the giver's history says where
+		// its spare went, the receiver's says where its new piece came from.
+		char szHint[64];
+		snprintf(szHint, sizeof(szHint), "%s", sharer.m_receiver->GetName());
+		LogManager::instance().ItemLog(ch, oldItem, "PLAYERBOT_GIFT_OUT", szHint);
 		oldItem->RemoveFromCharacter();
 		if (oldItem->AddToCharacter(sharer.m_receiver, TItemPos(INVENTORY, receiverCell)))
 		{
+			snprintf(szHint, sizeof(szHint), "%s", ch->GetName());
+			LogManager::instance().ItemLog(sharer.m_receiver, oldItem, "PLAYERBOT_GIFT_IN", szHint);
 			sys_log(0, "PLAYERBOT_AI: gifted reserve gear pid=%u name=%s -> target_pid=%u target_name=%s vnum=%u refine=%u improvement=%lld",
 					ch->GetPlayerID(), ch->GetName(), sharer.m_receiver->GetPlayerID(),
 					sharer.m_receiver->GetName(), vnum, refine, sharer.m_bestImprovement);
@@ -586,6 +593,12 @@ namespace
 		{
 			sys_log(0, "PLAYERBOT_AI: equipped upgrade pid=%u name=%s wear=%d old_vnum=%u new_vnum=%u old_score=%lld new_score=%lld",
 					ch->GetPlayerID(), ch->GetName(), bestWearCell, oldVnum, newVnum, oldScore, bestScore);
+			// The one line a player asks about first - "why is my top Sura
+			// suddenly without her +8" - is the swap, so it goes to log.log
+			// with what came off.
+			char szHint[64];
+			snprintf(szHint, sizeof(szHint), "slot %d zamiast %u", bestWearCell, oldVnum);
+			LogManager::instance().ItemLog(ch, bestItem, "PLAYERBOT_EQUIP", szHint);
 
 			if (bestOldItem)
 				SharePlayerBotOldGearNearby(ch, bestOldItem);

@@ -1966,6 +1966,10 @@ namespace
 		// own cell and never merges - and matching by vnum found that second
 		// stack and walked a buyer over to a sold slot.
 		DWORD dwItemID;
+		// Whether the sale of this line has been written to log.log. The engine
+		// logs the buyer's side (SHOP_BUY) and nothing for the keeper, and the
+		// keeper is the one whose history a player reads.
+		bool bSoldLogged;
 		// Where the line sits in the engine's shop, which is what CShopManager::Buy
 		// indexes by. Not the line's index in the table: a private shop is a grid
 		// of five columns and eight rows, a weapon is three cells tall and an

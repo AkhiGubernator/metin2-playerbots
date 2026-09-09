@@ -1222,6 +1222,19 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   at least 1000, level 11+) on a successful transition. "Portal walk
   stalled" goes to syserr too - support bundles carry only syserr.
 
+- **A bot's gear history is `log.log`, and the core has to write its half.**
+  The engine logs refines (`REFINE SUCCESS`/`FAIL`, `REMOVE (REFINE FAIL)`
+  for a burn), the buyer's `SHOP_BUY`, and every `ITEM_MANAGER::RemoveItem`
+  reason as `how` - which is where `PLAYERBOT_SHOP_SELL` and `PLAYERBOT_BONUS`
+  come from. What it never saw is what a player asks about: the swap into a
+  wear slot, a gift, the keeper's side of a stall sale, our own safebox
+  deposit. `LogManager::instance().ItemLog` writes those (`PLAYERBOT_EQUIP`,
+  `PLAYERBOT_GIFT_OUT/IN`, `PLAYERBOT_STALL_SOLD` once per line via
+  `TPlayerBotShopOffer::bSoldLogged`, `SAFEBOX PUT`); the classic panel's
+  `/api/bot_gear_history` reads them by `who` with an IN-list of `how`,
+  because the table holds eighteen million rows and GET/SET_SOCKET/GET_GOLD
+  are most of them.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

@@ -104,6 +104,9 @@ namespace
 			{
 				if (!box->IsValidPosition(pos) || !box->IsEmpty(pos, item->GetSize()))
 					continue;
+				char szHint[128];
+				snprintf(szHint, sizeof(szHint), "%s %u", item->GetName(), (unsigned int)item->GetCount());
+				LogManager::instance().ItemLog(ch, item, "SAFEBOX PUT", szHint);
 				item->RemoveFromCharacter();
 				box->Add(pos, item);
 				placed = true;
@@ -1478,10 +1481,27 @@ namespace
 		{
 			// Line by line, by item id - see TPlayerBotShopOffer::dwItemID. By
 			// vnum a counter whose every line had sold stayed open as long as
-			// the bag held a second stack of any of them.
-			for (size_t i = 0; i < state.vecShopOffers.size() && bSoldOut; ++i)
-				if (FindPlayerBotOfferItem(ch, state.vecShopOffers[i]))
+			// the bag held a second stack of any of them. A line that is gone
+			// is written to log.log once, as the keeper's sale: the panel's
+			// equipment history reads it there beside the engine's own rows.
+			for (size_t i = 0; i < state.vecShopOffers.size(); ++i)
+			{
+				TPlayerBotShopOffer& offer = state.vecShopOffers[i];
+				if (FindPlayerBotOfferItem(ch, offer))
+				{
 					bSoldOut = false;
+					continue;
+				}
+				if (!offer.bSoldLogged)
+				{
+					offer.bSoldLogged = true;
+					char szHint[64];
+					snprintf(szHint, sizeof(szHint), "%u x%u za %u", offer.dwVnum,
+							(unsigned int)offer.wCount, offer.dwPrice);
+					LogManager::instance().ItemLog(ch, (int)offer.dwItemID, (int)offer.dwVnum,
+							"PLAYERBOT_STALL_SOLD", szHint);
+				}
+			}
 		}
 
 		// Whatever else happens, a corpse or a bot that is no longer standing on
@@ -1713,6 +1733,7 @@ namespace
 			offer.bRefine = item->GetRefineLevel();
 			offer.wCount = item->GetCount();
 			offer.dwItemID = item->GetID();
+			offer.bSoldLogged = false;
 			offer.bSlot = (BYTE)slot;
 			offers.push_back(offer);
 			if (scored[i].first > bestScore)

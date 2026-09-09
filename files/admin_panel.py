@@ -4358,6 +4358,7 @@ MAP_I18N = {
   "stats":"Statystyki","unspent_stats":"Nierozdane: {n} pkt statystyk","skills":"Umiejętności","profession_none":"Nie wybrano","profession_pending":"Profesja nie została jeszcze wybrana.","depot":"Magazyn","depot_empty":"Magazyn jest pusty.",
   "unspent_skills":"Nierozdane: {n} pkt umiejętności","equipped":"Założony ekwipunek (EQ)","weapon":"Broń","armor":"Zbroja","helmet":"Hełm","shield":"Tarcza","bracelet":"Bransoleta",
   "boots":"Buty","necklace":"Naszyjnik","earrings":"Kolczyki","empty":"Puste","inventory":"Zawartość ekwipunku","items_count":"przedmiotów","inventory_empty":"Ekwipunek jest pusty.","quantity":"Ilość",
+  "gear_history":"Historia ekwipunku","gear_history_hint":"Ulepszenia, spalenia, założenia, prezenty, sprzedaż, magazyn — z log.log","gear_history_loading":"Ładowanie historii...","gear_history_empty":"Brak wpisów o ekwipunku tej postaci.","gear_history_more":"Pokaż starsze",
   "event_log":"Dziennik zdarzeń bota (logi na żywo)","track_live":"Śledź na żywo","copy_logs":"Kopiuj logi","loading_logs":"Ładowanie logów postaci","no_logs":"Brak najświeższych wpisów w logach dla tej postaci.",
   "log_error":"Błąd odczytu logów","network_error":"Błąd sieci","teleporting":"Teleportowanie Twojej postaci w grze...","teleported":"Przeteleportowano {name} do bota w grze!","you":"Cię","failure":"Niepowodzenie",
   "copied":"Skopiowano","paste":"wklej w grze [Enter] → Ctrl+V → [Enter]","solo_exp":"Solo — zdobywanie doświadczenia","party_exp":"[PT] Zdobywanie doświadczenia w grupie","metin_hunt":"Polowanie na Metiny",
@@ -4377,6 +4378,7 @@ MAP_I18N = {
   "stats":"Statistics","unspent_stats":"Unspent: {n} stat points","skills":"Skills","profession_none":"Not selected","profession_pending":"The profession has not been selected yet.","depot":"Depot","depot_empty":"The depot is empty.",
   "unspent_skills":"Unspent: {n} skill points","equipped":"Equipped items","weapon":"Weapon","armor":"Armour","helmet":"Helmet","shield":"Shield","bracelet":"Bracelet",
   "boots":"Boots","necklace":"Necklace","earrings":"Earrings","empty":"Empty","inventory":"Inventory contents","items_count":"items","inventory_empty":"The inventory is empty.","quantity":"Quantity",
+  "gear_history":"Equipment history","gear_history_hint":"Refines, burns, equips, gifts, sales, safebox — from log.log","gear_history_loading":"Loading history...","gear_history_empty":"No equipment entries for this character.","gear_history_more":"Show older",
   "event_log":"Bot event log (live)","track_live":"Track live","copy_logs":"Copy logs","loading_logs":"Loading logs for","no_logs":"No recent log entries for this character.",
   "log_error":"Log read error","network_error":"Network error","teleporting":"Teleporting your in-game character...","teleported":"Teleported {name} to the bot in game!","you":"you","failure":"Failure",
   "copied":"Copied","paste":"paste in game [Enter] → Ctrl+V → [Enter]","solo_exp":"Solo levelling","party_exp":"[PT] Party levelling","metin_hunt":"Hunting Metins",
@@ -5942,6 +5944,19 @@ function openBotModal(pid) {
       html += '<div class="muted" style="font-size:10px;margin-top:7px">' +
               I18N.unspent_skills.replace('{n}', p.skill_point || 0) + '</div></div></div>';
 
+      // Equipment history: what this bot refined, burned, put on, gave away,
+      // sold and stored - read out of log.log, where the engine and the core
+      // both write it. Filled on open, like the live log below.
+      html += '<div style="margin-top:14px;border-top:1px solid #332814;padding-top:10px">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+              '<h4 style="margin:0;color:var(--gold);font-size:13px">📖 ' + I18N.gear_history + '</h4>' +
+              '<button type="button" onclick="loadBotGearHistory(' + p.id + ', true)" style="padding:2px 8px;font-size:11px;background:#334155;color:#fff;border:none;border-radius:4px;cursor:pointer">' + I18N.gear_history_more + '</button>' +
+              '</div>' +
+              '<div class="muted" style="font-size:10px;margin-bottom:6px">' + I18N.gear_history_hint + '</div>' +
+              '<div id="botGearHistory" style="background:#09090b;border:1px solid #27272a;border-radius:6px;padding:6px 8px;max-height:220px;overflow-y:auto;font-size:11px;line-height:1.5">' +
+              I18N.gear_history_loading + '</div>' +
+              '</div>';
+
       // Live Bot Logs section
       html += '<div style="margin-top:14px;border-top:1px solid #332814;padding-top:10px">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
@@ -6038,6 +6053,7 @@ function openBotModal(pid) {
       content.innerHTML = html;
       renderInventoryGrid(inv);
       startLogTracking(p.name);
+      loadBotGearHistory(p.id, false);
     })
     .catch(function(err) {
       content.innerHTML = '<p style="color:#ef4444;text-align:center">' + I18N.network_error + ': ' + err + '</p>';
@@ -6048,6 +6064,35 @@ var g_activeLogBot = null;
 var g_logInterval = null;
 var g_collectedLogs = [];
 var g_seenLogsSet = {};
+
+function loadBotGearHistory(pid, older) {
+  var box = document.getElementById('botGearHistory');
+  if (!box) return;
+  var limit = older ? 400 : 60;
+  fetch('/api/bot_gear_history/' + pid + '?limit=' + limit)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!box) return;
+      if (!data || !data.ok || !data.rows || data.rows.length === 0) {
+        box.textContent = (data && data.error) ? data.error : I18N.gear_history_empty;
+        return;
+      }
+      var colors = { refine_ok: '#4ade80', refine_fail: '#f87171', burned: '#f87171', equip: '#60a5fa',
+                     gift_out: '#fbbf24', gift_in: '#fbbf24', stall_sold: '#a78bfa', bought: '#a78bfa',
+                     vendor: '#94a3b8', bonus: '#f472b6', safebox: '#38bdf8', get: '#94a3b8', other: '#94a3b8' };
+      var html = '';
+      data.rows.forEach(function(r) {
+        var c = colors[r.kind] || colors.other;
+        html += '<div style="display:flex;gap:8px;border-bottom:1px solid #1f1f23;padding:2px 0">' +
+                '<span style="color:#71717a;white-space:nowrap">' + r.time + '</span>' +
+                '<span style="color:' + c + ';white-space:nowrap;min-width:110px">' + r.label + '</span>' +
+                '<span style="color:#e4e4e7">' + r.item + (r.detail ? ' <span style="color:#a1a1aa">' + r.detail + '</span>' : '') + '</span>' +
+                '</div>';
+      });
+      box.innerHTML = html;
+    })
+    .catch(function() { if (box) box.textContent = I18N.gear_history_empty; });
+}
 
 function fetchBotLogs(botName) {
   var consoleEl = document.getElementById('botLogsConsole');
@@ -6281,6 +6326,97 @@ def api_admin_warp_me():
         return jsonify({"ok": True, "status": st, "name": gm_name, "x": target_x, "y": target_y})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+# What log.log says about one bot's equipment. The engine writes the refines
+# (REFINE SUCCESS / REFINE FAIL, and REMOVE (REFINE FAIL) for a piece that
+# burned), the stall purchases (SHOP_BUY), the merchant sales the core makes
+# through RemoveItem (PLAYERBOT_SHOP_SELL), the stone a bonus reroll consumes
+# (PLAYERBOT_BONUS) and the Moonlight chest; the core adds the swap into a
+# wear slot (PLAYERBOT_EQUIP), both ends of a gift, the keeper's side of a
+# stall sale and the storekeeper deposit. Asked for by a player who wanted to
+# know why his top Sura "suddenly flies without her +8".
+GEAR_HISTORY_HOWS = {
+    "REFINE SUCCESS":        ("refine_ok",   {"pl": "Ulepszenie udane",   "en": "Refine succeeded"}),
+    "REFINE FAIL":           ("refine_fail", {"pl": "Ulepszenie nieudane", "en": "Refine failed"}),
+    "REMOVE (REFINE FAIL)":  ("burned",      {"pl": "Spalone przy ulepszaniu", "en": "Burned in refine"}),
+    "REFINE FISH_ROD SUCCESS": ("refine_ok", {"pl": "Wędka ulepszona",    "en": "Rod refined"}),
+    "REFINE FISH_ROD FAIL":  ("refine_fail", {"pl": "Wędka nieulepszona", "en": "Rod refine failed"}),
+    "PLAYERBOT_EQUIP":       ("equip",       {"pl": "Założone",           "en": "Equipped"}),
+    "PLAYERBOT_GIFT_OUT":    ("gift_out",    {"pl": "Podarowane",         "en": "Given away"}),
+    "PLAYERBOT_GIFT_IN":     ("gift_in",     {"pl": "Dostane w prezencie", "en": "Received as gift"}),
+    "PLAYERBOT_STALL_SOLD":  ("stall_sold",  {"pl": "Sprzedane na straganie", "en": "Sold at the stall"}),
+    "SHOP_BUY":              ("bought",      {"pl": "Kupione na straganie", "en": "Bought at a stall"}),
+    "PLAYERBOT_SHOP_SELL":   ("vendor",      {"pl": "Sprzedane handlarzowi", "en": "Sold to merchant"}),
+    "PLAYERBOT_BONUS":       ("bonus",       {"pl": "Zużyte na przemianę bonusów", "en": "Used for a bonus reroll"}),
+    "SAFEBOX PUT":           ("safebox",     {"pl": "Do magazynu",        "en": "Into the safebox"}),
+    "SAFEBOX GET":           ("safebox",     {"pl": "Z magazynu",         "en": "Out of the safebox"}),
+    "MOONLIGHT_GET":         ("get",         {"pl": "Ze Szkatułki Blasku", "en": "From a Moonlight chest"}),
+    "EXCHANGE_TAKE":         ("gift_in",     {"pl": "Z wymiany",          "en": "From a trade"}),
+    "EXCHANGE_GIVE":         ("gift_out",    {"pl": "Oddane w wymianie",  "en": "Given in a trade"}),
+}
+
+
+@app.route("/api/bot_gear_history/<int:pid>")
+def api_bot_gear_history(pid):
+    language = lang()
+    lang_key = "pl" if language == "pl" else "en"
+    try:
+        limit = max(10, min(400, int(request.args.get("limit", 60))))
+    except (TypeError, ValueError):
+        limit = 60
+    hows = list(GEAR_HISTORY_HOWS.keys())
+    marks = ",".join(["%s"] * len(hows))
+    try:
+        with db() as c, c.cursor() as cur:
+            # `who` is indexed; the IN list keeps the loot noise (GET, SET_SOCKET,
+            # GET_GOLD - millions of rows) out of the scan.
+            cur.execute(
+                "SELECT time, how, hint, vnum FROM log.log "
+                "WHERE who = %s AND how IN (" + marks + ") "
+                "ORDER BY time DESC LIMIT %s",
+                tuple([pid] + hows + [limit]),
+            )
+            rows = []
+            for r in cur.fetchall():
+                how = r.get("how") or ""
+                kind, labels = GEAR_HISTORY_HOWS.get(how, ("other", {"pl": how, "en": how}))
+                vnum = int(r.get("vnum") or 0)
+                item = localized_item_name(vnum, language) if vnum else ""
+                hint = (r.get("hint") or "").strip()
+                detail = ""
+                if how in ("PLAYERBOT_GIFT_OUT",):
+                    detail = ("→ " if lang_key == "en" else "→ ") + hint
+                elif how in ("PLAYERBOT_GIFT_IN",):
+                    detail = ("← " if lang_key == "en" else "← ") + hint
+                elif how == "PLAYERBOT_STALL_SOLD":
+                    # "vnum xCOUNT za PRICE"
+                    parts = hint.split()
+                    if len(parts) >= 4:
+                        detail = parts[1] + (" for " if lang_key == "en" else " za ") + "{:,}".format(int(parts[3])).replace(",", " ") + " yang"
+                elif how == "PLAYERBOT_EQUIP":
+                    parts = hint.split()
+                    if len(parts) >= 4 and parts[3].isdigit() and int(parts[3]) > 0:
+                        detail = ("instead of " if lang_key == "en" else "zamiast ") + localized_item_name(int(parts[3]), language)
+                elif how.startswith("REFINE") or how.startswith("REMOVE"):
+                    # The engine's hint is the item's own name with its grade,
+                    # which the item column already shows.
+                    detail = ""
+                elif how in ("SAFEBOX PUT", "SAFEBOX GET"):
+                    parts = hint.rsplit(" ", 1)
+                    if len(parts) == 2 and parts[1].isdigit() and int(parts[1]) > 1:
+                        detail = "x" + parts[1]
+                t = r.get("time")
+                rows.append({
+                    "time": t.strftime("%d.%m %H:%M") if hasattr(t, "strftime") else str(t),
+                    "kind": kind,
+                    "label": labels.get(lang_key, labels["en"]),
+                    "item": item or ("#%d" % vnum if vnum else ""),
+                    "detail": detail,
+                })
+        return jsonify({"ok": True, "pid": pid, "rows": rows})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "rows": []})
+
 
 @app.route("/api/bot_logs/<string:bot_name>")
 def api_bot_logs(bot_name):

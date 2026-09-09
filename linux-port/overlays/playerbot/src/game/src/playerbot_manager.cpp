@@ -17,6 +17,7 @@
 #include "input.h"
 #include "item.h"
 #include "item_manager.h"
+#include "log.h"
 #include "config.h"
 #include "constants.h"
 #include "battle.h"

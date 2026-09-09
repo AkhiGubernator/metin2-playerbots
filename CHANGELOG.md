@@ -17,6 +17,32 @@ every version here.
 
 ---
 
+## 1.30.36 — 2026-09-09
+
+### Instalator i launcher (raport Sykesa)
+
+- **Brak zrzutów SQL po przygotowaniu paczki kończył się „database not ready
+  after 30 minutes”.** Instalator sprawdzał tylko, czy katalog
+  `mariadb/initdb.d/dumps` istnieje, launcher nie sprawdzał go wcale; MariaDB
+  startowała pusta i zgłaszała „healthy”, a `playerbot-migrate` czekał 30
+  minut na schemat, którego nie było — prawdziwy błąd leżał w logu MariaDB.
+  Teraz pięć plików (`account`, `common`, `player`, `log`, `hotbackup.sql`,
+  cztery pierwsze niepuste) sprawdza **przed** `docker compose up`:
+  instalator (`Test-ContextComplete`, z listą brakujących), `start-server.ps1`
+  i ścieżka GRAJ w launcherze (obie — bo to dwie różne drogi do builda), oraz
+  przycisk przygotowania paczki w GUI. Instalacja z już zainicjalizowaną bazą
+  nie jest wstrzymywana (zrzuty czyta się tylko przy pierwszym starcie).
+  Komunikat mówi, skąd wziąć zrzuty (`Server\metin2_mysql_dump.zip` z paczki
+  r40250, `$env:M2_SRC_ARCHIVE` dla instalatora).
+
+- **`playerbot-migrate` rozróżnia trzy czekania.** Zamiast jednego „still
+  waiting for the database”: „MariaDB odpowiada, ale nie ma ŻADNEJ z tabel
+  r40250 — baza zainicjalizowała się bez zrzutów, czekanie tego nie naprawi”,
+  „import pierwszego startu w toku: X/8 tabel” albo „baza jeszcze nie
+  odpowiada — duży świat odzyskuje się dłużej”.
+
+---
+
 ## 1.30.35 — 2026-09-09
 
 ### Naprawione

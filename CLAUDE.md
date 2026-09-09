@@ -1200,6 +1200,28 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   loop now tells "answering with none of the tables" apart from "import in
   progress" and "not answering yet".
 
+- **A full bag is an errand.** `IsPlayerBotBagFull` (occupied cells at
+  `PLAYERBOT_BAG_FULL_PERCENT`) is read by the two drop expeditions
+  (`ShouldPlayerBotPursueHorseExpedition`, which the Monkey Dungeon's exit
+  decision and the planner both consult, and `ShouldPlayerBotVisitM3`), by
+  `ShouldPlayerBotKeepShop` (a counter whatever the roll, one line is
+  enough) and by the safebox collector. `NeedsPlayerBotCriticalTownServices`
+  already sent a bot to town at 45% occupancy; what it found there was a
+  visit that scrapped nothing, because a collector's spares are goods, so
+  the errand has to be the counter and the storekeeper, not the merchant.
+
+- **A gate is where the warp NPC stands, not where npc.txt said.**
+  `FindPlayerBotWarpNpc` walks the map's entities for `IsWarp()` characters,
+  reads the destination out of the name the way `FuncCheckWarp` does
+  (`"%s %ld %ld"`, cells, absolute), resolves the map with
+  `SECTREE_MANAGER::GetMapIndex(x, y)` and hands `MovePlayerBotToWorldPortal`
+  the nearest one to the point it was asked for, cached per (map, target)
+  for `PLAYERBOT_WARP_NPC_CACHE_MS`. The Teleporter is a quest NPC, not a
+  warp, so `IsPlayerBotTeleporterPoint` keeps the constant and the trip
+  pays `GetPlayerBotTeleporterFee` (map_warp.quest: floor(level/5)*1000,
+  at least 1000, level 11+) on a successful transition. "Portal walk
+  stalled" goes to syserr too - support bundles carry only syserr.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

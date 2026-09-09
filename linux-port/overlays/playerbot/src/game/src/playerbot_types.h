@@ -207,6 +207,13 @@ namespace
 	// the chance of a key or a buyer goes to the merchant, so the chests and
 	// the loot still have somewhere to land.
 	const int PLAYERBOT_BAG_PRESSURE_FREE_CELLS = 8;
+	// A bag this full is an errand, not a state to hunt in. Above this share
+	// of the ninety cells the bot goes and does something about it - the
+	// merchant, its own counter, the storekeeper, the blacksmith - and no
+	// expedition whose point is a drop starts: a Master of Equipment ran the
+	// Monkey Dungeon for two hours after a medal that had no cell to land in
+	// ("eq pelne od dawna a on se napierdala 2 godziny malpy").
+	const int PLAYERBOT_BAG_FULL_PERCENT = 80;
 	// The storekeeper (Dozorca, 9005): npc.txt cell (609,596) on map 21, base
 	// (0,102400); cell (471,347) on map 23, base (102400,204800). A bot's
 	// safebox is one page of forty-five cells behind the default password -
@@ -954,6 +961,14 @@ namespace
 	// are the Chunjo entries of Town.txt, the exits are the Teleporter (NPC 9012)
 	// each map carries, and departure reuses Bokjung's own Teleporter.
 	// Joan's own Teleporter (NPC 9012 in metin2_map_b1/npc.txt).
+	// The Teleporter (9012) is a quest, map_warp.quest: it refuses a
+	// character of ten or under and charges floor(level / 5) * 1000 yang, a
+	// thousand at least, for a warp to Orc Valley, the desert, Sohan or the
+	// Demon Tower gate. A bot that leaves through him pays the same.
+	const BYTE PLAYERBOT_TELEPORTER_MIN_LEVEL = 11;
+	const int PLAYERBOT_TELEPORTER_FEE_PER_FIVE_LEVELS = 1000;
+	// How long a gate found on the map is remembered per map and destination.
+	const DWORD PLAYERBOT_WARP_NPC_CACHE_MS = 600000;
 	const long PLAYERBOT_M1_TELEPORTER_X = 51900;
 	const long PLAYERBOT_M1_TELEPORTER_Y = 153600;
 	const long PLAYERBOT_MAP_DESERT = 63;

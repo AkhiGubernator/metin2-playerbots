@@ -338,6 +338,9 @@ namespace
 	{
 		if (!ch || !HasPlayerBotM3ReadyEquipment(ch))
 			return false;
+		// The farm is for a drop, and a full bag has no cell for it.
+		if (IsPlayerBotBagFull(ch))
+			return false;
 		// The M3 dropper is there for the weapons it will sell, so owning one
 		// changes nothing, and it stays as long as the map can still be hunted.
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_M3_DROPPER)
@@ -396,6 +399,11 @@ namespace
 	bool ShouldPlayerBotPursueHorseExpedition(LPCHARACTER ch, DWORD dwNow)
 	{
 		if (!ch)
+			return false;
+		// A medal needs a cell. This gate is what the Monkey Dungeon's exit
+		// decision and the planner both read, so a bot already inside with a
+		// full bag finishes its medal and leaves, and a dropper does too.
+		if (IsPlayerBotBagFull(ch))
 			return false;
 		// The medal dropper goes for the medals themselves, whatever its own horse
 		// needs, in whichever dungeon its level earns them.
@@ -616,6 +624,98 @@ namespace
 		return true;
 	}
 
+	// The gate itself, found on the map. A warp NPC (CHAR_TYPE_WARP) carries
+	// its destination in its name - "%s %ld %ld", world coordinates in cells,
+	// exactly what FuncCheckWarp in char.cpp reads - and the engine sends a
+	// player within 300 units of it there. Our portal constants were read out
+	// of npc.txt once; the package an operator installed from may place a
+	// gate elsewhere, and a bot walking to where the gate used to be stands
+	// beside it for good ("do portalu, tuz przed nim, zawraca, kolko wokol
+	// M2"). So the point walked to is the living NPC whose destination lies
+	// on the target map, the one nearest the point asked for, remembered per
+	// map and destination for PLAYERBOT_WARP_NPC_CACHE_MS. The Teleporter is
+	// not a warp NPC - he is a quest - so a trip through him keeps the
+	// constant, and pays.
+	struct FPlayerBotFindWarp
+	{
+		long m_lTargetMap;
+		long m_lNearX, m_lNearY;
+		LPCHARACTER m_found;
+		long m_lBest;
+		FPlayerBotFindWarp(long targetMap, long nearX, long nearY)
+			: m_lTargetMap(targetMap), m_lNearX(nearX), m_lNearY(nearY), m_found(NULL), m_lBest(-1) {}
+		void operator()(LPENTITY entity)
+		{
+			if (!entity || !entity->IsType(ENTITY_CHARACTER))
+				return;
+			LPCHARACTER npc = static_cast<LPCHARACTER>(entity);
+			if (!npc->IsWarp())
+				return;
+			char szTmp[64];
+			long lToX = 0, lToY = 0;
+			if (3 != sscanf(npc->GetName(), " %63s %ld %ld ", szTmp, &lToX, &lToY))
+				return;
+			if (SECTREE_MANAGER::instance().GetMapIndex(lToX * 100, lToY * 100) != m_lTargetMap)
+				return;
+			const long d = DISTANCE_APPROX(npc->GetX() - m_lNearX, npc->GetY() - m_lNearY);
+			if (m_lBest < 0 || d < m_lBest)
+			{
+				m_lBest = d;
+				m_found = npc;
+			}
+		}
+	};
+
+	bool FindPlayerBotWarpNpc(long mapIndex, long targetMap, long nearX, long nearY,
+			DWORD dwNow, long& outX, long& outY)
+	{
+		struct TGateAnswer { DWORD dwStamp; bool bFound; long lX; long lY; };
+		static std::map<std::pair<long, long>, TGateAnswer> s_mapGates;
+		const std::pair<long, long> key(mapIndex, targetMap);
+		std::map<std::pair<long, long>, TGateAnswer>::iterator it = s_mapGates.find(key);
+		if (it != s_mapGates.end() && dwNow - it->second.dwStamp < PLAYERBOT_WARP_NPC_CACHE_MS)
+		{
+			outX = it->second.lX;
+			outY = it->second.lY;
+			return it->second.bFound;
+		}
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(mapIndex);
+		if (!pMap)
+			return false;
+		FPlayerBotFindWarp finder(targetMap, nearX, nearY);
+		pMap->for_each(finder);
+		TGateAnswer& answer = s_mapGates[key];
+		answer.dwStamp = dwNow;
+		answer.bFound = finder.m_found != NULL;
+		answer.lX = answer.bFound ? finder.m_found->GetX() : 0;
+		answer.lY = answer.bFound ? finder.m_found->GetY() : 0;
+		if (it == s_mapGates.end())
+		{
+			if (answer.bFound)
+				sys_log(0, "PLAYERBOT_WORLD: gate to map=%ld on map=%ld at (%ld,%ld) name=%s asked=(%ld,%ld) off_by=%ld",
+						targetMap, mapIndex, answer.lX, answer.lY, finder.m_found->GetName(),
+						nearX, nearY, finder.m_lBest);
+			else
+				sys_log(0, "PLAYERBOT_WORLD: no warp npc to map=%ld on map=%ld, keeping the point (%ld,%ld)",
+						targetMap, mapIndex, nearX, nearY);
+		}
+		outX = answer.lX;
+		outY = answer.lY;
+		return answer.bFound;
+	}
+
+	bool IsPlayerBotTeleporterPoint(long x, long y)
+	{
+		return (x == PLAYERBOT_M1_TELEPORTER_X && y == PLAYERBOT_M1_TELEPORTER_Y) ||
+				(x == PLAYERBOT_M2_TO_M3_TELEPORTER_X && y == PLAYERBOT_M2_TO_M3_TELEPORTER_Y);
+	}
+
+	int GetPlayerBotTeleporterFee(LPCHARACTER ch)
+	{
+		return std::max(PLAYERBOT_TELEPORTER_FEE_PER_FIVE_LEVELS,
+				((int)ch->GetLevel() / 5) * PLAYERBOT_TELEPORTER_FEE_PER_FIVE_LEVELS);
+	}
+
 	bool MovePlayerBotToWorldPortal(LPCHARACTER ch, TPlayerBotAIState& state,
 			long portalX, long portalY, long targetMap, long targetX, long targetY,
 			DWORD dwNow, const char* reason)
@@ -625,6 +725,31 @@ namespace
 		SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
 		state.dwTargetVID = 0;
 		ch->SetVictim(NULL);
+
+		// Through the Teleporter, at his price, or through the gate where it
+		// actually stands.
+		const bool viaTeleporter = IsPlayerBotTeleporterPoint(portalX, portalY);
+		if (viaTeleporter)
+		{
+			if (ch->GetLevel() < PLAYERBOT_TELEPORTER_MIN_LEVEL ||
+					ch->GetGold() < GetPlayerBotTeleporterFee(ch))
+			{
+				PlayerBotLogThrottled("teleporter_refused", dwNow,
+						"PLAYERBOT_WORLD: teleporter refuses pid=%u name=%s level=%u gold=%d fee=%d to=%ld reason=%s",
+						ch->GetPlayerID(), ch->GetName(), (unsigned int)ch->GetLevel(), ch->GetGold(),
+						GetPlayerBotTeleporterFee(ch), targetMap, reason ? reason : "?");
+				return false;
+			}
+		}
+		else
+		{
+			long gateX = 0, gateY = 0;
+			if (FindPlayerBotWarpNpc(ch->GetMapIndex(), targetMap, portalX, portalY, dwNow, gateX, gateY))
+			{
+				portalX = gateX;
+				portalY = gateY;
+			}
+		}
 
 		// Warp NPCs trigger at 300 units and hand the client to whichever core
 		// hosts the target map, which is not a conversation a bot descriptor can
@@ -641,7 +766,16 @@ namespace
 			state.iPortalWalkBest = 0;
 			state.wPortalWalkTicks = 0;
 			state.wPortalWalkRouteIndex = 0;
-			return TransitionPlayerBotMap(ch, state, targetMap, targetX, targetY, dwNow, reason);
+			const int fee = viaTeleporter ? GetPlayerBotTeleporterFee(ch) : 0;
+			if (!TransitionPlayerBotMap(ch, state, targetMap, targetX, targetY, dwNow, reason))
+				return false;
+			if (fee > 0)
+			{
+				ch->PointChange(POINT_GOLD, -fee);
+				sys_log(0, "PLAYERBOT_WORLD: teleporter fee pid=%u name=%s level=%u fee=%d to=%ld gold_left=%d",
+						ch->GetPlayerID(), ch->GetName(), (unsigned int)ch->GetLevel(), fee, targetMap, ch->GetGold());
+			}
+			return true;
 		}
 
 		// Walking to a portal has to be able to fail, and this is what it looked
@@ -722,6 +856,14 @@ namespace
 			char szStuckTag[64];
 			snprintf(szStuckTag, sizeof(szStuckTag), "portal_stuck:%s",
 					reason ? reason : "?");
+			// Into syserr as well: a support bundle carries syserr and not
+			// syslog, and the one bundle sent about a bot circling a gate held
+			// nothing about the gate.
+			PlayerBotErrThrottled(szStuckTag, dwNow,
+					"PLAYERBOT_WORLD: portal walk stalled pid=%u name=%s map=%ld pos=(%ld,%ld) portal=(%ld,%ld) distance=%d reason=%s riding=%d last=%u",
+					ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(), ch->GetX(), ch->GetY(),
+					portalX, portalY, distance, reason ? reason : "?", ch->IsRiding() ? 1 : 0,
+					(unsigned int)state.bLastNavOutcome);
 			PlayerBotLogThrottled(szStuckTag, dwNow,
 					"PLAYERBOT_WORLD: portal walk stalled pid=%u name=%s map=%ld pos=(%ld,%ld) portal=(%ld,%ld) distance=%d reason=%s "
 					"ticks=%u route=%u/%u plan_in=%d defer=%u stuck=%u seg=%d riding=%d last=%u",

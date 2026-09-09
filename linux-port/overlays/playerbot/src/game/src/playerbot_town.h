@@ -49,7 +49,8 @@ namespace
 	void CollectPlayerBotSafeboxBooks(LPCHARACTER ch, std::vector<WORD>& cells)
 	{
 		cells.clear();
-		if (!ch || CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_BAG_PRESSURE_FREE_CELLS)
+		if (!ch || (!IsPlayerBotBagFull(ch) &&
+				CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_BAG_PRESSURE_FREE_CELLS))
 			return;
 		int keep = PLAYERBOT_SAFEBOX_BOOK_KEEP;
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER)
@@ -563,8 +564,9 @@ namespace
 		if (!ch || ch->GetLevel() < PLAYERBOT_SHOP_MIN_LEVEL)
 			return false;
 		// A bot that cannot afford its potions sells what it has, whatever its
-		// personality rolled.
-		if (IsPlayerBotPoorKeeper(ch))
+		// personality rolled. So does one whose bag is full: the counter is
+		// where the spares a collector will not scrap can go.
+		if (IsPlayerBotPoorKeeper(ch) || IsPlayerBotBagFull(ch))
 			return true;
 		// A trader always has the stall open when it can. For everyone else it
 		// stays what it was: an occasional thing one bot in ten does with a spare.
@@ -1575,7 +1577,8 @@ namespace
 			std::vector<std::pair<int, WORD> > worthTaking;
 			CollectPlayerBotShopItems(ch, worthTaking, IsPlayerBotStallKeeper(state));
 			if (!IsPlayerBotStallWorthOpening(worthTaking.size(),
-					worthTaking.empty() ? 0 : worthTaking[0].first, IsPlayerBotPoorKeeper(ch)))
+					worthTaking.empty() ? 0 : worthTaking[0].first,
+					IsPlayerBotPoorKeeper(ch) || IsPlayerBotBagFull(ch)))
 				return false;
 			PlayerBotLogThrottled("stall_overflow", dwNow,
 					"PLAYERBOT_SHOP: Bokjung full, taking the stall to Joan pid=%u name=%s stalls=%d lines=%u",
@@ -1609,7 +1612,8 @@ namespace
 			CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state));
 		}
 		if (!IsPlayerBotStallWorthOpening(scored.size(),
-				scored.empty() ? 0 : scored[0].first, IsPlayerBotPoorKeeper(ch)))
+				scored.empty() ? 0 : scored[0].first,
+				IsPlayerBotPoorKeeper(ch) || IsPlayerBotBagFull(ch)))
 		{
 			// Nothing worth a stall right now; look again after a hunt rather than
 			// re-scanning the whole inventory every tick. A bot that is merely a
@@ -1747,7 +1751,7 @@ namespace
 		// moves between the two - a town errand happens in between - and a stall
 		// that loses two of its three lines on the way to the pitch should stay
 		// packed up rather than open with what is left.
-		if (!IsPlayerBotStallWorthOpening(tableCount, bestScore, bPoor))
+		if (!IsPlayerBotStallWorthOpening(tableCount, bestScore, bPoor || IsPlayerBotBagFull(ch)))
 		{
 			state.dwNextShopKeepTime = dwNow + (tableCount == 0
 					? number(300000, 600000) : number(120000, 240000));
@@ -1839,6 +1843,19 @@ namespace
 			// in the drop-protection window while the bots ran about between them.
 			if (ch->GetEmptyInventory(1) < 0)
 			{
+				// First pour the split singles back together: the stall scan cut
+				// shellfish and bait into one-unit lines for a counter that then
+				// had no cell for its own bundle, and a bag of ninety carried
+				// twelve shells in twelve cells for good. A merge that frees a
+				// cell is retried at once.
+				const int merged = MergePlayerBotStacks(ch, PLAYERBOT_STACK_MERGES_PER_PASS * 2);
+				if (merged > 0 && ch->GetEmptyInventory(1) >= 0)
+				{
+					sys_log(0, "PLAYERBOT_SHOP: merged %d stacks to make room for the bundle pid=%u name=%s",
+							merged, ch->GetPlayerID(), ch->GetName());
+					state.dwNextShopKeepTime = dwNow + 2000;
+					return false;
+				}
 				// And back off. Returning without a clock left the keeper asking
 				// again on the very next tick: one log line a second per bot, and
 				// the bot itself pacing its pitch with a stall it could never

@@ -383,6 +383,16 @@ namespace
 		return free;
 	}
 
+	// Occupied cells against PLAYERBOT_BAG_FULL_PERCENT of the bag. Counted
+	// by cell rather than by item, so a weapon's three cells count as three.
+	bool IsPlayerBotBagFull(LPCHARACTER ch)
+	{
+		if (!ch || !ch->IsItemLoaded())
+			return false;
+		const int occupied = INVENTORY_MAX_NUM - CountPlayerBotFreeInventoryCells(ch);
+		return occupied * 100 >= INVENTORY_MAX_NUM * PLAYERBOT_BAG_FULL_PERCENT;
+	}
+
 	// Books of one skill in the cells before this one. Cell order decides, so
 	// the same books stay put from one town visit to the next.
 	int CountPlayerBotSkillBooksAhead(LPCHARACTER ch, LPITEM item, DWORD skillVnum)

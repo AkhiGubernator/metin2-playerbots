@@ -17,6 +17,66 @@ every version here.
 
 ---
 
+## 1.32.4 — 2026-09-10
+
+### Boty oddają wreszcie okazy Biologowi
+
+Bot z dwoma Zębami Orka w plecaku przechodził obok Biologa i je zatrzymywał.
+Próg czterech sztuk, który miał sens jako powód do wyprawy z frontu do M1,
+stosował się też do bota, który już stoi w swojej wiosce — a quest przyjmuje
+jedną sztukę na raz, więc nie było na co czekać.
+
+Zmierzone przed poprawką: 656 botów od trzydziestego poziomu nie oddało ani
+jednej sztuki, niosąc między sobą 577 zębów. Po niej, w dziesięć minut: 1766
+przyjętych okazów i 778 wizyt u Biologa.
+
+Przy okazji Shinsoo i Jinno dostały swoich Biologów. Warunek sprawdzający mapę
+Chunjo przetrwał w tym miejscu przenosiny na katalog królestw i odcinał oba nowe
+królestwa od ich własnego NPC.
+
+### Ulepszanie broni ruszyło z miejsca
+
+Cenny przedmiot był wstrzymywany, gdy szansa powodzenia wynosiła mniej niż sto
+procent, czyli na każdym kroku tabeli ulepszeń, a zwoju szukano dopiero od +6.
+Poniżej +6 przedmiot nie mógł więc być ani ryzykowany, ani chroniony i nie
+ruszał się wcale (zgłosił sekuras).
+
+Zmierzone: 451 z 959 botów posiadających zwój nosiło broń dokładnie na +4, a 230
+na +0, przy 1287 Zwojach Boga Smoków i 1002 Zwojach Błogosławieństwa w
+plecakach. Teraz zwoju wolno szukać przy każdym poziomie ulepszenia, a
+wstrzymanie zostaje tylko tam, gdzie porażka naprawdę kosztuje. Po wdrożeniu:
+6361 prób ulepszenia w pięć minut wobec praktycznego zastoju wcześniej.
+
+Uczciwie o drugiej połowie tego zgłoszenia: pomiar pokazał, że większość botów
+stojących na +4 nie ma po prostu materiału. Krok z +4 na +5 wymaga dwóch sztuk
+Nieznanego Lekarstwa+, a w całym świecie jest ich 586 na około 360 takich botów.
+Tego kod nie naprawi, to kwestia dropu i rynku.
+
+### Skrzynie nie wysypują się już na ziemię
+
+Przed otwarciem skrzyni sprawdzane było miejsce na jeden mały przedmiot, a
+skrzynia wydaje kilka — sama broń zajmuje trzy komórki. Silnik nie odmawia przy
+pełnym plecaku, tylko rzuca resztę na ziemię i zgłasza sukces, więc zawartość
+lądowała pod nogami bota na oczach wszystkich (zgłosił archonek2137). Teraz bot
+pyta o miejsce na broń, zanim otworzy.
+
+### Boty kupują tylko to, co handlarz naprawdę ma
+
+Bot nie kupował drogich broni — on je tworzył. Zakup przedmiotu z drabinki
+rozwoju wywoływał silnikowe „daj przedmiot" i liczył cenę z tabeli
+przedmiotów, nie zaglądając wcale do asortymentu NPC. Stąd bot w Masce Strachu
+na sześćdziesiąty poziom kupionej za 20 000 yang u handlarza zbrojami, choć
+żaden sklep w tym świecie jej nie ma (zgłosił jaksiezabic, z linią logu na
+dowód).
+
+Teraz bot kupuje wyłącznie to, co stoi na ladzie u handlarza bronią, zbrojami
+albo różności, i po cenie sklepu. Warto wiedzieć, co to znaczy: te trzy sklepy
+mają razem 64 pozycje, broń do 36 poziomu, zbroje do 26, hełmy tylko startowe.
+Wszystko powyżej ma pochodzić z dropu, straganów i kowala — dokładnie tak, jak
+u gracza.
+
+---
+
 ## 1.32.3 — 2026-09-10
 
 ### Trzy królestwa dało się włączyć tylko na świeżej instalacji

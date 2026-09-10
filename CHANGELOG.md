@@ -17,6 +17,95 @@ every version here.
 
 ---
 
+## 1.32.0 — 2026-09-10
+
+### Trzy królestwa
+
+Dotąd cały świat botów był jednym królestwem: Chunjo, jego dwie wioski i jego
+mapy. Shinsoo i Jinno stały puste. Od tego wydania boty mogą żyć we wszystkich
+trzech królestwach naraz, każde w swoich wioskach, u swoich kupców i na swoich
+łowiskach.
+
+**Domyślnie nic się nie zmienia.** Przełącznik `M2_PLAYERBOT_KINGDOMS` w
+`.env` jest ustawiony na `0`, więc świat, który masz, zostaje dokładnie taki,
+jaki był: 1500 botów Chunjo, te same postacie, te same poziomy, ten sam
+ekwipunek. Żeby dołożyć dwa nowe królestwa, ustaw `M2_PLAYERBOT_KINGDOMS=1` i
+uruchom serwer ponownie. Dosiewane jest wtedy 500 botów Shinsoo i 500 Jinno
+obok istniejących; nic z tego, co już masz, nie jest ruszane ani przepisywane.
+
+Co dostaje każde królestwo:
+
+- **Własne wioski.** Yongan i Jayang dla Shinsoo, Joan i Bokjung dla Chunjo,
+  Pyongmoo i Bakra dla Jinno. Nazwy są te, których używają questy silnika, a
+  nie zgadywane.
+- **Własne usługi.** Handlarz bronią, handlarz zbrojami, handlarka różności,
+  dozorca, kowal, stajenny, starsza pani i Teleporter tej wioski, w której bot
+  stoi. Wcześniej bot Shinsoo pisał nad głową „Ide do kowala" i szedł do kowala
+  osiemdziesiąt kilometrów dalej, bo w kodzie były wpisane współrzędne Chunjo.
+- **Własnych trenerów zawodu.** Ośmiu w każdej pierwszej wiosce. Drugie wioski
+  nie mają żadnego i nigdy nie miały, i właśnie dlatego bot bez grupy
+  umiejętności wraca do M1.
+- **Własnego Biologa**, własny rynek ze straganami i własne łowisko z Rybakiem.
+- **Własne tereny łowieckie.** Huby, pasma poziomów, punkty metinów i Bestialni
+  bossowie każdej drugiej wioski, zmierzone z plików mapy tego królestwa.
+- **Własne bramy.** Każdy przeskok między mapami królestwa czyta bramę i punkt
+  lądowania z nazwy samego NPC, tak jak robi to silnik. Sprawdzone: wszystkie
+  osiemnaście bram prowadzi tam, gdzie ma prowadzić, i wypuszcza postać na
+  gruncie, po którym da się chodzić.
+
+Chunjo nie został ruszony. Pomiar odtwarza jego stare, ręcznie wpisane
+współrzędne co do jednostki — łącznie z trzema bossami Bokjung i ośmioma
+trenerami Joan — i test pilnuje, żeby tak zostało.
+
+### Panele widzą cały świat
+
+- **Klasyczny panel** dostał granice i mapy terenu ośmiu nowych map, nazwy
+  wiosek w filtrze i w rankingu. Do tej pory boty Shinsoo i Jinno były żywe i
+  niewidoczne.
+- **Panel zaawansowany** dostał te same granice, więc jego żywa mapa i lista
+  śledzonych map obejmują nowe królestwa, a konsola respawnu ziemie klanowe.
+- Mapa 24 była podpisana „Pyungmoo" i „Waryong". Pyongmoo to stolica Jinno, nie
+  ziemia klanowa Chunjo; obie nazwy poprawione.
+
+### Czego nowe królestwa jeszcze nie mają
+
+Wspólne mapy świata — Dolina Orków, Pustynia Yongbi, Góra Sohan, oba Lochy
+Pająków, Świątynia Hwang i dwa trudniejsze Lochy Małp — są hostowane przez ten
+sam rdzeń co Chunjo, a bot nie może przejść na mapę, której jego rdzeń nie
+hostuje (przeniesienie postaci między rdzeniami wymaga ponownego połączenia
+klienta, a bot klienta nie ma). Dlatego Shinsoo i Jinno mają na razie własne
+cztery mapy, które niosą je mniej więcej do trzydziestego szóstego poziomu.
+
+Żeby to nie kończyło się botami stojącymi bezczynnie: bot nie jest wysyłany na
+mapę spoza swojego rdzenia, a królestwo bez frontu może polować w swojej drugiej
+wiosce także powyżej trzydziestego piątego poziomu. Rozwiązanie docelowe to
+decyzja o tym, jak ma być poukładany serwer, i czeka na Ciebie.
+
+### Drobne
+
+- **Raport rejestru mówił nieprawdę.** Liczył tożsamość jako odrzuconą, gdy jej
+  królestwo nie było Chunjo, więc wypisywał „wrong_empire=1000" obok modułu,
+  który przed chwilą przyjął wszystkie tysiąc. Teraz odrzuceniem jest tylko
+  królestwo spoza zakresu 1-3.
+
+### Pomiar
+
+Na serwerze testowym, 970 botów w trzech królestwach naraz:
+
+| co | ile |
+|---|---|
+| procesor | 12,59 s rdzenia na 65 s ściany, czyli 19,4% jednego rdzenia |
+| tick, rdzeń Shinsoo | 1,45 s z 60 |
+| tick, rdzeń Chunjo | 2,16 s z 60 |
+| tick, rdzeń Jinno | 1,41 s z 60 |
+| resety watchdoga | 0, 1, 0 |
+
+Budżet, którego pilnujemy, to 40% rdzenia przy 850 botach. W cztery minuty nowe
+królestwa zrobiły po ponad 600 wizyt u własnych kupców i po ponad 300 u własnych
+trenerów.
+
+---
+
 ## 1.31.8 — 2026-09-10
 
 ### Boss z pustyni w Bokjung

@@ -17,6 +17,111 @@ every version here.
 
 ---
 
+## 1.33.1 — 2026-09-10
+
+Poprawki z audytu zgłoszeń z Discorda. Wszystkie sprawdzone na żywym serwerze
+testowym, nie tylko skompilowane.
+
+### Masowe nadawanie przedmiotów gubiło sztuki i mówiło, że się udało
+
+Panel przyjmował do 65535 sztuk, a silnik czyta tę liczbę jako jeden bajt:
+300 stawało się 44, 256 stawało się zerem, 65535 stawało się 255. Nikt się o tym
+nie dowiadywał, bo paczka kończyła się statusem „Nadano”.
+
+Prawdziwy sufit jednego wydania to 200 sztuk — pełny stos, i tyle silnik potrafi
+dodać za jednym razem. Powyżej tej liczby panel odmawia teraz wprost, a po
+wydaniu porównuje zawartość plecaka przed i po, bo samo „silnik coś zwrócił” nie
+dowodzi dostarczenia: przy braku miejsca ten sam kod kładzie przedmiot na ziemi
+i też zgłasza sukces.
+
+**Do wiadomości operatorów:** kto dotąd wpisywał 300, dostawał 44 i widział
+„Nadano”. Teraz zobaczy czytelną odmowę. Limit 200 na jedno żądanie jest nowy.
+
+### Nagrody ze skrzyń przestają lądować na ziemi
+
+Bot sprawdzał miejsce w plecaku dwoma pytaniami o to samo pole — silnikowa
+funkcja zwraca *pozycję* wolnego miejsca, a nie ich liczbę, więc dwa wywołania
+obok siebie mogą wskazać tę samą kratkę i nie rezerwują niczego. Skrzynia wydaje
+nagrody po kolei, a to, co się nie mieści, spada na trawę. Teraz liczone są
+rzeczywiste wolne pola i skrzynia otwiera się dopiero, gdy jest ich pięć.
+
+To zabezpieczenie, nie pełne rozwiązanie: docelowo zestaw nagród trzeba wylosować
+raz, sprawdzić miejsce na całość i dopiero potem zużyć skrzynię, a to zmiana
+w silniku, która musi dostać własny tryb „do plecaka albo wcale”, żeby nie ruszyć
+nagród graczy.
+
+### Bot przestał chodzić do kowala po nic
+
+Planer i wykonawca oceniały zawartość plecaka inaczej: planer przyjmował wszystko,
+co bot potrafi założyć, a wykonawca odrzucał to, co reguła złomu przeznaczyła dla
+handlarza. Rozpoczęta wizyta w mieście jest zobowiązaniem, którego planer nie
+cofnie, więc bot szedł przez pół mapy i wracał z niczym — zgłoszone jako „mam
+wszystko +9 założone, a bot dalej lezie do kowala”. Obie strony pytają teraz
+jednej funkcji.
+
+### Świeża instalacja bazy nie zbuduje się już w połowie
+
+Skrypt startowy bazy sprawdzał istnienie plików z danymi świata, a potem próbował
+je przeczytać kontem `mysql` przez katalog wpięty z dysku hosta. Paczka
+rozpakowana pod ścisłą maską uprawnień na Linuksie dawała prawa, których to konto
+nie miało — import przerywał się w połowie, już po utworzeniu baz i użytkownika,
+a katalog danych przestawał być pusty. Ten krok wykonuje się raz na wolumen
+i nigdy więcej, więc świat zostawał na stałe w połowie zbudowany, za zdrowym
+healthcheckiem.
+
+Każdy z pięciu plików jest teraz czytany na jeden bajt, zanim powstanie
+cokolwiek trwałego, a komunikat nazywa po imieniu plik brakujący, nieczytelny
+i pusty. Instalator Linuksa przy okazji normalizuje uprawnienia całego kontekstu
+budowy, żeby ta sytuacja nie powstała.
+
+### Sklep z przedmiotami odpowiadał 403
+
+`COPY` w obrazie zachowuje uprawnienia źródła, więc pliki sklepu skopiowane
+z katalogu o ścisłych prawach były nieczytelne dla serwera WWW w środku
+kontenera. Uprawnienia są teraz normalizowane w obrazie.
+
+### Migrator bazy przestał czekać pół godziny na złe hasło
+
+Błędne hasło do bazy jest odpowiedzią ostateczną, a nie chwilową niedostępnością
+— migrator ponawiał je przez trzydzieści minut i kończył komunikatem o czasie
+oczekiwania, który niczego nie tłumaczył. Po pięciu odmowach uwierzytelnienia
+z rzędu kończy teraz pracę i pisze, co jest nie tak. Zmierzone: 9 sekund zamiast
+pół godziny.
+
+### Rankingi w panelach pokazywały nie to, co obiecywały
+
+Trzy osobne błędy w tej samej okolicy:
+
+- **Obrażenia od umiejętności i średnie były zamienione miejscami.** Numery 71
+  i 72 stały odwrotnie w obu panelach, w panelu zaawansowanym w trzech miejscach
+  naraz — w tym w nazwach kolumn, po których sortuje baza, więc pierwsza setka
+  wyników była wybierana według niewłaściwej wartości.
+- **Ranking +9 nie widział tarcz ani biżuterii.** Filtr odcinał wszystko powyżej
+  pewnego numeru przedmiotu, co miało wykluczyć materiały, a wykluczało również
+  tarcze. Panel pyta teraz bazę, co jest wyposażeniem: 17 przedmiotów zamiast 9.
+- **Ranking umiejętności brał pod uwagę tylko czterystu najwyższych poziomem.**
+  Bot trzydziestego poziomu z mistrzowską umiejętnością nie miał szans się
+  pojawić. Liczony jest cały zbiór.
+
+Do tego dwie osobowości botów były podpisane nawzajem: handlarz jako wędrowiec
+i odwrotnie.
+
+### Czego to wydanie nie naprawia
+
+- **Nazwy przedmiotów w historii ekwipunku.** Tabela logów jest zadeklarowana
+  w chińskim kodowaniu, a gra pisze do niej po polsku. 128 573 z 279 242 wpisów
+  spoza ASCII ma w tym miejscu nieodwracalny znak zapytania — zmiana deklaracji
+  naprawi to, co zostanie zapisane dalej, i nie odzyska niczego. Tabela ma
+  22 miliony wierszy i 1,75 GB, więc każda zmiana to minuty przerwy w działaniu.
+  To zaplanowana migracja z kopią zapasową, a nie poprawka przy okazji. Dotyczy
+  wyłącznie historii — nic w grze tej kolumny nie czyta.
+- **Cztery zgłoszenia czekają na powtórzenie:** wyjątki suwaka straganów, bot
+  krążący po pierwszej wiosce mimo celu na pustyni, boty zamarzające lub
+  znikające, oraz cenne przedmioty innych klas zapychające plecak. Każde z nich
+  wymaga najpierw diagnostyki, nie ślepej poprawki.
+
+---
+
 ## 1.33.0 — 2026-09-10
 
 ### Gra znowu jest po polsku po każdej aktualizacji

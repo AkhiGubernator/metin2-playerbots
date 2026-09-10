@@ -22,6 +22,7 @@ NEVER_SHIPS = [
     ('CLAUDE.md', 'notatki projektu'),
     ('*.md', 'dokumentacja'),
     ('docs/*', 'dokumentacja i audyty'),
+    ('installer/*', 'instalator pobiera sie z repozytorium przy kazdym uruchomieniu, nie z paczki'),
     ('tools/*', 'narzedzia pomiarowe, nie sa czescia serwera'),
     ('tests/*', 'testy'),
     ('builds/*', 'artefakty'),

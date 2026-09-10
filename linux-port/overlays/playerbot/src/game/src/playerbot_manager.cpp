@@ -1097,7 +1097,11 @@ void CPlayerBotManager::ReportPlayerBotRegistryShortfall(unsigned int usable)
 			"  LPAD(l.pid-3,GREATEST(3,LENGTH(l.pid-3)),'0'))),"
 			" SUM(a.id IS NOT NULL AND BINARY a.social_id<>BINARY CONCAT('9',LPAD(l.pid-3,12,'0'))),"
 			" SUM(pi.id IS NOT NULL AND (pi.pid1<>l.pid OR pi.pid2<>0 OR pi.pid3<>0 OR pi.pid4<>0)),"
-			" SUM(pi.id IS NOT NULL AND pi.empire<>2) "
+			// Three kingdoms are registered now, so only an empire outside
+			// 1..3 is a rejection. Left at "<> 2" this line reported every
+			// Shinsoo and Jinno identity as refused - a thousand of two
+			// thousand - beside a loader that had just accepted them.
+			" SUM(pi.id IS NOT NULL AND pi.empire NOT IN (1,2,3)) "
 			"FROM common.playerbot_seed_state AS l "
 			"LEFT JOIN player.player AS p ON p.id=l.pid "
 			"LEFT JOIN account.account AS a ON a.id=p.account_id "

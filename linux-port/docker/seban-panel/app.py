@@ -26,14 +26,24 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
 )
 
+# Nazwy wiosek pochodzą z questów silnika: new_quest_lv52 czyta pierwsze
+# wioski jako { "Yongan", "Joan", "Pyongmoo" } wg królestwa, a new_quest_lv7
+# nazywa drugie Jayang, Bokjung i Bakra.
 MAP_NAMES = {
-    1: "Shinsoo M1", 3: "Shinsoo M2", 21: "Chunjo M1", 23: "Chunjo M2",
-    24: "Chunjo M3", 25: "Łatwy Loch Małp", 41: "Jinno M1", 43: "Jinno M2",
+    1: "Shinsoo M1 — Yongan", 3: "Shinsoo M2 — Jayang", 4: "Ziemia Klanu Shinsoo",
+    5: "Loch Małp Shinsoo", 44: "Ziemia Klanu Jinno", 45: "Loch Małp Jinno",
+    21: "Chunjo M1 — Joan", 23: "Chunjo M2 — Bokjung",
+    24: "Ziemia Klanu Chunjo", 25: "Łatwy Loch Małp",
+    41: "Jinno M1 — Pyongmoo", 43: "Jinno M2 — Bakra",
     61: "Góra Sohan", 63: "Pustynia Yongbi", 64: "Dolina Orków", 104: "Loch Pająków V1",
     65: "Świątynia Hwang", 71: "Loch Pająków V2",
     108: "Loch Małp Normalny", 109: "Loch Małp Trudny",
 }
 MAP_BOUNDS = {
+    1: (409600, 896000, 102400, 128000), 3: (307200, 819200, 102400, 102400),
+    4: (128000, 0, 51200, 51200), 5: (768000, 435200, 76800, 76800),
+    41: (921600, 204800, 102400, 128000), 43: (819200, 204800, 102400, 102400),
+    44: (230400, 0, 51200, 51200), 45: (921600, 435200, 76800, 76800),
     21: (0, 102400, 102400, 128000), 23: (102400, 204800, 102400, 102400),
     24: (179200, 0, 51200, 51200), 25: (844800, 435200, 76800, 76800),
     61: (358400, 153600, 153600, 153600), 63: (204800, 486400, 153600, 153600),
@@ -43,14 +53,16 @@ MAP_BOUNDS = {
 }
 TRACKED_MAP_OPTIONS = tuple((index, MAP_NAMES[index]) for index in MAP_BOUNDS)
 MAP_RESPAWN_OPTIONS = (
-    (1, "Shinsoo M1 — Yongan"), (3, "Shinsoo M2"), (21, "Chunjo M1 — Joan"),
-    (23, "Chunjo M2"), (41, "Jinno M1"), (43, "Jinno M2"),
+    (1, "Shinsoo M1 — Yongan"), (3, "Shinsoo M2 — Jayang"), (21, "Chunjo M1 — Joan"),
+    (23, "Chunjo M2 — Bokjung"), (41, "Jinno M1 — Pyongmoo"), (43, "Jinno M2 — Bakra"),
+    (4, "Ziemia Klanu Shinsoo"), (24, "Ziemia Klanu Chunjo"), (44, "Ziemia Klanu Jinno"),
+    (5, "Loch Małp Shinsoo"), (45, "Loch Małp Jinno"),
     (25, "Łatwy Loch Małp"), (61, "Góra Sohan"), (63, "Pustynia Yongbi"), (64, "Dolina Orków"),
     (104, "Loch Pająków V1"), (71, "Loch Pająków V2"), (108, "Loch Małp Normalny"), (109, "Loch Małp Trudny"),
 )
 # Monkey Dungeons and Spider Dungeon V1 ship no stone.txt, so only their mob
 # respawns can be configured. The explicit allowlist also protects the helper.
-MAP_STONE_RESPAWN_IDS = frozenset(index for index, _name in MAP_RESPAWN_OPTIONS if index not in {25, 104, 71, 108, 109})
+MAP_STONE_RESPAWN_IDS = frozenset(index for index, _name in MAP_RESPAWN_OPTIONS if index not in {5, 25, 45, 104, 71, 108, 109})
 STATUS_GLOBS = (os.environ.get("PLAYERBOTS_STATUS_GLOB", "/opt/metin2/var/channel1/*/playerbot_status.tsv"),)
 RATES_SPOOL = Path("/opt/m2spool")
 UPDATE_SPOOL = Path("/opt/m2update")

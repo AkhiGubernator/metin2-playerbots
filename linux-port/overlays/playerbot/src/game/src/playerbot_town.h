@@ -311,7 +311,12 @@ namespace
 		// anything. Only the hand-in needs the Biologist, who is in Joan.
 		if (!EnsurePlayerBotBiologistMissionStarted(ch, missionIndex))
 			return false;
-		if (ch->GetMapIndex() != 21)
+		// 20084 stands in all three first villages, so the hand-in is a local
+		// errand in every kingdom. This test named map 21 outright and survived
+		// the move to the catalog below it, which meant a Shinsoo or Jinno bot
+		// could stand beside its own Biologist and still turn round.
+		playerbot_empire_rules::TPoint biologistPos;
+		if (!playerbot_empire_rules::GetBiologist(ch->GetMapIndex(), biologistPos))
 		{
 			state.bVisitingBiologist = false;
 			return false;
@@ -324,10 +329,19 @@ namespace
 				GetPlayerBotBiologistFlag(*mission, "collect_count")));
 		const int remaining = std::max(0, required - accepted);
 		const int carried = ch->CountSpecifyItem(wantedVnum);
-		// A handful is worth the walk. See PLAYERBOT_BIOLOGIST_MIN_HANDIN: the
-		// quest takes them one at a time, so there is nothing to wait for.
-		const int worthTheWalk = std::min(remaining, PLAYERBOT_BIOLOGIST_MIN_HANDIN);
-		if (!state.bVisitingBiologist && carried < worthTheWalk)
+		// One specimen is worth handing in, because the bot is already here.
+		//
+		// PLAYERBOT_BIOLOGIST_MIN_HANDIN is the threshold for the JOURNEY - it
+		// is what NeedsPlayerBotM1OnlyServices asks before spending a trip from
+		// the frontier - and applying it here as well meant a bot standing in
+		// its own village with two Orc Teeth walked past the Biologist and kept
+		// them. Measured on this world: 656 bots of thirty and up had handed in
+		// nothing at all while carrying 577 teeth between them, and the counts
+		// fell away sharply from three, which is where four-at-once stops
+		// happening for a row the bot has outgrown and no longer hunts on
+		// purpose. The quest accepts one specimen per interaction anyway, so
+		// there was never anything to save them up for.
+		if (!state.bVisitingBiologist && carried < 1)
 			return false;
 
 		if (!state.bVisitingBiologist)
@@ -347,19 +361,11 @@ namespace
 		state.dwTargetVID = 0;
 		ch->SetVictim(NULL);
 
-		// Whichever kingdom's Biologist this is: 20084 stands in all three first
-		// villages, so the hand-in is a local errand everywhere. A bot that is
-		// not in a first village has nobody to hand a specimen to.
-		playerbot_empire_rules::TPoint biologist;
-		if (!playerbot_empire_rules::GetBiologist(ch->GetMapIndex(), biologist))
-		{
-			state.bVisitingBiologist = false;
-			state.dwNextBiologistCheckTime = dwNow + 30000;
-			return false;
-		}
+		// biologistPos came from the guard at the top of this pass: reaching
+		// here means this village has one.
 		long approachX = 0, approachY = 0;
-		GetPlayerBotNpcApproach(ch->GetPlayerID(), biologist.x,
-				biologist.y, 0x42494f4cU, approachX, approachY);
+		GetPlayerBotNpcApproach(ch->GetPlayerID(), biologistPos.x,
+				biologistPos.y, 0x42494f4cU, approachX, approachY);
 		if (DISTANCE_APPROX(ch->GetX() - approachX, ch->GetY() - approachY) > 650)
 		{
 			if (!MovePlayerBot(ch, approachX, approachY, dwNow, 20, true, true, false, true) &&

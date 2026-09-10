@@ -72,7 +72,7 @@ namespace
 				LPITEM key = ch->GetInventoryItem(keyCell);
 				if (!key || key->GetType() != ITEM_TREASURE_KEY || key->GetValue(0) != box->GetValue(0))
 					continue;
-				if (ch->GetEmptyInventory(1) < 0)
+				if (ch->GetEmptyInventory(1) < 0 || ch->GetEmptyInventory(3) < 0)
 					return false;
 				const DWORD boxVnum = box->GetVnum(), keyVnum = key->GetVnum();
 				const int before = ch->GetEmptyInventory(1);
@@ -103,7 +103,7 @@ namespace
 					s_mapPlayerBotChestRefused.find(item->GetVnum());
 			if (refused != s_mapPlayerBotChestRefused.end() && dwNow < refused->second)
 				continue;
-			if (ch->GetEmptyInventory(1) < 0)
+			if (ch->GetEmptyInventory(1) < 0 || ch->GetEmptyInventory(3) < 0)
 				return false;
 			const int before = ch->GetEmptyInventory(1);
 			const DWORD chestVnum = item->GetVnum();

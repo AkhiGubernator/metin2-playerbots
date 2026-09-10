@@ -270,6 +270,18 @@ namespace
 	// that matters at the anvil - it is refined under a scroll or not at all.
 	const BYTE PLAYERBOT_BONUS_MIN_REFINE = 4;
 	const int PLAYERBOT_PRIZE_LINES = 5;
+	// Above this chance a valuable piece is refined without a scroll.
+	//
+	// refine_proto runs 90/90/90/90/80/60/50/40/30, so this lets a prize item
+	// climb to +5 on its own and demands a scroll only where a failure really
+	// costs something. It used to demand one below 100%, which is every step
+	// there is - and the scroll was only ever looked for from +6 up, so a prize
+	// weapon below that could neither be risked nor protected and simply never
+	// moved. Measured on this world: 451 of 959 bots holding a scroll wore a
+	// weapon stuck at exactly +4, and another 230 at +0, while 1287 Dragon God
+	// and 1002 Blessing scrolls sat in their bags (zglosil sekuras).
+	const int PLAYERBOT_PRIZE_SAFE_REFINE_PROB = 80;
+
 	const int PLAYERBOT_STACK_MERGES_PER_PASS = 4;
 	const int PLAYERBOT_STACK_MAX = 200;
 	const int PLAYERBOT_SHOP_SINGLE_UNITS = 4;

@@ -1368,6 +1368,38 @@ namespace
 		return 6;
 	}
 
+	// What the village merchants actually stock, and what they charge for it.
+	//
+	// The three shops hold sixty-four rows between them in this world, and
+	// nothing outside them can be bought by a player at any counter. The
+	// progression ladder walks item_proto by vnum stride instead, so it named
+	// pieces no shop has ever sold - and the purchase below simply created
+	// them. What a player saw was a bot in a level-60 Mask of Fear bought for
+	// twenty thousand yang at the armour merchant, with the log line to prove
+	// it (jaksiezabic). A bot buys what a player could buy at the same counter,
+	// at the same price; everything above that comes from drops, the counters
+	// and the blacksmith, exactly as it does for a player.
+	bool FindPlayerBotMerchantOffer(DWORD vnum, long long* priceOut)
+	{
+		static const DWORD merchants[] = { 9001, 9002, 9003 };
+		for (size_t i = 0; i < sizeof(merchants) / sizeof(merchants[0]); ++i)
+		{
+			LPSHOP shop = CShopManager::instance().GetByNPCVnum(merchants[i]);
+			if (!shop)
+				continue;
+			const std::vector<CShop::SHOP_ITEM>& offers = shop->GetItemVector();
+			for (size_t k = 0; k < offers.size(); ++k)
+			{
+				if (offers[k].vnum != vnum)
+					continue;
+				if (priceOut)
+					*priceOut = offers[k].price > 0 ? offers[k].price : 0;
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool BuyPlayerBotProgressionGear(LPCHARACTER ch, DWORD vnum, const char* category)
 	{
 		if (!ch || vnum == 0)
@@ -1376,7 +1408,11 @@ namespace
 		if (!proto || ch->GetEmptyInventory(std::max(1, (int)proto->bSize)) < 0)
 			return false;
 
-		long long price = proto->dwShopBuyPrice > 0 ? proto->dwShopBuyPrice : proto->dwGold;
+		long long price = 0;
+		if (!FindPlayerBotMerchantOffer(vnum, &price))
+			return false;
+		if (price <= 0)
+			price = proto->dwShopBuyPrice > 0 ? proto->dwShopBuyPrice : proto->dwGold;
 		price = std::max<long long>(100, price);
 		if (ch->GetGold() < price)
 			return false;

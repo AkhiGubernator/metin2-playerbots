@@ -1008,7 +1008,13 @@ namespace
 			// SetRefineMode, spends it, and on failure hands back the item one
 			// level down rather than nothing.
 			int scrollCell = -1;
-			if (plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS)
+			// A prize piece may ask for a scroll at any plus, not only from +6.
+			// The +6 rule is about not spending a scarce scroll on an ordinary
+			// item; a piece the bot refuses to risk needs one wherever it
+			// stands, and without this it was refused a scroll below +6 and
+			// then held for want of one - the deadlock that parked 451 weapons
+			// on +4.
+			if (plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item))
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel);
 			// No scroll, a roll that can fail, and a weapon worth more than the
 			// next plus: leave it. The blacksmith burns what he fails.
@@ -1019,7 +1025,12 @@ namespace
 					(IsPlayerBotSpecialLevel30Weapon(item) && plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS)))
 			{
 				const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
-				if (prt && prt->prob < 100)
+				// Hold only where a failure really costs something. Ninety and
+				// eighty percent are not odds worth freezing a weapon over, and
+				// freezing it is what happened: every step of refine_proto is
+				// under a hundred, so "prob < 100" held every prize item at
+				// whatever plus it happened to have.
+				if (prt && prt->prob < PLAYERBOT_PRIZE_SAFE_REFINE_PROB)
 				{
 					PlayerBotLogThrottled("refine_prize_no_scroll", dwNow,
 							"PLAYERBOT_AI: refine held, prize line and no blessing scroll pid=%u name=%s vnum=%u plus=%u prob=%d",

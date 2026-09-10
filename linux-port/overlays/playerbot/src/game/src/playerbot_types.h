@@ -303,6 +303,15 @@ namespace
 	// books: the roll picked one bot in ten and the books sat with the other
 	// nine.
 	const int PLAYERBOT_SHOP_BOOK_PRESSURE_MIN = 6;
+	// How often a bag of surplus books alone opens a counter, per thousand,
+	// before the TRADE weight is applied. A thousand means "always" at the
+	// neutral weight, which is what this rule did before it answered to the
+	// slider at all - and nothing at the minimum, which is what an operator
+	// dragging the slider down is asking for. Measured on this world: 238 of
+	// 970 bots hold six or more surplus books, so this one clause decided a
+	// quarter of the population whatever the setting said (zglosil Shenyo:
+	// 180 straganow na 288 botow przy suwaku na minimum).
+	const int PLAYERBOT_SHOP_BOOK_ROLL = 1000;
 	const DWORD PLAYERBOT_SOUL_STONE_CHECK_INTERVAL = 10000;
 	// What UseItemEx leaves in the socket when the 30% roll fails. Defined as a
 	// file-local const in char_item.cpp, so it is repeated here.

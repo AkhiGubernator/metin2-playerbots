@@ -591,7 +591,16 @@ namespace
 		// pressure: on a world of full bags every keeper would qualify, and
 		// on one of half-empty bags none would, while the books sat either
 		// way.
-		if (CountPlayerBotSurplusSkillBooks(ch) >= PLAYERBOT_SHOP_BOOK_PRESSURE_MIN)
+		// ...but the operator's slider still decides how many of them do it. This
+		// clause used to return true outright, so a world whose bots had books -
+		// which is every world after a few hours of Metin stones - ran whatever
+		// counter share the books dictated and the TRADE weight moved nothing.
+		// At the neutral weight the behaviour is what it was; at the minimum the
+		// stalls actually stop.
+		if (CountPlayerBotSurplusSkillBooks(ch) >= PLAYERBOT_SHOP_BOOK_PRESSURE_MIN &&
+				PlayerBotWeightedRoll(
+					PlayerBotNavHash(ch->GetPlayerID() ^ 0x424f4f4bU) % 1000U,
+					PLAYERBOT_SHOP_BOOK_ROLL, PLAYERBOT_WEIGHT_TRADE))
 			return true;
 		if (IsPlayerBotDropper(state.bPersonality))
 		{

@@ -815,7 +815,12 @@ def server_settings_status():
     elif result["pending"]:
         result["message"] = "Zlecenie nie jest odbierane przez helper gry. Sprawdź instalację integracji; po 10 minutach można usunąć wyłącznie zaległe zlecenie."
     else:
-        result["message"] = "Brak sygnału helpera gry. Zainstaluj integrację `m2-server-settings` i `m2-supervise` przed zmianą respawnów lub rat."
+        # Telling the operator to install something this build never ships is
+        # not help, and the warning fired on every visit to the console even
+        # though both buttons that matter work without the helper.
+        result["message"] = ("Ta wersja serwera nie zawiera silnikowej integracji Sebana, "
+                             "więc zmiana respawnów map jest niedostępna. Restart serwera "
+                             "i zmiana rat działają normalnie i niczego nie wymagają.")
     return result
 
 

@@ -194,8 +194,32 @@ Dungeons - is on `game1` with Chunjo. `IsPlayerBotMapHostedHere` filters the
 frontier draw so no bot is sent at one, and `IsPlayerBotGrindAllowedHere` drops
 the second-village ceiling for a kingdom whose core hosts no frontier at all -
 otherwise Shinsoo and Jinno would wedge at level thirty-six with nowhere they
-were allowed to hunt. Splitting the shared maps between the three cores is the
-open question this leaves; it is a decision about the world, not a bug.
+were allowed to hunt.
+
+What that leaves is a level wall, and the measurement is worth having to hand
+before anybody proposes a fix. Counting every hosted map's spawns through
+`regen.txt` and taking the fifth to ninety-fifth percentile of monster level:
+
+| core | continuous cover | holes |
+|---|---|---|
+| game1, Chunjo | 1-77 | 78, 83-86, 98+ |
+| first, Shinsoo | 1-36, 60-104 | **37-59** |
+| game2, Jinno | 1-35, 57-60, 69-72, 95-100 | **36-56**, 61-68, 73-94 |
+
+The band that fills the hole exists on exactly two maps in this world - Orc
+Valley (34-49) and the Yongbi Desert (37-52) - and both are on Chunjo's core.
+Moving them does not help; it puts the same hole in Chunjo instead. The two ways
+out are to host every kingdom map and the shared world on **one** core so any
+bot can reach anything (at 323 bots a core the tick is 1.6-4.3 s of 60, so one
+core carrying all of them is around 8 s of 60 - affordable, at the cost of the
+three-way parallelism), or to accept that the two new kingdoms are village
+kingdoms that stop at thirty-six. That is a decision about the world rather than
+a bug, so it is not made here.
+
+Separately, Chunjo's own core already hosts five maps this AI has never used -
+217 (60-68), 70 (66-77), 216 (79-82), 73 (87-97) and 69 (9-76) - and Shinsoo's
+and Jinno's each host a high-level set of their own. Adding one is the checklist
+under "The frontier is four maps and one table".
 
 ### The spawn ceiling is the registry, not the slider
 

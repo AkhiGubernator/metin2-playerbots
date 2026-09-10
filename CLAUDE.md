@@ -84,6 +84,7 @@ dependency order at the top of `playerbot_manager.cpp`:
 | `playerbot_log.h` | Saying something once for three hundred bots: a tag, a minute, and a count of what was swallowed. |
 | `playerbot_battle_horse.h` | Earning the horse that can fight: the desert trial, and what the stable keeper does at the end of it. |
 | `playerbot_config.h` | The weights an operator moves in the panel while the world runs. Re-read from a file every five seconds; neutral when it is missing. |
+| `playerbot_empire_rules.h` | The three kingdoms as pure policy: which map belongs to whom and what it is for, the town services and gates of all six villages, the Teleporter's per-kingdom arrivals, and how two characters stand to one another. No engine types, unit-tested. |
 | `playerbot_world_rules.h` | Pure travel policy. No engine types, unit-tested. |
 | `playerbot_navigation.h` | Where a bot may stand and whether two points connect. Calls nothing above it. |
 | `playerbot_world_memory.h` | What the population has learned about the world, as opposed to about itself. |
@@ -1538,6 +1539,20 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   (automatic?) repair failed" - which is what a player saw through the panel.
   `99-metin2.cnf` asks for `BACKUP,FORCE`. To repair an install that is
   already in that state: `mysqlcheck --auto-repair --check --all-databases`.
+- **The three kingdoms are mirrors in shape and nothing else in coordinates.**
+  `map/index` gives M1/M2/M3/easy as 1,3,4,5 (Shinsoo), 21,23,24,25 (Chunjo)
+  and 41,43,44,45 (Jinno) - M3 is the guild map, which is what our
+  `PLAYERBOT_MAP_CHUNJO_M3 = 24` already meant. Measured: each M1 carries
+  ~9200 spawn points of level 1-31, each M2 ~6000 of 18-36, each guild map
+  ~300 of 8-24, and the three easy dungeons are the same 1404 points of
+  22-30 with identical `server_attr`. But every town is laid out differently
+  and the Teleporter (NPC 9012, on all six village maps) lands each kingdom
+  on its **own** point of a shared map - `map_warp.quest` holds a table
+  indexed by empire. So a Shinsoo or Jinno number is never Chunjo's plus an
+  offset. `tools/dump_world_catalog.py` reads all of it out of the game's
+  files; it reproduces four constants the AI has been using for months
+  (both Teleporters, the desert and the valley arrival) to the unit, which
+  is what says the reader agrees with the engine.
 
 ## Engine facts worth not re-deriving
 

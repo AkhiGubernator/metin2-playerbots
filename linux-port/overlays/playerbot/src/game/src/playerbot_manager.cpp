@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "playerbot_manager.h"
+#include "playerbot_empire_rules.h"
 #include "playerbot_world_rules.h"
 
 #include "char.h"

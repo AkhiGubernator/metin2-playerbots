@@ -804,7 +804,15 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   thousand times a minute - one throttled log line a minute with the real count
   hidden in its `[+N more]`. A day of measurements concluded those maps were
   empty for reasons that were never true. The fast build copies
-  `linux-port/docker/game/bin/` now, exactly as the real image does.
+  `linux-port/docker/game/bin/` now, exactly as the real image does. What it
+  still cannot copy is `share/`, and that includes the **compiled quests**: they
+  are built by `qc` in an image stage and never at container start, so a test
+  server kept alive on fast builds runs whatever quest the last real image build
+  compiled. On 10 September that was a `web_admin.quest` three days old, and the
+  panel's mass item grant answered `unknown_cmd` for every bot - which is what
+  "masowe dawanie itemow botom nie dziala" was, for a player as much as here.
+  After changing anything under `files/*.quest`, rebuild the image
+  (`docker compose build game`) before concluding anything about a quest.
 - **A price of one yang is permanent.** `GetPlayerBotNpcSellUnitPrice` returns
   zero for anything `item_proto` prices at zero - the horse medal 50050, every
   chest and casket - so the asking price came out `max(1, 0 * markup)`, and the

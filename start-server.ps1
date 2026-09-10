@@ -363,6 +363,36 @@ function Get-DockerDesktopCandidates {
     return @($paths | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Unique)
 }
 
+function Assert-PanelPassphrase {
+    # The one password an operator actually types, and the one way it can go
+    # missing.
+    #
+    # .env.example ships M2_PANEL_PASSWORD empty. The installer fills it in and
+    # prints it at the end, but every other route to a .env leaves it empty - a
+    # file copied from the example by hand, an interrupted install, a stack
+    # started with `docker compose up` directly. The panel container then does
+    # what its entrypoint has always done: invents a twenty-character password,
+    # writes only its PBKDF2 hash into m2panel.conf, and prints the plaintext
+    # once to a container log nobody reads. From then on the panel has a
+    # password that exists nowhere: "ja nie mam zadnego hasla nawet w panelu
+    # tieru", "przy czystej instalacji losuje haslo".
+    #
+    # So the launcher fills the blank before Compose ever sees it. Written to
+    # .env, where the operator can read it back, and said out loud once here.
+    #
+    # An .env that already carries one is never touched - it may be the hash in
+    # m2panel.conf, and overwriting it would lock the operator out for real.
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Content,
+        [ref]$Generated
+    )
+    $match = [Regex]::Match($Content, '(?m)^M2_PANEL_PASSWORD=(.*)$')
+    if ($match.Success -and $match.Groups[1].Value.Trim()) { return $Content }
+    $passphrase = New-DotEnvPassphrase
+    if ($Generated) { $Generated.Value = $passphrase }
+    return (Set-DotEnvValue -Content $Content -Name 'M2_PANEL_PASSWORD' -Value $passphrase)
+}
+
 function Initialize-InstallationIdentity {
     $envPath = Join-Path $PSScriptRoot 'linux-port\docker\.env'
     if (-not (Test-Path -LiteralPath $envPath -PathType Leaf)) {
@@ -431,7 +461,25 @@ function Initialize-InstallationIdentity {
     # Last, so anything the identity decides above wins over the example.
     $content = Add-MissingDotEnvKeys -Content $content -ExamplePath (
         Join-Path (Split-Path -Parent $envPath) '.env.example')
+    # And after that, because Add-MissingDotEnvKeys deliberately never touches a
+    # PASSWORD key - which is right for not clobbering one, and leaves an empty
+    # one empty.
+    $panelGenerated = ''
+    $content = Assert-PanelPassphrase -Content $content -Generated ([ref]$panelGenerated)
     [IO.File]::WriteAllText($envPath, $content, [Text.UTF8Encoding]::new($false))
+    if ($panelGenerated) {
+        Write-Host ''
+        Write-Host '=============================================================' -ForegroundColor Yellow
+        Write-Host '  HASLO DO PANELU WWW (wygenerowane, bo w .env go nie bylo)' -ForegroundColor Yellow
+        Write-Host ''
+        Write-Host "      $panelGenerated" -ForegroundColor White
+        Write-Host ''
+        Write-Host '  Jest tez w linux-port\docker\.env (M2_PANEL_PASSWORD).' -ForegroundColor Yellow
+        Write-Host '  Jesli panel go nie przyjmuje, to znaczy, ze zapamietal' -ForegroundColor Yellow
+        Write-Host '  starsze - uzyj przycisku HASLO DO PANELU w launcherze.' -ForegroundColor Yellow
+        Write-Host '=============================================================' -ForegroundColor Yellow
+        Write-Host ''
+    }
     Write-Host "Installation identity: $project" -ForegroundColor DarkGray
 }
 

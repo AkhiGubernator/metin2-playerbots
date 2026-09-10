@@ -2836,20 +2836,29 @@ T.update({
 CATS = ["all","weapon","armor","usable","ds","metin","special","other"]
 
 def lang():
-    """Chosen language, or the browser's if none was chosen yet.
+    """Polish, unless somebody chose otherwise in the header.
 
-    First visit: the browser says what it prefers (Accept-Language) and a
-    German visitor sees German without clicking anything. Clicking a language
-    in the header stores it in the session and wins from then on.
+    It used to ask the browser first and fall back on English, which is how a
+    Polish player on an English-language Windows landed on an English page:
+    Chrome sends "en-US,en;q=0.9,pl;q=0.8" and best_match picks English. What
+    they then saw was worse than either language on its own - "mam polowe
+    panelu po angielsku polowe po polsku" - because this panel is only half
+    translated: 446 strings go through t() and about 530 more are written in
+    Polish where they stand, so an English page is a Polish page with holes.
+
+    So Polish is the default and the browser is not consulted at all. The
+    switch in the header is how anyone changes it, and that choice is now
+    remembered past the end of the browser session (see set_lang below) rather
+    than being forgotten every time the window closes.
     """
     chosen = session.get("lang")
     if chosen in LANGS:
         return chosen
     if has_request_context():
-        best = request.accept_languages.best_match(list(LANGS))
-        if best:
-            return best
-    return "en"
+        remembered = request.cookies.get("m2lang")
+        if remembered in LANGS:
+            return remembered
+    return "pl"
 
 def t(key):
     return T.get(key, {}).get(lang(), T.get(key, {}).get("en", key))
@@ -2993,9 +3002,17 @@ def inject_i18n():
 
 @app.route("/lang/<code>")
 def setlang(code):
+    response = redirect(request.referrer or url_for("login"))
     if code in LANGS:
         session["lang"] = code
-    return redirect(request.referrer or url_for("login"))
+        # And in a cookie of its own, for a year. The session cookie dies when
+        # the browser closes, so a language chosen in the evening was forgotten
+        # by the morning; marking the SESSION permanent would have fixed that
+        # and quietly given the admin login a month of life as well, which is
+        # not a thing a language switch should decide.
+        response.set_cookie("m2lang", code, max_age=31536000,
+                            samesite="Lax", httponly=False)
+    return response
 
 MAX_FAIL, LOCK_SEC = 5, 900
 FAILS = {}

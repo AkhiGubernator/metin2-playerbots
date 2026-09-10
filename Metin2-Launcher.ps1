@@ -1,6 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [ValidateSet('Menu', 'Start', 'Stop', 'StartDocker', 'StopAll', 'Check', 'UpdateServer', 'UpdateClient', 'UpdateAll', 'Diagnose', 'Logs', 'SendLogs', 'Configure', 'SetBots', 'ImportDb', 'BackupDb', 'RestoreDb', 'ResetWorld', 'RepairDb', 'DbAccess')]
+    [ValidateSet('Menu', 'Start', 'Stop', 'StartDocker', 'StopAll', 'Check', 'UpdateServer', 'UpdateClient', 'UpdateAll', 'Diagnose', 'Logs', 'SendLogs', 'Configure', 'SetBots', 'ImportDb', 'BackupDb', 'RestoreDb', 'ResetWorld', 'RepairDb', 'DbAccess', 'PanelPassword')]
     [string]$Action = 'Menu',
     [string]$Manifest = '',
     [int]$BotCount = -1,
@@ -728,6 +728,72 @@ function Reset-WorldAction {
     Write-Host 'Świat skasowany. Kliknij GRAJ - serwer zbuduje bazę od nowa i zasieje boty.' -ForegroundColor Green
 }
 
+function Reset-PanelPasswordAction {
+    # The panel keeps a PBKDF2 hash of its passphrase in m2panel.conf, on a
+    # volume of its own, and its entrypoint never regenerates it - regenerating
+    # would log every operator out and invalidate every session cookie. Right,
+    # except when the passphrase it hashed is one nobody has: the container
+    # invented it on a first run and printed it to a log nobody read.
+    #
+    # Deleting that one file is the whole reset. The entrypoint then rebuilds it
+    # from M2_PANEL_PASSWORD, which the launcher now guarantees is in .env.
+    $creds = Get-InstallDbCredentials
+    $panelPw = ''
+    if ($creds.EnvPath) {
+        $text = [IO.File]::ReadAllText($creds.EnvPath)
+        $match = [Regex]::Match($text, '(?m)^M2_PANEL_PASSWORD=(.+?)\s*$')
+        if ($match.Success) { $panelPw = $match.Groups[1].Value }
+    }
+    if (-not $panelPw) {
+        Write-Host 'W pliku .env nie ma hasla do panelu. Uruchom raz GRAJ - launcher je uzupelni i pokaze.' -ForegroundColor Yellow
+        return
+    }
+    Write-Host 'Haslo do panelu WWW (z pliku linux-port\docker\.env):' -ForegroundColor Cyan
+    Write-Host "  $panelPw"
+    Write-Host ''
+    Write-Host 'Jesli panel go nie przyjmuje, znaczy to, ze zapamietal starsze haslo.' -ForegroundColor Gray
+    Write-Host 'Reset kasuje jeden plik konfiguracyjny panelu; swiat, postacie i boty' -ForegroundColor Gray
+    Write-Host 'sa w bazie i nie sa tym ruszane. Wylogowuje otwarte sesje panelu.' -ForegroundColor Gray
+    if (-not (Confirm-Operation 'Zresetowac haslo panelu do tego z .env?')) {
+        Write-Host 'Anulowano - haslo wyzej pozostaje aktualne.' -ForegroundColor Yellow
+        return
+    }
+    # The panel's config volume is named after the same project as the database
+    # volume, which the launcher already knows how to find.
+    $dbVolume = Get-CurrentInstallTargetVolume
+    if (-not $dbVolume -or -not $dbVolume.EndsWith('_db-data')) {
+        Write-Host 'Nie moge ustalic nazwy projektu tej instalacji. Uruchom raz GRAJ.' -ForegroundColor Yellow
+        return
+    }
+    $volume = $dbVolume.Substring(0, $dbVolume.Length - '_db-data'.Length) + '_panel-conf'
+
+    $composeDir = Join-Path $serverRoot 'linux-port\docker'
+    $composeFile = Join-Path $composeDir 'docker-compose.yml'
+    $previousPreference = $ErrorActionPreference
+    try {
+        # docker compose writes progress to stderr; under 'Stop' that is a
+        # terminating error even when the command worked. See Stop-Server.
+        $ErrorActionPreference = 'Continue'
+        Write-Host 'Zatrzymuje panel...' -ForegroundColor Cyan
+        docker compose --project-directory $composeDir -f $composeFile stop panel 2>&1 | Out-Null
+        Write-Host 'Kasuje zapamietane haslo...' -ForegroundColor Cyan
+        docker run --rm -v "${volume}:/etc/m2panel" alpine:3.20 rm -f /etc/m2panel/m2panel.conf 2>&1 | Out-Null
+        $removeExit = $LASTEXITCODE
+        if ($removeExit -ne 0) {
+            Write-Host "Nie udalo sie skasowac pliku (kod $removeExit). Panel zostaje bez zmian." -ForegroundColor Red
+            docker compose --project-directory $composeDir -f $composeFile start panel 2>&1 | Out-Null
+            return
+        }
+        Write-Host 'Uruchamiam panel...' -ForegroundColor Cyan
+        docker compose --project-directory $composeDir -f $composeFile up -d --no-deps panel 2>&1 | Out-Null
+    }
+    finally { $ErrorActionPreference = $previousPreference }
+
+    Write-Host ''
+    Write-Host 'Gotowe. Zaloguj sie haslem:' -ForegroundColor Green
+    Write-Host "  $panelPw"
+}
+
 function Get-InstallDbCredentials {
     # Everything a database client needs, straight from .env: the port the
     # compose file publishes on 127.0.0.1, the game account and root. The root
@@ -881,6 +947,7 @@ function Invoke-Action {
         'ResetWorld' { Reset-WorldAction }
         'RepairDb' { Repair-DatabaseAction }
         'DbAccess' { Show-DatabaseAccessAction }
+        'PanelPassword' { Reset-PanelPasswordAction }
         default { throw "Nieznana akcja: $SelectedAction" }
     }
 }
@@ -907,6 +974,7 @@ function Show-Menu {
         Write-Host ' 17. Zresetuj świat do stanu świeżej instalacji (kopia zapisywana automatycznie)'
         Write-Host ' 18. Napraw dostęp do bazy (gdy migrate/serwer nie startuje albo Navicat odrzuca hasło)'
         Write-Host ' 19. Dane do połączenia z bazą (Navicat, HeidiSQL)'
+        Write-Host ' 20. Hasło do panelu WWW (pokaż / zresetuj)'
         Write-Host '  0. Wyjście'
         Write-Host ''
         $choice = Read-Host 'Wybierz opcję'
@@ -921,6 +989,7 @@ function Show-Menu {
             '17' { 'ResetWorld' }
             '18' { 'RepairDb' }
             '19' { 'DbAccess' }
+            '20' { 'PanelPassword' }
             '0' { return }
             default { '' }
         }

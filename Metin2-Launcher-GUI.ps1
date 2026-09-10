@@ -182,6 +182,7 @@ $script:Strings = @{
         panelInfo    = 'Oba panele pokazuja ten sam swiat i dzialaja jednoczesnie.'
         panelClassic = "Oryginalny panel`r`nmapa i sterowanie"
         panelSeban   = "Zaawansowany panel seban latino`r`nprofile, rankingi, gospodarka, obciazenie"
+        panelPw      = 'Nie moge sie zalogowac (haslo do panelu)'
         importDialog = 'Importuj baze z innej instalacji'
         importInfo   = 'Wybierz zrodlowa instalacje. Jej swiat (postacie, poziomy, ekwipunek) zostanie skopiowany do biezacej instalacji.'
         importOk     = 'Importuj'
@@ -229,6 +230,7 @@ $script:Strings = @{
         panelInfo    = 'Both panels show the same world and run at the same time.'
         panelClassic = "Original panel`r`nmap and controls"
         panelSeban   = "Advanced panel by seban latino`r`nprofiles, rankings, economy, load"
+        panelPw      = 'I cannot log in (panel password)'
         importDialog = 'Import a database from another installation'
         importInfo   = 'Pick the source installation. Its world - characters, levels, equipment - is copied into this one.'
         importOk     = 'Import'
@@ -1036,6 +1038,74 @@ function Get-M2PanelAddresses {
     }
 }
 
+function Show-PanelPasswordDialog {
+    # In-process and read-only: an action would print the passphrase through the
+    # launcher log, and the launcher log travels in support bundles that get
+    # posted on the Discord. Same rule as the database credentials dialog.
+    $envPath = Join-Path $root 'linux-port\docker\.env'
+    $passphrase = ''
+    if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+        $match = [Regex]::Match([IO.File]::ReadAllText($envPath), '(?m)^M2_PANEL_PASSWORD=(.+?)\s*$')
+        if ($match.Success) { $passphrase = $match.Groups[1].Value }
+    }
+    if (-not $passphrase) {
+        [Windows.Forms.MessageBox]::Show(
+            "W pliku .env nie ma jeszcze hasla do panelu.`r`n`r`nKliknij GRAJ raz - launcher je uzupelni i pokaze.",
+            'Haslo do panelu', 'OK', 'Information') | Out-Null
+        return
+    }
+
+    $dialog = [Windows.Forms.Form]::new()
+    $dialog.Text = 'Haslo do panelu WWW'
+    $dialog.Size = [Drawing.Size]::new(520, 250)
+    $dialog.StartPosition = 'CenterParent'
+    $dialog.FormBorderStyle = 'FixedDialog'
+    $dialog.MaximizeBox = $false
+    $dialog.MinimizeBox = $false
+
+    $info = [Windows.Forms.Label]::new()
+    $info.Text = 'Panel ma jedno haslo i nie ma loginu. Zaznacz je i skopiuj.'
+    $info.Location = [Drawing.Point]::new(16, 14)
+    $info.Size = [Drawing.Size]::new(480, 20)
+    $dialog.Controls.Add($info)
+
+    $box = [Windows.Forms.TextBox]::new()
+    $box.Text = $passphrase
+    $box.ReadOnly = $true
+    $box.Location = [Drawing.Point]::new(16, 40)
+    $box.Size = [Drawing.Size]::new(480, 26)
+    $box.Font = [Drawing.Font]::new('Consolas', 12)
+    $dialog.Controls.Add($box)
+
+    $hint = [Windows.Forms.Label]::new()
+    $hint.Text = ('Jesli panel go nie przyjmuje, zapamietal starsze haslo z pierwszego' + [Environment]::NewLine +
+        'uruchomienia. Reset kasuje jeden plik konfiguracyjny panelu i ustawia' + [Environment]::NewLine +
+        'haslo powyzej. Swiat, postacie i boty sa w bazie i nie sa tym ruszane.')
+    $hint.Location = [Drawing.Point]::new(16, 76)
+    $hint.Size = [Drawing.Size]::new(480, 60)
+    $dialog.Controls.Add($hint)
+
+    $resetButton = [Windows.Forms.Button]::new()
+    $resetButton.Text = 'Zresetuj haslo panelu'
+    $resetButton.Location = [Drawing.Point]::new(16, 148)
+    $resetButton.Size = [Drawing.Size]::new(230, 34)
+    $resetButton.DialogResult = [Windows.Forms.DialogResult]::Yes
+    $dialog.Controls.Add($resetButton)
+
+    $closeButton = [Windows.Forms.Button]::new()
+    $closeButton.Text = 'Zamknij'
+    $closeButton.Location = [Drawing.Point]::new(396, 148)
+    $closeButton.Size = [Drawing.Size]::new(100, 34)
+    $closeButton.DialogResult = [Windows.Forms.DialogResult]::Cancel
+    $dialog.Controls.Add($closeButton)
+    $dialog.CancelButton = $closeButton
+
+    $answer = $dialog.ShowDialog()
+    $dialog.Dispose()
+    if ($answer -ne [Windows.Forms.DialogResult]::Yes) { return }
+    Start-LauncherAction -Action 'PanelPassword' -Yes
+}
+
 function Show-PanelChoiceDialog {
     # Two panels look at the same world and neither replaces the other, so the
     # button asks instead of deciding: the classic one is the map and the
@@ -1071,6 +1141,16 @@ function Show-PanelChoiceDialog {
     $sebanButton.DialogResult = [Windows.Forms.DialogResult]::No
     $dialog.Controls.Add($sebanButton)
 
+    # The third thing somebody pressing this button may actually want.
+    # "podajcie te kody do gm bo ja nie moge na www wejsc", "ja nie mam zadnego
+    # hasla nawet w panelu tieru" - it is one line in .env and nothing showed it.
+    $passwordButton = [Windows.Forms.Button]::new()
+    $passwordButton.Text = (T 'panelPw')
+    $passwordButton.Location = [Drawing.Point]::new(16, 174)
+    $passwordButton.Size = [Drawing.Size]::new(370, 30)
+    $passwordButton.DialogResult = [Windows.Forms.DialogResult]::Retry
+    $dialog.Controls.Add($passwordButton)
+
     $cancelButton = [Windows.Forms.Button]::new()
     $cancelButton.Text = (T 'cancel')
     $cancelButton.Location = [Drawing.Point]::new(396, 174)
@@ -1085,6 +1165,7 @@ function Show-PanelChoiceDialog {
     switch ($answer) {
         ([Windows.Forms.DialogResult]::Yes) { return $Addresses.ClassicUrl }
         ([Windows.Forms.DialogResult]::No)  { return $Addresses.SebanUrl }
+        ([Windows.Forms.DialogResult]::Retry) { return 'panel-password' }
         default { return $null }
     }
 }
@@ -1092,6 +1173,10 @@ function Show-PanelChoiceDialog {
 $panelButton.Add_Click({
     $addresses = Get-M2PanelAddresses -ServerRoot $root
     $url = Show-PanelChoiceDialog -Addresses $addresses
+    if ($url -eq 'panel-password') {
+        Show-PanelPasswordDialog
+        return
+    }
     if ($url) {
         Write-LocalLog "Otwieram panel: $url"
         Start-Process $url

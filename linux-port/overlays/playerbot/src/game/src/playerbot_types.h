@@ -1429,6 +1429,13 @@ namespace
 	// fifty to a dragon armour with seven more defence and nothing else.
 	const long long PLAYERBOT_ARMOR_OUTGROWN_PERCENT_PER_LEVEL = 5;
 	const DWORD PLAYERBOT_SKILL_FORGET_SCROLL_VNUM = 70037;
+	// Moving a point from a skill the priority list ranks lower to the one it
+	// wants next: one Forgetting Book per point, at this price and this pace
+	// (sosen: a bot with sixteen in Tapniecie put its new points into Duchowe
+	// and left the sixteen where they were). Cheaper than the "stuck at
+	// seventeen" book above because it runs from level five, on M1 purses.
+	const long long PLAYERBOT_SKILL_REALLOCATE_PRICE = 20000;
+	const DWORD PLAYERBOT_SKILL_REALLOCATE_INTERVAL = 30000;
 	// No merchant in this world sells the scroll and nothing drops it, so a
 	// bot past the old woman's thirty bought it nowhere and a skill stuck at
 	// seventeen stayed there for life - 81 bots carried a skill at eighteen or
@@ -2500,6 +2507,7 @@ namespace
 			dwNextSkillBookTime(0),
 			dwNextSoulStoneTime(0),
 			dwNextThirdHandTime(0),
+			dwNextSkillReallocateTime(0),
 			dwNextProgressionChestCheckTime(0),
 			dwNextBuffCheckTime(0),
 			dwNextSkillCastTime(0),
@@ -2735,6 +2743,7 @@ namespace
 		DWORD dwNextSkillBookTime;
 		DWORD dwNextSoulStoneTime;
 		DWORD dwNextThirdHandTime;
+		DWORD dwNextSkillReallocateTime;
 		DWORD dwNextProgressionChestCheckTime;
 		DWORD dwNextBuffCheckTime;
 		DWORD dwNextSkillCastTime;

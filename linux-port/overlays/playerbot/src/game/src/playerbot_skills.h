@@ -137,6 +137,10 @@ namespace
 		DWORD dwBuffSkills[3];
 		DWORD dwOffensiveSkills[4];
 		DWORD dwPrimaryMaxSkill;
+		// The tier of dwSkills[i] in the players' priority list: two skills of
+		// one tier are "losowo" - either first - and a point is never moved
+		// between them.
+		BYTE abSkillTier[6];
 	};
 
 	// The order the skill points go in, per build, as the Discord's players
@@ -164,7 +168,10 @@ namespace
 				std::swap(pick[i], pick[j]);
 			}
 			for (BYTE i = 0; i < count && n < 6; ++i)
+			{
+				build.abSkillTier[n] = t;
 				build.dwSkills[n++] = pick[i];
+			}
 		}
 		build.bSkillCount = n;
 		build.dwPrimaryMaxSkill = n > 0 ? build.dwSkills[0] : 0;
@@ -566,6 +573,75 @@ namespace
 		return true;
 	}
 
+	// The same book, bought for a point that is in the wrong skill. Any level
+	// from five: the old woman's reset costs every skill level the character
+	// has, and a bot of twenty with sixteen points in the wrong place would
+	// rather move them one at a time.
+	bool BuyPlayerBotReallocateBook(LPCHARACTER ch, DWORD dwSkillVnum)
+	{
+		if (!ch || dwSkillVnum == 0 || !ch->IsItemLoaded())
+			return false;
+		if ((long long)ch->GetGold() - GetPlayerBotReservedGold(ch) < PLAYERBOT_SKILL_REALLOCATE_PRICE)
+			return false;
+		if (ch->GetEmptyInventory(1) < 0)
+			return false;
+		LPITEM scroll = ch->AutoGiveItem(PLAYERBOT_SKILL_FORGET_SCROLL_VNUM, 1, -1, false);
+		if (!scroll)
+			return false;
+		ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_SKILL_REALLOCATE_PRICE);
+		return true;
+	}
+
+	// One point, from the lowest-ranked skill that has more than its unlock
+	// point, to the highest-ranked one still short of Master. Runs only when
+	// the bot has no free points - a free point goes to the same place for
+	// nothing - and never touches a skill already at Master, which the engine
+	// will not lower anyway.
+	void ReallocatePlayerBotSkillPoint(LPCHARACTER ch, TPlayerBotAIState& state,
+			const TJobSkillBuild& build, DWORD dwNow)
+	{
+		if (ch->GetPoint(POINT_SKILL) > 0 || dwNow < state.dwNextSkillReallocateTime)
+			return;
+		DWORD wanted = 0;
+		BYTE wantedIndex = 0;
+		for (BYTE i = 0; i < build.bSkillCount; ++i)
+		{
+			const DWORD v = build.dwSkills[i];
+			if (v != 0 && ch->GetSkillMasterType(v) == SKILL_NORMAL &&
+					ch->GetSkillLevel(v) < PLAYERBOT_SKILL_MASTER_TRY_LEVEL)
+			{
+				wanted = v;
+				wantedIndex = i;
+				break;
+			}
+		}
+		if (wanted == 0)
+			return;
+		DWORD victim = 0;
+		for (int i = (int)build.bSkillCount - 1; i > (int)wantedIndex; --i)
+		{
+			const DWORD v = build.dwSkills[i];
+			if (build.abSkillTier[i] <= build.abSkillTier[wantedIndex])
+				continue; // the same tier: either of them is what the list asked for
+			if (v != 0 && ch->GetSkillLevel(v) > 1 && ch->GetSkillMasterType(v) == SKILL_NORMAL)
+			{
+				victim = v;
+				break;
+			}
+		}
+		if (victim == 0)
+			return;
+		state.dwNextSkillReallocateTime = dwNow + PLAYERBOT_SKILL_REALLOCATE_INTERVAL;
+		const BYTE victimBefore = ch->GetSkillLevel(victim);
+		if (!UsePlayerBotForgetScroll(ch, victim) &&
+				!(BuyPlayerBotReallocateBook(ch, victim) && UsePlayerBotForgetScroll(ch, victim)))
+			return;
+		sys_log(0, "PLAYERBOT_SKILL: point moved pid=%u name=%s from=%u (%u->%u) to=%u (%u) points=%d gold=%d",
+				ch->GetPlayerID(), ch->GetName(), victim, (unsigned int)victimBefore,
+				(unsigned int)ch->GetSkillLevel(victim), wanted, (unsigned int)ch->GetSkillLevel(wanted),
+				ch->GetPoint(POINT_SKILL), ch->GetGold());
+	}
+
 	void ManagePlayerBotSkills(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || ch->GetLevel() < 5 || dwNow < state.dwNextSkillCheckTime)
@@ -606,6 +682,10 @@ namespace
 				}
 			}
 		}
+
+		// Before the early return below: a bot with no free point is exactly
+		// the bot whose points are in the wrong place.
+		ReallocatePlayerBotSkillPoint(ch, state, build, dwNow);
 
 		if (ch->GetPoint(POINT_SKILL) <= 0)
 			return;

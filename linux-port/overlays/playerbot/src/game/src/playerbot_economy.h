@@ -1008,7 +1008,11 @@ namespace
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel);
 			// No scroll, a roll that can fail, and a weapon worth more than the
 			// next plus: leave it. The blacksmith burns what he fails.
-			if (scrollCell < 0 && IsPlayerBotPrizeItem(item))
+			// A level-30 weapon from +6 on goes only under a scroll, prize lines
+			// or not - a burnt Full Moon Sword +7 is a week of somebody's
+			// hunting, and the Moonlight chests keep the scrolls coming.
+			if (scrollCell < 0 && (IsPlayerBotPrizeItem(item) ||
+					(IsPlayerBotSpecialLevel30Weapon(item) && plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS)))
 			{
 				const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
 				if (prt && prt->prob < 100)

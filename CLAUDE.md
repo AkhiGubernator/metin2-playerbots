@@ -1473,6 +1473,24 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   update. Pin every Dockerfile to a Debian codename (`-bookworm`) and run
   no `apt-get` where nothing needs a package - the ItemShop's healthcheck
   asks PHP itself now.
+- **"Finished" has to mean the same thing for every weapon.**
+  `HasPlayerBotFinishedBonus` called a weapon finished by its average line
+  only for the level-30 family, so a bow of forty-five with a 40% average
+  was rerolled towards `PLAYERBOT_BONUS_KEEP_SCORE` until the average was
+  gone - 37 000 rerolls a day on this world, and "boty zmixowaly wysokie
+  srednie 35+" on the Discord. Any weapon at `PLAYERBOT_BONUS_KEEP_AVERAGE`
+  is finished now, and a level-30 weapon from `PLAYERBOT_SCROLL_REFINE_MIN_PLUS`
+  waits for a scroll whatever its lines.
+- **A skill priority is worth nothing to points already spent.** The
+  players' order (`ApplyPlayerBotSkillPriority`) only steered new points, so
+  a bot with sixteen in the third skill kept them for good.
+  `ReallocatePlayerBotSkillPoint` moves one point per
+  `PLAYERBOT_SKILL_REALLOCATE_INTERVAL` from the lowest-ranked skill above
+  its unlock point to the highest-ranked one short of Master, with a
+  Forgetting Book bought at `PLAYERBOT_SKILL_REALLOCATE_PRICE` -
+  `SkillLevelDown` refunds the point and refuses a skill at Master, which
+  is why Master skills stay where they are. Only when there is no free
+  point: a free point goes to the same place for nothing.
 
 ## Engine facts worth not re-deriving
 

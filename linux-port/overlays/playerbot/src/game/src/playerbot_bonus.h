@@ -132,11 +132,11 @@ namespace
 			case WEAR_SHIELD:
 				return immuneStun;
 			case WEAR_WEAPON:
-				// Only on the level-30 families. On anything else average damage
-				// is a good line, not a reason to stop: the weapon itself is
-				// going to be replaced.
-				return IsPlayerBotSpecialLevel30WeaponVnum(item->GetVnum()) &&
-						average >= PLAYERBOT_BONUS_KEEP_AVERAGE;
+				// Any weapon, not only the level-30 family: with the vnum test
+				// here a bow of forty-five with a 40% average was "unfinished"
+				// and rerolled towards the line score until the average was
+				// gone ("boty zmixowaly wysokie srednie 35+ na duzo mniejsze").
+				return average >= PLAYERBOT_BONUS_KEEP_AVERAGE;
 			case WEAR_BODY:
 			case WEAR_HEAD:
 			case WEAR_FOOTS:

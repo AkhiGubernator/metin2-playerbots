@@ -17,6 +17,75 @@ every version here.
 
 ---
 
+## 1.31.8 — 2026-09-10
+
+### Boss z pustyni w Bokjung
+
+- **Boss nie skacze już za ofiarą na inną mapę** (zgłosił Pasywny: komuś
+  przeteleportował się Olbrzymi Żółw z Pustyni Yongbi do M2). Błąd jest w
+  samym silniku, w `char_state.cpp`: żółw (rasa 2191) co jakiś czas
+  przeskakuje pod swoją ofiarę przez `Show(victim->GetMapIndex(), ...)`,
+  a więc bierze mapę **ofiary**, nie swoją. Gdy ofiara w tym czasie przeszła
+  przez bramę albo zapłaciła Teleporterowi, boss szedł za nią i lądował w
+  mieście. Łatka 0011 pozwala bossowi gonić i przeskakiwać tylko do ofiary
+  na tej samej mapie; ta sama poprawka usuwa bezsensowną pogoń za
+  współrzędnymi z mapy, której ofiara już nie ma. Dotyczy też graczy, nie
+  tylko botów. Plik `char_state.cpp` jedzie w aktualizacji jak `char.cpp`.
+
+### Aktualizacja na Linuksie i VPS
+
+- **Aktualizacja nie zatrzymuje się już na łatce 0009** (zgłosił archded, wraz
+  z trafną diagnozą). `prepare-context.sh` sprawdzał każdą łatkę osobno, na
+  nietkniętym drzewie — a to inne pytanie niż to, o które chodzi: pierwszy
+  hunk łatki 0009 ma w kontekście `#include "playerbot_manager.h"`, który
+  dokłada łatka 0001. Osobno nie przechodzi, po kolei przechodzi bez zarzutu.
+  Każda instalacja na Linuksie i VPS stawała w tym miejscu („Hunk #1 FAILED at
+  37") i nie dało się zaktualizować; Windows tego nie widział, bo tam launcher
+  wykłada pliki już połatane. Teraz próba jest kumulacyjna: pliki, których
+  dotyka seria, lądują w katalogu roboczym poza kontekstem budowy i cała seria
+  jest tam nakładana naprawdę. Prawdziwe drzewo zostaje ruszone dopiero wtedy,
+  gdy próba przejdzie do końca — zasada „albo wszystkie, albo żadna" zostaje.
+
+### Baza danych
+
+- **Uszkodzona tabela naprawia się sama** (zgłosił cyckiseusmaz: „Błąd: (144,
+  Table './player/quest' is marked as crashed and last (automatic?) repair
+  failed")). Siedemdziesiąt trzy z siedemdziesięciu pięciu tabel gry to MyISAM,
+  który nie znosi nagłego zatrzymania — wyciągnięta wtyczka, ubity kontener
+  albo pełny dysk zostawiają tabelę oznaczoną jako uszkodzona i od tej chwili
+  wszystko, co ją czyta, pada. Domyślne `BACKUP,QUICK` naprawia tylko plik
+  indeksu, więc gdy uszkodzony jest plik danych, automat się poddaje — i to
+  właśnie mówi ten komunikat. Ustawiamy `BACKUP,FORCE`: pełna naprawa przy
+  otwarciu, z kopią uszkodzonego pliku obok, żeby nic nie znikło po cichu.
+  **Kto ma ten błąd teraz**, naprawi go jednym poleceniem, zanim zaktualizuje:
+  `docker compose exec mariadb mysqlcheck -uroot -p"$M2_DB_ROOT_PASSWORD" --auto-repair --check --all-databases`
+
+### Boty i ulepszacze
+
+- **Bot nie sprzedaje już zwojów ulepszeń handlarzowi** (zgłosił jaroszv2).
+  Reguła złomu nie miała dla nich żadnej gałęzi, a handlarz płaci grosze za
+  jedyną rzecz, bez której nie da się ulepszać powyżej +6: u nas przez dobę
+  poszło tak 471 Zwojów Błogosławieństwa, podczas gdy bronie na nie czekały.
+  Objęte są wszystkie zwoje, które zna silnik: Błogosławieństwa, Magiczny
+  Kamień, Podręcznik Kowala, Zwój Boga Wojny i Zwój Boga Smoków. Na straganie
+  nadal mogą stać — inny bot też ich potrzebuje.
+
+### Miasta
+
+- **Zdjęte limity straganów i zwiedzających.** Bokjung miał limit straganów
+  (8 promili żywych botów), a straganiarz, który zastał pełny rynek, szedł
+  z towarem do Joan. Jedno i drugie zniknęło: miasto ma się zaludniać, a
+  odprawiony straganiarz to bot bez zajęcia. Joan bierze stragany od botów,
+  które w Joan stoją.
+- **Bot odsyła konia, gdy zsiada w strefie bezpiecznej.** `StopRiding`
+  zostawia konia jako towarzysza, więc każde zsiadanie w mieście dokładało
+  wierzchowca do tłumu na placu (u nas 295 zsiadań na M1 w kwadrans).
+  Sprawdzone w `server_attr`: oba rynki, w Joan i w Bokjung, mają flagę
+  strefy bezpiecznej, więc koń znika dokładnie tam, gdzie stoi tłum. Na
+  mapach łowieckich koń zostaje, bo bot zaraz znów go dosiądzie.
+
+---
+
 ## 1.31.7 — 2026-09-10
 
 ### Boty w grze (sosen, „Ulepszanie broni na 30 lvl oraz zmiany w umiejętnościach”)

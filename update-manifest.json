@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T08:54:00Z",
-  "statusMessage": "Aktualizacja 1.31.7. Punkty skilli przenoszone Ksiega Zapomnienia, kazda bron ze srednia 20+ gotowa, bron 30 lv od +6 tylko na zwoju.",
+  "publishedAt": "2026-09-10T11:03:00Z",
+  "statusMessage": "Aktualizacja 1.31.8. Aktualizacja na Linuksie znow przechodzi, boss nie skacze za ofiara na inna mape, boty nie sprzedaja zwojow ulepszen, uszkodzona tabela naprawia sie sama.",
   "server": {
-    "version": "1.31.7",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.7/metin2-server-update-1.31.7.zip",
-    "sha256": "5A813C3CE7AADDB7F0CE255865D89E432A488758D7A12CF95C358FB486B9549F"
+    "version": "1.31.8",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.8/metin2-server-update-1.31.8.zip",
+    "sha256": "F1755EFFB0A86CDF1D8BAD8F0F0983A52A665CBD989ABA672444D05EADB068C3"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

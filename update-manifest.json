@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T06:27:00Z",
-  "statusMessage": "Aktualizacja 1.31.5. Bot znow zbiera cudzy drop, gdy ma okazje (cofniecie blokady z 1.31.4).",
+  "publishedAt": "2026-09-10T06:44:00Z",
+  "statusMessage": "Aktualizacja 1.31.6. Yang z zabojstwa prosto do sakiewki dla kazdego, bez Trzeciej Reki; boty oddaja przedmiot.",
   "server": {
-    "version": "1.31.5",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.5/metin2-server-update-1.31.5.zip",
-    "sha256": "B8FB3EF495CCF31349B48B0698A14C0ECDA3810082C868ADD8603C96CCF1018D"
+    "version": "1.31.6",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.6/metin2-server-update-1.31.6.zip",
+    "sha256": "248478AF5A2C41152183A7B4085B19D0576BBCB6419F2586A926F4865C97A5F4"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

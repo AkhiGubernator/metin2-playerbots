@@ -17,6 +17,23 @@ every version here.
 
 ---
 
+## 1.31.6 — 2026-09-10
+
+### Yang prosto do sakiewki, dla każdego
+
+- **Yang z zabójstwa trafia prosto do sakiewki każdemu — graczom i botom —
+  bez Trzeciej Ręki** (Invisible: „czy da się dodać status trzeciej ręki bez
+  zajmowania slota w eq?”; Tieru: „na większości serwerów tak jest
+  domyślnie”). Łatka silnika 0010 w `CHARACTER::RewardGold` uznaje każdego
+  zabójcę za wyposażonego w automatyczne zbieranie; Trzecia Ręka i premium
+  nadal są honorowane, ale niepotrzebne. Plik `char_battle.cpp` jedzie w
+  aktualizacji jak `char.cpp`.
+- **Boty zdejmują i oddają Trzecią Rękę** (72016–72018): pass, który do tej
+  pory ją tworzył, zakładał i nakręcał, teraz ją usuwa, żeby nie zajmowała
+  slota. Gracze swoje egzemplarze zachowują.
+
+---
+
 ## 1.31.5 — 2026-09-10
 
 ### Boty w grze

@@ -1251,6 +1251,23 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   core, on three cores' worth of world. Splitting the population between
   kingdoms is what makes that affordable; game1 carries the shared maps and
   costs four times what a village kingdom does.
+- **A rollback that throws replaces the error that caused it.**
+  `Invoke-M2PackageUpdate` rolled back **every** file in the package, not just
+  the ones it had written - so a refused write to `pack/root.eix` was followed
+  by restoring the backup onto that same unwritable file, which failed the same
+  way, and *that* second exception is what reached the player. The copy loop's
+  careful diagnosis was built and then thrown away one frame later. It took an
+  end-to-end test with a real Deny ACL to see it: the message on screen was
+  identical before and after the diagnosis was added, which reads exactly like
+  "my fix did not work" and is not. Roll back only what was applied, and wrap
+  each restore so the rollback can never be the thing that speaks.
+  Related: `catch [UnauthorizedAccessException]` does **not** fire here.
+  With `$ErrorActionPreference = 'Stop'` PowerShell 5.1 wraps a cmdlet's error
+  in `ActionPreferenceStopException` and the typed catch is skipped - walk
+  `.InnerException` the way `Test-M2AntivirusBlock` does. And `Copy-Item -Force`
+  already overwrites read-only *and* hidden destinations, so neither is the
+  cause of an access denial: what is left is an ACL, Controlled Folder Access,
+  or a process holding the file. `New-M2AccessDeniedError` names which.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

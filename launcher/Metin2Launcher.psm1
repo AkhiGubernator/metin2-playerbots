@@ -176,6 +176,129 @@ function New-M2AntivirusError {
         'zebysmy zobaczyli, o ktory plik chodzi.')
 }
 
+function Test-M2AccessDenied {
+    # Nie da sie tego zlapac przez `catch [UnauthorizedAccessException]`:
+    # przy $ErrorActionPreference = 'Stop' PowerShell 5.1 opakowuje blad
+    # cmdletu w ActionPreferenceStopException i typowany catch go mija -
+    # sprawdzone, gracz dostawal goly komunikat mimo poprawnego z pozoru
+    # bloku. Lancuch wyjatkow mowi prawde, tak samo jak przy antywirusie.
+    param([Parameter(Mandatory = $true)]$ErrorRecord)
+
+    $exception = $ErrorRecord.Exception
+    while ($exception) {
+        if ($exception -is [UnauthorizedAccessException]) { return $true }
+        # E_ACCESSDENIED, gdy przyjdzie jako zwykly Win32Exception.
+        if ($exception.HResult -eq -2147024891) { return $true }
+        $exception = $exception.InnerException
+    }
+    return $false
+}
+
+function Repair-M2WritableFile {
+    # Copy-Item -Force overwrites a read-only destination, but NOT a hidden or
+    # system one: Windows refuses to replace those and .NET reports it as
+    # UnauthorizedAccessException - the same sentence an ACL denial produces.
+    # Clearing the three attributes is the one cause we can repair ourselves, so
+    # it is tried before the copy is called a failure.
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    try {
+        $item = Get-Item -LiteralPath $Path -Force
+        $unwanted = ([IO.FileAttributes]::ReadOnly -bor
+            [IO.FileAttributes]::Hidden -bor [IO.FileAttributes]::System)
+        if (([int]$item.Attributes -band [int]$unwanted) -eq 0) { return $false }
+        $item.Attributes = [IO.FileAttributes]([int]$item.Attributes -band (-bnot [int]$unwanted))
+        return $true
+    }
+    catch { return $false }
+}
+
+function New-M2AccessDeniedError {
+    # "Odmowa dostepu do sciezki" is what Windows says for at least four
+    # different problems, and this function exists because the launcher used to
+    # pass that one sentence through untouched. Artur554 hit it nine times in a
+    # day on E:\Metin2Client - every attempt the same eleven words, nothing to
+    # act on, and the client never updated once. Same shape as the bait purchase
+    # that reported "cannot_afford_tackle" for three unrelated causes: name each
+    # refusal, or the report cannot be diagnosed from outside.
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)]$ErrorRecord
+    )
+
+    $lines = @()
+    $lines += "Brak prawa zapisu do pliku: $Path"
+    $lines += "Windows zglosil: $($ErrorRecord.Exception.Message)"
+    $lines += 'Nic nie zostalo zmienione - poprzednia wersja dziala dalej.'
+    $lines += ''
+    $found = $false
+
+    # 1. Cos z tego folderu dziala i trzyma plik. Windows zwykle mowi wtedy
+    #    "uzywany przez inny proces", ale przy pliku otwartym na wylacznosc
+    #    przez sterownik gry potrafi odpowiedziec odmowa dostepu.
+    try {
+        $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd('') + ''
+        $holders = @(Get-Process -ErrorAction SilentlyContinue |
+            Where-Object { $_.Path -and $_.Path.StartsWith($rootFull, [StringComparison]::OrdinalIgnoreCase) } |
+            Select-Object -ExpandProperty Name -Unique)
+        if ($holders.Count -gt 0) {
+            $lines += "* Z tego folderu dziala teraz: $($holders -join ', ')."
+            $lines += '  Zamknij gre (takze launcher gry, jesli go uzywasz) i sprobuj ponownie.'
+            $found = $true
+        }
+    }
+    catch { }
+
+    # 2. Atrybuty pliku. Repair-M2WritableFile probowal je zdjac wczesniej, wiec
+    #    jesli nadal tu sa, to znaczy, ze nie wolno ich bylo zmienic.
+    try {
+        if (Test-Path -LiteralPath $Path -PathType Leaf) {
+            $attrs = (Get-Item -LiteralPath $Path -Force).Attributes
+            if (([int]$attrs -band [int][IO.FileAttributes]::ReadOnly) -ne 0) {
+                $lines += '* Plik jest tylko do odczytu i nie dalo sie tego zdjac.'
+                $found = $true
+            }
+        }
+    }
+    catch { }
+
+    # 3. Ochrona folderow w Windows Defenderze. Blokuje zapis do Dokumentow,
+    #    Pulpitu i wszystkiego, co operator sam dopisal - i zglasza to dokladnie
+    #    tak samo jak brak uprawnien.
+    try {
+        $cfa = (Get-MpPreference -ErrorAction SilentlyContinue).EnableControlledFolderAccess
+        if ($cfa -and [int]$cfa -ne 0) {
+            $lines += '* Wlaczona jest Ochrona folderow (Kontrolowany dostep do folderow) w Zabezpieczeniach Windows.'
+            $lines += '  Zabezpieczenia Windows > Ochrona przed wirusami i zagrozeniami > Ochrona przed'
+            $lines += '  ransomware > Zezwalaj aplikacji na dostep - dodaj powershell.exe, albo wylacz ochrone na czas aktualizacji.'
+            $found = $true
+        }
+    }
+    catch { }
+
+    # 4. Zwykle uprawnienia NTFS. Test zapisu mowi wiecej niz odczytanie listy
+    #    ACL, bo liczy sie wynik, a nie to, co na liscie widac.
+    if (-not $found) {
+        $parent = Split-Path -Parent $Path
+        $probe = Join-Path $parent (".m2write-" + [Guid]::NewGuid().ToString('N') + ".tmp")
+        try {
+            [IO.File]::WriteAllText($probe, 'x')
+            Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
+            $lines += "* Do folderu $parent mozna pisac, ale do samego pliku nie."
+            $lines += '  Kliknij plik prawym przyciskiem > Wlasciwosci > Zabezpieczenia i sprawdz, czy Twoje konto ma Zapis.'
+        }
+        catch {
+            $lines += "* Do folderu $parent nie mozna pisac w ogole - to uprawnienia NTFS, nie sam plik."
+            $lines += '  Kliknij folder prawym przyciskiem > Wlasciwosci > Zabezpieczenia > Edytuj i daj swojemu kontu Pelna kontrole,'
+            $lines += '  albo przenies klienta do folderu, ktorego jestes wlascicielem (np. C:\Gry\Metin2Client).'
+        }
+    }
+
+    return ($lines -join [Environment]::NewLine)
+}
+
 function Get-M2Download {
     param(
         [Parameter(Mandatory = $true)][string]$Source,
@@ -343,6 +466,12 @@ function Invoke-M2PackageUpdate {
             }
         }
 
+        # Only what was really written is rolled back. Rolling back the whole
+        # list used to mean restoring a backup onto a file the update had just
+        # been refused - which fails the same way and replaces the diagnosis
+        # with its own error, so the player was told "Odmowa dostepu" no matter
+        # how carefully the copy loop had named the cause.
+        $applied = @()
         try {
             foreach ($change in $changes) {
                 New-Item -ItemType Directory -Path (Split-Path -Parent $change.Destination) -Force | Out-Null
@@ -353,19 +482,34 @@ function Invoke-M2PackageUpdate {
                     if (Test-M2AntivirusBlock -ErrorRecord $_) {
                         throw (New-M2AntivirusError -Path $change.Relative -ErrorRecord $_)
                     }
-                    throw
+                    if (-not (Test-M2AccessDenied -ErrorRecord $_)) { throw }
+                    # One repair is worth trying before this is called a failure:
+                    # a read-only or hidden destination costs nothing to clear.
+                    # It is rarely the cause - Copy-Item -Force handles both on
+                    # its own - so the message below is what usually ships, and
+                    # it has to name which of the remaining causes this is.
+                    if (-not (Repair-M2WritableFile -Path $change.Destination)) {
+                        throw (New-M2AccessDeniedError -Path $change.Destination -Root $target -ErrorRecord $_)
+                    }
+                    Copy-Item -LiteralPath $change.Source -Destination $change.Destination -Force
                 }
+                $applied += $change
             }
         }
         catch {
-            foreach ($change in $changes) {
-                $backupFile = Join-Path $backup $change.Relative
-                if (Test-Path -LiteralPath $backupFile -PathType Leaf) {
-                    Copy-Item -LiteralPath $backupFile -Destination $change.Destination -Force
+            foreach ($change in $applied) {
+                # A rollback that throws hides why the update failed, and that is
+                # the one thing the player needs. Each restore stands alone.
+                try {
+                    $backupFile = Join-Path $backup $change.Relative
+                    if (Test-Path -LiteralPath $backupFile -PathType Leaf) {
+                        Copy-Item -LiteralPath $backupFile -Destination $change.Destination -Force
+                    }
+                    elseif (-not $change.Existed -and (Test-Path -LiteralPath $change.Destination -PathType Leaf)) {
+                        Remove-Item -LiteralPath $change.Destination -Force
+                    }
                 }
-                elseif (-not $change.Existed -and (Test-Path -LiteralPath $change.Destination -PathType Leaf)) {
-                    Remove-Item -LiteralPath $change.Destination -Force
-                }
+                catch { }
             }
             throw
         }

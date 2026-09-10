@@ -1212,6 +1212,45 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   exclude materials and excluded every shield (13xxx) and all jewellery with
   them - 9 items found against 17. Ask `item_proto` what is equipment
   (`type IN (1, 2)`) and score the whole set before paginating.
+- **`item_proto` and `mob_proto` in the database are mirrors, rewritten from the
+  txt at every boot.** `CClientManager::InitializeTables` runs
+  `InitializeMobTable` -> `MirrorMobTableIntoDB` -> `InitializeItemTable` ->
+  `MirrorItemTableIntoDB`, and each mirror is a `REPLACE INTO` of **every row**
+  built from what `share/conf/mob_proto.txt` and `item_proto.txt` just said. So
+  an operator who edits `player.item_proto` in HeidiSQL, ticks the box and
+  restarts gets the shipped values back, every time, and nothing tells them why.
+  Reported by Artur554 as "zmieniam bonusy w bazie ... i wraca do fabrycznych".
+  The split is worth memorising, because it is exactly what he observed:
+
+  | Read from the DATABASE (edit it, it sticks) | Read from `share/conf/*.txt` (editing the DB does nothing) |
+  |---|---|
+  | `refine_proto`, `shop` + `shop_item`, `item_attr`, `item_attr_rare`, `skill_proto`, `banword`, `quest_item_proto` | `item_proto` (item stats, applies, values), `mob_proto` (level, hp, exp, drops' owner) |
+
+  And the txt files are baked into the game image, so editing them inside a
+  running container is undone by the next rebuild - the same shape as the
+  language switch. The only persistent path this project has for a txt table is
+  `m2-rates`: keep what the operator asked for on a state volume and re-apply it
+  before the cores read anything (`$STATE_DIR/wanted`, scaled from a `.m2orig`
+  baseline). Anything that lets an operator change item or mob stats has to be
+  built that way; there is no supported way to do it today, and saying "edit the
+  database" is wrong advice.
+- **Two numbers that mean the same thing must be the same number.**
+  `PLAYERBOT_AUTOSPAWN_COUNT` was clamped to 1000 in `input_db.cpp` while the
+  launcher's slider, its label ("LICZBA BOTOW (0-2500)") and
+  `Set-PlayerbotCount` all offered 2500 - so an operator who raised it past a
+  thousand got exactly a thousand bots and no line anywhere said so. Patch 0013
+  makes the ceiling 2500 and logs `autospawn asked=%d, cut to the ceiling %d`
+  when it fires. The real guard was never this clamp: `SplitPopulation` caps
+  each kingdom at the identities it has and `SpawnRegistered` at what
+  `LoadRegisteredBots` accepted, which is why asking for 3000 on this world
+  yields 2012 (shinsoo=500 chunjo=1012 jinno=500) and not 2500 - the Chunjo
+  cohort is 1500 seeded but 1012 usable, per the registry shortfall above.
+  **Measured at that size**, because "2500 is untested" was the open question:
+  2004 bots live, tick 2.5 s / 12.5 s / 3.2 s of every 60 on first / game1 /
+  game2, and 33 core-seconds a minute for the whole game container - 0.55 of one
+  core, on three cores' worth of world. Splitting the population between
+  kingdoms is what makes that affordable; game1 carries the shared maps and
+  costs four times what a village kingdom does.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

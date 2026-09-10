@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T21:12:14Z",
-  "statusMessage": "Aktualizacja 1.33.1. Poprawki z audytu zgłoszeń z Discorda: masowe nadawanie przedmiotów gubiło sztuki i mówiło, że się udało (limit to teraz 200 na żądanie), nagrody ze skrzyń nie lądują już na ziemi, bot nie chodzi do kowala po nic, świeża instalacja bazy nie zbuduje się w połowie, sklep z przedmiotami nie odpowiada 403, a rankingi w panelach pokazują to, co obiecują. Klient bez zmian.",
+  "publishedAt": "2026-09-10T22:04:53Z",
+  "statusMessage": "Aktualizacja 1.33.2. Trzy zgłoszenia z Discorda: suwak liczby botów wreszcie znaczy to, co pokazuje (rdzeń ścinał go do 1000, teraz sufit to 2500 jak na suwaku, a zmiana działa po restarcie serwera); launcher mówi, dlaczego nie mógł zapisać pliku klienta, zamiast powtarzać „odmowa dostępu”; a zaawansowany panel nazywa uszkodzoną tabelę bazy i podaje komendę naprawy, zamiast pokazywać sam błąd serwera. Klient bez zmian.",
   "server": {
-    "version": "1.33.1",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.1/metin2-server-update-1.33.1.zip",
-    "sha256": "2F5A3903935D6B932974C4FF8A1F5A508AB0139B0514390401516F68F07DDCEE"
+    "version": "1.33.2",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.2/metin2-server-update-1.33.2.zip",
+    "sha256": "25076221C0E97048D0FEA556B98EF3B195F964CE98ADBE3653D0B7575E33D7FE"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

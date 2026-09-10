@@ -17,6 +17,27 @@ every version here.
 
 ---
 
+## 1.31.7 — 2026-09-10
+
+### Boty w grze (sosen, „Ulepszanie broni na 30 lvl oraz zmiany w umiejętnościach”)
+
+- **Punkty skilli przenoszone Księgą Zapomnienia.** Po wprowadzeniu
+  priorytetów bot z szesnastoma punktami w Tąpnięciu wkładał nowe punkty w
+  Duchowe, a stare zostawały. Teraz bot bez wolnych punktów zdejmuje jeden
+  punkt Księgą Zapomnienia z najniżej stojącego skilla, który ma ich więcej
+  niż jeden, i wkłada go w najwyżej stojący jeszcze bez Mistrza — jeden punkt
+  na 30 s, księga za 20 000 yang, od piątego poziomu. Skille już na Mistrzu
+  zostają, bo silnik ich nie obniża.
+- **Każda broń ze średnią ≥ 20% jest gotowa i nie jest przelosowywana.**
+  Reguła „gotowa broń” działała tylko dla rodziny broni 30 lv, więc np. łuk
+  45 lv ze średnią 40% był losowany Zaczarowaniem, aż dobił wynik punktowy,
+  a średnia znikała. To były te „zmiksowane średnie 35+”.
+- **Broń 30 lv od +6 w górę tylko na zwoju.** Bez Zwoju Błogosławieństwa
+  (albo lepszego) bot nie niesie jej do kowala, tylko czeka — dotąd czekała
+  tylko broń z nagrodowymi liniami.
+
+---
+
 ## 1.31.6 — 2026-09-10
 
 ### Yang prosto do sakiewki, dla każdego

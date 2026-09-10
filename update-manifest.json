@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T06:44:00Z",
-  "statusMessage": "Aktualizacja 1.31.6. Yang z zabojstwa prosto do sakiewki dla kazdego, bez Trzeciej Reki; boty oddaja przedmiot.",
+  "publishedAt": "2026-09-10T08:54:00Z",
+  "statusMessage": "Aktualizacja 1.31.7. Punkty skilli przenoszone Ksiega Zapomnienia, kazda bron ze srednia 20+ gotowa, bron 30 lv od +6 tylko na zwoju.",
   "server": {
-    "version": "1.31.6",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.6/metin2-server-update-1.31.6.zip",
-    "sha256": "248478AF5A2C41152183A7B4085B19D0576BBCB6419F2586A926F4865C97A5F4"
+    "version": "1.31.7",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.7/metin2-server-update-1.31.7.zip",
+    "sha256": "5A813C3CE7AADDB7F0CE255865D89E432A488758D7A12CF95C358FB486B9549F"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

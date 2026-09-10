@@ -1183,12 +1183,19 @@ if INVENTORY_SLOTS < 1:
 # The default stays at 65535 so nothing changes for the servers this was
 # written on; set "max_item_count" in the config (or M2PANEL_MAX_ITEM_COUNT)
 # to 255 on server files whose column is a TINYINT.
+# Ale nie wyzej niz 200 przy wydawaniu przez quest: pc.give_item2 podaje
+# ilosc do AutoGiveItem(DWORD, BYTE, ...), wiec 256 staje sie zerem, a 300
+# czterdziestoma czterema - po cichu, bo niezerowe item_id wyglada na sukces.
+# Kolumna count moze pomiescic wiecej i nadal to sprawdzamy; granica ponizej
+# jest granica sciezki wydania, nie bazy.
+GRANT_MAX_PER_CALL = 200
 try:
     MAX_ITEM_COUNT = int(CONF.get("max_item_count", 65535))
 except (TypeError, ValueError):
     MAX_ITEM_COUNT = 65535
 if not (1 <= MAX_ITEM_COUNT <= 65535):
     MAX_ITEM_COUNT = 65535
+MAX_ITEM_COUNT = min(MAX_ITEM_COUNT, GRANT_MAX_PER_CALL)
 
 # The highest level this server will accept, which is MAX_LEVEL in the game's
 # CONFIG (gPlayerMaxLevel) and nothing to do with what the engine could do --

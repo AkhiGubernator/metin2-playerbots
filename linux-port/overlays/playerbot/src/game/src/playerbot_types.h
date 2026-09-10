@@ -641,6 +641,42 @@ namespace
 	const long PLAYERBOT_BONUS_KEEP_AVERAGE = 20;
 	const long PLAYERBOT_BONUS_KEEP_HP = 1500;
 	const long PLAYERBOT_BONUS_KEEP_CRIT = 5;
+	// The caster's half of the same rule, and it exists because the two damage
+	// lines are one roll rather than two. item_addon.cpp draws the skill line
+	// from a gaussian of sigma five and then sets the average line to minus
+	// twice it plus a little noise, so no weapon can carry both: +18% skill is
+	// -29% average on the same item. Eight is where the skill side is about as
+	// rare as twenty is on the average side - one reroll in eighteen - so a
+	// Shaman stops on a Warrior's odds instead of rerolling for ever.
+	const long PLAYERBOT_BONUS_KEEP_SKILL = 8;
+	// The rest of the finishing rolls, one per slot, each of them the fourth
+	// tier of what `player.item_attr` lets that line reach: block and dodge go
+	// to fifteen, attack speed to eight, movement speed and item drop to twenty,
+	// stolen life to ten, and a race line to twenty (ten on human). Stopping at
+	// the fifth tier would mean stopping almost never.
+	const long PLAYERBOT_BONUS_KEEP_BLOCK = 10;
+	const long PLAYERBOT_BONUS_KEEP_DODGE = 10;
+	const long PLAYERBOT_BONUS_KEEP_ATT_SPEED = 5;
+	const long PLAYERBOT_BONUS_KEEP_MOV = 10;
+	const long PLAYERBOT_BONUS_KEEP_DROP = 8;
+	const long PLAYERBOT_BONUS_KEEP_STEAL = 5;
+	const long PLAYERBOT_BONUS_KEEP_RACE = 10;
+	// What "silny przeciwko X" is worth per point, scaled by how much of the map
+	// that race actually is, and what it is worth on a map that is something
+	// else. Measured by tools/analyse_map_races.py over every map a bot may
+	// stand on: Orc Valley is 63% orcs, all three second villages are 100%
+	// human, the first villages 77% animal, the guild maps and all five Monkey
+	// Dungeons 100% animal, Mount Sohan 46% undead, Hwang 68% mystic - and the
+	// Yongbi Desert and both Spider Dungeons are made of DESERT, INSECT and ICE,
+	// races char.cpp maps no APPLY onto, so on those three no race line can ever
+	// do anything at all. The second number is not zero only because a bot
+	// changes maps.
+	const int PLAYERBOT_BONUS_RACE_ON_MAP = 16;
+	// The same line in the equipment score, which counts in the thousands
+	// because a point of defence does. Scaled by the same share, so a piece is
+	// not bought for a line the reroll pass will then throw away.
+	const int PLAYERBOT_GEAR_RACE_LINE_VALUE = 600;
+	const int PLAYERBOT_BONUS_RACE_OFF_MAP = 2;
 	const int PLAYERBOT_BONUS_STONES_PER_VISIT = 3;
 	// Effectively once per town visit. A four-second cadence like the refiner's
 	// would let one stop at the blacksmith burn a quarter of a million yang.
@@ -1197,6 +1233,82 @@ namespace
 	const long PLAYERBOT_DESERT_FROM_V1_X = 346700;
 	const long PLAYERBOT_DESERT_FROM_V1_Y = 632900;
 	const int PLAYERBOT_CROSSING_STONE_RANGE = 2500;
+
+	// --- What each map is made of --------------------------------------------
+	//
+	// battle.cpp CalcAttBonus walks the races as an else-if chain and stops at
+	// the first flag the monster carries, so a kill pays exactly one of them;
+	// and char.cpp maps an APPLY onto only six of the eleven - ANIMAL, UNDEAD,
+	// DEVIL, HUMAN, ORC, MILGYO. INSECT, FIRE, ICE, DESERT and TREE have a POINT
+	// and a place in the damage formula but nothing an item can put into them,
+	// so on a map made of those a "silny przeciwko" line is decoration.
+	//
+	// The slots are ordered as the engine tests them. OTHER is the fights that
+	// paid nothing, and it is counted rather than dropped: without it a bot on
+	// the desert has an empty histogram and falls back on whatever the map
+	// aggregate says, instead of the truth, which is "nothing here pays".
+	enum EPlayerBotRaceSlot
+	{
+		PLAYERBOT_RACE_ANIMAL = 0,
+		PLAYERBOT_RACE_UNDEAD,
+		PLAYERBOT_RACE_DEVIL,
+		PLAYERBOT_RACE_HUMAN,
+		PLAYERBOT_RACE_ORC,
+		PLAYERBOT_RACE_MILGYO,
+		PLAYERBOT_RACE_OTHER,
+		PLAYERBOT_RACE_SLOTS,
+		PLAYERBOT_RACE_NONE = -1
+	};
+
+	// The measurement, from tools/analyse_map_races.py: every spawn point of
+	// every map a bot may stand on, resolved through group.txt and
+	// group_group.txt, counted by the one race that pays. A share, not a flag,
+	// because a line that covers 46% of Mount Sohan is worth about half what the
+	// same line is worth in a Monkey Dungeon, and a bot should be able to tell.
+	//
+	// Re-measure rather than edit by hand; a map added to the frontier needs a
+	// row here, and with none it simply falls back on what the population has
+	// seen, which is the behaviour this table replaced.
+	struct TPlayerBotMapRaceRow
+	{
+		long lMapIndex;
+		int iRace;
+		int iPercent;
+	};
+	const TPlayerBotMapRaceRow PLAYERBOT_MAP_RACE_TABLE[] = {
+		{ 1, PLAYERBOT_RACE_ANIMAL, 77 },   { 21, PLAYERBOT_RACE_ANIMAL, 77 },
+		{ 41, PLAYERBOT_RACE_ANIMAL, 77 },
+		{ 3, PLAYERBOT_RACE_HUMAN, 100 },   { 23, PLAYERBOT_RACE_HUMAN, 100 },
+		{ 43, PLAYERBOT_RACE_HUMAN, 100 },
+		{ 4, PLAYERBOT_RACE_ANIMAL, 100 },  { 24, PLAYERBOT_RACE_ANIMAL, 100 },
+		{ 44, PLAYERBOT_RACE_ANIMAL, 100 },
+		{ 5, PLAYERBOT_RACE_ANIMAL, 100 },  { 25, PLAYERBOT_RACE_ANIMAL, 100 },
+		{ 45, PLAYERBOT_RACE_ANIMAL, 100 }, { 108, PLAYERBOT_RACE_ANIMAL, 100 },
+		{ 109, PLAYERBOT_RACE_ANIMAL, 100 },
+		{ 61, PLAYERBOT_RACE_UNDEAD, 46 },  // Sohan: the other 54% is ICE
+		{ 64, PLAYERBOT_RACE_ORC, 63 },     // Orc Valley: 35% of it is MILGYO
+		{ 65, PLAYERBOT_RACE_MILGYO, 68 },  // Hwang
+		// 63 Yongbi Desert (DESERT/INSECT), 104 and 71 the Spider Dungeons
+		// (INSECT): no row, because no line reaches those races.
+	};
+
+	// The race a map pays for, and how much of the map it is. Zero percent means
+	// "nothing here", which is a different answer from "not measured".
+	int GetPlayerBotMapRace(long mapIndex, int* percentOut)
+	{
+		for (size_t i = 0; i < sizeof(PLAYERBOT_MAP_RACE_TABLE) /
+				sizeof(PLAYERBOT_MAP_RACE_TABLE[0]); ++i)
+		{
+			if (PLAYERBOT_MAP_RACE_TABLE[i].lMapIndex != mapIndex)
+				continue;
+			if (percentOut)
+				*percentOut = PLAYERBOT_MAP_RACE_TABLE[i].iPercent;
+			return PLAYERBOT_MAP_RACE_TABLE[i].iRace;
+		}
+		if (percentOut)
+			*percentOut = 0;
+		return PLAYERBOT_RACE_NONE;
+	}
 	// An episode of self-defence, so that "it hit me first" cannot become a
 	// permanent licence to grind. The clock starts when the bot accepts an
 	// attacker as a target and is not renewed by another hit from the same one;
@@ -1570,12 +1682,21 @@ namespace
 	const DWORD PLAYERBOT_CAMPFIRE_VNUM = 27600;
 	const DWORD PLAYERBOT_CAMPFIRE_MOB_VNUM = 12000;
 	const DWORD PLAYERBOT_BAKE_WINDOW = 35000;
-	// The race histogram a bot keeps of what it has been fighting: five race
-	// flags (animal, undead, devil, orc, mystic), halved every ten minutes,
-	// and trusted over the map's aggregate once it holds this many.
-	const int PLAYERBOT_RACE_HISTOGRAM_SLOTS = 5;
+	// The race histogram a bot keeps of what it has been fighting: one slot per
+	// EPlayerBotRaceSlot, halved every ten minutes, and trusted over the map's
+	// own table once it holds this many. Human is in it because all three second
+	// villages are a hundred percent human and it used not to be counted at all;
+	// so is OTHER, which is every fight that paid no race, because a bot on the
+	// desert has to be able to conclude that the answer is none.
+	const int PLAYERBOT_RACE_HISTOGRAM_SLOTS = PLAYERBOT_RACE_SLOTS;
 	const DWORD PLAYERBOT_RACE_HISTOGRAM_DECAY = 600000;
 	const DWORD PLAYERBOT_RACE_HISTOGRAM_MIN_SAMPLES = 20;
+	// How much of a bot's fighting a race has to be before a line against it is
+	// worth anything. It used to be half, which is right for a map that is one
+	// race and wrong for Mount Sohan: the undead are 46% of it and the other 54%
+	// is ice, a race no item can be strong against, so "half must agree" threw
+	// away the only line that works there.
+	const int PLAYERBOT_RACE_WORTH_PERCENT = 25;
 	// A hub where a wanted material has been seen to drop is worth half as
 	// much again to a bot short of it; a cell with this many fights and no
 	// drop of it has told the bot all it needs to know.
@@ -3187,7 +3308,7 @@ namespace
 		DWORD dwStoneProgressVID;
 		DWORD dwStoneBrokenTime;
 		// What this bot has fought lately, by race flag; see the world memory.
-		WORD awRaceHistogram[PLAYERBOT_RACE_HISTOGRAM_SLOTS] = { 0, 0, 0, 0, 0 };
+		WORD awRaceHistogram[PLAYERBOT_RACE_HISTOGRAM_SLOTS] = { 0 };
 		DWORD dwRaceHistogramStamp;
 		// The Metin expedition: until when this bot hunts stones like a hunter,
 		// and when it next rolls for one. See PLAYERBOT_METIN_EXPEDITION_*.

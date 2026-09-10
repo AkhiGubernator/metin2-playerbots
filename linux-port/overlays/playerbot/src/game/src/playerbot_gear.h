@@ -415,24 +415,31 @@ namespace
 			score += 1000;
 
 		// A race-attack bonus is only worth carrying where that race is what you
-		// actually fight. The population learns which monsters live on each map,
-		// so "strong against orcs" counts for far more in Orc Valley than in a
-		// place where nothing orcish ever spawns.
+		// actually fight, and it is worth what share of the map that race is:
+		// "strong against orcs" covers 63% of Orc Valley, "strong against
+		// animals" the whole of a Monkey Dungeon, and nothing at all on the
+		// desert, which is made of a race no item can reach. The share comes
+		// from the same call the reroll scorer uses, so the pass that buys an
+		// item and the pass that rerolls it can no longer disagree about the
+		// line that made the bot pick it up.
 		if (ch)
 		{
-			const int dominant = GetPlayerBotFightingRace(ch);
-			if (dominant != PLAYERBOT_RACE_NONE)
+			int racePercent = 0;
+			const int dominant = GetPlayerBotFightingRace(ch, &racePercent);
+			if (dominant != PLAYERBOT_RACE_NONE && racePercent > 0)
 			{
 				const BYTE wanted = GetPlayerBotRaceApplyType(dominant);
+				const long long perPoint = (long long)PLAYERBOT_GEAR_RACE_LINE_VALUE *
+						racePercent / 100;
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					if (item->GetAttributeType(i) == wanted)
-						score += (long long)item->GetAttributeValue(i) * 600;
+						score += (long long)item->GetAttributeValue(i) * perPoint;
 				}
 				for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
 				{
 					if (item->GetProto()->aApplies[i].bType == wanted)
-						score += (long long)item->GetProto()->aApplies[i].lValue * 600;
+						score += (long long)item->GetProto()->aApplies[i].lValue * perPoint;
 				}
 			}
 		}

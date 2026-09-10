@@ -17,6 +17,43 @@ every version here.
 
 ---
 
+## 1.32.1 — 2026-09-10
+
+### Sprawdzanie aktualizacji mówi prawdę
+
+Przez dwadzieścia minut po wydaniu 1.32.0 launcher pokazywał wszystkim naraz
+dwa sprzeczne komunikaty: w stopce „Najnowsza wersja: nie udało się sprawdzić",
+a w okienku „Kanał aktualizacji nie ma obecnie nowej wersji serwera". Żaden z
+nich nie był prawdziwy. Nowa wersja była, tylko launcher nie potrafił odczytać
+pliku, w którym o niej pisze. Zgłosili to kiciamol i jaksiezabic, jeden był o
+krok od skasowania instalacji i postawienia jej od zera.
+
+Winny był plik manifestu, który poszedł ze znacznikiem BOM na początku —
+żaden wcześniejszy go nie miał. Sam manifest został poprawiony od razu i
+naprawa nie wymagała żadnej aktualizacji po Waszej stronie. To wydanie
+naprawia drugą połowę problemu, czyli to, że launcher w ogóle mógł tak
+skłamać:
+
+- **Manifest jest teraz czytany i rozbierany u nas, a nie przez
+  `Invoke-RestMethod`.** Ta komenda nie zgłasza błędu, gdy odpowiedź nie jest
+  poprawnym JSON-em: po cichu oddaje surowy tekst zamiast obiektu. Launcher
+  pytał wtedy taki tekst o wersję serwera, nie znajdował jej i uznawał, że
+  aktualizacji nie ma.
+- **Znacznik BOM jest zdejmowany przed odczytem**, więc ta sama pomyłka nie
+  zablokuje już nikomu aktualizacji.
+- **Pusta odpowiedź, strona HTML podstawiona przez proxy albo firmową sieć i
+  każdy inny plik, który nie jest manifestem, kończą się teraz czytelnym
+  błędem**, który wprost mówi, że problem jest po stronie kanału aktualizacji,
+  a nie Waszej instalacji.
+- Komunikat o braku wersji mówi „kanał nie podał wersji serwera" zamiast
+  twierdzić, że nowej wersji nie ma.
+
+Sprawdzone w tym samym Windows PowerShellu 5.1, w którym chodzi launcher:
+poprawny plik i żywy adres dają wersję, plik z BOM przechodzi, a strona HTML i
+pusta odpowiedź dają nazwany błąd.
+
+---
+
 ## 1.32.0 — 2026-09-10
 
 ### Trzy królestwa

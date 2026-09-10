@@ -1051,6 +1051,71 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `PLAYERBOT_LOAD` reports `resumed=`; `PLAYERBOT_NAV: far plan` names the
   destination of every plan over 1024 cells, which is how the pattern was
   found (the same hub from the same few hundred metres, every two seconds).
+- **What a bonus line is worth is three of the world's own tables, not taste.**
+  `player.item_attr` says what may roll on which slot and how high, and it is
+  the answer to most questions about gear: health does not roll on a helmet or
+  an earring, critical does not roll on a wrist or an earring, attack value
+  rolls on a body and nowhere else, block only on a shield, and
+  `APPLY_ATTBONUS_MONSTER` and the two damage-percent lines are not in it at
+  all - the first is only in `item_attr_rare` (value ten, what a Magic Metal
+  adds) and the other two come from `item_addon.cpp`. `battle.cpp` says what a
+  line does, and it disagrees with every wiki: the five weapon-type resistances
+  never fire against a monster, because `battle_hit` reads the *attacker's*
+  `WEAR_WEAPON` and a monster wears none; an elemental resistance is applied at
+  thirty percent of its own number; `BLOCK` answers melee (73% of this world's
+  monsters) and `DODGE`/`RESIST_BOW` only ranged (0-24% of a map). And
+  `item_addon.cpp` draws the skill-damage line from a gaussian of sigma five and
+  then sets the average line to **minus twice it** plus noise, so no weapon can
+  carry both - +18% skill is -29% average, and a caster that only ever stopped
+  on the average line never stopped at all. `HasPlayerBotFinishedBonus` used to
+  ask a helmet for health and attack value and an earring for health and
+  critical, none of which can roll there, so those slots could never be finished
+  and were rerolled for as long as their owner had gold.
+- **A race-attack line is worth what share of the map that race is, and on
+  three maps it is worth nothing at all.** `CalcAttBonus` walks the races as an
+  else-if chain (ANIMAL, UNDEAD, DEVIL, HUMAN, ORC, MILGYO, INSECT, FIRE, ICE,
+  DESERT, TREE) so a kill pays exactly one of them, and `char.cpp` maps an
+  APPLY onto only the first six: INSECT, FIRE, ICE, DESERT and TREE have a
+  POINT and a place in the damage formula and nothing an item can put into
+  them. `tools/analyse_map_races.py` counts every spawn point of every map a
+  bot may stand on: Orc Valley 63% orcs, all three second villages 100% human,
+  the first villages 77% animal, the guild maps and all five Monkey Dungeons
+  100% animal, Mount Sohan 46% undead, Hwang 68% mystic - and the Yongbi Desert
+  (DESERT/INSECT) and both Spider Dungeons (INSECT) pay no race line ever.
+  `PLAYERBOT_MAP_RACE_TABLE` in `playerbot_types.h` is that measurement and
+  `GetPlayerBotFightingRace` returns the share with the race, so the equipment
+  pass and the reroll pass cannot disagree - which they did, at 600 points a
+  point against one, so a bot bought a shield for the line and rerolled it off
+  at the next blacksmith.
+- **A bot's name is the one part of its identity nothing depends on, and five
+  places in the seed disagreed.** `LoadRegisteredBots` matches on the account
+  login (`playerbot_NNN`), the social id and the `player_index` row and never
+  reads `p.name`; `CHARACTER::Save` does not write the name column, so a
+  running core will not undo a rename; both panels ask the account. But
+  `generate_seed.py` treated a renamed character as "not the character this
+  registry describes" in five places - a skip rule, its matching assertion, the
+  alias pass, the `player_index` insert and the final row assertion - so the
+  first time nicknames were turned on the whole cohort left the seed's care:
+  "preserving 2500" instead of 668. They all consult
+  `common.playerbot_name_history` now and require both halves to agree, so a
+  second, hand-made rename is still somebody's deliberate choice.
+  `M2_PLAYERBOT_HUMAN_NAMES` is 1/0/`restore`; the pool is
+  `tools/generate_bot_names.py` over `data/bot_names_community.txt`.
+- **`account.account.empire` is not where a bot's kingdom lives.** The seed
+  wrote a literal 2 into it for the whole cohort while `player_index.empire` -
+  the column the core actually reads - was right, so every Shinsoo and Jinno bot
+  claimed Chunjo to anything that asked the account, and both panels did. Ask
+  `player_index` first and the account only as the fallback for a hand-made
+  character with no index row.
+- **No double quote may reach docker from PowerShell, and the second instance
+  cost a backup.** `Invoke-M2DatabaseImport`'s "does this database exist" probe
+  was `sh -c "mariadb ... -e `"SELECT ...`""`; PowerShell 5.1 wraps a native
+  command's argument in double quotes without escaping the ones inside it, so
+  the first `"` ended the argument, `sh` got a broken script, the probe always
+  came back empty and the "kopia trafi do folderu backups" the confirmation
+  dialog promises was an empty folder at every import anyone ever ran. Invoke
+  `mariadb` directly with the query as its own argument. Same trap as the
+  support bundle's empty `playerbot-syslog.txt`.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

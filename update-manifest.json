@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T17:15:00Z",
-  "statusMessage": "Aktualizacja 1.32.4. Cztery zgloszenia o zachowaniu botow: oddaja wreszcie okazy Biologowi, ulepszaja bron zamiast stac na +4, nie wysypuja skrzyn na ziemie przy pelnym plecaku i kupuja wylacznie to, co handlarz naprawde ma na ladzie.",
+  "publishedAt": "2026-09-10T17:50:00Z",
+  "statusMessage": "Aktualizacja 1.32.5. Suwak straganiarzy znowu cos znaczy: bot z nadmiarem ksiazek otwieral stragan bez wzgledu na ustawienie, a to czwarta czesc populacji. Panel przestal kazac instalowac integracje, ktorej ta wersja nie zawiera i nie potrzebuje.",
   "server": {
-    "version": "1.32.4",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.4/metin2-server-update-1.32.4.zip",
-    "sha256": "7EA17058F76DC44742A039C556B1ED0920E09932D6D74BA1B2AFDFDA8FD65A7E"
+    "version": "1.32.5",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.5/metin2-server-update-1.32.5.zip",
+    "sha256": "087F8C59B69F9E3DD155DE7F901A21B65472E18885E933D93E1B08C25993D041"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

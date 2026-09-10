@@ -17,6 +17,33 @@ every version here.
 
 ---
 
+## 1.32.5 — 2026-09-10
+
+### Suwak straganiarzy znowu coś znaczy
+
+Bot z sześcioma nadmiarowymi książkami umiejętności otwierał stragan
+bezwarunkowo, z pominięciem suwaka handlu — i było to w kodzie zapisane jako
+zamierzone. Rzecz w tym, że książki po kilku godzinach polowania na metiny ma
+praktycznie każdy świat, więc ta jedna reguła decydowała o udziale straganiarzy,
+a suwak nie ruszał niczego. Zgłosił Shenyo: 180 straganów na 288 botów przy
+suwaku ustawionym na minimum.
+
+Zmierzone u nas: 238 botów z 970 ma sześć lub więcej nadmiarowych książek, czyli
+czwarta część populacji kwalifikowała się bez względu na ustawienie. Teraz i ta
+reguła pyta o wagę handlu. Przy ustawieniu domyślnym zachowanie jest takie jak
+dotąd — sprawdzone po wdrożeniu — a przy minimum stragany faktycznie przestają
+powstawać.
+
+### Panel nie każe instalować czegoś, czego tu nie ma
+
+Konsola ustawień w panelu zaawansowanym pokazywała ostrzeżenie „Zainstaluj
+integrację `m2-server-settings` i `m2-supervise`". Ta wersja serwera takiej
+integracji nie zawiera i nie potrzebuje: restart serwera oraz zmiana rat działają
+bez niej i zawsze działały. Niedostępna jest wyłącznie zmiana respawnów map, i
+tylko to komunikat mówi teraz.
+
+---
+
 ## 1.32.4 — 2026-09-10
 
 ### Boty oddają wreszcie okazy Biologowi

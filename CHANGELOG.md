@@ -17,6 +17,72 @@ every version here.
 
 ---
 
+## 1.33.2 — 2026-09-11
+
+Trzy zgłoszenia z Discorda z jednego wieczoru. Wszystkie sprawdzone odtworzonym
+błędem, nie z lektury kodu. Klient bez zmian — aktualizuje się tylko serwer.
+
+### Suwak liczby botów wreszcie znaczy to, co pokazuje
+
+Suwak w launcherze sięga 2500 i tak jest podpisany, a rdzeń gry ścinał tę liczbę
+do 1000. Kto ustawił więcej, dostawał dokładnie tysiąc botów i nigdzie nie było
+powiedziane dlaczego — ani w logu, ani w panelu.
+
+Sufit w rdzeniu to teraz też 2500, a gdy liczba z `.env` jest większa, rdzeń
+wypisuje, co uciął. Prawdziwym ograniczeniem nigdy nie był ten sufit, tylko liczba
+tożsamości botów w bazie: prośba o 3000 daje na naszym świecie 2012 botów
+(shinsoo 500, chunjo 1012, jinno 500) i tak ma być.
+
+**Zmiana suwaka działa dopiero po restarcie serwera** — rdzeń czyta tę liczbę raz,
+przy starcie. To było prawdą od zawsze, ale nigdzie nie napisane.
+
+Zmierzone przy pełnej kohorcie: 2004 boty w świecie, 33 sekundy rdzenia na minutę
+dla całego kontenera gry — niecałe 0,6 jednego rdzenia. Rozdzielenie botów między
+trzy królestwa jest tym, co czyni to tanim: królestwo z mapami współdzielonymi
+kosztuje czterokrotnie tyle, co królestwo wioskowe.
+
+### Launcher mówi, dlaczego nie mógł zapisać pliku klienta
+
+„Odmowa dostępu do ścieżki" to zdanie, którym Windows opisuje co najmniej cztery
+różne problemy, a launcher przepisywał je bez zmian. Gracz, który próbował
+zainstalować panel GM dziewięć razy w ciągu dnia, dziewięć razy dostawał to samo
+zdanie i nie miał z czym pójść dalej.
+
+Teraz launcher sprawdza i nazywa przyczynę: proces trzymający plik, atrybut
+tylko-do-odczytu (zdejmowany automatycznie), Ochrona folderów w Windows
+Defenderze, albo uprawnienia NTFS — z rozróżnieniem, czy nie da się pisać do
+całego folderu, czy tylko do jednego pliku.
+
+Przy okazji wyszło coś gorszego: wycofywanie nieudanej aktualizacji przywracało
+kopię zapasową na ten sam plik, którego przed chwilą nie dało się zapisać,
+dostawało tę samą odmowę — i to jej komunikat wychodził na wierzch, kasując
+właściwą diagnozę. Wycofywane jest teraz wyłącznie to, co naprawdę zapisano,
+a żadne przywracanie nie może już przesłonić przyczyny.
+
+**Uwaga dla graczy z panelem GM na F9:** przycisk PANEL GM to po prostu
+aktualizacja klienta. Jeśli wyskakuje odmowa dostępu, to nie panel jest zepsuty,
+tylko launcher nie może podmienić dwóch plików w folderze gry.
+
+### Zaawansowany panel mówi, że tabela jest uszkodzona
+
+Panel odpowiadał samym „Internal Server Error", bez żadnej wskazówki. Pod spodem
+były uszkodzone tabele bazy `log` — silnik gry używa MyISAM, a te nie przeżywają
+nagłego zatrzymania: wystarczy zamknięcie Dockera w trakcie zapisu albo zanik
+zasilania.
+
+Stąd bardzo mylący objaw: **zwykły panel działa, a zaawansowany nie** — ten drugi
+czyta tabelę logów na samej stronie głównej, do rankingu wędkarzy. I stąd druga
+myląca rzecz: **aktualizacja tego nie naprawia**, bo uszkodzenie jest w danych na
+dysku, a nie w programie.
+
+Panel pokazuje teraz stronę, która nazywa uszkodzoną tabelę, podaje gotową
+komendę naprawy, mówi wprost, że aktualizacja nie pomoże, i wskazuje opróżnienie
+tabel `log` jako ostateczność — to wyłącznie historia, gra jej nie czyta i żadna
+postać ani przedmiot od niej nie zależą. Inne błędy bazy przechodzą dalej bez
+zmian, żeby ta strona nie zasłaniała prawdziwych awarii.
+
+---
+
 ## 1.33.1 — 2026-09-10
 
 Poprawki z audytu zgłoszeń z Discorda. Wszystkie sprawdzone na żywym serwerze

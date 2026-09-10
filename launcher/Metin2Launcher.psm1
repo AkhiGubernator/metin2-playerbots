@@ -51,6 +51,38 @@ function Save-M2LauncherConfig {
         ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $ConfigPath -Encoding UTF8
 }
 
+function ConvertFrom-M2ManifestText {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text,
+        [Parameter(Mandatory = $true)][string]$Origin
+    )
+
+    # A byte order mark is not JSON. ConvertFrom-Json in Windows PowerShell
+    # refuses a string that starts with one ("Nieprawidlowy element pierwotny
+    # JSON"), and Invoke-RestMethod hides that failure by handing back the raw
+    # text instead of an object - so the caller reads a String, finds no
+    # 'server' property on it and concludes there is no new version. 1.32.0
+    # shipped a manifest with a BOM and every install stopped seeing updates
+    # for twenty minutes, each one being told its channel had nothing new.
+    # Strip the mark, parse it here, and let a real failure be a failure.
+    $clean = $Text
+    if ($clean.Length -gt 0 -and [int]$clean[0] -eq 0xFEFF) { $clean = $clean.Substring(1) }
+    $clean = $clean.Trim()
+    if (-not $clean) {
+        throw "Kanal aktualizacji ($Origin) zwrocil pusta odpowiedz. Twoja instalacja pozostaje bez zmian."
+    }
+    try {
+        $parsed = $clean | ConvertFrom-Json
+    }
+    catch {
+        throw "Kanal aktualizacji ($Origin) zwrocil plik, ktorego nie da sie odczytac jako JSON. To blad po stronie kanalu, nie Twojej instalacji - zglos to na Discordzie. Szczegoly: $($_.Exception.Message)"
+    }
+    if ($parsed -isnot [psobject] -or $parsed -is [string]) {
+        throw "Kanal aktualizacji ($Origin) zwrocil cos, co nie jest manifestem. Twoja instalacja pozostaje bez zmian."
+    }
+    return $parsed
+}
+
 function Get-M2UpdateManifest {
     param(
         [Parameter(Mandatory = $true)][string]$Source,
@@ -58,7 +90,8 @@ function Get-M2UpdateManifest {
     )
 
     if (Test-Path -LiteralPath $Source -PathType Leaf) {
-        return Get-Content -LiteralPath $Source -Raw -Encoding UTF8 | ConvertFrom-Json
+        $text = Get-Content -LiteralPath $Source -Raw -Encoding UTF8
+        return ConvertFrom-M2ManifestText -Text $text -Origin $Source
     }
 
     $uri = $null
@@ -66,7 +99,11 @@ function Get-M2UpdateManifest {
         throw 'Manifest musi być lokalnym plikiem albo adresem HTTPS.'
     }
     try {
-        return Invoke-RestMethod -Uri $uri -Method Get -UseBasicParsing -TimeoutSec $TimeoutSec
+        # Invoke-WebRequest, not Invoke-RestMethod: the REST variant parses for
+        # us and silently degrades to a string when it cannot, which is exactly
+        # the failure that has to be visible here.
+        $response = Invoke-WebRequest -Uri $uri -Method Get -UseBasicParsing -TimeoutSec $TimeoutSec
+        return ConvertFrom-M2ManifestText -Text ([string]$response.Content) -Origin $Source
     }
     catch {
         $statusCode = 0

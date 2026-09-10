@@ -1095,7 +1095,7 @@ $updateButton.Add_Click({
     $serverProperty = $manifest.PSObject.Properties['server']
     if ($serverProperty -and $serverProperty.Value) { $server = $serverProperty.Value }
     if (-not $server -or -not [string]$server.version) {
-        $message = 'Kanał aktualizacji nie ma obecnie nowej wersji serwera. Twoja instalacja pozostaje bez zmian.'
+        $message = 'Kanał aktualizacji nie podał wersji serwera. Twoja instalacja pozostaje bez zmian.'
         $statusProperty = $manifest.PSObject.Properties['statusMessage']
         if ($statusProperty -and [string]$statusProperty.Value) { $message = [string]$statusProperty.Value }
         Write-LocalLog $message

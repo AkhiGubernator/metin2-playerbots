@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T15:10:00Z",
-  "statusMessage": "Aktualizacja 1.32.0. Trzy krolestwa: boty moga zyc takze w Shinsoo i Jinno, kazde we wlasnych wioskach, u wlasnych kupcow i na wlasnych lowiskach. Domyslnie nic sie nie zmienia - nowe krolestwa wlacza M2_PLAYERBOT_KINGDOMS=1. Oba panele pokazuja caly swiat.",
+  "publishedAt": "2026-09-10T15:40:00Z",
+  "statusMessage": "Aktualizacja 1.32.1. Sprawdzanie aktualizacji nie klamie juz, gdy nie potrafi odczytac manifestu: pusta odpowiedz, strona z proxy albo plik z BOM-em daja czytelny blad zamiast komunikatu o braku nowej wersji. Z 1.32.0: trzy krolestwa, wlaczane wpisem M2_PLAYERBOT_KINGDOMS=1.",
   "server": {
-    "version": "1.32.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.0/metin2-server-update-1.32.0.zip",
-    "sha256": "946B22CF3AEF56013B1503BDDD41D0665E02615A1E15F595392BA75C234EBD86"
+    "version": "1.32.1",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.1/metin2-server-update-1.32.1.zip",
+    "sha256": "25B577D42B233F3DF512D715583EBF1F6222BE1A54AAAD5890BF1597A5B25976"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

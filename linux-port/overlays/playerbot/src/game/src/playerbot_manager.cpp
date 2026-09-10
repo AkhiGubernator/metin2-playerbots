@@ -1448,15 +1448,6 @@ void CPlayerBotManager::Update()
 		LPCHARACTER c = it->second ? it->second->GetCharacter() : NULL;
 		if (c && !c->IsDead())
 			++s_mapPlayerBotsOnMap[c->GetMapIndex()];
-		// Two live bots for the loot pass to test an item's ownership against
-		// (playerbot_loot.h): the engine answers "yours" to everybody once
-		// the owner's ten seconds are up, and only a second name tells a free
-		// item from an owned one.
-		if (c && s_adwPlayerBotLootProbePids[0] == 0)
-			s_adwPlayerBotLootProbePids[0] = c->GetPlayerID();
-		else if (c && s_adwPlayerBotLootProbePids[1] == 0 &&
-				c->GetPlayerID() != s_adwPlayerBotLootProbePids[0])
-			s_adwPlayerBotLootProbePids[1] = c->GetPlayerID();
 	}
 
 	for (TPlayerBotMap::iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)

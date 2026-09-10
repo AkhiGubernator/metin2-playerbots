@@ -1447,15 +1447,13 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `playerbot_travel.h`), the grind rule makes an exception for a bot short
   of that, and the frontier branch neither sends a bot short of the fare nor
   one inside the refusal's wait. Measure with `teleporter refuses [+N more]`.
-- **An item nobody owns is everybody's, and the engine says so to everybody.**
-  `CItem::IsOwnership(ch)` returns true for any character once the
-  ten-second ownership event is gone, and there is no public way to ask
-  whether it is. The loot pass took that at its word and a bot of sixty
-  walked off with a player's junk from under his Metin. The test for "free"
-  is a second name: `IsPlayerBotItemUnowned` asks the same question for a
-  probe bot (`s_adwPlayerBotLootProbePids`, two live pids the tick keeps
-  fresh) and a free item is only taken by the bot whose `mapLootSeenSince`
-  already holds it - it saw it while it was still its own.
+- **An item nobody owns is everybody's, and that is the policy.** `CItem::IsOwnership(ch)`
+  returns true for any character once the ten-second ownership event is
+  gone, so a bot picks up a player's leftover drop like any player would.
+  1.31.4 restricted free items to the bot that saw them while owned (a
+  probe-pid trick, because nothing public says whether the event is alive);
+  the operator reverted it in 1.31.5 - a bot taking what a player left is
+  wanted. Do not put it back without asking.
 - **A rider is served at every counter.** The engine refuses a rider only a
   skill book (`LearnSkillByBook`), a costume and a second mount; the shop,
   the blacksmith, the storekeeper and every quest NPC answer from the

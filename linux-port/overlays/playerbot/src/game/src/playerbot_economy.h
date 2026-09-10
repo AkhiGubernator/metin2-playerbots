@@ -410,14 +410,9 @@ namespace
 		return false;
 	}
 
-	int CountPlayerBotFreeInventoryCells(LPCHARACTER ch)
-	{
-		int free = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
-			if (!ch->GetInventoryItem(cell))
-				++free;
-		return free;
-	}
+	// CountPlayerBotFreeInventoryCells jest w playerbot_consumables.h, ktory
+	// jest wlaczany wczesniej: skrzynie musza pytac o to samo, a w jednej
+	// jednostce kompilacji definicja moze byc tylko jedna.
 
 	// Occupied cells against PLAYERBOT_BAG_FULL_PERCENT of the bag. Counted
 	// by cell rather than by item, so a weapon's three cells count as three.
@@ -865,6 +860,27 @@ namespace
 		return blessing;
 	}
 
+	// Whether a piece lying in the bag is one this bot would actually raise.
+	//
+	// It exists because the planner and the pass that does the refining used to
+	// answer that question differently: the planner accepted anything the
+	// general equipment selector liked, the executor then also rejected
+	// whatever the junk rule had marked for the merchant. A bot could therefore
+	// see an opportunity, commit to a blacksmith visit - and BOT_TOWN_PHASE
+	// treats a started visit as a commitment that outranks the ordinary goal
+	// choice - walk there, find nothing to do, and come back. Reported as "mam
+	// wszystko +9 zalozone, a bot dalej lezie do kowala".
+	//
+	// Worn pieces do not go through here: the junk rule does not apply to
+	// something the bot is wearing, and a full +9 set is not a reason to refuse
+	// a legitimate upgrade waiting in the bag.
+	bool IsPlayerBotRefineBagCandidate(LPCHARACTER ch, LPITEM item)
+	{
+		return item && item->GetRefinedVnum() != 0 &&
+				IsPlayerBotEquipmentCandidate(ch, item) &&
+				!IsPlayerBotJunkItem(ch, item);
+	}
+
 	bool ManagePlayerBotRefining(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !ch->IsItemLoaded() || dwNow < state.dwNextRefineCheckTime)
@@ -909,15 +925,14 @@ namespace
 		// Also collect candidate gear in inventory
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
-			LPITEM item = ch->GetInventoryItem(cell);
-			if (!item || item->GetRefinedVnum() == 0 || !IsPlayerBotEquipmentCandidate(ch, item))
-				continue;
 			// What the merchant would take on the next town visit is not
 			// worth a refine now: Ametystowy Naszyjnik+0 was raised to +1 at
 			// 17:58 and sold for scrap at 18:19. A spare that is kept - an
 			// upgrade, a higher tier than the worn piece, a reserve at +6 -
 			// is worth raising; the rest is scrap and stays at what it is.
-			if (IsPlayerBotJunkItem(ch, item))
+			// The planner asks the same function, above.
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!IsPlayerBotRefineBagCandidate(ch, item))
 				continue;
 
 			const BYTE plusLevel = item->GetRefineLevel();
@@ -1384,8 +1399,10 @@ namespace
 
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
+			// The same test the refining pass applies, not a looser one: a
+			// promise the executor will refuse is a walk to town for nothing.
 			LPITEM item = ch->GetInventoryItem(cell);
-			if (IsPlayerBotEquipmentCandidate(ch, item) &&
+			if (IsPlayerBotRefineBagCandidate(ch, item) &&
 					CanPlayerBotAttemptRefineItem(ch, item))
 				return true;
 		}

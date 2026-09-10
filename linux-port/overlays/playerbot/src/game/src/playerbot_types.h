@@ -1667,6 +1667,22 @@ namespace
 	const DWORD PLAYERBOT_CHEST_INTERVAL = 8000;
 	// How long a box the engine has refused is left alone. A refusal can be
 	// a bag that happened to be full, so it is a wait rather than a verdict.
+	// Wolnych pol, ktore musza byc, zanim bot otworzy skrzynie.
+	//
+	// GetEmptyInventory(n) zwraca POZYCJE wolnego miejsca na przedmiot o tej
+	// wysokosci, a nie ich liczbe - dwa wywolania obok siebie moga wskazac to
+	// samo pole i nie rezerwuja niczego. A GiveItemFromSpecialItemGroup wydaje
+	// nagrody po kolei przez AutoGiveItem, ktory przy braku miejsca kladzie
+	// przedmiot na ziemi i zglasza to jako sukces - wiec nagroda po prostu
+	// znikala. Zgloszone jako "przedmioty ze skrzyn wypadaja na ziemie".
+	//
+	// To zabezpieczenie, nie rozwiazanie: prawdziwa naprawa to wylosowac zestaw
+	// raz, sprawdzic miejsce na CALY zestaw i dopiero potem zuzyc skrzynie -
+	// a to zmiana w silniku, ktora musi dostac wlasny tryb wydania, zeby nie
+	// ruszac zachowania nagrod graczy. Piec pol pokrywa kazdy zestaw, jaki
+	// nasza grupa Moonlight potrafi wylosowac (jedna linia na skrzynie), i
+	// wiekszosc skrzyn bossow.
+	const int PLAYERBOT_CHEST_FREE_CELLS = 5;
 	const DWORD PLAYERBOT_CHEST_REFUSED_RETRY = 600000;
 	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
 	// The chest's two boosters, and the two grilled fish that work the same

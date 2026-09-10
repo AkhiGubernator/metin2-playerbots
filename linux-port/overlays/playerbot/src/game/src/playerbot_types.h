@@ -510,6 +510,13 @@ namespace
 	// back to whatever it was doing. Long enough to cross a town, short enough
 	// that a bot which cannot get there loses one errand and not its evening.
 	const DWORD PLAYERBOT_MARKET_TRIP_TIMEOUT = 90000;
+	// What a keeper does with a line it has carried home unsold: ten percent
+	// off per stand, four stands deep, and a piece of gear under the precious
+	// refine is merchant scrap after six ("jakas losowa halabarda +5 to ja
+	// sprzedaje u handlarza" - the +5 stays, PLAYERBOT_PRECIOUS_REFINE is four).
+	const int PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT = 10;
+	const int PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_STANDS = 4;
+	const int PLAYERBOT_SHOP_UNSOLD_SCRAP_STANDS = 6;
 	// The ride from Bokjung's square to the Joan gate is 38 km.
 	const DWORD PLAYERBOT_MARKET_JOAN_WALK_TIMEOUT = 300000;
 	// And how far away the stalls may be before it is not worth setting off:
@@ -2788,6 +2795,11 @@ namespace
 		// the initialiser list: it default-constructs empty, which is the state a
 		// bot with no stall is in.
 		std::vector<TPlayerBotShopOffer> vecShopOffers;
+		// Item id -> stands it came home from unsold. Each stand takes
+		// PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT off the asking price, and a
+		// piece of gear under the precious refine that nobody wanted for
+		// PLAYERBOT_SHOP_UNSOLD_SCRAP_STANDS stands goes to the merchant.
+		std::map<DWORD, BYTE> mapStallUnsold;
 		DWORD dwNextShopDebugTime;
 		DWORD dwMonkeyReversePortalBlockUntil;
 		// Since when this bot has been working its current Monkey Dungeon chamber.

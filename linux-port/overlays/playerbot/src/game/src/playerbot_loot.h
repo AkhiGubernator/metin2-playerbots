@@ -84,6 +84,32 @@ namespace
 			bool m_bFound;
 	};
 
+	// Two live bot pids, kept fresh by the tick. CItem::IsOwnership answers
+	// "yours" to every character once the ten-second ownership has run out,
+	// and nothing public says whether it has - so the only test for "free"
+	// is that somebody else is told the same thing.
+	DWORD s_adwPlayerBotLootProbePids[2] = { 0, 0 };
+
+	bool IsPlayerBotItemUnowned(LPITEM item, LPCHARACTER owner)
+	{
+		if (!item || !owner)
+			return false;
+		const DWORD probePid = s_adwPlayerBotLootProbePids[0] != owner->GetPlayerID()
+				? s_adwPlayerBotLootProbePids[0] : s_adwPlayerBotLootProbePids[1];
+		if (probePid == 0)
+			return false;
+		LPCHARACTER probe = CHARACTER_MANAGER::instance().FindByPID(probePid);
+		if (!probe)
+		{
+			// Gone; the tick picks another.
+			s_adwPlayerBotLootProbePids[probePid == s_adwPlayerBotLootProbePids[0] ? 0 : 1] = 0;
+			return false;
+		}
+		if (probe == owner)
+			return false;
+		return item->IsOwnership(probe);
+	}
+
 	bool IsPlayerBotPartyLoot(LPCHARACTER owner, LPITEM item)
 	{
 		if (!owner || !item)
@@ -107,10 +133,12 @@ namespace
 	class CCollectPlayerBotLoot
 	{
 		public:
-			CCollectPlayerBotLoot(LPCHARACTER owner, int maxDistance, const std::map<DWORD, DWORD>& failedLoot, DWORD dwNow) :
+			CCollectPlayerBotLoot(LPCHARACTER owner, int maxDistance, const std::map<DWORD, DWORD>& failedLoot,
+					const std::map<DWORD, DWORD>& seenLoot, DWORD dwNow) :
 				m_owner(owner),
 				m_maxDistance(maxDistance),
 				m_failedLoot(failedLoot),
+				m_seenLoot(seenLoot),
 				m_dwNow(dwNow)
 			{
 			}
@@ -125,6 +153,14 @@ namespace
 				// Being in one of the owner's neighbouring sectrees is the reliable
 				// same-map test; checking item->GetMapIndex() rejects every drop.
 				if (!item->GetSectree() || !IsPlayerBotPartyLoot(m_owner, item))
+					return false;
+				// A player's drop becomes everybody's after ten seconds, and a
+				// bot of sixty walking off with a player's junk from under a
+				// Metin ("podchodzi jakis koks i zbiera moj zlom") was this
+				// pass taking the engine at its word. Once free, an item is
+				// only for the bot that saw it while it was still its own.
+				if (IsPlayerBotItemUnowned(item, m_owner) &&
+						m_seenLoot.find(item->GetVID()) == m_seenLoot.end())
 					return false;
 
 				std::map<DWORD, DWORD>::const_iterator fit = m_failedLoot.find(item->GetVID());
@@ -151,6 +187,7 @@ namespace
 			LPCHARACTER m_owner;
 			int m_maxDistance;
 			const std::map<DWORD, DWORD>& m_failedLoot;
+			const std::map<DWORD, DWORD>& m_seenLoot;
 			DWORD m_dwNow;
 			std::vector<std::pair<int, LPITEM> > m_items;
 	};
@@ -202,7 +239,7 @@ namespace
 		// immediate pickup circle, never Stop(), never clear the victim and never
 		// walk toward an item while a pack is still engaged.
 		CCollectPlayerBotLoot collector(ch, PLAYERBOT_PICKUP_RANGE,
-				state.mapFailedLootVIDs, dwNow);
+				state.mapFailedLootVIDs, state.mapLootSeenSince, dwNow);
 		ch->GetSectree()->ForEachAround(collector);
 		collector.Sort();
 		const std::vector<std::pair<int, LPITEM> >& items = collector.GetItems();
@@ -329,7 +366,7 @@ namespace
 
 		CCollectPlayerBotLoot collector(ch,
 				metinDash ? PLAYERBOT_METIN_LOOT_DASH_RANGE : PLAYERBOT_LOOT_SEARCH_RANGE,
-				state.mapFailedLootVIDs, dwNow);
+				state.mapFailedLootVIDs, state.mapLootSeenSince, dwNow);
 		ch->GetSectree()->ForEachAround(collector);
 		collector.Sort();
 		const std::vector<std::pair<int, LPITEM> >& items = collector.GetItems();

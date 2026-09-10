@@ -351,7 +351,7 @@ namespace
 				PLAYERBOT_BIOLOGIST_Y, 0x42494f4cU, approachX, approachY);
 		if (DISTANCE_APPROX(ch->GetX() - approachX, ch->GetY() - approachY) > 650)
 		{
-			if (!MovePlayerBot(ch, approachX, approachY, dwNow, 20, true, true) &&
+			if (!MovePlayerBot(ch, approachX, approachY, dwNow, 20, true, true, false, true) &&
 					state.bStuckCounter >= 6)
 			{
 				state.bVisitingBiologist = false;
@@ -364,7 +364,6 @@ namespace
 			return true;
 		}
 
-		SetPlayerBotRidingForTravel(ch, state, false, dwNow, "biologist_interaction");
 		ch->Stop();
 		ch->SetPosition(POS_STANDING);
 		if (state.dwNextBiologistActionTime == 0)
@@ -1315,6 +1314,9 @@ namespace
 		ch->PacketAround(&p, sizeof(TPacketGCShopSign));
 	}
 
+	// Defined below, with the counter's line bookkeeping.
+	LPITEM FindPlayerBotOfferItem(LPCHARACTER keeper, const TPlayerBotShopOffer& offer);
+
 	void ClosePlayerBotShop(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow,
 			const char* reason)
 	{
@@ -1327,8 +1329,32 @@ namespace
 		// once per line that left the bag.
 		bool bSoldSomething = false;
 		for (size_t i = 0; i < state.vecShopOffers.size(); ++i)
-			if (state.vecShopOffers[i].bSoldLogged)
-				bSoldSomething = true;
+		{
+			const TPlayerBotShopOffer& offer = state.vecShopOffers[i];
+			if (offer.bSoldLogged || !FindPlayerBotOfferItem(ch, offer))
+			{
+				bSoldSomething = bSoldSomething || offer.bSoldLogged;
+				state.mapStallUnsold.erase(offer.dwItemID);
+				continue;
+			}
+			BYTE& unsold = state.mapStallUnsold[offer.dwItemID];
+			if (unsold < 255)
+				++unsold;
+		}
+		// The map outlives the goods: a line vendored or burnt leaves its id
+		// behind, so it is pruned against the bag now and then.
+		if (state.mapStallUnsold.size() > 64)
+		{
+			for (std::map<DWORD, BYTE>::iterator it = state.mapStallUnsold.begin();
+					it != state.mapStallUnsold.end(); )
+			{
+				LPITEM held = ITEM_MANAGER::instance().Find(it->first);
+				if (!held || held->GetOwner() != ch)
+					state.mapStallUnsold.erase(it++);
+				else
+					++it;
+			}
+		}
 		state.dwShopOpenedTime = 0;
 		state.dwShopCloseTime = 0;
 		state.vecShopOffers.clear();
@@ -1764,6 +1790,16 @@ namespace
 			// memory still learns the real price the market would have paid.
 			if (bPoor)
 				price = std::max<DWORD>(1, price * PLAYERBOT_SHOP_POOR_DISCOUNT_PERCENT / 100);
+			// Carried home unsold before: cheaper by the stand, after the price
+			// is asked so the sale memory learns the market and not the markdown.
+			{
+				std::map<DWORD, BYTE>::const_iterator unsold = state.mapStallUnsold.find(item->GetID());
+				if (unsold != state.mapStallUnsold.end() && unsold->second > 0)
+				{
+					const int stands = std::min<int>(unsold->second, PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_STANDS);
+					price = std::max<DWORD>(1, price * (100 - stands * PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT) / 100);
+				}
+			}
 			table[tableCount].vnum = item->GetVnum();
 			table[tableCount].count = item->GetCount();
 			table[tableCount].pos = TItemPos(INVENTORY, cell);
@@ -2001,7 +2037,11 @@ namespace
 	{
 		if (DISTANCE_APPROX(ch->GetX() - goalX, ch->GetY() - goalY) <= arrivalDistance)
 		{
-			SetPlayerBotRidingForTravel(ch, state, false, dwNow, "town_interaction");
+			// No dismount: the engine serves a rider at every counter - the
+			// shop, the blacksmith, the storekeeper, a quest NPC - and refuses
+			// one only a skill book, a costume and a second mount. Climbing
+			// down at each NPC and up again after was the visible half of a
+			// town visit, and what a player does not do.
 			ch->Stop();
 			ch->SetPosition(POS_STANDING);
 			ClearPlayerBotRoute(state, true);
@@ -2064,7 +2104,7 @@ namespace
 			}
 		}
 		const bool moveAccepted = MovePlayerBot(ch, walkX, walkY, dwNow,
-				snapCells, true, true);
+				snapCells, true, true, false, true);
 		if (!moveAccepted && state.bStuckCounter >= 6)
 		{
 			sys_err("PLAYERBOT_TOWN: route failed pid=%u name=%s phase=%u from=(%ld,%ld) to=(%ld,%ld)",

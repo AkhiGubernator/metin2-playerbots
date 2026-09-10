@@ -1447,6 +1447,36 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `playerbot_travel.h`), the grind rule makes an exception for a bot short
   of that, and the frontier branch neither sends a bot short of the fare nor
   one inside the refusal's wait. Measure with `teleporter refuses [+N more]`.
+- **An item nobody owns is everybody's, and the engine says so to everybody.**
+  `CItem::IsOwnership(ch)` returns true for any character once the
+  ten-second ownership event is gone, and there is no public way to ask
+  whether it is. The loot pass took that at its word and a bot of sixty
+  walked off with a player's junk from under his Metin. The test for "free"
+  is a second name: `IsPlayerBotItemUnowned` asks the same question for a
+  probe bot (`s_adwPlayerBotLootProbePids`, two live pids the tick keeps
+  fresh) and a free item is only taken by the bot whose `mapLootSeenSince`
+  already holds it - it saw it while it was still its own.
+- **A rider is served at every counter.** The engine refuses a rider only a
+  skill book (`LearnSkillByBook`), a costume and a second mount; the shop,
+  the blacksmith, the storekeeper and every quest NPC answer from the
+  saddle. `MovePlayerBotTownLeg` and the Biologist keep the horse
+  (`keepHorseAtDestination`), the book pass dismounts itself, and the
+  fishing session sends the horse away with `HorseSummon(false)` because
+  `StopRiding()` alone parks it beside the angler for the whole session.
+- **Dead stock is counted by item id across stands.** `mapStallUnsold` in
+  the state: `ClosePlayerBotShop` adds a stand to every line that came home
+  (`FindPlayerBotOfferItem` still finds it), the open pass takes
+  `PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT` per stand off the asked price
+  (after the sale memory has seen the real price), and the junk rule vendors
+  gear under `PLAYERBOT_PRECIOUS_REFINE` after `PLAYERBOT_SHOP_UNSOLD_SCRAP_STANDS`.
+  The map is pruned against the bag past sixty-four entries.
+- **A base image tag moves under you.** `php:8.2-apache` became trixie in
+  2026 and trixie's apt verifies InRelease with sequoia, which failed on a
+  player's Docker Desktop and cancelled the whole compose build ("target
+  itemshop: failed to solve"), leaving him on the old server with no way to
+  update. Pin every Dockerfile to a Debian codename (`-bookworm`) and run
+  no `apt-get` where nothing needs a package - the ItemShop's healthcheck
+  asks PHP itself now.
 
 ## Engine facts worth not re-deriving
 

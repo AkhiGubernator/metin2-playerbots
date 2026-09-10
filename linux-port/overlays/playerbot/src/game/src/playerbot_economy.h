@@ -525,6 +525,21 @@ namespace
 
 		// A scrap keeper's low refines are its stock, not its junk - until the
 		// bag runs short, and then the merchant gets them like anyone else's.
+		// Gear the counter could not sell in six stands is scrap, whatever the
+		// keeper rules below would keep it for. Above the precious refine it
+		// never gets here.
+		if (item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR)
+		{
+			TPlayerBotAIStateMap::const_iterator st = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
+			if (st != s_mapPlayerBotAIStates.end())
+			{
+				std::map<DWORD, BYTE>::const_iterator unsold = st->second.mapStallUnsold.find(item->GetID());
+				if (unsold != st->second.mapStallUnsold.end() &&
+						unsold->second >= PLAYERBOT_SHOP_UNSOLD_SCRAP_STANDS)
+					return true;
+			}
+		}
+
 		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
 				IsPlayerBotScrapKeeper(ch->GetPlayerID()) &&
 				CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_SCRAP_KEEP_FREE_CELLS)

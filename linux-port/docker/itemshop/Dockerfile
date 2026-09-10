@@ -4,12 +4,14 @@
 #  player next login. Independent login form against account.account, not the
 #  retail sas/pid auto-login scheme -- real game credentials work.
 # =============================================================================
-FROM php:8.2-apache
+# Pinned to bookworm and built without apt: the trixie tag's apt verifies
+# InRelease with sequoia and failed on a player's Docker Desktop ("Splitting
+# of clearsigned file failed as it doesn't contain all expected parts"), which
+# cancelled the whole compose build and left him on the old server. Nothing
+# here needs a Debian package - the healthcheck asks PHP itself.
+FROM php:8.2-apache-bookworm
 
-RUN docker-php-ext-install mysqli \
- && apt-get update \
- && apt-get install -y --no-install-recommends curl \
- && rm -rf /var/lib/apt/lists/*
+RUN docker-php-ext-install mysqli
 
 COPY app/ /var/www/html/
 
@@ -27,4 +29,4 @@ RUN a2enmod rewrite \
 EXPOSE 80/tcp
 
 HEALTHCHECK --interval=20s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS -o /dev/null "http://127.0.0.1/itemshop/" || exit 1
+    CMD php -r 'exit(@file_get_contents("http://127.0.0.1/itemshop/") === false ? 1 : 0);'

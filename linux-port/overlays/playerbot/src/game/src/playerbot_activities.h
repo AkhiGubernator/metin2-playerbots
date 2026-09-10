@@ -960,7 +960,11 @@ namespace
 			ClearPlayerBotRoute(state, true);
 		}
 
-		SetPlayerBotRidingForTravel(ch, state, false, dwNow, "fishing");
+		if (SetPlayerBotRidingForTravel(ch, state, false, dwNow, "fishing"))
+			// StopRiding leaves the horse standing behind the angler for the
+			// whole session ("wszystkie moje boty lowia z konmi obok"); it is
+			// sent away like a player would, and summoned again for the ride.
+			ch->HorseSummon(false);
 		if (ch->IsStateMove())
 			ch->Stop();
 		ch->SetPosition(POS_STANDING);

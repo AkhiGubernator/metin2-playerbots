@@ -2576,6 +2576,18 @@ BEGIN NOT ATOMIC
                      ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (pid)
     ) ENGINE=MyISAM DEFAULT CHARSET=ascii;
+
+    -- The nickname ledger, for the same reason: the "renamed" skip rule below
+    -- reads it, and on a fresh install playerbot_names.sql has not run yet.
+    -- Empty and idempotent; creating it commits to nothing.
+    CREATE TABLE IF NOT EXISTS common.playerbot_name_history (
+        pid        INT UNSIGNED NOT NULL,
+        seed_name  VARCHAR(24) NOT NULL,
+        human_name VARCHAR(24) NOT NULL,
+        renamed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (pid),
+        KEY human_name (human_name)
+    ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 END//
 DELIMITER ;
 
@@ -2597,11 +2609,23 @@ CREATE TEMPORARY TABLE playerbot_seed_skip (
 ) ENGINE=MEMORY DEFAULT CHARSET=latin1;
 
 -- Renamed, re-classed, or otherwise not the character this registry describes.
+--
+-- With one exception, and it is the whole reason the nickname ledger exists:
+-- a bot the launcher renamed from botsomething to a human nickname is still
+-- this registry's bot, and skipping it would have quietly taken the entire
+-- cohort out of the seed's care the first time an operator turned nicknames on.
+-- The ledger has to agree on both halves - the name it was given and the name
+-- it wears - so a second, hand-made rename is still a character to leave alone.
 INSERT INTO playerbot_seed_skip (pid)
 SELECT s.pid
   FROM playerbot_seed_spec AS s
   JOIN player.player AS p ON p.id = s.pid
- WHERE BINARY p.name <> BINARY s.player_name OR p.job <> s.job;
+ WHERE p.job <> s.job
+    OR (BINARY p.name <> BINARY s.player_name
+        AND NOT EXISTS (SELECT 1 FROM common.playerbot_name_history AS h
+                         WHERE h.pid = s.pid
+                           AND BINARY h.seed_name = BINARY s.player_name
+                           AND BINARY h.human_name = BINARY p.name));
 
 -- player.name is only indexed, not unique, so aliases need their own pass.
 INSERT INTO playerbot_seed_skip (pid)
@@ -2609,6 +2633,13 @@ SELECT s.pid
   FROM playerbot_seed_spec AS s
   JOIN player.player AS p ON p.name = s.player_name
  WHERE p.id <> s.pid;
+
+-- A ledger row whose character is gone is a nickname held against nothing, and
+-- it would keep a recreated bot from ever being given one. Cleared here rather
+-- than in playerbot_names.sql, because this is the pass that knows which PIDs
+-- the registry expects to exist.
+DELETE FROM common.playerbot_name_history
+ WHERE pid NOT IN (SELECT id FROM player.player);
 
 -- An existing character sitting on a foreign account.
 INSERT INTO playerbot_seed_skip (pid)
@@ -2715,7 +2746,12 @@ BEGIN NOT ATOMIC
     SELECT COUNT(*) INTO v_conflicts
       FROM playerbot_seed_spec AS s
       JOIN player.player AS p ON p.id = s.pid
-     WHERE BINARY p.name <> BINARY s.player_name OR p.job <> s.job;
+     WHERE p.job <> s.job
+        OR (BINARY p.name <> BINARY s.player_name
+            AND NOT EXISTS (SELECT 1 FROM common.playerbot_name_history AS h
+                             WHERE h.pid = s.pid
+                               AND BINARY h.seed_name = BINARY s.player_name
+                               AND BINARY h.human_name = BINARY p.name));
     IF v_conflicts <> 0 THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'playerbot seed conflict: target PID has a foreign name or job';
@@ -2902,7 +2938,14 @@ BEGIN NOT ATOMIC
     SELECT a.id, s.pid, 0, 0, 0, s.empire
       FROM playerbot_seed_spec AS s
       JOIN player.player AS p
-        ON p.id = s.pid AND BINARY p.name = BINARY s.player_name AND p.job = s.job
+        ON p.id = s.pid AND p.job = s.job
+       -- The name it was seeded with, or the nickname this project gave
+       -- it; see the skip rule above.
+       AND (BINARY p.name = BINARY s.player_name
+            OR EXISTS (SELECT 1 FROM common.playerbot_name_history AS h
+                        WHERE h.pid = s.pid
+                          AND BINARY h.seed_name = BINARY s.player_name
+                          AND BINARY h.human_name = BINARY p.name))
       JOIN account.account AS a
         ON a.id = p.account_id
        AND BINARY a.login = BINARY s.login
@@ -3030,7 +3073,14 @@ BEGIN NOT ATOMIC
     SELECT COUNT(*) INTO v_count
       FROM playerbot_seed_spec AS s
       JOIN player.player AS p
-        ON p.id = s.pid AND BINARY p.name = BINARY s.player_name AND p.job = s.job
+        ON p.id = s.pid AND p.job = s.job
+       -- The name it was seeded with, or the nickname this project gave
+       -- it; see the skip rule above.
+       AND (BINARY p.name = BINARY s.player_name
+            OR EXISTS (SELECT 1 FROM common.playerbot_name_history AS h
+                        WHERE h.pid = s.pid
+                          AND BINARY h.seed_name = BINARY s.player_name
+                          AND BINARY h.human_name = BINARY p.name))
       JOIN account.account AS a
         ON a.id = p.account_id
        AND BINARY a.login = BINARY s.login

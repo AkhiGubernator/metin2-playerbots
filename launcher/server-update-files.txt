@@ -48,6 +48,14 @@ linux-port/overlays/playerbot/sql/playerbots_seed.sql
 # starts compose directly is not silently seeding an August-era registry.
 linux-port/docker/mariadb/playerbot/playerbots_seed.sql
 linux-port/overlays/playerbot/tools/generate_seed.py
+# The nickname pool, and the two copies it lives in for the same reason
+# the seed does: the overlay is the source, mariadb/playerbot is what the
+# migrate container mounts, and an update that refreshed only one of them
+# would run a pool nobody generated.
+linux-port/overlays/playerbot/sql/playerbot_names.sql
+linux-port/docker/mariadb/playerbot/playerbot_names.sql
+linux-port/overlays/playerbot/tools/generate_bot_names.py
+linux-port/overlays/playerbot/data/bot_names_community.txt
 # The overlay sources, and the staged build context they are compiled from.
 # Wildcards, not lists: splitting a source file must not require editing this
 # file, and forgetting to is what shipped a manager without its own headers in

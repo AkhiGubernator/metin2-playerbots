@@ -289,3 +289,41 @@ if [ "$added" -gt 0 ]; then
     echo "[playerbot-migrate] created $added new bot character(s)"
 fi
 echo "[playerbot-migrate] seed complete: $count bot character(s) in PID $first_pid..$last_pid"
+
+# ---------------------------------------------------------------------------
+# Human nicknames.
+#
+# "Pozdrawiam pana botarek7 jest kotem ale brzmi jak bot" - a world of botX7
+# reads as a world of bots however well they behave. The pool and the rules are
+# in playerbot_names.sql; this only chooses which of its three modes to run and
+# reports what it did.
+#
+# It runs after the seed on purpose: a bot created a minute ago is renamed on
+# the same start, and a bot the seed decided to preserve is left with whatever
+# name it has, because the SQL only touches characters still called bot*.
+#
+# A failure here is not fatal. Names are the one part of a bot's identity
+# nothing depends on - the core matches on the account login - so a server that
+# could not rename its bots is a server that works with the old names.
+# ---------------------------------------------------------------------------
+names=/opt/playerbot/playerbot_names.sql
+if [ -s "$names" ]; then
+    human=1
+    case "${M2_PLAYERBOT_HUMAN_NAMES:-1}" in
+        0|false|FALSE|no|NO) human=0 ;;
+        restore|RESTORE) human=restore ;;
+    esac
+    echo "[playerbot-migrate] human nicknames: $human"
+    names_out=/tmp/playerbot-names.out
+    if { printf 'SET @playerbot_human_names = %s;
+' "'$human'"; cat "$names"; } |
+            db --show-warnings >"$names_out" 2>&1; then
+        [ ! -s "$names_out" ] || cat "$names_out"
+    else
+        cat "$names_out" >&2
+        echo "[playerbot-migrate] WARNING: nicknames not applied; bots keep their seed names" >&2
+    fi
+    rm -f "$names_out"
+else
+    echo "[playerbot-migrate] no playerbot_names.sql; bots keep their seed names"
+fi

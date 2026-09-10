@@ -117,6 +117,11 @@ services:
       # start on their own villages. Off until their bots live a full life of
       # their own on their own maps.
       M2_PLAYERBOT_KINGDOMS: "${M2_PLAYERBOT_KINGDOMS:-0}"
+      # Bots wear nicknames from a pool instead of bot<something><number>.
+      # 1 renames every bot that still carries a seed name, 0 leaves every name
+      # alone, and "restore" puts the seed names back. The old name is kept in
+      # common.playerbot_name_history, which is what makes the last one work.
+      M2_PLAYERBOT_HUMAN_NAMES: "${M2_PLAYERBOT_HUMAN_NAMES:-1}"
 
     entrypoint: ["/bin/sh", "/opt/playerbot/apply.sh"]
 

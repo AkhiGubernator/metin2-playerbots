@@ -1,20 +1,20 @@
-{
-  "schema": 1,
-  "channel": "stable",
-  "publishedAt": "2026-09-10T11:03:00Z",
-  "statusMessage": "Aktualizacja 1.31.8. Aktualizacja na Linuksie znow przechodzi, boss nie skacze za ofiara na inna mape, boty nie sprzedaja zwojow ulepszen, uszkodzona tabela naprawia sie sama.",
-  "server": {
-    "version": "1.31.8",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.8/metin2-server-update-1.31.8.zip",
-    "sha256": "F1755EFFB0A86CDF1D8BAD8F0F0983A52A665CBD989ABA672444D05EADB068C3"
-  },
-  "support": {
-    "contactUrl": "https://discord.gg/pt5tvnrN6",
-    "uploadUrl": ""
-  },
-  "client": {
-    "version": "1.31.1",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.1/metin2-client-update-1.31.1.zip",
-    "sha256": "53C419421C9DA9F20C166C701932AFDD59C5EF5B5392C139766DE0086E6C13D4"
-  }
+﻿{
+ "schema": 1,
+ "channel": "stable",
+ "publishedAt": "2026-09-10T15:10:00Z",
+ "statusMessage": "Aktualizacja 1.32.0. Trzy krolestwa: boty moga zyc takze w Shinsoo i Jinno, kazde we wlasnych wioskach, u wlasnych kupcow i na wlasnych lowiskach. Domyslnie nic sie nie zmienia - nowe krolestwa wlacza M2_PLAYERBOT_KINGDOMS=1. Oba panele pokazuja caly swiat.",
+ "server": {
+  "version": "1.32.0",
+  "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.0/metin2-server-update-1.32.0.zip",
+  "sha256": "946B22CF3AEF56013B1503BDDD41D0665E02615A1E15F595392BA75C234EBD86"
+ },
+ "support": {
+  "contactUrl": "https://discord.gg/pt5tvnrN6",
+  "uploadUrl": ""
+ },
+ "client": {
+  "version": "1.31.1",
+  "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.1/metin2-client-update-1.31.1.zip",
+  "sha256": "53C419421C9DA9F20C166C701932AFDD59C5EF5B5392C139766DE0086E6C13D4"
+ }
 }

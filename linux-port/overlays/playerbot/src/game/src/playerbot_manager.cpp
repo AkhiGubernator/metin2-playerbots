@@ -2370,3 +2370,18 @@ void CPlayerBotManager::OnPlayerWhisper(LPCHARACTER from, LPCHARACTER bot, const
 {
 	HandlePlayerWhisperToBot(from, bot, szText);
 }
+
+// --- The F9 panel's two entry points ---------------------------------------
+//
+// Thin on purpose: everything they do is in playerbot_config.h, above, and the
+// only reason these exist is that the fragment lives in this file's anonymous
+// namespace and cmd_gm.cpp is a different translation unit.
+bool PlayerBotBuildWeightReport(char* szOut, size_t len)
+{
+	return BuildPlayerBotPanelWeightReport(szOut, len);
+}
+
+bool PlayerBotSetWeight(const char* szKey, long value)
+{
+	return WritePlayerBotPanelWeight(szKey, value);
+}

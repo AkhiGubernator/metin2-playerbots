@@ -78,4 +78,19 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		bool			m_bRegistryAvailable;
 };
 
+// The AI weights, for the F9 GM panel's "Sterowanie Serwerem" tab.
+//
+// They live in playerbot_weights.tsv, which the web panel writes and the core
+// re-reads every five seconds; the client panel is a second writer of the same
+// file. The reader, the writer and the bounds are all in playerbot_config.h -
+// inside the anonymous namespace of playerbot_manager.cpp, which no engine
+// translation unit can see - so cmd_gm.cpp reaches them through these two.
+//
+// The report is the seventeen values the panel expects, "|"-joined, in the
+// order the client zips its rows against by position; -1 means "no file has
+// set this" and is only ever the two chest keys. Setting refuses a name this
+// core does not know rather than appending it.
+bool PlayerBotBuildWeightReport(char* szOut, size_t len);
+bool PlayerBotSetWeight(const char* szKey, long value);
+
 #endif

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T15:40:00Z",
-  "statusMessage": "Aktualizacja 1.32.1. Sprawdzanie aktualizacji nie klamie juz, gdy nie potrafi odczytac manifestu: pusta odpowiedz, strona z proxy albo plik z BOM-em daja czytelny blad zamiast komunikatu o braku nowej wersji. Z 1.32.0: trzy krolestwa, wlaczane wpisem M2_PLAYERBOT_KINGDOMS=1.",
+  "publishedAt": "2026-09-10T16:20:00Z",
+  "statusMessage": "Aktualizacja 1.32.2. Suwak liczby botow siega teraz 2500, bo tyle tozsamosci tworzy dosiew przy wlaczonych trzech krolestwach; wczesniej konczyl sie na 1500 i tysiaca botow nie dalo sie poprosic. Masowe nadawanie przedmiotow botom dziala po przebudowaniu obrazu gry.",
   "server": {
-    "version": "1.32.1",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.1/metin2-server-update-1.32.1.zip",
-    "sha256": "25B577D42B233F3DF512D715583EBF1F6222BE1A54AAAD5890BF1597A5B25976"
+    "version": "1.32.2",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.2/metin2-server-update-1.32.2.zip",
+    "sha256": "F4AD27AC2D58663362AC3003B9D4557D26F471221820BF294DF59B3F95D301D3"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

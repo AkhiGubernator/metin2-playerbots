@@ -17,6 +17,18 @@ every version here.
 
 ---
 
+## 1.31.5 — 2026-09-10
+
+### Boty w grze
+
+- **Bot znów zbiera cudzy drop, gdy ma okazję** (decyzja Tieru). Blokada z
+  1.31.4 („przedmiot bez właściciela podnosi tylko bot, który widział go,
+  gdy był jego”) cofnięta: po dziesięciu sekundach drop przestaje mieć
+  właściciela i bot bierze go jak każdy gracz, który stoi obok. Reszta
+  1.31.4 bez zmian.
+
+---
+
 ## 1.31.4 — 2026-09-10
 
 ### Aktualizacja, która się nie budowała

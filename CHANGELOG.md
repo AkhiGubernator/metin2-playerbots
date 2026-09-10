@@ -52,6 +52,19 @@ every version here.
   przez sześć stoisk, idzie do handlarza. Od +4 w górę nic się nie zmienia —
   tego handlarz od bota nie dostaje.
 
+- **Priorytety wbijania skilli według listy sosena** (wątek „Priorytety
+  wbijania skilli przez botów”). Każdy build ma teraz kolejność punktów:
+  Wojownik Body: Aura, potem Berek/Wir (losowo), potem Szarża/Trójstronne;
+  Mental: Silne Ciało, Duchowe/Walnięcie, Tąpnięcie, Uderzenie Miecza; Sura
+  WP: Czarowane Ostrze, potem cztery losowo, Rozproszenie na końcu; Sura BM:
+  Ognisty Duch, Mroczna Ochrona, potem cztery losowo; Szaman Smok: Pomoc
+  Smoka, Błogosławieństwo/Skowyt, Talizman/Strzelający Smok, Odbicie;
+  Healer: Leczenie, Zwinność/Błyskawica/Szpon, Piorun/Zwiększenie Ataku;
+  Ninja Dagger: Chmura/Zasadzka, Sztylet/Szybki Atak, Krycie; Archer: Ognista,
+  Trująca, potem trzy losowo. „Losowo” to stały los per bot, więc dwa boty
+  jednego buildu różnią się, a jeden bot jutro chce tego samego. Pierwszy
+  skill z listy idzie do Mistrza przed drugim punktem w czymkolwiek innym.
+
 ### ItemShop
 
 - **Księga Zapomnienia (70037) w ItemShopie** (sosen): cofa punkt wybranej

@@ -40,6 +40,47 @@ function Set-DotEnvValue {
     return $Content + "$Name=$Value" + [Environment]::NewLine
 }
 
+function Add-MissingDotEnvKeys {
+    # A player's .env is written once and never rewritten: what is in it is
+    # theirs, including passwords nobody else has a copy of. So a switch added
+    # to .env.example after they installed never appears for them, and telling
+    # them to "set M2_PLAYERBOT_KINGDOMS=1 in .env" is advice about a line that
+    # is not there. That is how the three kingdoms looked broken on an install
+    # which had been updated rather than made fresh (jaksiezabic, 1.32.1):
+    # Compose still had its own default, so nothing failed - the player simply
+    # had no way to turn the feature on.
+    #
+    # Only ABSENT keys are added, always with the example's own default, and a
+    # line that already exists is never touched. Secrets are skipped whatever
+    # happens: a placeholder quietly landing next to a real password is a far
+    # worse failure than a missing switch.
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Content,
+        [Parameter(Mandatory = $true)][string]$ExamplePath
+    )
+    if (-not (Test-Path -LiteralPath $ExamplePath -PathType Leaf)) { return $Content }
+    $added = New-Object System.Collections.Generic.List[string]
+    foreach ($line in [IO.File]::ReadAllLines($ExamplePath)) {
+        $match = [Regex]::Match($line, '^\s*([A-Za-z0-9_]+)=(.*)$')
+        if (-not $match.Success) { continue }
+        $name = $match.Groups[1].Value
+        if ($name -match 'PASSWORD|SECRET|TOKEN|_KEY$') { continue }
+        # An empty value in the example means "leave it to Compose", and every
+        # place that reads one uses ${VAR:-default}, which falls back on an
+        # empty value too. Writing the empty line would gain nothing and would
+        # put a setting in front of the player that has no meaning on its own -
+        # M2_SEBAN_TIERU_PANEL_URL is the one that made this worth a rule.
+        if (-not $match.Groups[2].Value.Trim()) { continue }
+        if ([Regex]::IsMatch($Content, '(?m)^' + [Regex]::Escape($name) + '=')) { continue }
+        $Content = Set-DotEnvValue -Content $Content -Name $name -Value $match.Groups[2].Value
+        $added.Add($name)
+    }
+    if ($added.Count -gt 0) {
+        Write-Host ("Dopisano do .env brakujace ustawienia: " + ($added -join ', ')) -ForegroundColor DarkGray
+    }
+    return $Content
+}
+
 function Get-DotEnvValue {
     param(
         [Parameter(Mandatory = $true)][string]$Content,
@@ -387,6 +428,9 @@ function Initialize-InstallationIdentity {
         [Text.UTF8Encoding]::new($false))
     $content = Set-DotEnvValue -Content $content -Name 'M2_COMPOSE_PROJECT_NAME' -Value $project
     $content = Set-DotEnvValue -Content $content -Name 'M2_CONTAINER_PREFIX' -Value $prefix
+    # Last, so anything the identity decides above wins over the example.
+    $content = Add-MissingDotEnvKeys -Content $content -ExamplePath (
+        Join-Path (Split-Path -Parent $envPath) '.env.example')
     [IO.File]::WriteAllText($envPath, $content, [Text.UTF8Encoding]::new($false))
     Write-Host "Installation identity: $project" -ForegroundColor DarkGray
 }

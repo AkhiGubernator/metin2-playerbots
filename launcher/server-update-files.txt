@@ -59,6 +59,7 @@ linux-port/docker/game/src/server/game/src/playerbot_*
 # only lives under overlays/playerbot/patches reaches nobody; the staged,
 # patched file does - the same way the playerbot sources do.
 linux-port/docker/game/src/server/game/src/char.cpp
+linux-port/docker/game/src/server/game/src/char_battle.cpp
 linux-port/docker/game/src/server/game/src/cmd.cpp
 linux-port/docker/game/src/server/game/src/cmd_gm.cpp
 linux-port/docker/game/src/server/game/src/item_manager.cpp

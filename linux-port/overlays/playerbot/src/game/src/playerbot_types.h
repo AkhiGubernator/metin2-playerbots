@@ -1963,6 +1963,8 @@ namespace
 	// hours of hunting and then nothing. A bot has no item shop to go back to,
 	// so its copy is wound back up instead of re-bought - the same answer
 	// ManagePlayerBotSkillBooks gives to a book's eighteen-hour wait.
+	// The group is 72016..72018; since patch 0010 the bots take these off.
+	const DWORD PLAYERBOT_THIRD_HAND_VNUM_FIRST = 72016;
 	const DWORD PLAYERBOT_THIRD_HAND_VNUM = 72018;
 	const long PLAYERBOT_THIRD_HAND_MINUTES = 525600;
 	const long PLAYERBOT_THIRD_HAND_REWIND_BELOW = 10080;

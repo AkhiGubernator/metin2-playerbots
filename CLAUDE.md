@@ -927,18 +927,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   reported that as "OK: Docker Engine odpowiada (wersja Error response...)",
   which also suppressed the WSL remedy - it is only raised when the engine is
   known to be down. A version is digits and dots.
-- **The third hand is 72018, and the group is what the engine reads.**
-  `CHARACTER::RewardGold` gives a kill's yang straight to the killer when
-  `IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT)`, and what group 10011 holds in
-  these serverfiles is 72016..72018 - not the 71010 an item shop sells, which
-  is in no group at all and would do nothing. It is a timed item:
-  `ITEM_MANAGER::CreateItem` seeds `ITEM_SOCKET_UNIQUE_REMAIN_TIME` from
-  VALUE0 (180 for 72018) and `unique_expire_event` counts it down one minute
-  per minute of wear, so `ManagePlayerBotThirdHand` winds it back up rather
-  than buying another. That pass must not put the winding behind its own
-  `EquipItem`: the engine refuses to equip within 1.5 s of an attack or a
-  cast, which is most of a bot's life - the first draft wound eight clocks
-  out of six hundred, and the ordinary equipment pass had put the rest on.
+- **Yang goes straight to the purse, for everybody, by patch 0010.**
+  `CHARACTER::RewardGold` gave a kill's yang to the killer only with the
+  premium or `IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT)` (72016..72018 on
+  these serverfiles - not the 71010 an item shop sells); the bots wore and
+  wound a 72018 for it (`ManagePlayerBotThirdHand`, a timed item whose
+  `ITEM_SOCKET_UNIQUE_REMAIN_TIME` counts down while worn). Since 1.31.6 the
+  patch makes `isAutoLoot` true for every killer, the same pass takes the
+  Third Hand off every bot and removes it, and `char_battle.cpp` ships in
+  `server-update-files.txt` like `char.cpp`. The operator's rule: most
+  servers run this by default, and no bot slot is to be spent on it.
 - **A snapped goal must stay inside the radius that tests arrival.**
   `MovePlayerBotTownLeg` asked for a sixteen-cell target snap and then
   checked arrival at 350 to 850 units. A goal behind a counter snapped

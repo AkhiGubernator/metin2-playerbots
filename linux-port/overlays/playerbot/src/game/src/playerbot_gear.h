@@ -2275,45 +2275,33 @@ namespace
 			return;
 		state.dwNextThirdHandTime = dwNow + PLAYERBOT_THIRD_HAND_INTERVAL;
 
-		// The bot's copy, worn or carried - carried counts, or a bot that could
-		// not put it on this minute would be handed another one every pass.
-		LPITEM hand = ch->GetWear(WEAR_UNIQUE1);
-		if (!hand || hand->GetVnum() != PLAYERBOT_THIRD_HAND_VNUM)
-			hand = ch->GetWear(WEAR_UNIQUE2);
-		if (hand && hand->GetVnum() != PLAYERBOT_THIRD_HAND_VNUM)
-			hand = NULL;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM && !hand; ++cell)
+		// Since patch 0010 every kill's yang goes straight to the purse, for
+		// bots and players alike, so the Third Hand only takes a slot ("da sie
+		// dodac status trzeciej reki bez zajmowania slota w eq?"). Whatever a
+		// bot still wears or carries of the group is taken away.
+		for (int pass = 0; pass < 2; ++pass)
 		{
-			LPITEM item = ch->GetInventoryItem(cell);
-			if (item && item->GetVnum() == PLAYERBOT_THIRD_HAND_VNUM)
-				hand = item;
-		}
-
-		if (!hand)
-		{
-			// AutoGiveItem hands the item over even when there is nowhere to put
-			// it, and it lands on the ground wearing the bot's name - the arrows
-			// and the stall bundles both learned this the hard way. Wait for a
-			// free cell instead.
-			if (ch->GetEmptyInventory(1) < 0)
-				return;
-			hand = ch->AutoGiveItem(PLAYERBOT_THIRD_HAND_VNUM, 1, -1, false);
+			LPITEM hand = NULL;
+			for (BYTE wear = 0; wear < WEAR_MAX_NUM && !hand; ++wear)
+			{
+				LPITEM worn = ch->GetWear(wear);
+				if (worn && worn->GetVnum() >= PLAYERBOT_THIRD_HAND_VNUM_FIRST &&
+						worn->GetVnum() <= PLAYERBOT_THIRD_HAND_VNUM)
+					hand = worn;
+			}
+			for (WORD cell = 0; cell < INVENTORY_MAX_NUM && !hand; ++cell)
+			{
+				LPITEM item = ch->GetInventoryItem(cell);
+				if (item && item->GetVnum() >= PLAYERBOT_THIRD_HAND_VNUM_FIRST &&
+						item->GetVnum() <= PLAYERBOT_THIRD_HAND_VNUM && !item->isLocked())
+					hand = item;
+			}
 			if (!hand)
 				return;
-			sys_log(0, "PLAYERBOT_GEAR: third hand made pid=%u name=%s",
-					ch->GetPlayerID(), ch->GetName());
+			sys_log(0, "PLAYERBOT_GEAR: third hand retired pid=%u name=%s vnum=%u worn=%d",
+					ch->GetPlayerID(), ch->GetName(), hand->GetVnum(), hand->IsEquipped() ? 1 : 0);
+			ITEM_MANAGER::instance().RemoveItem(hand, "PLAYERBOT_THIRD_HAND_RETIRED");
 		}
-
-		// CHARACTER::EquipItem refuses within a second and a half of an attack
-		// or a cast, which for a bot is most of its life - the first draft put
-		// the winding below behind a successful equip here and wound eight
-		// clocks out of six hundred. Trying is enough: what this pass does not
-		// manage, ManagePlayerBotEquipment picks out of the bag on its own.
-		if (!hand->IsEquipped())
-			ch->EquipItem(hand);
-
-		if (hand->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) < PLAYERBOT_THIRD_HAND_REWIND_BELOW)
-			hand->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, PLAYERBOT_THIRD_HAND_MINUTES);
 	}
 }
 

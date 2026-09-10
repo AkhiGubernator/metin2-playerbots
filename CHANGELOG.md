@@ -17,6 +17,56 @@ every version here.
 
 ---
 
+## 1.32.3 — 2026-09-10
+
+### Trzy królestwa dało się włączyć tylko na świeżej instalacji
+
+Plik `.env` powstaje raz i nigdy nie jest przepisywany, bo trzyma Wasze hasła,
+których nikt inny nie ma. Skutkiem ubocznym było to, że każdy przełącznik
+dodany do wzorca po Waszej instalacji po prostu u Was nie istniał, a rada
+„ustaw `M2_PLAYERBOT_KINGDOMS=1`" dotyczyła linii, której w pliku nie ma
+(zgłosił jaksiezabic). Nic nie wywalało błędu, bo Docker ma własną wartość
+domyślną. Po prostu nie było czym włączyć królestw.
+
+Launcher dopisuje teraz do `.env` wyłącznie ustawienia, których w nim nie ma, i
+zawsze z wartością domyślną z pliku wzorcowego. Nie rusza żadnej istniejącej
+linii i nigdy nie tyka haseł ani kluczy. Sprawdzone na prawdziwym `.env`
+starszej instalacji: dopisało siedem ustawień, które narosły przez ostatnie
+wydania, i nie zmieniło ani jednej linii, która już tam była.
+
+### Panel zaawansowany po nieczystym zatrzymaniu serwera
+
+Siedemdziesiąt trzy z siedemdziesięciu pięciu tabel tej gry to MyISAM, a jedno
+nieczyste zatrzymanie wystarczy, żeby oznaczyć tabelę jako uszkodzoną. Od tej
+chwili każdy, kto z niej czyta, dostaje błąd, więc klasyczny panel działa
+normalnie (czyta pliki), a zaawansowany wywala się na „Internal Server Error"
+(czyta wyłącznie bazę). Zgłosił archonek2137, z wklejonym błędem — co skróciło
+szukanie do minuty.
+
+Automatyczna naprawa w konfiguracji obejmuje tylko tabele otwierane po tym, jak
+ustawienie weszło w życie, więc baza, która już chodziła w chwili aktualizacji,
+zostawała na starym zachowaniu aż do restartu. Teraz przy każdym starcie serwera
+idzie przebieg naprawczy, który ogląda wyłącznie tabele niezamknięte poprawnie i
+naprawia uszkodzone, zanim cokolwiek z nich przeczyta. Na zdrowym świecie
+kosztuje 417 milisekund przy tabeli `log` wielkości 1130 MB i 21,7 miliona
+wierszy, więc startu nie opóźnia, a błąd nigdy nie zatrzymuje uruchamiania.
+
+### ItemShop odpowiadał błędem 400
+
+Rdzeń składa link, który otwiera klient, jako `http://` plus zawartość
+`M2_MALL_URL`. Adres wpisany razem ze schematem dawał więc
+`http://http://127.0.0.1:7791/ishop?...`, a wbudowana przeglądarka klienta
+odpowiadała gołym HTTP 400, o którym w logach serwera nie ma ani słowa (zgłosił
+jaroszv2). Napisanie `http://` przed adresem jest odruchem, więc adres jest
+teraz przyjmowany w każdej postaci, a schemat i końcowy ukośnik są zdejmowane
+przy starcie.
+
+Przy okazji: `M2_MALL_URL` występował w pliku wzorcowym dwa razy. Docker bierze
+ostatnie wystąpienie, więc kto przeczytał opis przy pierwszym i tam wpisał swój
+adres, nie dostawał z tego nic. Został jeden wpis, ten z opisem.
+
+---
+
 ## 1.32.2 — 2026-09-10
 
 ### Suwak liczby botów sięga teraz 2500

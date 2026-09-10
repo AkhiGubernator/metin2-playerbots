@@ -709,6 +709,13 @@ namespace
 			if (!ch->StopRiding())
 				return false;
 
+			// StopRiding summons the horse as a follower, so a bot that climbs
+			// down in a town square leaves it standing there - which is the herd
+			// of horses in every screenshot of Joan and Bokjung. Inside a safe
+			// zone the horse is sent away like a player would send it; on a
+			// hunting map it stays, because the bot is about to want it again.
+			if (IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()))
+				ch->HorseSummon(false);
 			ClearPlayerBotRoute(state, false);
 			state.dwNextNavPlanTime = 0;
 			state.dwNextHorseRideCheckTime = dwNow + 1000;

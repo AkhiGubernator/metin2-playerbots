@@ -27,6 +27,7 @@ files/static/*
 linux-port/docker/docker-compose.yml
 linux-port/docker/.env.example
 linux-port/docker/mariadb/initdb.d/10-import-dumps.sh
+linux-port/docker/mariadb/conf.d/99-metin2.cnf
 # Waits for the database before seeding. Its timeout decides whether a slow
 # recovery fails the whole compose "up".
 linux-port/docker/mariadb/playerbot/apply.sh
@@ -60,6 +61,7 @@ linux-port/docker/game/src/server/game/src/playerbot_*
 # patched file does - the same way the playerbot sources do.
 linux-port/docker/game/src/server/game/src/char.cpp
 linux-port/docker/game/src/server/game/src/char_battle.cpp
+linux-port/docker/game/src/server/game/src/char_state.cpp
 linux-port/docker/game/src/server/game/src/cmd.cpp
 linux-port/docker/game/src/server/game/src/cmd_gm.cpp
 linux-port/docker/game/src/server/game/src/item_manager.cpp

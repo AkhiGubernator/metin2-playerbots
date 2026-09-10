@@ -1491,6 +1491,53 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `SkillLevelDown` refunds the point and refuses a skill at Master, which
   is why Master skills stay where they are. Only when there is no free
   point: a free point goes to the same place for nothing.
+- **The town crowd is deliberate, and it is not capped.**
+  `PLAYERBOT_TOWN_LINGER_PERCENT` is 100 and its comment does the arithmetic
+  for the angler trigger alone - a session ends about once a minute, so
+  "three or four bots on the square". The same linger is also set by every
+  completed town visit in Joan, and those run twenty-five a minute: measured
+  32-48 bots in `BOT_ACTION_TOWN_REST` at every moment and 74 different ones
+  in three minutes, which is the crowd players photograph ("Bots just running
+  in Safe Zone", twice). 1.31.8 briefly capped it and the operator reverted
+  the cap along with the Bokjung stall cap: a town is meant to fill up, and a
+  keeper refused a pitch is a bot with nothing to do. So the number on the
+  square is a feature - what was actually wrong there was the horses. Do not
+  add a cap back without asking.
+- **A dismount in a town square parks a horse there.** `StopRiding()` summons
+  the horse as a follower, so 295 dismounts on M1 in a quarter of an hour
+  left 295 horses standing in Joan - the herd in every screenshot of the
+  square. `SetPlayerBotRidingForTravel(false)` sends the horse away with
+  `HorseSummon(false)` inside `IsPlayerBotSafeZone` and nowhere else, because
+  on a hunting map the bot wants it back in a minute. `StartRiding()` does
+  not need the horse summoned, so nothing else has to change (the stall
+  opener has done this since it was written).
+- **A boss blinks to its victim's map, not its own.** `char_state.cpp`, the
+  BOSS branch: race 2191 (the desert's Giant Turtle) rolls one in twenty and
+  calls `Show(victim->GetMapIndex(), new_x, new_y, 0, true)`, so a victim that
+  changed map in the meantime - a warp NPC, the Teleporter, or our own
+  server-side `TransitionPlayerBotMap` - drags the boss onto the new map. That
+  is how a desert boss appears in Bokjung, for players as much as for bots.
+  Patch 0011 gates the whole boss branch on `GetVictim()->GetMapIndex() ==
+  GetMapIndex()`, which also stops `__CHARACTER_GotoNearTarget` walking the
+  boss towards coordinates that belong to a map it is not on.
+- **A dry run of one patch is not a dry run of the series.**
+  `prepare-context.sh` rehearsed every engine patch separately against the
+  untouched tree, and 0009's first hunk carries the `#include
+  "playerbot_manager.h"` that 0001 adds as context - so it failed alone and
+  applies perfectly in sequence. Every Linux and VPS install stopped there
+  from 1.31.0 on and could not update; Windows never saw it, because the
+  launcher stages already-patched files. The rehearsal copies the files the
+  series touches into `mktemp -d` (outside the build context, or it ships in
+  the image) and applies the whole series there for real, so a dependent
+  patch passes and the real tree is still all-or-nothing. Proven both ways
+  on a two-patch case with the same dependency.
+- **MyISAM is what this game runs on, and it does not survive a kill.**
+  73 of 75 tables; one unclean stop marks a table crashed and every reader
+  fails from then on. MariaDB's default `myisam_recover_options=BACKUP,QUICK`
+  only rebuilds the index file, so a damaged data file ends as "last
+  (automatic?) repair failed" - which is what a player saw through the panel.
+  `99-metin2.cnf` asks for `BACKUP,FORCE`. To repair an install that is
+  already in that state: `mysqlcheck --auto-repair --check --all-databases`.
 
 ## Engine facts worth not re-deriving
 

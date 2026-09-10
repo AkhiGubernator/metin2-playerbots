@@ -1639,45 +1639,13 @@ namespace
 		long pitchX = 0, pitchY = 0;
 		if (!GetPlayerBotShopCentre(ch->GetMapIndex(), pitchX, pitchY))
 			return false;
-		// Bokjung's ring is capped. A keeper that finds it full takes its goods
-		// to Joan rather than adding an eighth counter nobody can see past -
-		// which is the only way the second market ever gets stock, since this is
-		// where the bots with something to sell happen to be standing.
-		const int iM2StallCap = MAX(PLAYERBOT_SHOP_M2_MAX_STALLS,
-				GetPlayerBotsAlive() * PLAYERBOT_SHOP_M2_STALLS_PER_MILLE / 1000);
-		if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 &&
-				s_iPlayerBotStallsInM2 >= iM2StallCap)
-		{
-			// Only a keeper by personality, and only one with nowhere else to
-			// be. This pass runs ahead of the world travel, so a bot bound for
-			// the frontier was walked to the M1 portal instead - every tick,
-			// for as long as it held six surplus books.
-			// ...and not a bot whose place is the frontier: it stood in
-			// Bokjung on its way to Sohan with "Ide na Gore Sohan" over its
-			// head and rode to the Joan gate instead, which is what "the bots
-			// go to the wrong portal" looked like from the outside.
-			if (!IsPlayerBotStallKeeper(state) || state.lDepartureMap != 0 ||
-					GetPlayerBotFrontierMapForLevel(ch) != 0)
-			{
-				state.dwNextShopKeepTime = dwNow + PLAYERBOT_SHOP_RING_FULL_RETRY;
-				return false;
-			}
-			std::vector<std::pair<int, WORD> > worthTaking;
-			CollectPlayerBotShopItems(ch, worthTaking, IsPlayerBotStallKeeper(state));
-			if (!IsPlayerBotStallWorthOpening(worthTaking.size(),
-					worthTaking.empty() ? 0 : worthTaking[0].first,
-					IsPlayerBotPoorKeeper(ch) || IsPlayerBotBagFull(ch)))
-				return false;
-			PlayerBotLogThrottled("stall_overflow", dwNow,
-					"PLAYERBOT_SHOP: Bokjung full, taking the stall to Joan pid=%u name=%s stalls=%d cap=%d lines=%u",
-					ch->GetPlayerID(), ch->GetName(), s_iPlayerBotStallsInM2, iM2StallCap,
-					(unsigned int)worthTaking.size());
-			state.dwStallWalkUntil = dwNow + PLAYERBOT_SHOP_RING_FULL_RETRY;
-			return MovePlayerBotToWorldPortal(ch, state,
-					PLAYERBOT_M2_TO_M1_PORTAL_X, PLAYERBOT_M2_TO_M1_PORTAL_Y,
-					PLAYERBOT_MAP_CHUNJO_M1, PLAYERBOT_M1_GUARD_X,
-					PLAYERBOT_M1_GUARD_Y, dwNow, "stall_overflow_to_m1");
-		}
+		// Bokjung's ring used to be capped, and a keeper that found it full
+		// carried its goods to Joan. Both are gone: a town is meant to fill up,
+		// and a counter refused is a bot with nothing to do (the operator's
+		// call - "jak chca to niech chodza i zaludniaja miasto"). Joan gets its
+		// stalls from the bots standing in Joan, which is where they came from
+		// before the cap existed. s_iPlayerBotStallsInM2 is still counted for
+		// the ledger's report.
 		// A keeper already standing on the ring counts as in town too. A server
 		// restart drops every shop - they live only in memory - and leaves its
 		// keeper parked exactly where the stall was, with no errand to bring it

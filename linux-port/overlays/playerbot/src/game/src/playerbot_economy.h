@@ -578,6 +578,10 @@ namespace
 		if (item->GetType() == ITEM_TREASURE_KEY ||
 				item->GetType() == ITEM_GIFTBOX || vnum == PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
 			return false;
+		// A refine scroll stays in the bag or goes on a counter, never to the
+		// merchant. It is still stall goods: another bot needs one too.
+		if (IsPlayerBotRefineScroll(vnum))
+			return false;
 		// A soul stone is somebody's socket: this bot's, or across a counter
 		// another's. The merchant paid one yang for a Potwora +4.
 		if (item->GetType() == ITEM_METIN)

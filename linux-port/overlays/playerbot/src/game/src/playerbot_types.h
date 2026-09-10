@@ -1552,6 +1552,24 @@ namespace
 	// blacksmith's 40 and 30, which the Blessing Scroll keeps; both hand the
 	// piece back a level down on failure. Measured, not assumed.
 	const DWORD PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[] = { 39022, 71032, 76009 };
+	// Every scroll DoRefineWithScroll knows, by the engine's own switch:
+	// Blessing (25040), Magic Stone (25041, 39001), Blacksmith's Manual
+	// (39007, 70039), War God (39014, 71021), Dragon God (39022, 71032,
+	// 76009). None of them is merchant scrap. The junk rule had no branch for
+	// them and the merchant pays pennies for the one thing a refine above +6
+	// cannot be done without: 471 Blessing Scrolls went over that counter in
+	// a single day (jaroszv2), while the weapons they were meant for waited.
+	bool IsPlayerBotRefineScroll(DWORD vnum)
+	{
+		switch (vnum)
+		{
+			case 25040: case 25041: case 39001: case 39007: case 39014:
+			case 39022: case 70039: case 71021: case 71032: case 76009:
+				return true;
+			default:
+				return false;
+		}
+	}
 	const BYTE PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS = 7;
 	const BYTE PLAYERBOT_SCROLL_REFINE_MIN_PLUS = 6;
 	const DWORD PLAYERBOT_SCROLL_REFINE_INTERVAL = 45000;
@@ -1583,31 +1601,6 @@ namespace
 	// base + cell*100.
 	const long PLAYERBOT_M1_GUARD_X = 63400;
 	const long PLAYERBOT_M1_GUARD_Y = 166300;
-	// How far from the middle a stall may stand. A hundred units is a metre here,
-	// so this is a market four to seventeen metres across instead of the
-	// two-and-a-half-metre huddle it was.
-	//
-	// It cannot be wider. shop_manager.cpp refuses a purchase beyond 2000 units,
-	// so a buyer reaches twenty metres and no further, and PLAYERBOT_SHOPPING_RANGE
-	// is 1800 for the same reason. Spread over forty metres the market looked
-	// roomy and stopped working: stalls at opposite ends were out of each other's
-	// reach and nobody bought anything at all. The ceiling belongs to the engine,
-	// not to us.
-	// How many counters Bokjung's ring may hold before a keeper takes its goods
-	// to Joan instead. Bokjung is where the bots are, so left alone every stall
-	// opens there and the other town's market never happens; a cap is what
-	// pushes the overflow somewhere it is worth walking to.
-	const int PLAYERBOT_SHOP_M2_MAX_STALLS = 7;
-	// ...and that cap is a floor, not the number. Seven for a thousand bots
-	// was the whole reason the market emptied: after a restart every keeper
-	// opened in the same tick (the count lags a minute), then each expired
-	// stand was refused a reopening at "Bokjung full" - 229 refusals a
-	// minute - and walked to Joan, where the planner sent it shopping
-	// instead. Ninety stalls fell to twenty-eight in an hour and a half with
-	// the reopening already in place. The ring takes this share of the
-	// living population, never under the floor: eighty for a thousand bots,
-	// twenty-eight for three hundred and fifty.
-	const int PLAYERBOT_SHOP_M2_STALLS_PER_MILLE = 80;
 	// After the Teleporter refuses a bot for want of yang, how long before
 	// it asks again. It asked on every tick before: one bot of fifty-eight
 	// with 799 yang against an 11 000 fee was refused 24 000 times a minute,
@@ -1621,13 +1614,6 @@ namespace
 	// less than one fare, 79 yang the poorest, and the Teleporter was asked
 	// 26 000 times a minute by bots that could neither pay nor earn.
 	const int PLAYERBOT_TELEPORTER_FARE_RESERVE_COUNT = 3;
-	// How long a keeper that found Bokjung's ring full waits before asking
-	// again. Only a merchant or a dropper carries its goods to Joan when the
-	// ring is full; with every bot holding six surplus books a keeper, that
-	// walk pre-empted the world travel of hundreds of bots - "a bot that
-	// wants Sohan heads for the portal to M1, turns back, circles M2 and
-	// tries again" - on the tick before their own travel could run.
-	const DWORD PLAYERBOT_SHOP_RING_FULL_RETRY = 600000;
 	// How long Bokjung's counters are worth a look after Joan had nothing. Long
 	// enough that a bot which crossed for nothing is not sent straight back,
 	// short enough that Joan stays the first stop.
@@ -2665,7 +2651,6 @@ namespace
 			dwNextMaterialScanTime(0),
 			dwMaterialHuntVnum(0),
 			dwShopSignClearUntil(0),
-			dwStallWalkUntil(0),
 			dwNextShopSignClearTime(0),
 			dwPortalWalkSince(0),
 			iPortalWalkBest(0),
@@ -2985,9 +2970,6 @@ namespace
 		DWORD dwNextMaterialScanTime;
 		DWORD dwMaterialHuntVnum;
 		DWORD dwShopSignClearUntil;
-		// While set, the bot is carrying its goods to the other town's ring
-		// because this one is full - the status says so instead of the goal.
-		DWORD dwStallWalkUntil;
 		DWORD dwNextShopSignClearTime;
 		DWORD dwPortalWalkSince;
 		int iPortalWalkBest;

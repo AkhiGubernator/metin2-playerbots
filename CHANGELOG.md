@@ -17,6 +17,95 @@ every version here.
 
 ---
 
+## 1.33.0 — 2026-09-10
+
+### Gra znowu jest po polsku po każdej aktualizacji
+
+Przełącznik języka podmienia cztery pliki w `share/`: nazwy przedmiotów, nazwy
+potworów i dwa pliki tłumaczeń. `share/` jest wpieczone w obraz gry, a każda
+aktualizacja ten obraz przebudowuje — więc angielskie oryginały wracały na
+miejsce, podczas gdy zapamiętany wybór, strona języka w panelu i status dalej
+mówiły „polski". Świat był nazwany po połowie w każdym języku: nasze polskie
+napisy obok „Skill Book" na szyldzie straganu, misje i potwory po angielsku.
+
+Kontener nakłada teraz zapamiętany język przy każdym starcie. Jedno uruchomienie
+naprawia instalację, która dziś jest po angielsku — nie trzeba niczego migrować.
+
+### Hasło do panelu przestało być tajemnicą przed właścicielem serwera
+
+`M2_PANEL_PASSWORD` bywało puste — plik `.env` przepisany z przykładu, przerwana
+instalacja, serwer odpalony samym `docker compose`. Panel wymyślał wtedy
+dwudziestoznakowe hasło, zapisywał sam jego skrót i wypisywał je raz do logu
+kontenera, którego nikt nie czyta. Od tej chwili panel miał hasło, które nie
+istniało nigdzie.
+
+Launcher wypełnia teraz tę lukę, zanim Docker ją zobaczy, i pokazuje hasło.
+A przycisk OTWÓRZ PANEL WWW ma trzecią pozycję — „Nie mogę się zalogować" —
+która pokazuje hasło z `.env` i proponuje reset, gdy panel pamięta starsze.
+Baza, świat, postacie i boty nie są tym ruszane.
+
+### Strona panelu domyślnie po polsku
+
+Panel pytał najpierw przeglądarkę i spadał na angielski, więc Polak na
+angielskim Windowsie dostawał angielski. To, co widział, było gorsze od obu
+języków osobno: ten panel jest przetłumaczony w połowie, więc angielska strona
+to polska strona z dziurami. Teraz domyślny jest polski, a wybór z przełącznika
+w nagłówku jest pamiętany przez rok.
+
+### Boty noszą ludzkie nicki
+
+Trzy tysiące sześćset nicków: 1491 napisanych przez jaksiezabica dla tego
+serwera, reszta złożona z tego samego słownictwa. Bot utworzony minutę wcześniej
+dostaje nick na tym samym starcie. `M2_PLAYERBOT_HUMAN_NAMES`: 1 nadaje
+(domyślnie), 0 nie rusza niczego, „restore" przywraca stare nazwy — stara nazwa
+jest zapamiętana, więc to odwracalne.
+
+Nazwa jest jedyną częścią tożsamości bota, od której nic nie zależy: rdzeń
+dopasowuje postać po loginie konta, a oba panele robią to samo. Nasiona wymagały
+poprawki w pięciu miejscach, żeby przemianowany bot nadal był ich botem.
+
+### Bonusy wyceniane według map i slotów
+
+Linia „silny przeciwko orkom" mnoży cały atak przeciwko każdemu potworowi tej
+rasy. Pas ekwipunku wyceniał ją wysoko, a pas mixowania na jeden punkt — bot
+kupował tarczę dla tej linii i zrzucał ją u pierwszego kowala. Teraz obie strony
+pytają o to samo i skalują udziałem rasy w mapie, zmierzonym po wszystkich
+punktach odrodzenia: Dolina Orków to 63% orków, każda druga wioska 100% ludzi,
+Lochy Małp 100% zwierząt, Sohan 46% nieumarłych. Na Pustyni i w obu Lochach
+Pająków żadna taka linia nie działa i bot już o tym wie.
+
+Druga rzecz: reguła „przedmiot skończony" pytała hełm o życie i wartość ataku, a
+kolczyki o życie i krytyczne — żadna z tych linii nie może wypaść na tych
+slotach, więc hełm, kolczyk i bransoleta były mixowane bez końca. Każdy slot ma
+teraz warunek z linii, które na nim faktycznie wypadają.
+
+### Flaga królestwa przy nicku bota
+
+W obu panelach. Przy okazji wyszło, że konta botów Shinsoo i Jinno twierdziły,
+że są z Chunjo — nasiona wpisywały tam dosłownie 2 dla całej kohorty. Naprawione
+także dla kont już założonych.
+
+### Kopia świata w launcherze
+
+Przycisk KOPIA ŚWIATA: zapisz, przywróć, zacznij od zera. Kopia to pięć zrzutów
+SQL, plik z datą i liczbą postaci oraz jeden zip w folderze `backups`.
+Przywracanie zapisuje najpierw obecny świat do własnej kopii. Reset odmawia,
+dopóki pliki, z których powstaje nowa baza, nie leżą na dysku.
+
+Przy okazji: obietnica z okna importu — „kopia trafi do folderu backups" — nie
+była prawdziwa. Sonda sprawdzająca istnienie bazy miała cudzysłów w miejscu, w
+którym PowerShell go nie przepuszcza, więc folder z kopią był pusty przy każdym
+imporcie, jaki ktokolwiek wykonał.
+
+### Panel GM (F9): osiem nowych komend
+
+Nowa wersja panelu OskarPWA dostała stronę serwera: losowe bossy i metiny (pula
+metinów budowana z plików serwera, nie z zaszytej listy), marmur przemiany,
+siedemnaście suwaków AI zapisywanych do tego samego pliku co panel webowy, trzy
+raty i restart. Klientowa połowa jedzie w paczce klienta tej wersji.
+
+---
+
 ## 1.32.5 — 2026-09-10
 
 ### Suwak straganiarzy znowu coś znaczy

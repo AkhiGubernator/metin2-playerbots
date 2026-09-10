@@ -21,6 +21,7 @@ LIST = os.path.join(ROOT, 'launcher', 'server-update-files.txt')
 NEVER_SHIPS = [
     ('CLAUDE.md', 'notatki projektu'),
     ('*.md', 'dokumentacja'),
+    ('docs/*', 'dokumentacja i audyty'),
     ('tools/*', 'narzedzia pomiarowe, nie sa czescia serwera'),
     ('tests/*', 'testy'),
     ('builds/*', 'artefakty'),

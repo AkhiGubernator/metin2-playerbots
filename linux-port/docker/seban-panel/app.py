@@ -910,8 +910,37 @@ def biologist_missions():
     return tuple(sorted(names, key=mission_order))
 
 
+# ---------------------------------------------------------------------------
+# What makes a character a bot, in one place instead of eight.
+#
+# The name used to be the test: everything this project creates is called
+# bot<something>, so `name LIKE 'bot%'` found them all. Rename them - which is
+# exactly what the Discord keeps asking for, human nicknames instead of
+# botarek7 - and every ranking, the live map, the world statistics and the
+# season page quietly stop counting them.
+#
+# The core never asks the name. CPlayerBotManager::LoadRegisteredBots accepts a
+# character only when its account login is exactly playerbot_NNN, and renaming a
+# character does not touch an account login. So that is what is asked here too,
+# with the old name test kept beside it, so a hand-made bot on an ordinary
+# account stays visible exactly as before.
+#
+# The classic panel has had this since it was bitten by the same thing; this is
+# the same predicate, spelled for the aliases these queries use.
+def bot_identity(alias="p"):
+    ref = (alias + ".") if alias else ""
+    return ("(EXISTS (SELECT 1 FROM account.account ba"
+            " WHERE ba.id = " + ref + "account_id"
+            " AND LEFT(ba.login, 10) = 'playerbot_')"
+            " OR " + ref + "name LIKE 'bot%%')")
+
+
+BOT_IS = bot_identity("p")
+BOT_IS_BARE = bot_identity("")
+
+
 def bot_ranking(kind, sort_by="avg"):
-    base = "p.name LIKE 'bot%%'"
+    base = BOT_IS
     if kind == "gold":
         return rows(f"SELECT p.id,p.name,p.level,p.gold,CONCAT(FORMAT(p.gold,0),' Yang') AS detail FROM player.player p WHERE {base} ORDER BY p.gold DESC,p.level DESC LIMIT 100")
     if kind == "weapon":
@@ -1095,13 +1124,13 @@ def dashboard():
     map_rows = live_map_counts()
     for row in map_rows:
         row["name"] = map_name(row["map_index"])
-    top = rows("SELECT id, name, level, exp, job, map_index, playtime FROM player.player WHERE name LIKE 'bot%%' ORDER BY level DESC, exp DESC LIMIT 10")
+    top = rows("SELECT id, name, level, exp, job, map_index, playtime FROM player.player WHERE " + BOT_IS_BARE + " ORDER BY level DESC, exp DESC LIMIT 10")
     global_top_id = top[0]["id"] if top else None
     live = live_statuses()
     live_roster = live_bots()
     try:
         bot_guilds = one("""SELECT COUNT(*) AS count FROM player.guild g
-                           JOIN player.player p ON p.id=g.master WHERE p.name LIKE 'bot%%'""").get("count", 0)
+                           JOIN player.player p ON p.id=g.master WHERE """ + BOT_IS).get("count", 0)
     except pymysql.MySQLError:
         bot_guilds = 0
     restart_status = read_rate_status()
@@ -1136,13 +1165,13 @@ def dashboard():
     weapon30 = bot_ranking("weapon30")[:10]
     quick_rankings.append({"title": "Broń 30 Lv", "subtitle": "średnie / umiejętności", "items": [{"id": row["id"], "name": row["name"], "value": f"Śr. {int(row.get('avg_damage') or 0)}% · Um. {int(row.get('skill_damage') or 0)}%"} for row in weapon30]})
     metins = rows("""SELECT p.id,p.name,COUNT(*) AS score FROM log.log l JOIN player.player p ON p.id=l.who
-                     WHERE p.name LIKE 'bot%%' AND l.how='STONE_KILL' AND l.time >= NOW() - INTERVAL 7 DAY
+                     WHERE """ + BOT_IS + """ AND l.how='STONE_KILL' AND l.time >= NOW() - INTERVAL 7 DAY
                      GROUP BY p.id,p.name ORDER BY score DESC,p.name LIMIT 10""")
     quick_rankings.append({"title": "Metiny", "subtitle": "rozbite · ostatnie 7 dni", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in metins]})
     bosses = bot_ranking("bosses")[:10]
     quick_rankings.append({"title": "Bossy", "subtitle": "zabite · ostatnie 7 dni", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in bosses]})
     fish = rows("""SELECT p.id,p.name,COUNT(*) AS score FROM log.log l JOIN player.player p ON p.id=l.who
-                   WHERE p.name LIKE 'bot%%' AND l.time >= NOW() - INTERVAL 7 DAY
+                   WHERE """ + BOT_IS + """ AND l.time >= NOW() - INTERVAL 7 DAY
                      AND (l.what LIKE '%%ryb%%' OR l.what LIKE '%%fish%%')
                    GROUP BY p.id,p.name ORDER BY score DESC,p.name LIMIT 10""")
     quick_rankings.append({"title": "Ryby", "subtitle": "wyłowione · ostatnie 7 dni", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in fish]})
@@ -1484,7 +1513,7 @@ def changelog():
 @app.route("/api/live-bots")
 @login_required
 def api_live_bots():
-    global_top = one("SELECT id FROM player.player WHERE name LIKE 'bot%%' ORDER BY level DESC,exp DESC LIMIT 1")
+    global_top = one("SELECT id FROM player.player WHERE " + BOT_IS_BARE + " ORDER BY level DESC,exp DESC LIMIT 1")
     return {"ok": True, "updated_at": int(datetime.now().timestamp() * 1000), "maps": MAP_NAMES, "bounds": MAP_BOUNDS, "global_top_id": global_top.get("id"), "bots": live_bots()}
 
 
@@ -1554,7 +1583,7 @@ def season():
         SUM(l.how='BOSS_KILL') AS bosses,
         SUM(l.how='REFINE SUCCESS' AND (l.hint LIKE '%%+7' OR l.hint LIKE '%%+8' OR l.hint LIKE '%%+9')) AS refine7
         FROM log.log l JOIN player.player p ON p.id=l.who
-        WHERE l.time>=NOW()-INTERVAL 7 DAY AND p.name LIKE 'bot%%'
+        WHERE l.time>=NOW()-INTERVAL 7 DAY AND """ + BOT_IS + """
           AND l.how IN ('STONE_KILL','BOSS_KILL','REFINE SUCCESS')
         GROUP BY p.id ORDER BY (SUM(l.how='STONE_KILL')*150+SUM(l.how='BOSS_KILL')*500+SUM(l.how='REFINE SUCCESS' AND (l.hint LIKE '%%+7' OR l.hint LIKE '%%+8' OR l.hint LIKE '%%+9'))*200) DESC,p.level DESC LIMIT 30""")
     for row in weekly:

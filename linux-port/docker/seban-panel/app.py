@@ -1245,7 +1245,7 @@ def guild(guild_id):
 @app.route("/player/<int:pid>")
 @login_required
 def player(pid):
-    character = one("SELECT p.id,p.account_id,p.name,p.level,p.job,p.exp,p.gold,p.hp,p.mp,p.x,p.y,p.horse_level,p.alignment,p.st,p.ht,p.dx,p.iq,p.stat_point,p.skill_point,p.skill_group,p.skill_level,p.map_index,p.playtime,COALESCE(NULLIF(a.empire,0),pi.empire,0) AS empire FROM player.player p LEFT JOIN account.account a ON a.id=p.account_id LEFT JOIN player.player_index pi ON pi.id=p.account_id WHERE p.id=%s", (pid,))
+    character = one("SELECT p.id,p.account_id,p.name,p.level,p.job,p.exp,p.gold,p.hp,p.mp,p.x,p.y,p.horse_level,p.alignment,p.st,p.ht,p.dx,p.iq,p.stat_point,p.skill_point,p.skill_group,p.skill_level,p.map_index,p.playtime,COALESCE(NULLIF(pi.empire,0),a.empire,0) AS empire FROM player.player p LEFT JOIN account.account a ON a.id=p.account_id LEFT JOIN player.player_index pi ON pi.id=p.account_id WHERE p.id=%s", (pid,))
     if not character:
         abort(404)
     live = live_statuses().get(pid)
@@ -1558,6 +1558,19 @@ def rankings():
     ranking = bot_ranking(kind, weapon30_sort)
     ids = [row["id"] for row in ranking]
     if ids:
+        # Which kingdom each of them belongs to. player_index.empire, because
+        # that is the column the core reads when it decides where a bot lives;
+        # the account's own copy was left at Chunjo for the whole cohort.
+        marks = ",".join(["%s"] * len(ids))
+        empire_rows = rows(
+            "SELECT p.id, COALESCE(NULLIF(pi.empire,0),a.empire,0) AS empire"
+            " FROM player.player p"
+            " LEFT JOIN player.player_index pi ON pi.id=p.account_id"
+            " LEFT JOIN account.account a ON a.id=p.account_id"
+            " WHERE p.id IN (" + marks + ")", ids)
+        empires = {row["id"]: row["empire"] for row in empire_rows}
+        for row in ranking:
+            row["empire"] = empires.get(row["id"], 0)
         progress_rows = rows("SELECT id,level,exp,job FROM player.player WHERE id IN (" + ",".join(["%s"] * len(ids)) + ")", ids)
         progress = {row["id"]: experience_progress(row["level"], row["exp"]) for row in progress_rows}
         jobs = {row["id"]: row["job"] for row in progress_rows}

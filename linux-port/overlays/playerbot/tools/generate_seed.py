@@ -494,11 +494,16 @@ BEGIN NOT ATOMIC
       LEFT JOIN common.playerbot_seed_state AS l ON l.pid = s.pid
      WHERE l.pid IS NULL;
 
+    -- s.empire, not a literal 2. player_index.empire is what the core reads
+    -- when it decides which kingdom a bot belongs to, and it has always been
+    -- right; the account's own column was left at Chunjo for everybody, so
+    -- every Shinsoo and Jinno bot claimed Chunjo to anything that asked the
+    -- account instead - both panels did, and showed the wrong flag.
     INSERT INTO account.account
         (login, password, social_id, email, create_time, is_testor, status,
          empire, name_checked, availDt, last_play)
     SELECT s.login, '!', s.social_id, '', UTC_TIMESTAMP(), 0, 'BLOCK',
-           2, 1, UTC_TIMESTAMP(), UTC_TIMESTAMP()
+           s.empire, 1, UTC_TIMESTAMP(), UTC_TIMESTAMP()
       FROM playerbot_seed_missing AS s
       JOIN common.playerbot_seed_state AS l ON l.pid = s.pid AND l.state = 'pending'
       LEFT JOIN account.account AS a ON a.login = s.login
@@ -547,6 +552,19 @@ BEGIN NOT ATOMIC
        AND BINARY a.social_id = BINARY s.social_id
       LEFT JOIN player.player_index AS pi ON pi.id = a.id
      WHERE pi.id IS NULL;
+
+    -- And the same repair for the accounts already created with the literal.
+    -- Bounded to this seed's own logins and to rows that actually disagree, so
+    -- it is idempotent and cannot reach a character a person plays. Nothing in
+    -- the engine reads this column for a bot - LoadRegisteredBots asks
+    -- player_index - so it is corrected here rather than left as a trap for
+    -- the next thing that asks the account which kingdom it belongs to.
+    UPDATE account.account AS a
+      JOIN player.player_index AS pi ON pi.id = a.id
+      JOIN playerbot_seed_spec AS s ON s.pid = pi.pid1
+       AND BINARY s.login = BINARY a.login
+       SET a.empire = s.empire
+     WHERE a.empire <> s.empire;
 
     DROP TEMPORARY TABLE IF EXISTS playerbot_seed_pending;
     CREATE TEMPORARY TABLE playerbot_seed_pending (

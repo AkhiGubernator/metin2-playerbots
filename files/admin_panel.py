@@ -5248,7 +5248,7 @@ function renderRankings() {
     }
 
     rankHtml += '<div class="rank-row" onclick="openBotModal(' + b.id + ')">' +
-                '<div><b>#' + (idx+1) + '</b> ' + ptBadge + '<b>' + b.name + '</b> <span class="muted">(' + b.job + ')</span></div>' +
+                '<div><b>#' + (idx+1) + '</b> ' + ptBadge + empireFlag(b.empire) + '<b>' + b.name + '</b> <span class="muted">(' + b.job + ')</span></div>' +
                 '<div style="text-align:right">' + detailStr + ' <span style="font-size:10px;color:#888">🔍</span></div>' +
                 '</div>';
   });
@@ -5854,6 +5854,25 @@ function renderInventoryGrid(invItems) {
   });
 }
 
+// The three kingdom flags, as the client draws them. Shinsoo is red with the
+// dragon, Chunjo gold with the phoenix, Jinno blue with the turtle; the files
+// are the same ones the advanced panel already shipped, so there is one set of
+// them in the project and not two.
+var EMPIRE_FLAGS = {
+  1: {name: 'Shinsoo', file: 'shinsoo.png'},
+  2: {name: 'Chunjo', file: 'chunjo.png'},
+  3: {name: 'Jinno', file: 'jinno.png'}
+};
+
+function empireFlag(empire, height) {
+  var kingdom = EMPIRE_FLAGS[empire];
+  if (!kingdom) return '';
+  return '<img src="/static/empires/' + kingdom.file + '" alt="' + kingdom.name +
+         '" title="' + kingdom.name + '" style="height:' + (height || 11) +
+         'px;width:auto;vertical-align:-1px;margin-right:5px;border:1px solid #000;' +
+         'border-radius:2px;box-shadow:0 0 3px rgba(0,0,0,.6)">';
+}
+
 function openBotModal(pid) {
   var modal = document.getElementById('botModal');
   var content = document.getElementById('botModalContent');
@@ -5885,7 +5904,7 @@ function openBotModal(pid) {
       // LEFT COLUMN: Character Details & Stats & Logs
       html += '<div>';
       html += '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #332814;padding-bottom:10px;margin-bottom:12px">' +
-              '<div><h3 style="margin:0;color:var(--gold2);font-size:18px">' + escapeHtml(p.name) + ' <span style="font-size:13px;color:#aaa">Lv ' + p.level + ' ' + escapeHtml(p.job_name) + '</span></h3></div>' +
+              '<div><h3 style="margin:0;color:var(--gold2);font-size:18px">' + empireFlag(p.empire, 15) + escapeHtml(p.name) + ' <span style="font-size:13px;color:#aaa">Lv ' + p.level + ' ' + escapeHtml(p.job_name) + '</span></h3></div>' +
               '<div>' + typeBadge + '</div>' +
               '</div>';
 
@@ -6293,7 +6312,25 @@ def _bot_identity(alias, pct):
             " OR " + ref + "name LIKE 'bot" + pct + "')")
 
 
+# Which kingdom a character belongs to, for a SELECT list.
+#
+# player_index.empire first, because that is the column the core reads:
+# LoadRegisteredBots takes a bot's kingdom from it and CPlayerBotManager::Spawn
+# refuses an argument that disagrees. The account's own column is the fallback
+# for a hand-made character that has no index row, and it used to be asked
+# first - which showed every Shinsoo and Jinno bot as Chunjo, because the seed
+# wrote a literal 2 into it for the whole cohort.
+def _empire_of(alias):
+    ref = (alias + ".") if alias else ""
+    return ("COALESCE(NULLIF((SELECT bpi.empire FROM player.player_index bpi"
+            " WHERE bpi.id = " + ref + "account_id), 0),"
+            " (SELECT bea.empire FROM account.account bea"
+            " WHERE bea.id = " + ref + "account_id), 0)")
+
+
 _BOT_MARKERS = {
+    "<<EMPIRE>>":    _empire_of(""),
+    "<<EMPIRE_P>>":  _empire_of("p"),
     "<<BOT_2>>":     _bot_identity("", "%%"),
     "<<BOT_1>>":     _bot_identity("", "%"),
     "<<BOT_P_2>>":   _bot_identity("p", "%%"),
@@ -9796,7 +9833,8 @@ def api_bot_inventory(pid):
                 SELECT id, name, level, job, exp, gold, hp, mp, x, y,
                        horse_level, st, ht, dx, iq, stat_point, skill_point,
                        skill_group, skill_level,
-                       <<BOT_2>> AS is_bot
+                       <<BOT_2>> AS is_bot,
+                       <<EMPIRE>> AS empire
                 FROM player.player
                 WHERE id = %s
             """), (pid,))
@@ -10178,6 +10216,18 @@ def api_bot_rankings():
                 """), (rank_limit,))
 
             rows = cur.fetchall()
+            # One lookup for the whole page instead of a column in each of the
+            # dozen ranking queries, which is also the only way it stays right
+            # when a new ranking is added.
+            empires = {}
+            if rows:
+                rank_ids = [r["id"] for r in rows]
+                cur.execute(
+                    bot_sql("SELECT id, <<EMPIRE>> AS empire FROM player.player"
+                            " WHERE id IN (" + ",".join(["%s"] * len(rank_ids)) + ")"),
+                    rank_ids)
+                empires = {row["id"]: int(row["empire"] or 0)
+                           for row in cur.fetchall()}
             rankings = []
             for r in rows:
                 wv = r.get("weapon_vnum")
@@ -10237,6 +10287,7 @@ def api_bot_rankings():
                     hunting_remain, hunting_complete, language)
                 rankings.append({
                     "id": r["id"],
+                    "empire": empires.get(r["id"], 0),
                     "name": r["name"],
                     "level": r["level"],
                     "job": localized_job_name(r.get("job", 0), language),

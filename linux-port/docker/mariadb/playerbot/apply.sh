@@ -106,6 +106,40 @@ while :; do
     sleep 2
 done
 
+# Repair anything MyISAM left marked as crashed.
+#
+# Seventy-three of this game's seventy-five tables are MyISAM, and one unclean
+# stop marks a table crashed: every reader then fails until somebody repairs
+# it. `myisam_recover_options = BACKUP,FORCE` in 99-metin2.cnf handles the
+# common case, but only for a table the server itself opens AFTER that setting
+# took effect - so a database that was already running when the option arrived
+# keeps the old behaviour until it is restarted, and a data file damaged beyond
+# what QUICK will touch stays broken either way. What the operator sees then is
+# not a database error but a blank "Internal Server Error" from the advanced
+# panel, which reads everything from these tables while the classic panel,
+# which reads files, keeps working (archonek2137, 10 September: log.log marked
+# as crashed).
+#
+# --fast only looks at tables that were not closed properly, so on a healthy
+# world this is one open per table and repairs nothing. Failures are reported
+# and never fatal: a world that starts with one damaged log table is far better
+# than a world that refuses to start at all.
+if [ -n "${M2_DB_ROOT_PASSWORD:-}" ]; then
+    repair_log=/tmp/playerbot-repair.log
+    if MYSQL_PWD="$M2_DB_ROOT_PASSWORD" mariadb-check \
+            --protocol=tcp --host="$M2_DB_HOST" --port="$M2_DB_PORT" --user=root \
+            --auto-repair --fast --silent \
+            --databases account common player log >"$repair_log" 2>&1; then
+        if [ -s "$repair_log" ]; then
+            echo "[playerbot-migrate] repaired tables left crashed by an unclean stop:"
+            head -20 "$repair_log"
+        fi
+    else
+        echo "[playerbot-migrate] WARNING: table check failed; continuing" >&2
+        head -5 "$repair_log" >&2
+    fi
+fi
+
 # The ItemShop's own database, and the item_award table its purchases are
 # delivered through. Created as root because the metin2 user cannot create a
 # database, and only when the root password is in the environment (it is,

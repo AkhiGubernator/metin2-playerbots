@@ -1152,6 +1152,66 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   the browser is not consulted; the header's switch stores the choice in its
   own year-long cookie, not in the session, because marking the session
   permanent would have extended the admin login to a month as a side effect.
+- **A quantity that reaches the engine as a BYTE is a quantity nobody counted.**
+  `pc.give_item2` reads its count as an `int` and hands it to
+  `CHARACTER::AutoGiveItem(DWORD, BYTE bCount, ...)`: 256 becomes 0, 300
+  becomes 44, 65535 becomes 255, and nothing reports it, because a non-zero
+  `item_id` looks like success and the panel writes "Nadano". The panels
+  offered 65535. 200 is the real ceiling for one call - it is a full stack, and
+  what `AutoGiveItem` tops up (`MIN(200 - GetCount(), bCount)`) - so
+  `web_admin.quest` refuses anything above it with `qty_too_big` and compares
+  the bag before and after, because a non-zero pointer does not prove delivery
+  either: with no free cell the same function drops the item on the ground and
+  still returns it. **And a new status word has to be added to the quest's own
+  whitelist** near the end of the handler, or it is rewritten to `unknown_cmd`
+  and the panel reports "quest wymaga aktualizacji" - which is what the first
+  test of this showed.
+- **`GetEmptyInventory(height)` returns a position, not a count.** Two calls
+  beside each other can point at the same cell and reserve nothing, which is
+  what "przedmioty ze skrzyn wypadaja na ziemie" was:
+  `GiveItemFromSpecialItemGroup` hands out its rewards one by one through
+  `AutoGiveItem`, and that drops what does not fit. Count the free cells
+  (`CountPlayerBotFreeInventoryCells`, defined in `playerbot_consumables.h`
+  because that file is included before `playerbot_economy.h`) and require
+  `PLAYERBOT_CHEST_FREE_CELLS`. This is a mitigation: the real fix is to roll
+  the reward set once, check room for the whole set, and only then consume the
+  chest - an engine change that needs its own "into the bag or not at all"
+  mode, because it must not alter how rewards reach players.
+- **The planner and the pass that acts must ask one function, not two lists.**
+  `HasPlayerBotRefineOpportunity` accepted any bag piece the equipment selector
+  liked; the refining pass then also rejected anything `IsPlayerBotJunkItem`
+  had marked for the merchant. A started blacksmith visit is a commitment the
+  planner will not override, so the bot walked to town for nothing - "mam
+  wszystko +9 zalozone, a bot dalej lezie do kowala". Both ask
+  `IsPlayerBotRefineBagCandidate` now. Worn pieces are outside it: the junk
+  rule does not apply to what a bot is wearing.
+- **`log.log` is declared big5 and the game writes CP1250 into it.** Measured
+  on this world: `TABLE_COLLATION` is `big5_chinese_ci` for `type`, `how`,
+  `hint` and `ip`, and the bytes prove the conversion happened on the way in -
+  "Bojowy Luk Jezdzcy" is stored as `42 6F ... A2 47 75 6B ... 3F ... 3F`,
+  where CP1250's single `0xA3` became the two-byte big5 `A2 47` and every
+  character big5 cannot represent became `0x3F`. 128 573 of the 279 242
+  non-ASCII hints carry that question mark, and it cannot be undone. So
+  changing the declaration fixes what is written next and repairs nothing that
+  exists; transcoding the column would make it worse. The table is 22 million
+  rows and 1.75 GB of MyISAM, so any ALTER is minutes of downtime - it is a
+  planned, versioned migration with a backup, not a drive-by. Only the gear
+  history's item names are affected; nothing in the game reads this column.
+- **The panels' 71 and 72 are the most-repeated mistake in this project.**
+  `APPLY_SKILL_DAMAGE_BONUS` is 71 and `APPLY_NORMAL_HIT_DAMAGE_BONUS` is 72
+  (`common/length.h`). Both panels have had them the wrong way round at least
+  twice, in three different places at once: a tooltip table that was right
+  beside a ranking loop that was wrong, a label dictionary, and the two SQL
+  aliases - and because `ORDER BY` used those aliases, the first hundred rows
+  were chosen by the wrong column, so fixing the Python sort afterwards could
+  not help. Named constants now, on both sides.
+- **A ranking's candidate set decides the ranking.** The skills tab took the
+  400 highest-level bots and looked for the best skill among them, so a bot of
+  thirty with a Master skill stood behind four hundred fifties who had none and
+  never appeared; the +9 tab filtered `vnum < 12000`, which was meant to
+  exclude materials and excluded every shield (13xxx) and all jewellery with
+  them - 9 items found against 17. Ask `item_proto` what is equipment
+  (`type IN (1, 2)`) and score the whole set before paginating.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

@@ -15,6 +15,18 @@ RUN docker-php-ext-install mysqli
 
 COPY app/ /var/www/html/
 
+# COPY keeps the source's modes, and a ZIP unpacked under a strict umask on
+# Linux gives 770 on directories and 660 on files - owned by root, unreadable
+# by www-data. Apache then answers 403 and syserr carries AH00529 for the
+# .htaccess it cannot read; the shop looked broken and a hand-made chmod inside
+# the running container fixed it until the container was recreated. Normalised
+# here instead, in the image, where it survives every recreate.
+#
+# 755 on directories and 644 on files is what a document root needs and no
+# more: nothing here is executed as a program and the application writes
+# nothing back into its own tree - purchases go into the database.
+RUN find /var/www/html -type d -exec chmod 0755 {} +  && find /var/www/html -type f -exec chmod 0644 {} +  && chown -R root:root /var/www/html
+
 # ACMD(do_in_game_mall) hardcodes "http://host/ishop?pid=...&sas=..." (no
 # trailing slash). mod_dir's default DirectorySlash would 302 that to
 # "/ishop/?pid=...&sas=..." before it ever reaches index.php - fine in a

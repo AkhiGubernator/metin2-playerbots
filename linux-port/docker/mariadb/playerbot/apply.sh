@@ -48,6 +48,10 @@ db() {
 # dump, then require the item prototypes used by the starter rows.
 echo "[playerbot-migrate] waiting for the complete r40250 schema"
 attempt=0
+# Consecutive probes refused for authentication; see the check inside the
+# loop. Reset by any probe that fails for a different reason, so a login
+# that starts working is not held against it.
+auth_failures=0
 while :; do
     attempt=$((attempt + 1))
     # Keep the error instead of discarding it. A refused login looks exactly
@@ -66,10 +70,34 @@ while :; do
     if [ -s "$probe_err" ] && [ "$attempt" -eq 3 ]; then
         echo "[playerbot-migrate] the database is not answering yet:" >&2
         head -3 "$probe_err" >&2
-        if grep -qi "access denied" "$probe_err"; then
-            echo "[playerbot-migrate] this is a login failure, not a slow import." >&2
-            echo "[playerbot-migrate] use the launcher button NAPRAW DOSTEP DO BAZY." >&2
-        fi
+    fi
+
+    # A refused login is not a slow import, and waiting thirty minutes for it
+    # to fix itself tells the operator the wrong thing twice: once by the wait
+    # and once by the message at the end, which blames a large world still
+    # recovering and suggests starting again. It never recovers - the password
+    # in .env and the one the volume was initialised with simply differ.
+    #
+    # MariaDB error 1045 is "access denied for user" and 1044 is "access denied
+    # to database"; both are permanent until somebody changes the credentials.
+    # Confirmed over a few attempts rather than on the first, because a server
+    # in the middle of starting can refuse a connection once for other reasons,
+    # and then given up on with a message about the thing that is actually
+    # wrong. Everything else - a refused connection, a missing schema - keeps
+    # the long budget, which is what it was for.
+    if [ -s "$probe_err" ] && grep -qiE "1045|1044|access denied" "$probe_err"; then
+        auth_failures=$((auth_failures + 1))
+    else
+        auth_failures=0
+    fi
+    if [ "$auth_failures" -ge 5 ]; then
+        echo "[playerbot-migrate] FATAL: the database refuses this login." >&2
+        head -1 "$probe_err" >&2
+        echo "[playerbot-migrate] This is a credentials problem, not a slow import: the password in" >&2
+        echo "[playerbot-migrate] linux-port/docker/.env and the one this database was created with" >&2
+        echo "[playerbot-migrate] are not the same. Waiting will not change it." >&2
+        echo "[playerbot-migrate] In the launcher: NAPRAW DOSTEP DO BAZY." >&2
+        exit 1
     fi
     if [ "$ready" = "8" ]; then
         protos=$(db -e "SELECT COUNT(*) FROM player.item_proto;" 2>/dev/null || true)

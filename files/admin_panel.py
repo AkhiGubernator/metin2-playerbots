@@ -197,17 +197,23 @@ _PLAYERBOT_STATUS_LOCK = threading.Lock()
 _PLAYERBOT_STATUS_CACHE_KEY = None
 _PLAYERBOT_STATUS_CACHE = {}
 
+# EPlayerBotPersonality in playerbot_types.h is the source of truth and its
+# order is BOT_PERSONALITY_MERCHANT = 5, BOT_PERSONALITY_WANDERER = 6. These
+# two were the other way round here, in both languages, so a keeper minding its
+# stall was labelled "Wedrowiec" and a wanderer "Handlarz" - reported against
+# botcobra2 (PID 129, personality 5) on 10 September. The stored personality of
+# every bot is unchanged; only the words for it were wrong.
 BOT_PERSONALITY_LABELS = {
     "pl": {
         0: "Wytrwały poszukiwacz", 1: "Pogromca Metinów", 2: "Towarzysz drużyny",
-        3: "Mistrz ekwipunku", 4: "Rozważny zbieracz", 5: "Wędrowiec",
-        6: "Handlarz", 7: "Dropek Metinów", 8: "Dropek z M3",
+        3: "Mistrz ekwipunku", 4: "Rozważny zbieracz", 5: "Handlarz",
+        6: "Wędrowiec", 7: "Dropek Metinów", 8: "Dropek z M3",
         9: "Dropek z M2", 10: "Dropek medali",
     },
     "en": {
         0: "Steady adventurer", 1: "Metin breaker", 2: "Team companion",
-        3: "Gear specialist", 4: "Careful collector", 5: "Wanderer",
-        6: "Merchant", 7: "Metin dropper", 8: "M3 weapon dropper",
+        3: "Gear specialist", 4: "Careful collector", 5: "Merchant",
+        6: "Wanderer", 7: "Metin dropper", 8: "M3 weapon dropper",
         9: "M2 Bestial dropper", 10: "Medal dropper",
     },
 }
@@ -2834,6 +2840,15 @@ T.update({
 })
 
 CATS = ["all","weapon","armor","usable","ds","metin","special","other"]
+
+# The two damage lines, by their engine numbers. common/length.h:
+#   APPLY_SKILL_DAMAGE_BONUS      = 71   "obrazenia umiejetnosci"
+#   APPLY_NORMAL_HIT_DAMAGE_BONUS = 72   "srednie obrazenia"
+# Written down once because reading them the wrong way round is the single
+# mistake this panel has made most often, and a bare 71 in a loop says nothing.
+APPLY_SKILL_DAMAGE_BONUS = 71
+APPLY_NORMAL_HIT_DAMAGE_BONUS = 72
+
 
 def lang():
     """Polish, unless somebody chose otherwise in the header.
@@ -10202,23 +10217,37 @@ def api_bot_rankings():
                     ORDER BY level DESC
                 """).format(placeholders), tuple(keeper_ids))
             elif rtype == "skills":
+                # Every bot that has a profession, not the four hundred highest
+                # levels. A skill ranking sorted by level first answers a
+                # different question: a bot of thirty with a Master skill sat
+                # below four hundred bots of fifty who had none, and never
+                # appeared at all. The scoring below is done in Python because
+                # skill_level is a packed blob, so the whole set has to come
+                # back - two and a half thousand rows on a full world, which is
+                # what this page already reads for the live map.
                 cur.execute(bot_sql("""
                     SELECT id, name, level, job, gold, skill_group, skill_level
                     FROM player.player
                     WHERE <<BOT_2>> AND skill_group > 0
-                    ORDER BY level DESC
-                    LIMIT 400
                 """))
             elif rtype == "plus9":
-                # Equipment stores its refine in the vnum: base + 0..9. Anything
-                # below 12000 is wearable; the tables above that are materials and
-                # consumables, whose vnums ending in 9 mean nothing of the sort.
+                # Equipment stores its refine in the vnum: base + 0..9. Which
+                # vnums are equipment is a question for item_proto, not for a
+                # number: "below 12000" was meant to exclude materials and
+                # consumables and excluded every shield (13xxx) and every piece
+                # of jewellery with them. Measured on our own world: 9 items
+                # found by the old rule, 17 by this one, and the eight it had
+                # been hiding were all armour.
+                #
+                # type 1 is ITEM_WEAPON and 2 is ITEM_ARMOR (common/item_length.h),
+                # which is exactly the set whose refine chain runs base+0..9.
                 cur.execute(bot_sql("""
                     SELECT p.id, p.name, p.level, p.job, p.gold,
                            i.vnum as weapon_vnum, i.window as item_window
                     FROM player.item i
                     JOIN player.player p ON p.id = i.owner_id
-                    WHERE <<BOT_P_2>> AND i.vnum < 12000
+                    JOIN player.item_proto ip ON ip.vnum = i.vnum
+                    WHERE <<BOT_P_2>> AND ip.type IN (1, 2)
                       AND MOD(i.vnum, 10) = 9
                     ORDER BY i.vnum DESC, p.level DESC
                     LIMIT %s
@@ -10252,13 +10281,20 @@ def api_bot_rankings():
                 w_name = localized_item_name(wv, language) if wv else ""
                 a_name = localized_item_name(av, language) if av else ""
 
-                sr = 0
-                um = 0
+                # common/length.h: APPLY_SKILL_DAMAGE_BONUS is 71 and
+                # APPLY_NORMAL_HIT_DAMAGE_BONUS is 72 - the tooltip table above
+                # has said so for months while this loop read them the other way
+                # round, so the "Bron 30 Lv" ranking sorted by skill damage
+                # under the heading "srednie" and showed each weapon's two
+                # numbers exchanged. The item's own attributes were always
+                # right; only this reading of them was not.
+                sr = 0   # srednie obrazenia  = APPLY_NORMAL_HIT_DAMAGE_BONUS
+                um = 0   # obrazenia umiejetnosci = APPLY_SKILL_DAMAGE_BONUS
                 for a_idx in range(7):
                     atype = r.get(f"attrtype{a_idx}")
                     aval = r.get(f"attrvalue{a_idx}")
-                    if atype == 71: sr = int(aval or 0)
-                    if atype == 72: um = int(aval or 0)
+                    if atype == APPLY_NORMAL_HIT_DAMAGE_BONUS: sr = int(aval or 0)
+                    if atype == APPLY_SKILL_DAMAGE_BONUS: um = int(aval or 0)
 
                 # Only the skills ranking pays to decode the packed skill
                 # table; every other ranking would be doing it for nothing. What

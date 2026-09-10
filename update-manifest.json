@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T20:10:00Z",
-  "statusMessage": "Aktualizacja 1.33.0. Gra znowu jest po polsku po kazdej aktualizacji: przelacznik jezyka podmienia pliki w obrazie, a kazda przebudowa je cofala, wiec swiat byl nazwany po polowie w kazdym jezyku. Haslo do panelu przestalo byc tajemnica przed wlascicielem serwera, strona jest domyslnie po polsku, boty nosz\u0105 ludzkie nicki, a panel GM na F9 dostal osiem nowych komend.",
+  "publishedAt": "2026-09-10T21:12:14Z",
+  "statusMessage": "Aktualizacja 1.33.1. Poprawki z audytu zgłoszeń z Discorda: masowe nadawanie przedmiotów gubiło sztuki i mówiło, że się udało (limit to teraz 200 na żądanie), nagrody ze skrzyń nie lądują już na ziemi, bot nie chodzi do kowala po nic, świeża instalacja bazy nie zbuduje się w połowie, sklep z przedmiotami nie odpowiada 403, a rankingi w panelach pokazują to, co obiecują. Klient bez zmian.",
   "server": {
-    "version": "1.33.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.0/metin2-server-update-1.33.0.zip",
-    "sha256": "4D993204A6E541D6FCC4D90ED9B8648CA52C54283F6560743A0B61025BAE555B"
+    "version": "1.33.1",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.1/metin2-server-update-1.33.1.zip",
+    "sha256": "2F5A3903935D6B932974C4FF8A1F5A508AB0139B0514390401516F68F07DDCEE"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

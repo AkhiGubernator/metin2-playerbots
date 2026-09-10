@@ -1116,6 +1116,42 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   dialog promises was an empty folder at every import anyone ever ran. Invoke
   `mariadb` directly with the query as its own argument. Same trap as the
   support bundle's empty `playerbot-syslog.txt`.
+- **The game's language lives in the image, so every update undid it.**
+  `m2-lang` switches four files under `share/` - `conf/item_names.txt`,
+  `conf/mob_names.txt`, `locale/*/translate.lua`, `locale/*/locale_string.txt` -
+  and `share/` is baked into the game image, not on a volume. Every update
+  rebuilds that image, so the English originals came back while the remembered
+  choice, the panel's language page and `lang.status` all went on saying Polish.
+  What a player saw was a world named half in each: our own Polish strings
+  beside "Skill Book" on a bot's stall sign, quests and monsters in English.
+  `cmd_prepare` remembered the choice and never re-applied it; it calls
+  `cmd_apply` now, on every start, which is idempotent and keeps the shipped
+  English file beside the active one as `.m2orig`. Reproduce it by copying
+  `item_names.txt.m2orig` over `item_names.txt` - vnum 50300 goes from
+  "Ksiega Umiejetnosci" to "Skill Book" and back. The db core reads these at
+  boot and pushes them into `player.item_proto.locale_name`, which is what
+  `proto->szLocaleName` - every name a bot says - comes from, so one restart
+  carries the fix all the way to the stall signs.
+- **The panel's passphrase can be a secret from its own operator.**
+  `.env.example` ships `M2_PANEL_PASSWORD` empty; the installer fills it in and
+  every other route to a `.env` does not. The panel's entrypoint then invents
+  twenty characters, stores only the PBKDF2 hash in `m2panel.conf` and prints
+  the plaintext once to a container log nobody reads - so the panel has a
+  password that exists nowhere and `docker compose config` shows
+  `M2_PANEL_PASSWORD: ""` while the operator swears it is set. The launcher
+  fills the blank before Compose sees it (`Assert-PanelPassphrase`), and the
+  panel button offers both the value from `.env` and a reset that deletes
+  `m2panel.conf` so the entrypoint can rebuild it. Nothing in the panel has
+  ever had a hard-coded login or password; there is no login at all.
+- **Half a translation reads worse than either language.** The classic panel
+  puts 446 strings through `t()` and writes about 530 more in Polish where they
+  stand, so an English page is a Polish page with holes - "mam polowe panelu po
+  angielsku polowe po polsku". It used to ask `Accept-Language` first and fall
+  back on English, and a Polish player on an English Windows got English
+  because Chrome sends `en-US,en;q=0.9,pl;q=0.8`. Polish is the default now and
+  the browser is not consulted; the header's switch stores the choice in its
+  own year-long cookie, not in the session, because marking the session
+  permanent would have extended the admin login to a month as a side effect.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

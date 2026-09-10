@@ -442,9 +442,14 @@ function Set-PlayerbotCount {
     # holds simply gets the registry. The core says both numbers at startup:
     #   PLAYERBOT_AUTH: loaded <n> registered bot identities
     #   PLAYERBOT: autospawn requested=<x> registered_started=<n>
+    #
+    # The ceiling is the seed's canonical cohort: 1500 for Chunjo alone and 2500
+    # once the other two kingdoms are switched on. This clamp is the one that
+    # decides - the slider in the GUI only proposes a number, and raising that
+    # alone would have written 1500 into .env while showing the player 2500.
     param([Parameter(Mandatory = $true)][int]$Count)
     if ($Count -lt 0) { $Count = 0 }
-    if ($Count -gt 1500) { $Count = 1500 }
+    if ($Count -gt 2500) { $Count = 2500 }
     $envPath = Get-PlayerbotEnvPath
     if (-not (Test-Path -LiteralPath $envPath -PathType Leaf)) {
         throw "Brak pliku .env: $envPath. Uruchom najpierw serwer (GRAJ), aby go utworzyć."
@@ -483,7 +488,7 @@ function Set-BotCountAction {
         return
     }
 
-    $answer = Read-Host 'Ilu botów ma grać (0-1500)'
+    $answer = Read-Host 'Ilu botów ma grać (0-2500)'
     if ($answer -notmatch '^\d+$') { Write-Host 'Anulowano: to nie jest liczba.' -ForegroundColor Yellow; return }
     $applied = Set-PlayerbotCount -Count ([int]$answer)
     Write-Host "Zapisano: $applied grających botów." -ForegroundColor Green
@@ -768,7 +773,7 @@ function Show-Menu {
         Write-Host ' 10. Utwórz paczkę diagnostyczną ZIP'
         Write-Host ' 11. Utwórz i wyślij logi (po potwierdzeniu)'
         Write-Host ' 12. Konfiguracja launchera'
-        Write-Host ' 13. Ustaw liczbę grających botów (0-1500)'
+        Write-Host ' 13. Ustaw liczbę grających botów (0-2500)'
         Write-Host ' 14. Importuj bazę z innej instalacji (wyższe postacie)'
         Write-Host ' 15. Napraw dostęp do bazy (gdy migrate/serwer nie startuje albo Navicat odrzuca hasło)'
         Write-Host ' 16. Dane do połączenia z bazą (Navicat, HeidiSQL)'

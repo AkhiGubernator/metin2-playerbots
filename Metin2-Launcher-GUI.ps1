@@ -155,7 +155,7 @@ $script:Strings = @{
         diagnostics  = 'DIAGNOSTYKA'
         openLog      = 'OTWORZ LOG'
         logFolder    = 'FOLDER LOGOW'
-        botCount     = 'LICZBA BOTOW (0-1500)'
+        botCount     = 'LICZBA BOTOW (0-2500)'
         importDb     = 'IMPORTUJ BAZE'
         repairDb     = 'NAPRAW DOSTEP DO BAZY'
         dbAccess     = 'DANE DO BAZY (NAVICAT)'
@@ -194,7 +194,7 @@ $script:Strings = @{
         diagnostics  = 'DIAGNOSTICS'
         openLog      = 'OPEN LOG'
         logFolder    = 'LOG FOLDER'
-        botCount     = 'BOT COUNT (0-1500)'
+        botCount     = 'BOT COUNT (0-2500)'
         importDb     = 'IMPORT DATABASE'
         repairDb     = 'REPAIR DATABASE ACCESS'
         dbAccess     = 'DATABASE LOGIN (NAVICAT)'
@@ -612,8 +612,12 @@ function Get-InstalledServerVersion {
 function Show-BotCountDialog {
     # Slider instead of a typed number: the range is a property of the world, and
     # dragging is far friendlier than guessing a value. The maximum matches the
-    # canonical cohort the seed creates (PID 4..1503); how many of those a world
-    # can actually spawn depends on its registry, which is often smaller.
+    # canonical cohort the seed creates - 1500 for Chunjo alone (PID 4..1503) and
+    # 2500 once the other two kingdoms are switched on (M2_PLAYERBOT_KINGDOMS=1,
+    # PID 4..2503). It stopped at 1500 while the world already held 2500, so a
+    # thousand seeded bots could not be asked for from here at all. Asking for
+    # more than a world holds is safe and always was: the core spawns what its
+    # registry has and logs requested/registered/started.
     param([int]$Current = 350)
     $dialog = [Windows.Forms.Form]::new()
     $dialog.Text = (T 'botDialog')
@@ -624,7 +628,7 @@ function Show-BotCountDialog {
     $dialog.MinimizeBox = $false
 
     $info = [Windows.Forms.Label]::new()
-    $info.Text = "Ilu botów ma grać jednocześnie?`r`nEfektywny limit to liczba botów w Twoim świecie (kanoniczna paczka ma 350).`r`nZmiana wymaga restartu serwera."
+    $info.Text = "Ilu botów ma grać jednocześnie?`r`nEfektywny limit to liczba botów w Twoim świecie: 1500 dla samego Chunjo,`r`n2500 przy włączonych trzech królestwach. Zmiana wymaga restartu serwera."
     $info.Location = [Drawing.Point]::new(14, 12)
     $info.Size = [Drawing.Size]::new(440, 54)
     $dialog.Controls.Add($info)
@@ -639,13 +643,13 @@ function Show-BotCountDialog {
     $bar = [Windows.Forms.TrackBar]::new()
     $bar.Name = 'botBar'
     $bar.Minimum = 0
-    $bar.Maximum = 1500
+    $bar.Maximum = 2500
     $bar.TickFrequency = 50
     $bar.SmallChange = 1
     $bar.LargeChange = 25
     $bar.Location = [Drawing.Point]::new(12, 104)
     $bar.Size = [Drawing.Size]::new(442, 45)
-    $bar.Value = [Math]::Max(0, [Math]::Min(1500, $Current))
+    $bar.Value = [Math]::Max(0, [Math]::Min(2500, $Current))
     $dialog.Controls.Add($bar)
     $valueLabel.Text = "Boty: $($bar.Value)"
     # $this/FindForm keeps the handler independent of captured locals.

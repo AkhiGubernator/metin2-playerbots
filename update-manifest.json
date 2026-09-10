@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-09T21:33:00Z",
-  "statusMessage": "Aktualizacja 1.31.3. Lucznik bije Metiny sztyletem, bot bez yangow na Teleporter poluje w Bokjung na oplate zamiast pytac go co tick.",
+  "publishedAt": "2026-09-10T06:06:00Z",
+  "statusMessage": "Aktualizacja 1.31.4. Obraz ItemShopu bez apt (aktualizacja znow sie buduje), NPC z siodla, bot nie zbiera cudzego dropu, martwy towar na straganie taniej, Ksiega Zapomnienia w ItemShopie.",
   "server": {
-    "version": "1.31.3",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.3/metin2-server-update-1.31.3.zip",
-    "sha256": "520EF675A64DD07D41C188566BDAC5A07D6A468522FF9082B3F5D2F4663C7F6E"
+    "version": "1.31.4",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.4/metin2-server-update-1.31.4.zip",
+    "sha256": "3AC1A9E9994BE95C21ACE825354005785AF66C7A27F7EF1B93F93B4B159D4B20"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

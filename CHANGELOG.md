@@ -17,6 +17,49 @@ every version here.
 
 ---
 
+## 1.31.4 — 2026-09-10
+
+### Aktualizacja, która się nie budowała
+
+- **Obraz ItemShopu bez `apt-get`** (Marcol, paczka z 23:43: „target itemshop:
+  failed to solve … Splitting of clearsigned file failed”). Obraz `php:8.2-apache`
+  przeszedł na Debiana trixie, którego `apt` weryfikuje repozytorium przez
+  sequoia i na niektórych Docker Desktopach pada; jedna nieudana warstwa
+  anulowała całą budowę i serwer zostawał na starej wersji. ItemShop jest
+  teraz przypięty do bookworm i nie stawia żadnej paczki Debiana (healthcheck
+  pyta samo PHP), a panel klasyczny też jest przypięty do bookworm. Jeśli u
+  kogoś strona ItemShopu „się nie ładuje” (sosen), to najpewniej ten sam
+  powód: kontener sklepu nigdy nie powstał.
+
+### Boty w grze
+
+- **NPC z siodła** (Tieru). Bot nie zsiada już z konia przy sklepie, kowalu,
+  dozorcy, Biologu ani przy portalu — silnik obsługuje jeźdźca przy każdej
+  ladzie, odmawia tylko czytania księgi (tu bot zsiada) i stroju. Zsiadanie
+  przy każdym NPC i wsiadanie zaraz potem było najbardziej widoczną częścią
+  wizyty w mieście.
+- **Koń odwołany na czas łowienia** (cyfrowy_mat: „wszystkie moje boty łowią
+  z końmi obok”). Zsiadając przy wodzie bot odsyła konia, jak gracz, i
+  przywołuje go do jazdy.
+- **Bot nie zbiera cudzego dropu** (Kuszaa: „bije metina w M1, podchodzi
+  jakiś koks i zbiera mój złom”). Silnik po dziesięciu sekundach zdejmuje
+  własność z przedmiotu i od tej chwili każdemu odpowiada „twój”; pass lootu
+  brał to dosłownie. Teraz przedmiot bez właściciela podnosi tylko bot, który
+  widział go, gdy jeszcze był jego.
+- **Martwy towar na straganie** (sekuras, cyfrowy_mat, jaksiezabic). Linia,
+  która wróciła z lady niesprzedana, jest na następnym stoisku o 10% tańsza
+  (do 40% po czterech), a broń albo zbroja poniżej +4, której nikt nie chciał
+  przez sześć stoisk, idzie do handlarza. Od +4 w górę nic się nie zmienia —
+  tego handlarz od bota nie dostaje.
+
+### ItemShop
+
+- **Księga Zapomnienia (70037) w ItemShopie** (sosen): cofa punkt wybranej
+  umiejętności, dla skilla, który utknął na 17 po trzydziestym poziomie.
+  Trafia też do sklepów już założonych, raz, pod kolejnym wolnym numerem.
+
+---
+
 ## 1.31.3 — 2026-09-09
 
 ### Łucznik kontra Metin

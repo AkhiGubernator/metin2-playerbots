@@ -157,6 +157,14 @@ $script:Strings = @{
         logFolder    = 'FOLDER LOGOW'
         botCount     = 'LICZBA BOTOW (0-2500)'
         importDb     = 'IMPORTUJ BAZE'
+        worldBackup  = 'KOPIA SWIATA'
+        backupDialog = 'Kopia swiata'
+        backupInfo   = 'Kopia zapisuje caly swiat - postacie, poziomy, ekwipunek, boty i konta gry - do jednego pliku zip w folderze backups. Serwer zostanie na czas kazdej z tych operacji zatrzymany i zapisany.'
+        backupMake   = 'Zapisz kopie swiata'
+        backupLoad   = 'Przywroc swiat z kopii'
+        backupReset  = 'Zacznij od zera (swieza instalacja)'
+        backupPick   = 'Wybierz plik kopii'
+        backupNone   = 'W folderze backups nie ma jeszcze zadnej kopii. Zapisz najpierw kopie.'
         repairDb     = 'NAPRAW DOSTEP DO BAZY'
         dbAccess     = 'DANE DO BAZY (NAVICAT)'
         gmPanel      = 'PANEL GM F9 (TEST)'
@@ -196,6 +204,14 @@ $script:Strings = @{
         logFolder    = 'LOG FOLDER'
         botCount     = 'BOT COUNT (0-2500)'
         importDb     = 'IMPORT DATABASE'
+        worldBackup  = 'WORLD BACKUP'
+        backupDialog = 'World backup'
+        backupInfo   = 'A backup writes the whole world - characters, levels, equipment, bots and game accounts - into one zip file in the backups folder. The server is stopped and saved for each of these operations.'
+        backupMake   = 'Save a backup'
+        backupLoad   = 'Restore from a backup'
+        backupReset  = 'Start over (fresh install)'
+        backupPick   = 'Choose a backup file'
+        backupNone   = 'There is no backup in the backups folder yet. Save one first.'
         repairDb     = 'REPAIR DATABASE ACCESS'
         dbAccess     = 'DATABASE LOGIN (NAVICAT)'
         gmPanel      = 'GM PANEL F9 (BETA)'
@@ -895,13 +911,17 @@ $dbAccessButton = New-Button (T 'dbAccess') 28 418 218 32 ([Drawing.Color]::From
 # rides in every update, this button fetches the client package from the
 # manifest's `client` component and swaps pack/root.eix + root.epk.
 $gmPanelButton = New-Button (T 'gmPanel') 262 418 218 32 ([Drawing.Color]::FromArgb(120, 70, 130))
+# Backup, restore and "start over" behind one button: reported from the
+# Discord as "the launcher can import a database but nothing says how to
+# export one", together with a wish to get back to a fresh install.
+$worldBackupButton = New-Button (T 'worldBackup') 496 418 230 32 ([Drawing.Color]::FromArgb(70, 120, 90))
 
 # The language switch sits with the other small buttons rather than in a menu:
 # somebody who cannot read the window needs to find it without reading anything.
 $languageButton = New-Button (T 'language') 508 702 218 28 ([Drawing.Color]::FromArgb(60, 70, 95))
 $languageButton.Add_Click({ Switch-LauncherLanguage })
 
-foreach ($button in @($installButton, $playButton, $dockerButton, $stopButton, $panelButton, $clientButton, $updateButton, $bundleButton, $diagnosticsButton, $openLogButton, $folderButton, $botCountButton, $importDbButton, $repairDbButton, $dbAccessButton, $gmPanelButton, $languageButton)) {
+foreach ($button in @($installButton, $playButton, $dockerButton, $stopButton, $panelButton, $clientButton, $updateButton, $bundleButton, $diagnosticsButton, $openLogButton, $folderButton, $botCountButton, $importDbButton, $repairDbButton, $dbAccessButton, $gmPanelButton, $worldBackupButton, $languageButton)) {
     $script:form.Controls.Add($button)
 }
 
@@ -1241,6 +1261,94 @@ $importDbButton.Add_Click({
         'Potwierdź import bazy', 'YesNo', 'Warning')
     if ($confirm -ne [Windows.Forms.DialogResult]::Yes) { return }
     Start-LauncherAction -Action 'ImportDb' -Yes -ExtraArgs @('-ImportSource', "$picked")
+})
+$worldBackupButton.Add_Click({
+    # One button rather than three, because the main window has no room for
+    # three and the report was that the backup could not be FOUND, not that it
+    # was too many clicks away. The dialog says what each of them does before
+    # anything is stopped or deleted.
+    if (-not (Confirm-DockerReady)) { return }
+    $dlg = [Windows.Forms.Form]::new()
+    $dlg.Text = (T 'backupDialog')
+    $dlg.Size = [Drawing.Size]::new(470, 300)
+    $dlg.StartPosition = 'CenterParent'
+    $dlg.FormBorderStyle = 'FixedDialog'
+    $dlg.MaximizeBox = $false
+    $dlg.MinimizeBox = $false
+    $lbl = [Windows.Forms.Label]::new()
+    $lbl.Text = (T 'backupInfo')
+    $lbl.Location = [Drawing.Point]::new(12, 10)
+    $lbl.Size = [Drawing.Size]::new(430, 60)
+    $dlg.Controls.Add($lbl)
+    $choice = ''
+    $makeButton = [Windows.Forms.Button]::new()
+    $makeButton.Text = (T 'backupMake')
+    $makeButton.Location = [Drawing.Point]::new(12, 80)
+    $makeButton.Size = [Drawing.Size]::new(430, 40)
+    $makeButton.Add_Click({ $script:guiBackupChoice = 'make'; $dlg.DialogResult = [Windows.Forms.DialogResult]::OK })
+    $dlg.Controls.Add($makeButton)
+    $loadButton = [Windows.Forms.Button]::new()
+    $loadButton.Text = (T 'backupLoad')
+    $loadButton.Location = [Drawing.Point]::new(12, 126)
+    $loadButton.Size = [Drawing.Size]::new(430, 40)
+    $loadButton.Add_Click({ $script:guiBackupChoice = 'load'; $dlg.DialogResult = [Windows.Forms.DialogResult]::OK })
+    $dlg.Controls.Add($loadButton)
+    $resetButton = [Windows.Forms.Button]::new()
+    $resetButton.Text = (T 'backupReset')
+    $resetButton.Location = [Drawing.Point]::new(12, 172)
+    $resetButton.Size = [Drawing.Size]::new(430, 40)
+    $resetButton.BackColor = [Drawing.Color]::FromArgb(180, 75, 55)
+    $resetButton.ForeColor = [Drawing.Color]::White
+    $resetButton.Add_Click({ $script:guiBackupChoice = 'reset'; $dlg.DialogResult = [Windows.Forms.DialogResult]::OK })
+    $dlg.Controls.Add($resetButton)
+    $cancelButton = [Windows.Forms.Button]::new()
+    $cancelButton.Text = (T 'cancel')
+    $cancelButton.Location = [Drawing.Point]::new(347, 222)
+    $cancelButton.Size = [Drawing.Size]::new(95, 30)
+    $cancelButton.DialogResult = [Windows.Forms.DialogResult]::Cancel
+    $dlg.Controls.Add($cancelButton)
+    $dlg.CancelButton = $cancelButton
+    $script:guiBackupChoice = ''
+    $result = $dlg.ShowDialog()
+    $choice = $script:guiBackupChoice
+    $dlg.Dispose()
+    if ($result -ne [Windows.Forms.DialogResult]::OK -or -not $choice) { return }
+
+    if ($choice -eq 'make') {
+        Start-LauncherAction -Action 'BackupDb' -Yes
+        return
+    }
+    if ($choice -eq 'load') {
+        $backupRoot = Join-Path $root 'backups'
+        if (-not (Test-Path -LiteralPath $backupRoot -PathType Container) -or
+            -not (Get-ChildItem -LiteralPath $backupRoot -Filter 'db-backup-*.zip' -File -ErrorAction SilentlyContinue)) {
+            [Windows.Forms.MessageBox]::Show((T 'backupNone'), (T 'backupDialog'), 'OK', 'Information') | Out-Null
+            return
+        }
+        $picker = [Windows.Forms.OpenFileDialog]::new()
+        $picker.Title = (T 'backupPick')
+        $picker.InitialDirectory = $backupRoot
+        $picker.Filter = 'Kopia swiata (db-backup-*.zip)|db-backup-*.zip|ZIP|*.zip'
+        if ($picker.ShowDialog() -ne [Windows.Forms.DialogResult]::OK) { $picker.Dispose(); return }
+        $file = $picker.FileName
+        $picker.Dispose()
+        $confirm = [Windows.Forms.MessageBox]::Show(
+            "Przywrócić świat z '$([IO.Path]::GetFileName($file))'?`r`n`r`nObecny świat zostanie ZASTĄPIONY. Zanim to nastąpi, launcher zapisze go do własnej kopii w folderze 'backups', więc da się cofnąć.",
+            'Potwierdź przywrócenie kopii', 'YesNo', 'Warning')
+        if ($confirm -ne [Windows.Forms.DialogResult]::Yes) { return }
+        Start-LauncherAction -Action 'RestoreDb' -Yes -ExtraArgs @('-RestoreSource', "$file")
+        return
+    }
+    # reset
+    $confirm = [Windows.Forms.MessageBox]::Show(
+        "Zresetować świat do stanu świeżej instalacji?`r`n`r`nZniknie CAŁY obecny świat: postacie, poziomy, ekwipunek, boty i konta gry. Launcher najpierw zapisze go do kopii zip w folderze 'backups', więc da się do niego wrócić przyciskiem KOPIA SWIATA -> Przywroc swiat z kopii.`r`n`r`nPierwszy start po resecie potrwa dłużej - baza powstaje od nowa i boty są zasiewane.",
+        'Potwierdź reset świata', 'YesNo', 'Warning')
+    if ($confirm -ne [Windows.Forms.DialogResult]::Yes) { return }
+    $again = [Windows.Forms.MessageBox]::Show(
+        "Na pewno? To ostatnie pytanie.`r`n`r`nPo kliknięciu TAK obecny świat przestaje być światem tego serwera.",
+        'Reset świata', 'YesNo', 'Warning')
+    if ($again -ne [Windows.Forms.DialogResult]::Yes) { return }
+    Start-LauncherAction -Action 'ResetWorld' -Yes
 })
 $dbAccessButton.Add_Click({
     # In-process on purpose: an action would print through the log box and the

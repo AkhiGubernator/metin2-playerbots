@@ -1289,7 +1289,14 @@ function Invoke-M2DatabaseImport {
         # 1. Reversible backup of the current target world.
         $tgtC = Start-M2ThrowawayDb -Volume $TargetVolume
         foreach ($db in $script:M2_DB_LIST) {
-            $exists = & docker exec $tgtC sh -c "mariadb -uroot -N -B -e `"SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$db' LIMIT 1`"" 2>$null
+            # No double quote may reach docker from PowerShell 5.1: it wraps a
+            # native command's argument in double quotes without escaping the ones
+            # inside it, so the first `" ends the argument and sh gets a broken
+            # script. This probe carried one, always came back empty, and the
+            # "reversible backup of the current target world" the operator is
+            # promised in the confirmation dialog was an empty folder every time.
+            # mariadb is invoked directly, with the query as its own argument.
+            $exists = & docker exec $tgtC mariadb -uroot -N -B -e "SHOW DATABASES LIKE '$db'" 2>$null
             if ($exists) { Export-M2Database -Container $tgtC -Database $db -OutFile (Join-Path $backupDir "target-before-import\$db.sql") }
         }
         Stop-M2ThrowawayDb -Container $tgtC; $tgtC = $null
@@ -1357,6 +1364,225 @@ function Invoke-M2DatabaseImport {
     }
 }
 
+function New-M2DatabaseBackup {
+    # A backup an operator can keep, move to another machine, and read.
+    #
+    # The import path already dumped the target world before overwriting it, but
+    # only as a side effect of an import, into a folder nobody was told about.
+    # This is the same dump asked for on purpose: the five game databases as
+    # plain SQL, a manifest naming what is inside, and a zip so that what lands
+    # in a cloud folder is one file.
+    #
+    # The server has to be stopped first - the caller does that - because a
+    # throwaway container cannot open a volume MariaDB is holding.
+    param(
+        [Parameter(Mandatory = $true)][string]$Volume,
+        [Parameter(Mandatory = $true)][string]$BackupRoot,
+        [string]$Label = ''
+    )
+    $previous = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $safeLabel = ($Label -replace '[^A-Za-z0-9_\-]', '')
+    $name = if ($safeLabel) { "db-backup-$stamp-$safeLabel" } else { "db-backup-$stamp" }
+    $dir = Join-Path $BackupRoot $name
+    $container = $null
+    try {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        $container = Start-M2ThrowawayDb -Volume $Volume
+        $sizes = @()
+        foreach ($db in $script:M2_DB_LIST) {
+            # See the note in Invoke-M2DatabaseImport: no double quote inside a
+            # command handed to docker from PowerShell.
+            $exists = & docker exec $container mariadb -uroot -N -B -e "SHOW DATABASES LIKE '$db'" 2>$null
+            if (-not $exists) { continue }
+            $out = Join-Path $dir "$db.sql"
+            Export-M2Database -Container $container -Database $db -OutFile $out
+            $sizes += [pscustomobject]@{ Name = $db; Bytes = (Get-Item -LiteralPath $out).Length }
+        }
+        if ($sizes.Count -eq 0) { throw 'Nie znaleziono zadnej bazy gry do zapisania.' }
+        $stat = & docker exec $container sh -c "mariadb -uroot -N -B -e 'SELECT COUNT(*), IFNULL(MAX(level),0) FROM player.player'" 2>$null
+        $players = 0; $maxLevel = 0
+        if ($stat) {
+            $parts = ($stat.ToString().Trim() -split "`t")
+            if ($parts.Count -ge 2) { $players = [int]$parts[0]; $maxLevel = [int]$parts[1] }
+        }
+        Stop-M2ThrowawayDb -Container $container; $container = $null
+
+        # A backup that cannot be identified six months later is not a backup.
+        $readme = New-Object System.Text.StringBuilder
+        [void]$readme.AppendLine('Kopia zapasowa swiata Metin2 Singleplayer')
+        [void]$readme.AppendLine('')
+        [void]$readme.AppendLine("Wykonana:      $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
+        [void]$readme.AppendLine("Wolumen:       $Volume")
+        [void]$readme.AppendLine("Postaci:       $players")
+        [void]$readme.AppendLine("Najwyzszy lvl: $maxLevel")
+        [void]$readme.AppendLine('')
+        [void]$readme.AppendLine('Zawartosc (zrzuty mariadb-dump, latin1 jak w grze):')
+        foreach ($s in $sizes) {
+            [void]$readme.AppendLine(('  {0,-12} {1,12:N0} B' -f ($s.Name + '.sql'), $s.Bytes))
+        }
+        [void]$readme.AppendLine('')
+        [void]$readme.AppendLine('Przywrocenie: launcher -> PRZYWROC KOPIE, i wskaz ten folder albo zip.')
+        [IO.File]::WriteAllText((Join-Path $dir 'README.txt'), $readme.ToString(),
+            [Text.UTF8Encoding]::new($false))
+
+        $zip = Join-Path $BackupRoot ($name + '.zip')
+        if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+        Compress-Archive -Path (Join-Path $dir '*') -DestinationPath $zip -CompressionLevel Optimal
+        return [pscustomobject]@{
+            Folder   = $dir
+            Zip      = $zip
+            Players  = $players
+            MaxLevel = $maxLevel
+            Files    = $sizes
+            ZipBytes = (Get-Item -LiteralPath $zip).Length
+        }
+    }
+    finally { Stop-M2ThrowawayDb -Container $container; $ErrorActionPreference = $previous }
+}
+
+function Restore-M2DatabaseBackup {
+    # The other half of New-M2DatabaseBackup, and the same swap Invoke-M2DatabaseImport
+    # performs - only the source is a folder of SQL files instead of another
+    # volume. A zip is accepted and unpacked to a temporary folder first, so an
+    # operator can point at exactly what the backup produced.
+    param(
+        [Parameter(Mandatory = $true)][string]$BackupPath,
+        [Parameter(Mandatory = $true)][string]$TargetVolume,
+        [Parameter(Mandatory = $true)][string]$BackupRoot,
+        [string]$DbUser = 'metin2',
+        [string]$DbPassword = ''
+    )
+    $previous = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $work = Join-Path ([IO.Path]::GetTempPath()) ('m2dbres-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+    $tgtC = $null
+    try {
+        New-Item -ItemType Directory -Path $work -Force | Out-Null
+        $source = $BackupPath
+        if ((Test-Path -LiteralPath $BackupPath -PathType Leaf) -and
+                ([IO.Path]::GetExtension($BackupPath) -eq '.zip')) {
+            $source = Join-Path $work 'unpacked'
+            New-Item -ItemType Directory -Path $source -Force | Out-Null
+            Expand-Archive -LiteralPath $BackupPath -DestinationPath $source -Force
+        }
+        if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+            throw "Nie znaleziono kopii: $BackupPath"
+        }
+        # A backup without player.sql is not this server's backup, and loading it
+        # would leave the install with no world at all.
+        $found = @()
+        foreach ($db in $script:M2_DB_LIST) {
+            if (Test-Path -LiteralPath (Join-Path $source "$db.sql") -PathType Leaf) { $found += $db }
+        }
+        if ($found -notcontains 'player') {
+            throw "W kopii '$source' nie ma pliku player.sql - to nie jest kopia swiata tego serwera."
+        }
+
+        # The world about to be replaced goes into its own backup first. The
+        # operator asked to restore, not to lose what is there now.
+        $safety = New-M2DatabaseBackup -Volume $TargetVolume -BackupRoot $BackupRoot -Label 'przed-przywroceniem'
+
+        $tgtC = Start-M2ThrowawayDb -Volume $TargetVolume
+        $sb = New-Object System.Text.StringBuilder
+        [void]$sb.AppendLine('SET FOREIGN_KEY_CHECKS=0;')
+        foreach ($db in $found) {
+            [void]$sb.AppendLine("DROP DATABASE IF EXISTS $db;")
+            [void]$sb.AppendLine("CREATE DATABASE $db DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;")
+        }
+        $createFile = Join-Path $work 'create.sql'
+        [IO.File]::WriteAllText($createFile, $sb.ToString(), [Text.UTF8Encoding]::new($false))
+        Invoke-M2SqlFile -Container $tgtC -Database '' -InFile $createFile
+        foreach ($db in $found) {
+            Invoke-M2SqlFile -Container $tgtC -Database $db -InFile (Join-Path $source "$db.sql")
+        }
+        $stats = & docker exec $tgtC sh -c "mariadb -uroot -N -B -e 'SELECT COUNT(*), IFNULL(MAX(level),0) FROM player.player'" 2>$null
+
+        # Same tail as the import: the game user and its grants last, because
+        # FLUSH PRIVILEGES turns the privilege system back on.
+        if ($DbPassword) {
+            $safeUser = ($DbUser -replace '[^A-Za-z0-9_]', '')
+            if (-not $safeUser) { $safeUser = 'metin2' }
+            $pwEsc = $DbPassword.Replace('\', '\\').Replace("'", "''")
+            $gb = New-Object System.Text.StringBuilder
+            [void]$gb.AppendLine('FLUSH PRIVILEGES;')
+            [void]$gb.AppendLine("CREATE USER IF NOT EXISTS '$safeUser'@'%' IDENTIFIED BY '$pwEsc';")
+            [void]$gb.AppendLine("ALTER USER '$safeUser'@'%' IDENTIFIED BY '$pwEsc';")
+            foreach ($db in $script:M2_DB_LIST) {
+                [void]$gb.AppendLine("GRANT ALL PRIVILEGES ON $db.* TO '$safeUser'@'%';")
+            }
+            [void]$gb.AppendLine('FLUSH PRIVILEGES;')
+            $grantFile = Join-Path $work 'grant.sql'
+            [IO.File]::WriteAllText($grantFile, $gb.ToString(), [Text.UTF8Encoding]::new($false))
+            Invoke-M2SqlFile -Container $tgtC -Database '' -InFile $grantFile
+        }
+        Stop-M2ThrowawayDb -Container $tgtC; $tgtC = $null
+
+        $players = 0; $maxLevel = 0
+        if ($stats) {
+            $parts = ($stats.ToString().Trim() -split "`t")
+            if ($parts.Count -ge 2) { $players = [int]$parts[0]; $maxLevel = [int]$parts[1] }
+        }
+        return [pscustomobject]@{
+            Players  = $players
+            MaxLevel = $maxLevel
+            Source   = $source
+            Safety   = $safety.Zip
+            Restored = $found
+        }
+    }
+    finally {
+        Stop-M2ThrowawayDb -Container $tgtC
+        Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+        $ErrorActionPreference = $previous
+    }
+}
+
+function Reset-M2WorldToFreshInstall {
+    # Back to the world a fresh install starts with: the r40250 dumps, the
+    # playerbot schema and a freshly seeded cohort.
+    #
+    # It is done by deleting the database volume, because that is the only thing
+    # that makes MariaDB run initdb.d again - the entrypoint skips it entirely on
+    # a volume that is not empty, which is why "just drop the databases" would
+    # leave an install with no schema and no way to get one back.
+    #
+    # And it refuses to delete anything until the five dumps that rebuild it are
+    # on disk. An install assembled from an update package can be missing them,
+    # and a reset that discovers this after the volume is gone leaves an operator
+    # with neither the old world nor a new one.
+    param(
+        [Parameter(Mandatory = $true)][string]$Volume,
+        [Parameter(Mandatory = $true)][string]$ServerRoot,
+        [Parameter(Mandatory = $true)][string]$BackupRoot
+    )
+    # @(): an empty result unrolls to $null on the way out, and $null.Count
+    # throws under StrictMode - which is how the first run of this refused to
+    # reset a world it was perfectly able to reset. Same idiom as every other
+    # caller of this function.
+    $missing = @(Get-M2MissingSqlDumps -ServerRoot $ServerRoot)
+    if ($missing.Count -gt 0) {
+        throw ("Nie moge zresetowac swiata: brakuje zrzutow, z ktorych powstaje nowa baza (" +
+               ($missing -join ', ') + "). Znajduja sie w linux-port\docker\mariadb\initdb.d\dumps.")
+    }
+    $backup = $null
+    if (Test-M2VolumeInitialized -Volume $Volume) {
+        $backup = New-M2DatabaseBackup -Volume $Volume -BackupRoot $BackupRoot -Label 'przed-resetem'
+    }
+    $previous = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    try {
+        & docker volume rm -f $Volume 1>$null 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Nie udalo sie usunac wolumenu '$Volume' - czy serwer na pewno jest zatrzymany?"
+        }
+    }
+    finally { $ErrorActionPreference = $previous }
+    return [pscustomobject]@{
+        Volume = $Volume
+        Backup = if ($backup) { $backup.Zip } else { '' }
+        Players = if ($backup) { $backup.Players } else { 0 }
+    }
+}
+
 Export-ModuleMember -Function @(
     'Get-M2DefaultLauncherConfig',
     'Get-M2LauncherConfig',
@@ -1370,6 +1596,9 @@ Export-ModuleMember -Function @(
     'Get-M2DbDataVolumes',
     'Get-M2VolumeWorldStats',
     'Invoke-M2DatabaseImport',
+    'New-M2DatabaseBackup',
+    'Restore-M2DatabaseBackup',
+    'Reset-M2WorldToFreshInstall',
     'Repair-M2GameDbUser',
     'Test-M2VolumeInitialized',
     'Get-M2MissingSqlDumps',

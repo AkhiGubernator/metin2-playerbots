@@ -17,6 +17,39 @@ every version here.
 
 ---
 
+## 1.32.2 — 2026-09-10
+
+### Suwak liczby botów sięga teraz 2500
+
+Przy włączonych trzech królestwach dosiew tworzy 2500 botów, a suwak w
+launcherze kończył się na 1500. Tysiąca dosianych botów nie dało się w ogóle
+poprosić z poziomu okienka. Zgłosił xewi zaraz po 1.32.0.
+
+Limit siedział w dwóch miejscach i podniesienie samego suwaka nic by nie dało:
+funkcja zapisująca liczbę do `.env` zaciskała ją z powrotem do 1500, więc
+widzielibyście 2500, a do pliku poszłoby 1500. Poprawione są oba miejsca, a
+także tryb konsolowy i pozycja w menu.
+
+Dla samego Chunjo, czyli przy domyślnych ustawieniach, sufitem dalej jest 1500,
+bo tyle tożsamości tworzy ziarno. Proszenie o więcej, niż świat ma, było i jest
+bezpieczne: rdzeń uruchamia tyle botów, ile ma w rejestrze, i wypisuje w logu
+ile poproszono, ile jest zarejestrowanych i ile wystartowało.
+
+### Masowe dawanie przedmiotów botom
+
+Nic tu nie zmieniamy w kodzie, ale warto wiedzieć, skąd się brało „nie działa"
+(zgłosili zombian. i archded). Panel zleca nadanie przez wiersz w bazie, a
+podejmuje go pomocniczy quest w grze. Quest jest kompilowany przy budowaniu
+obrazu gry, nigdy przy starcie kontenera, więc serwer, którego obraz zbudowano
+przed 7 września, ma starszego questa i na każde zlecenie odpowiada „Quest
+wymaga aktualizacji". Wystarczy zaktualizować i kliknąć GRAJ, czekając aż
+przejdzie budowanie obrazu.
+
+Sprawdzone po przebudowaniu: zlecenie kończy się statusem „Nadano" w trzy
+sekundy, a log gry pokazuje utworzenie przedmiotu na koncie bota.
+
+---
+
 ## 1.32.1 — 2026-09-10
 
 ### Sprawdzanie aktualizacji mówi prawdę

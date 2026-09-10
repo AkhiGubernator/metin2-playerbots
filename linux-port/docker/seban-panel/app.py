@@ -14,6 +14,7 @@ from functools import wraps
 
 import pymysql
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
+from markupsafe import escape
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -187,6 +188,66 @@ try:
     GM_COMMANDS = (Path(__file__).parent / "gm_commands.txt").read_text(encoding="utf-8", errors="replace")
 except OSError:
     GM_COMMANDS = "Brak pliku z komendami."
+
+
+# MyISAM nie przezywa nieczystego zatrzymania, a ten panel czyta na stronie
+# glownej najruchliwsza tabele w calym swiecie - log.log, dla rankingu wedkarzy.
+# Gdy jest uszkodzona, kazde zapytanie do niej rzuca wyjatkiem, Flask pokazuje
+# wlasne "Internal Server Error", i to zrzut ekranu tej strony trafia na
+# Discorda - bez nazwy tabeli, bez przyczyny, bez niczego do zrobienia
+# (archonek, 10 wrzesnia: "klikam i blad wyskakuje"; zwykly panel dzialal, bo
+# jego strona glowna do log.log nie zaglada). Aktualizacja tego nie naprawia:
+# uszkodzenie siedzi w danych na wolumenie, nie w obrazie.
+#
+# Numery bledow: 1194 "is marked as crashed and should be repaired",
+# 1195 i 144 "last repair failed", 145 to samo dla starszych serwerow.
+CRASHED_TABLE_ERRNOS = (144, 145, 1194, 1195)
+
+
+@app.errorhandler(pymysql.err.OperationalError)
+def handle_crashed_table(error):
+    errno = error.args[0] if error.args else 0
+    message = str(error.args[1]) if len(error.args) > 1 else str(error)
+    if errno not in CRASHED_TABLE_ERRNOS:
+        # Nie nasza sprawa - niech Flask pokaze swoje 500 i zapisze slad.
+        raise error
+    table = ""
+    match = re.search(r"Table '([^']+)'", message)
+    if match:
+        table = match.group(1).replace("./", "").replace("/", ".")
+    named = ("Tabela <code>%s</code>" % escape(table)) if table else "Jedna z tabel bazy"
+    body = """<!doctype html><html lang="pl"><head><meta charset="utf-8">
+<title>Uszkodzona tabela bazy</title>
+<style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:52em;margin:3em auto;padding:0 1.5em;line-height:1.6;color:#222}
+h1{font-size:1.5em}code{background:#f2f2f2;padding:.15em .35em;border-radius:3px}
+pre{background:#f2f2f2;padding:1em;border-radius:5px;overflow-x:auto}
+.note{background:#fff8e1;border-left:4px solid #e0a800;padding:.8em 1em;margin:1.5em 0}</style>
+</head><body>
+<h1>Uszkodzona tabela bazy danych</h1>
+<p>%s jest oznaczona jako uszkodzona, wiec panel nie moze jej odczytac.
+Silnik gry uzywa tabel MyISAM, a te nie przezywaja nagłego zatrzymania -
+wystarczy zamkniecie Dockera w trakcie zapisu albo zanik zasilania.</p>
+<div class="note"><strong>Aktualizacja serwera tego nie naprawi.</strong>
+Uszkodzenie jest w danych na dysku, a nie w programie - nowa wersja czyta te
+same pliki.</div>
+<h2>Jak naprawic</h2>
+<p>Otworz PowerShell w folderze serwera, w podkatalogu <code>linux-port\\docker</code>
+(w launcherze przycisk FOLDER SERWERA), i uruchom:</p>
+<pre>docker compose exec mariadb mysqlcheck -uroot -p --auto-repair --databases log player account common</pre>
+<p>Zapyta o haslo - to <code>M2_DB_ROOT_PASSWORD</code> z pliku <code>.env</code>
+w tym samym folderze. Naprawa duzej tabeli logow potrafi potrwac kilka minut.</p>
+<h2>Jesli naprawa sie nie uda</h2>
+<p>Baza <code>log</code> to wylacznie historia: co kto podniosl, ulepszyl i
+powiedzial. Gra jej nie czyta i zadna postac, przedmiot ani bot od niej nie
+zaleza. Jesli <code>mysqlcheck</code> zglosi, ze nie da rady, mozna te tabele
+oproznic bez straty dla swiata:</p>
+<pre>docker compose exec mariadb mariadb -uroot -p -e "TRUNCATE log.log; TRUNCATE log.levellog; TRUNCATE log.shout_log;"</pre>
+<div class="note">Nie rob tego dla baz <code>player</code>, <code>account</code>
+ani <code>common</code> - tam sa postacie, konta i boty.</div>
+<p style="margin-top:2em;color:#666;font-size:.9em">Blad bazy: %s (%s)</p>
+</body></html>""" % (named, errno, escape(message))
+    return body, 500
+
 
 
 def db():

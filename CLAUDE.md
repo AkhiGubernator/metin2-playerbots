@@ -1843,6 +1843,20 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   (automatic?) repair failed" - which is what a player saw through the panel.
   `99-metin2.cnf` asks for `BACKUP,FORCE`. To repair an install that is
   already in that state: `mysqlcheck --auto-repair --check --all-databases`.
+  **`BACKUP,FORCE` does not save an install that has already crashed**: archonek
+  hit it on 1.32.5 with that setting in place, all three `log` tables gone
+  (`log.log`, `log.levellog`, `log.shout_log`) and the server log repeating
+  "last (automatic?) repair failed" - a damaged data file is past what the
+  automatic pass can do. It is also why "update to the newest version" is the
+  wrong advice and was tried first: the damage is in the volume, not the image.
+  The symptom is specific - the **advanced** panel five-hundreds on its front
+  page while the classic one is fine - because `dashboard` reads `log.log` for
+  the fishing ranking and the classic front page never touches it. That page now
+  answers with `handle_crashed_table` naming the table and the repair instead of
+  Flask's bare "Internal Server Error", which is all the screenshot used to
+  carry. The `log` database is history only: nothing in the game reads it, so
+  truncating those three tables is a legitimate last resort, and saying so is
+  what turns a dead server into a five-minute fix.
 - **The three kingdoms are mirrors in shape and nothing else in coordinates.**
   `map/index` gives M1/M2/M3/easy as 1,3,4,5 (Shinsoo), 21,23,24,25 (Chunjo)
   and 41,43,44,45 (Jinno) - M3 is the guild map, which is what our

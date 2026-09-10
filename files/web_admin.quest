@@ -381,7 +381,7 @@ quest web_admin begin
 								-- Only words from our own short list may
 								-- reach the database. Nothing a user typed
 								-- can get in here.
-								if result ~= "done" and result ~= "bad_args" and result ~= "no_skill" and result ~= "has_item" and result ~= "full" and result ~= "failed" then
+								if result ~= "done" and result ~= "bad_args" and result ~= "no_skill" and result ~= "has_item" and result ~= "full" and result ~= "failed" and result ~= "qty_too_big" and result ~= "partial" then
 									result = "unknown_cmd"
 								end
 

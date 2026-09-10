@@ -12,6 +12,7 @@ The engine source is **not in this repository** and never will be — see
 |---|---|
 | `linux-port/overlays/playerbot/src/game/src/` | The playerbot AI, split into implementation fragments (see below). `playerbot_manager.cpp` is the tick and whatever has not been lifted out yet. |
 | `linux-port/overlays/playerbot/src/game/src/playerbot_world_rules.h` | Pure travel policy, no engine types. Unit-tested. The model for extracting logic. |
+| `linux-port/overlays/playerbot/src/game/src/playerbot_empire_rules.h` | The three kingdoms: maps, gates, services, trainers, pitches. Unit-tested against Chunjo's own historical constants. |
 | `linux-port/patches/` | Patches applied to the pristine engine source. |
 | `files/admin_panel.py` | Flask admin panel. The copy under
 `linux-port/docker/panel/app/` is staged there by `prepare-context.sh` and is
@@ -85,6 +86,7 @@ dependency order at the top of `playerbot_manager.cpp`:
 | `playerbot_battle_horse.h` | Earning the horse that can fight: the desert trial, and what the stable keeper does at the end of it. |
 | `playerbot_config.h` | The weights an operator moves in the panel while the world runs. Re-read from a file every five seconds; neutral when it is missing. |
 | `playerbot_empire_rules.h` | The three kingdoms as pure policy: which map belongs to whom and what it is for, the town services and gates of all six villages, the Teleporter's per-kingdom arrivals, and how two characters stand to one another. No engine types, unit-tested. |
+| `playerbot_empire_rules.h` | The three kingdoms as pure policy: which maps a kingdom owns, its gates, its town services, its trainers, its market pitch. No engine types, unit-tested. Included first, so anything may ask it. |
 | `playerbot_world_rules.h` | Pure travel policy. No engine types, unit-tested. |
 | `playerbot_navigation.h` | Where a bot may stand and whether two points connect. Calls nothing above it. |
 | `playerbot_world_memory.h` | What the population has learned about the world, as opposed to about itself. |
@@ -141,6 +143,59 @@ which subsystem wins the tick -- then the goal planner, then the subsystem hooks
 (each `continue`s to claim the tick), and target acquisition and attacking run
 **last**. A subsystem that owns the tick therefore also suppresses combat and the
 gear pass.
+
+### Three kingdoms, and nothing may name a village by its index
+
+The world has three kingdoms and each has the same four maps: a first village,
+a second village, a guild map and an easy Monkey Dungeon. Shinsoo is 1/3/4/5 on
+the `first` core, Chunjo 21/23/24/25 on `game1`, Jinno 41/43/44/45 on `game2`.
+The engine's own quests name them - `new_quest_lv52` reads the first villages out
+of `{ "Yongan", "Joan", "Pyongmoo" }` by empire and `new_quest_lv7` names the
+second ones Jayang, Bokjung and Bakra. (Pyongmoo is Jinno's capital. The status
+table used to label Chunjo's guild map with it, which was simply wrong.)
+
+The three are mirrors in what they hold and in nothing else. Each village has
+the same eight service NPCs (9001 Handlarz Bronia, 9002 Zbrojami, 9003
+Roznosci, 9005 Dozorca, 9006 Starsza Pani, 20016 Kowal, 20349 Stajenny, 9012
+Teleporter), the same starter monsters under vnum 500, the same Bestial bosses
+in the second village, the same eight trainers in the first - and puts every one
+of them somewhere else. **A Chunjo coordinate plus an offset is wrong for every
+other kingdom.** So `playerbot_empire_rules.h` answers by map or by empire and
+`playerbot_types.h` carries the per-map tables: services, market pitch,
+trainers (`GetSkillTrainer`, first villages only - the second villages have no
+trainer at all, which is what sends a bot with no skill group back to M1), the
+Biologist, the wander hubs (`GetPlayerBotVillageGround`) and the fishing bank
+(`GetPlayerBotFishingBank`). Chunjo's rows are the hand-made ones unchanged; the
+measurement reproduces them to the unit, which is what says the other rows can
+be trusted, and `tests/playerbot_empire_rules_test.cpp` pins that.
+
+Ask `IsPlayerBotM1Map` / `IsPlayerBotM2Map` / `IsPlayerBotM3Map` /
+`IsPlayerBotVillageMap`, never `== PLAYERBOT_MAP_CHUNJO_M2`. For a leg between
+two of a kingdom's maps ask `GetPlayerBotKingdomLeg`, which gives the gate NPC
+to walk to and the arrival the engine will use, both read from that gate's own
+name. `GetPlayerBotRoadsEmpire` says whose roads a bot is on: the map's owner
+inside a kingdom (the gate in front of the bot is the one it can walk to), the
+bot's own empire everywhere else (there "go home" can only mean its own home).
+
+Tools that measure a map rather than guessing at it:
+`tools/dump_world_catalog.py` (services, gates, spawns, ground),
+`tools/generate_wander_hubs.py` (hunting hubs with their level band) and
+`tools/generate_fishing_bank.py` (stands and the water they face). All three
+read the server's own files. Note that `decode_server_attr.load` returns
+**sectors**, not cells: each is 128x128 cells of fifty units, and scanning
+`range(w) x range(h)` looks at the first sixteen by twenty cells of the map and
+finds a river nowhere.
+
+**One map is hosted by exactly one core, and a bot cannot cross between them.**
+`WarpSet` tells a client to reconnect and a bot has no client, so a map its core
+does not host is a map it can never reach. Every shared map in this world - Orc
+Valley, the desert, Sohan, both Spider Dungeons, Hwang, the two harder Monkey
+Dungeons - is on `game1` with Chunjo. `IsPlayerBotMapHostedHere` filters the
+frontier draw so no bot is sent at one, and `IsPlayerBotGrindAllowedHere` drops
+the second-village ceiling for a kingdom whose core hosts no frontier at all -
+otherwise Shinsoo and Jinno would wedge at level thirty-six with nowhere they
+were allowed to hunt. Splitting the shared maps between the three cores is the
+open question this leaves; it is a decision about the world, not a bug.
 
 ### The spawn ceiling is the registry, not the slider
 

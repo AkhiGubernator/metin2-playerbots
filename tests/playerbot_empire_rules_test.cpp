@@ -88,6 +88,17 @@ int main()
 	assert(b1.teleporter.x == 51900 && b1.teleporter.y == 153600);
 	assert(b3.teleporter.x == 136900 && b3.teleporter.y == 240300);
 	assert(b1.skillReset.x == 58800 && b1.skillReset.y == 165700);  // the old woman
+	// The three merchants the town visit has always walked to on map 21.
+	assert(b1.weaponMerchant.x == 67600 && b1.weaponMerchant.y == 168600);
+	assert(b1.armourMerchant.x == 67600 && b1.armourMerchant.y == 164100);
+	assert(b1.miscMerchant.x == 59000 && b1.miscMerchant.y == 171300);
+	assert(b1.blacksmith.x == 59400 && b1.blacksmith.y == 171600);
+	assert(b1.storekeeper.x == 60900 && b1.storekeeper.y == 162000);
+	assert(b1.stableKeeper.x == 54900 && b1.stableKeeper.y == 163400);
+	// ...and on map 23.
+	assert(b3.weaponMerchant.x == 147200 && b3.armourMerchant.x == 148500);
+	assert(b3.miscMerchant.x == 141300 && b3.blacksmith.x == 142000);
+	assert(b3.storekeeper.x == 149500 && b3.stableKeeper.x == 146900);
 
 	// --- gates: six per kingdom, both ends, and they lead where they say
 	TKingdomGate gates[6];
@@ -188,6 +199,82 @@ int main()
 		registered[EMPIRE_CHUNJO] = 500;
 		SplitPopulation(0, registered, want);
 		assert(want[EMPIRE_CHUNJO] == 0);
+	}
+
+	// -----------------------------------------------------------------
+	//  The market pitch, the trainers and the Biologist
+	// -----------------------------------------------------------------
+	{
+		TPoint p;
+		// Chunjo's two are the points the AI has always used. If either of
+		// these ever changes, a live market has moved and it was not on
+		// purpose.
+		assert(GetTownPitch(21, p) && p.x == 63400 && p.y == 166300);
+		assert(GetTownPitch(23, p) && p.x == 145500 && p.y == 240000);
+		// Every village has one, and only villages have one.
+		const long villages[6] = { 1, 3, 21, 23, 41, 43 };
+		for (int i = 0; i < 6; ++i)
+			assert(GetTownPitch(villages[i], p));
+		assert(!GetTownPitch(24, p));    // a guild map has no market
+		assert(!GetTownPitch(64, p));    // nor has Orc Valley
+
+		// The trainers reproduce, to the unit, the eight coordinates the town
+		// visit carried as literals before this table existed: group one at
+		// x = 62300/63100/64500/65300 and group two four hundred east of each,
+		// with the Warrior a hundred south of the other three jobs.
+		assert(GetSkillTrainer(21, 0, 1, p) && p.x == 62300 && p.y == 161800);
+		assert(GetSkillTrainer(21, 0, 2, p) && p.x == 62700 && p.y == 161800);
+		assert(GetSkillTrainer(21, 1, 1, p) && p.x == 63100 && p.y == 161900);
+		assert(GetSkillTrainer(21, 1, 2, p) && p.x == 63500 && p.y == 161900);
+		assert(GetSkillTrainer(21, 2, 1, p) && p.x == 64500 && p.y == 161900);
+		assert(GetSkillTrainer(21, 2, 2, p) && p.x == 64900 && p.y == 161900);
+		assert(GetSkillTrainer(21, 3, 1, p) && p.x == 65300 && p.y == 161900);
+		assert(GetSkillTrainer(21, 3, 2, p) && p.x == 65700 && p.y == 161900);
+		// All four jobs and both groups answer in every first village, and no
+		// second village has a trainer at all - which is what sends a bot with
+		// no skill group back to M1.
+		const long firstVillages[3] = { 1, 21, 41 };
+		for (int i = 0; i < 3; ++i)
+		{
+			assert(HasSkillTrainers(firstVillages[i]));
+			for (int job = 0; job < 4; ++job)
+				for (int group = 1; group <= 2; ++group)
+					assert(GetSkillTrainer(firstVillages[i], job, group, p) &&
+							p.x != 0 && p.y != 0);
+		}
+		assert(!HasSkillTrainers(3) && !HasSkillTrainers(23) && !HasSkillTrainers(43));
+		// Out-of-range arguments answer no rather than reading past the table.
+		assert(!GetSkillTrainer(21, -1, 1, p));
+		assert(!GetSkillTrainer(21, 4, 1, p));
+		assert(!GetSkillTrainer(21, 0, 0, p));
+		assert(!GetSkillTrainer(21, 0, 3, p));
+
+		// The Biologist stands in the three first villages and nowhere else.
+		assert(GetBiologist(21, p) && p.x == 89800 && p.y == 182100);
+		assert(GetBiologist(1, p) && GetBiologist(41, p));
+		assert(!GetBiologist(3, p) && !GetBiologist(23, p) && !GetBiologist(43, p));
+
+		// Every service point of every village is on that village's own ground:
+		// a table row copied from the wrong kingdom is caught here rather than
+		// by a bot walking eighty kilometres to the wrong anvil.
+		for (int i = 0; i < 6; ++i)
+		{
+			const long map = villages[i];
+			TTownServices svc;
+			assert(GetTownServices(map, svc));
+			assert(GetTownPitch(map, p));
+			const TPoint* points[8] = {
+				&svc.miscMerchant, &svc.weaponMerchant, &svc.armourMerchant,
+				&svc.storekeeper, &svc.blacksmith, &svc.stableKeeper,
+				&svc.skillReset, &svc.teleporter
+			};
+			for (int k = 0; k < 8; ++k)
+			{
+				const long dx = points[k]->x > p.x ? points[k]->x - p.x : p.x - points[k]->x;
+				const long dy = points[k]->y > p.y ? points[k]->y - p.y : p.y - points[k]->y;
+				assert(dx + dy < 30000);
+			}
+		}
 	}
 
 	return 0;

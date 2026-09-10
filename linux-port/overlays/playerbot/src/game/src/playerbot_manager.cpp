@@ -1590,9 +1590,7 @@ void CPlayerBotManager::Update()
 		if (ResetPlayerBotIfInactive(ch, state, dwNow))
 			continue;
 
-		if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 ||
-				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 ||
-				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M3 ||
+		if (playerbot_empire_rules::IsKingdomMap(ch->GetMapIndex()) ||
 				IsPlayerBotMonkeyMap(ch->GetMapIndex()) ||
 				IsPlayerBotFrontierMap(ch->GetMapIndex()))
 		{
@@ -1601,7 +1599,7 @@ void CPlayerBotManager::Update()
 					currentMap);
 			navigation.Init(currentMap);
 			const bool bOutOfBounds = !navigation.IsInsideWorld(ch->GetX(), ch->GetY());
-			const bool bCrossingJoanGate = currentMap == PLAYERBOT_MAP_CHUNJO_M1 &&
+			const bool bCrossingJoanGate = HasPlayerBotTownGate(currentMap) &&
 					state.bVisitingShop && ch->GetX() >= 59500 && ch->GetX() <= 61100 &&
 					ch->GetY() >= 169050 && ch->GetY() <= 170750;
 			const bool bInsideObstacle = !bOutOfBounds &&
@@ -1619,18 +1617,16 @@ void CPlayerBotManager::Update()
 							ch->GetX(), ch->GetY(), 20, safe, ch->GetPlayerID());
 				if (!foundSafe)
 				{
+					// The village or guild map's own entry point, whichever
+					// kingdom this is. GetPlayerBotHomePoint answers for all
+					// twelve; the old code named Joan's square as the default
+					// and would have dropped a Jinno bot into Chunjo.
 					long fallbackX = 60600;
 					long fallbackY = 170900;
-					if (currentMap == PLAYERBOT_MAP_CHUNJO_M2)
-					{
-						fallbackX = PLAYERBOT_M2_ARRIVAL_X;
-						fallbackY = PLAYERBOT_M2_ARRIVAL_Y;
-					}
-					else if (currentMap == PLAYERBOT_MAP_CHUNJO_M3)
-					{
-						fallbackX = PLAYERBOT_M3_ARRIVAL_X;
-						fallbackY = PLAYERBOT_M3_ARRIVAL_Y;
-					}
+					long fallbackMap = 0;
+					if (playerbot_empire_rules::IsKingdomMap(currentMap))
+						GetPlayerBotHomePoint(ch, currentMap, fallbackMap,
+								fallbackX, fallbackY);
 					else if (IsPlayerBotMonkeyMap(currentMap))
 						GetPlayerBotMonkeyArrival(currentMap, fallbackX, fallbackY);
 					else
@@ -1663,7 +1659,7 @@ void CPlayerBotManager::Update()
 
 		// The census, once a minute: why each level-40 bot in Bokjung is there.
 		if (s_bPlayerBotM2CensusPass && ch->GetLevel() >= 40 &&
-				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
+				IsPlayerBotM2Map(ch->GetMapIndex()))
 		{
 			NotePlayerBotM2Stay(ClassifyPlayerBotTownStay(ch, state, dwNow));
 			// A rotating handful explains itself in full. The rotation is by
@@ -1863,8 +1859,7 @@ void CPlayerBotManager::Update()
 		// its 5-10 minute retry cooldown.  Otherwise a bot that cannot yet afford
 		// the next tier loops forever between the weapon and armour merchants and
 		// never returns to combat (or to its local party).
-		const bool bOnTownMap = ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 ||
-				ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2;
+		const bool bOnTownMap = IsPlayerBotVillageMap(ch->GetMapIndex());
 		if (bOnTownMap && !state.bVisitingShop && !state.bMultiPullActive &&
 				!bFightingMetin &&
 				(bNeedsProfession || dwNow > state.dwNextShopCheckTime))
@@ -1948,7 +1943,7 @@ void CPlayerBotManager::Update()
 			ch->SetVictim(NULL);
 			if (state.dwEmergencyScavengeUntil != 0 &&
 					dwNow < state.dwEmergencyScavengeUntil &&
-					ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1)
+					IsPlayerBotM1Map(ch->GetMapIndex()))
 			{
 				// HandleLoot above collects any ownerless nearby drop. Wander between
 				// hunting hubs so the next scans cover new ground instead of idling at
@@ -1956,8 +1951,7 @@ void CPlayerBotManager::Update()
 				SetPlayerBotGoal(ch, state, BOT_GOAL_GET_EQUIPMENT, dwNow);
 				ManagePlayerBotWandering(ch, state, dwNow);
 			}
-			else if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 ||
-					ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
+			else if (IsPlayerBotVillageMap(ch->GetMapIndex()))
 			{
 				state.dwEmergencyScavengeUntil = 0;
 				StartPlayerBotTownVisit(ch, state, dwNow);
@@ -2063,9 +2057,11 @@ void CPlayerBotManager::Update()
 					ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(),
 					ch->GetX(), ch->GetY(),
 					SECTREE_MANAGER::instance().GetMapIndex(ch->GetX(), ch->GetY()));
-			if (TransitionPlayerBotMap(ch, state, PLAYERBOT_MAP_CHUNJO_M2,
-					PLAYERBOT_M2_FROM_M3_X, PLAYERBOT_M2_FROM_M3_Y, dwNow,
-					"half_warp_recovery"))
+			long recoverMap = 0, recoverX = 0, recoverY = 0;
+			if (GetPlayerBotVillageReturn(ch, playerbot_empire_rules::MAP_ROLE_M2,
+						recoverMap, recoverX, recoverY) &&
+					TransitionPlayerBotMap(ch, state, recoverMap, recoverX, recoverY,
+						dwNow, "half_warp_recovery"))
 				continue;
 		}
 		// Before target acquisition on purpose: a bot that has stood in the same

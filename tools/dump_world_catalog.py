@@ -54,16 +54,16 @@ KINGDOMS = [
 # The NPCs the AI actually walks to, by the vnum it looks for.
 SERVICES = {
     9003: 'misc merchant',
-    9004: 'weapon merchant',
+    9004: 'event helper',
     9002: 'armour merchant',
     9005: 'storekeeper',
     9006: 'skill reset (old woman)',
-    9001: 'guard',
+    9001: 'weapon merchant (Handlarz Bronia)',
     9012: 'teleporter',
     20016: 'blacksmith',
     20349: 'stable keeper',
-    20353: 'biologist',
-    20356: 'fisherman',
+    20353: 'stone monument',
+    20356: 'ginseng collector',
 }
 
 

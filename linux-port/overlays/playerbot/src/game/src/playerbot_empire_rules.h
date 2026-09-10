@@ -29,7 +29,8 @@ namespace playerbot_empire_rules
 		EMPIRE_SHINSOO = 1,
 		EMPIRE_CHUNJO = 2,
 		EMPIRE_JINNO = 3,
-		EMPIRE_COUNT = 4
+		EMPIRE_COUNT = 4,      // array size: the ids are 1..3, so index 0 is unused
+		EMPIRE_COUNT_REAL = 3  // how many kingdoms there actually are
 	};
 
 	enum EMapRole
@@ -232,16 +233,20 @@ namespace playerbot_empire_rules
 	//  The points a bot walks to, per kingdom
 	// -------------------------------------------------------------------
 	// npc.txt, in world coordinates. Only the services the AI has code for.
+	// By vnum, with the names mob_proto actually gives them: 9001 Handlarz
+	// Bronia, 9002 Handlarz Zbrojami, 9003 Handlarka Roznosci, 9005 Dozorca,
+	// 9006 Starsza Pani, 20016 Kowal, 20349 Stajenny, 9012 Teleporter. Worth
+	// stating because 9001 reads like a guard and is not one - the AI has
+	// walked to it for weapons since long before this table existed.
 	struct TTownServices
 	{
-		TPoint miscMerchant;
-		TPoint weaponMerchant;   // 9004: absent in these villages, filled with 9003
-		TPoint armourMerchant;
-		TPoint storekeeper;
-		TPoint blacksmith;
-		TPoint stableKeeper;
+		TPoint miscMerchant;     // 9003
+		TPoint weaponMerchant;   // 9001
+		TPoint armourMerchant;   // 9002
+		TPoint storekeeper;      // 9005
+		TPoint blacksmith;       // 20016
+		TPoint stableKeeper;     // 20349
 		TPoint skillReset;       // 9006, the old woman
-		TPoint guard;
 		TPoint teleporter;       // 9012, the quest NPC every long trip goes through
 	};
 
@@ -253,28 +258,123 @@ namespace playerbot_empire_rules
 
 	inline bool GetTownServices(long mapIndex, TTownServices& out)
 	{
-		// misc, weapon, armour, storekeeper, blacksmith, stable, skill reset,
-		// guard, teleporter. These villages have no separate 9004 weapon
-		// merchant, so that slot repeats the 9003 the AI actually buys from.
+		// The rows are in the struct's own order: misc, weapon, armour,
+		// storekeeper, blacksmith, stable, skill reset, teleporter. Chunjo's
+		// two rows reproduce, to the unit, the constants this AI has walked to
+		// since long before the table existed - which is what says the reading
+		// of npc.txt is right and the other four rows can be trusted.
 		static const TTownServiceRow rows[] = {
 			// Shinsoo M1, metin2_map_a1
-			{ 1, { { 477400, 952500 }, { 477400, 952500 }, { 469200, 956500 }, { 477000, 956700 }, { 476800, 951600 }, { 481400, 953700 }, { 472900, 958200 }, { 469200, 951700 }, { 465100, 958500 } } },
+			{ 1, { { 477400, 952500 }, { 469200, 951700 }, { 469200, 956500 }, { 477000, 956700 }, { 476800, 951600 }, { 481400, 953700 }, { 472900, 958200 }, { 465100, 958500 } } },
 			// Shinsoo M2, metin2_map_a3
-			{ 3, { { 349400, 880000 }, { 349400, 880000 }, { 354300, 880000 }, { 350200, 876600 }, { 349500, 881000 }, { 362000, 878000 }, { 355900, 885800 }, { 352200, 880000 }, { 357200, 876700 } } },
+			{ 3, { { 349400, 880000 }, { 352200, 880000 }, { 354300, 880000 }, { 350200, 876600 }, { 349500, 881000 }, { 362000, 878000 }, { 355900, 885800 }, { 357200, 876700 } } },
 			// Chunjo M1, metin2_map_b1 (Joan)
-			{ 21, { { 59000, 171300 }, { 59000, 171300 }, { 67600, 164100 }, { 60900, 162000 }, { 59400, 171600 }, { 54900, 163400 }, { 58800, 165700 }, { 67600, 168600 }, { 51900, 153600 } } },
+			{ 21, { { 59000, 171300 }, { 67600, 168600 }, { 67600, 164100 }, { 60900, 162000 }, { 59400, 171600 }, { 54900, 163400 }, { 58800, 165700 }, { 51900, 153600 } } },
 			// Chunjo M2, metin2_map_b3 (Bokjung)
-			{ 23, { { 141300, 240400 }, { 141300, 240400 }, { 148500, 242200 }, { 149500, 239500 }, { 142000, 239200 }, { 146900, 232400 }, { 144300, 235700 }, { 147200, 243500 }, { 136900, 240300 } } },
+			{ 23, { { 141300, 240400 }, { 147200, 243500 }, { 148500, 242200 }, { 149500, 239500 }, { 142000, 239200 }, { 146900, 232400 }, { 144300, 235700 }, { 136900, 240300 } } },
 			// Jinno M1, metin2_map_c1
-			{ 41, { { 959900, 274100 }, { 959900, 274100 }, { 961900, 263400 }, { 953100, 260800 }, { 960900, 274000 }, { 961200, 278300 }, { 963300, 271900 }, { 964600, 265500 }, { 964800, 273300 } } },
+			{ 41, { { 959900, 274100 }, { 964600, 265500 }, { 961900, 263400 }, { 953100, 260800 }, { 960900, 274000 }, { 961200, 278300 }, { 963300, 271900 }, { 964800, 273300 } } },
 			// Jinno M2, metin2_map_c3
-			{ 43, { { 867600, 243500 }, { 867600, 243500 }, { 862700, 251500 }, { 858600, 243800 }, { 868300, 244700 }, { 871900, 242100 }, { 862500, 242400 }, { 865200, 251500 }, { 867200, 240300 } } },
+			{ 43, { { 867600, 243500 }, { 865200, 251500 }, { 862700, 251500 }, { 858600, 243800 }, { 868300, 244700 }, { 871900, 242100 }, { 862500, 242400 }, { 867200, 240300 } } },
 		};
 		for (unsigned int i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i)
 		{
 			if (rows[i].mapIndex == mapIndex)
 			{
 				out = rows[i].services;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// The centre of a village's stall ring: where a keeper opens its counter and
+	// where a shopper looks for one. Chunjo's two are the points the AI has
+	// always used and are left alone - moving a live market is not this change.
+	// The other four are the centroid of that village's own eight service NPCs,
+	// snapped to the nearest standable cell inside the safe zone, so a counter
+	// stands among the shops instead of in the field behind them.
+	struct TTownPitchRow
+	{
+		long mapIndex;
+		TPoint pitch;
+	};
+
+	inline bool GetTownPitch(long mapIndex, TPoint& out)
+	{
+		static const TTownPitchRow rows[] = {
+			{ 1,  { 473625, 954925 } },
+			{ 3,  { 353987, 880012 } },
+			{ 21, { 63400, 166300 } },
+			{ 23, { 145500, 240000 } },
+			{ 41, { 961212, 270162 } },
+			{ 43, { 865500, 244975 } },
+		};
+		for (unsigned int i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i)
+		{
+			if (rows[i].mapIndex == mapIndex)
+			{
+				out = rows[i].pitch;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// The eight profession trainers of a first village: [job][group], with job
+	// as CHARACTER::GetJob returns it (0..3) and group 1 or 2. Shinsoo's are
+	// 20300..20307, Chunjo's 20320..20327, Jinno's 20340..20347, and in every
+	// kingdom the even vnum of a pair teaches the first group.
+	//
+	// Only the first villages have them. That is not an omission in this table:
+	// npc.txt puts no trainer on any second village, which is exactly why a bot
+	// with no skill group has to be sent back to M1 to choose one.
+	struct TSkillTrainerRow
+	{
+		long mapIndex;
+		TPoint trainers[4][2];
+	};
+
+	inline bool GetSkillTrainer(long mapIndex, int job, int group, TPoint& out)
+	{
+		static const TSkillTrainerRow rows[] = {
+			{ 1, { { { 471800, 951600 }, { 472100, 951500 } }, { { 472500, 951400 }, { 472900, 951300 } }, { { 474000, 951100 }, { 474300, 951000 } }, { { 474700, 950900 }, { 475000, 950800 } } } },
+			{ 21, { { { 62300, 161800 }, { 62700, 161800 } }, { { 63100, 161900 }, { 63500, 161900 } }, { { 64500, 161900 }, { 64900, 161900 } }, { { 65300, 161900 }, { 65700, 161900 } } } },
+			{ 41, { { { 966000, 267100 }, { 966000, 267500 } }, { { 966000, 267900 }, { 966000, 268300 } }, { { 965900, 269200 }, { 965900, 269600 } }, { { 965900, 270000 }, { 965900, 270400 } } } },
+		};
+		if (job < 0 || job > 3 || (group != 1 && group != 2))
+			return false;
+		for (unsigned int i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i)
+		{
+			if (rows[i].mapIndex == mapIndex)
+			{
+				out = rows[i].trainers[job][group - 1];
+				return true;
+			}
+		}
+		return false;
+	}
+
+	inline bool HasSkillTrainers(long mapIndex)
+	{
+		TPoint unused;
+		return GetSkillTrainer(mapIndex, 0, 1, unused);
+	}
+
+	// The Biologist, mob 20084. One per first village and none anywhere else,
+	// so his collection is an M1 errand in every kingdom just as it is in Joan.
+	inline bool GetBiologist(long mapIndex, TPoint& out)
+	{
+		static const TTownPitchRow rows[] = {
+			{ 1,  { 499200, 957000 } },
+			{ 21, { 89800, 182100 } },
+			{ 41, { 950100, 233300 } },
+		};
+		for (unsigned int i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i)
+		{
+			if (rows[i].mapIndex == mapIndex)
+			{
+				out = rows[i].pitch;
 				return true;
 			}
 		}

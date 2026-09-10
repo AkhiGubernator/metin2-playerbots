@@ -775,6 +775,53 @@ namespace
 	const long PLAYERBOT_MAP_CHUNJO_M2 = 23;
 	const long PLAYERBOT_MAP_CHUNJO_M3 = 24;
 	const long PLAYERBOT_MAP_MONKEY_EASY = 25;
+
+	// Chunjo's four maps keep their names because a thousand lines were written
+	// against them, but they are one kingdom of three now and nothing may test
+	// a village by its index any more. A rule about "the first village" is a
+	// rule about MAP_ROLE_M1, and it has to answer for Shinsoo and Jinno too -
+	// a Jinno bot walking to Joan's blacksmith because 21 was written into the
+	// town visit is the whole reason this file grew these six questions.
+	bool IsPlayerBotM1Map(long mapIndex)
+	{
+		return playerbot_empire_rules::GetMapRole(mapIndex) ==
+				playerbot_empire_rules::MAP_ROLE_M1;
+	}
+
+	bool IsPlayerBotM2Map(long mapIndex)
+	{
+		return playerbot_empire_rules::GetMapRole(mapIndex) ==
+				playerbot_empire_rules::MAP_ROLE_M2;
+	}
+
+	bool IsPlayerBotM3Map(long mapIndex)
+	{
+		return playerbot_empire_rules::GetMapRole(mapIndex) ==
+				playerbot_empire_rules::MAP_ROLE_M3;
+	}
+
+	// Any village: the six maps that have merchants, a blacksmith and a
+	// Teleporter. This is the guard a town visit wants.
+	bool IsPlayerBotVillageMap(long mapIndex)
+	{
+		return IsPlayerBotM1Map(mapIndex) || IsPlayerBotM2Map(mapIndex);
+	}
+
+	// The map of `role` in the bot's OWN kingdom. The character's empire is the
+	// truth here and the map under its feet is not: a Jinno bot standing in
+	// Bokjung is a visitor, and sending it "home to M1" means Jinno's M1.
+	long GetPlayerBotHomeMap(LPCHARACTER ch, playerbot_empire_rules::EMapRole role)
+	{
+		return ch ? playerbot_empire_rules::GetHomeMap((int)ch->GetEmpire(), role) : 0;
+	}
+
+	// Whether two maps belong to the same kingdom, which is what says a walk
+	// from one to the other is a local errand rather than a journey abroad.
+	bool IsPlayerBotSameKingdom(long a, long b)
+	{
+		const int ea = playerbot_empire_rules::GetMapOwnerEmpire(a);
+		return ea != 0 && ea == playerbot_empire_rules::GetMapOwnerEmpire(b);
+	}
 	const long PLAYERBOT_MAP_MONKEY_MEDIUM = 108;
 	const long PLAYERBOT_MAP_MONKEY_HARD = 109;
 	const long PLAYERBOT_M1_TO_M2_PORTAL_X = 87600;
@@ -2226,9 +2273,11 @@ namespace
 
 	bool IsPlayerBotHuntingMobHosted(DWORD vnum, long lMapIndex = 0)
 	{
-		// Everything the first twenty-five rows ask for lives in Joan and Bokjung.
+		// Everything the first twenty-five rows asks for is starter game, and
+		// every kingdom has its own: the villages are what host mobs under 500,
+		// whichever kingdom the bot belongs to.
 		if (vnum < 500)
-			return lMapIndex == 0 || lMapIndex == PLAYERBOT_MAP_CHUNJO_M1 || lMapIndex == PLAYERBOT_MAP_CHUNJO_M2;
+			return lMapIndex == 0 || IsPlayerBotVillageMap(lMapIndex);
 		for (size_t i = 0; i < sizeof(PLAYERBOT_HUNTING_MOB_HOMES) / sizeof(PLAYERBOT_HUNTING_MOB_HOMES[0]); ++i)
 		{
 			const TPlayerBotMobHome& home = PLAYERBOT_HUNTING_MOB_HOMES[i];
@@ -2301,6 +2350,298 @@ namespace
 		{ 62600, 213600 }, { 88600, 201000 }, { 94000, 164300 },
 		{ 83700, 119300 }, { 67600, 117700 }, { 63500, 133500 }
 	};
+
+	// ---------------------------------------------------------------------
+	// The hunting ground of each village, measured per map.
+	//
+	// Joan's tables above were placed by hand off metin2_map_b1, and for a year
+	// they were the only ones there were - so every branch of the wander pass
+	// tested for map 21, 23 or 24 and a bot anywhere else fell through to a
+	// random walk. Shinsoo and Jinno host the same monsters in the same bands
+	// and put them in entirely different places, so none of these numbers can
+	// be Chunjo's plus an offset; each row was measured from that map's own
+	// regen.txt and stone.txt with tools/generate_wander_hubs.py: the richest
+	// 6400-unit squares, kept apart, each landed on a real spawn point that is
+	// standable on server_attr and outside the safe zone, with the median
+	// monster level within 2500 units as its band.
+	//
+	// Chunjo's rows are the hand-made tables unchanged. The measurement agrees
+	// with them where it can be checked - the three Bokjung bosses come out on
+	// the constants this file has always carried - which is what says the rows
+	// for the other four villages can be trusted.
+	struct TPlayerBotVillageHub { long x; long y; int mobLevel; };
+
+	// Shinsoo M1, metin2_map_a1
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_1[32] = {
+		{ 419700, 904500, 25 }, { 425700, 913000, 25 }, { 431500, 912100, 25 },
+		{ 426000, 918900, 25 }, { 432800, 904900, 25 }, { 456400, 983000, 9 },
+		{ 464400, 910600, 13 }, { 444800, 969600, 9 }, { 422700, 905200, 25 },
+		{ 438900, 937900, 7 }, { 433400, 937400, 10 }, { 464000, 937200, 3 },
+		{ 443900, 963600, 9 }, { 451600, 981600, 10 }, { 463800, 1008100, 13 },
+		{ 451900, 936700, 3 }, { 477000, 980800, 3 }, { 450000, 918800, 9 },
+		{ 464000, 988400, 7 }, { 488700, 969900, 3 }, { 476700, 906400, 18 },
+		{ 469900, 974200, 3 }, { 432900, 949100, 9 }, { 468500, 905300, 13 },
+		{ 427000, 964600, 13 }, { 427400, 925700, 18 }, { 482600, 905000, 24 },
+		{ 438000, 912400, 20 }, { 425000, 937900, 20 }, { 490900, 951300, 3 },
+		{ 490700, 956200, 3 }, { 458200, 917400, 9 }
+	};
+	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_1[12] = {
+		{ 470300, 905000 }, { 461900, 967600 }, { 431900, 910800 },
+		{ 417200, 903000 }, { 429900, 905000 }, { 443600, 913400 },
+		{ 483500, 918200 }, { 491800, 922000 }, { 458800, 930100 },
+		{ 439800, 930300 }, { 500600, 930700 }, { 464900, 933200 }
+	};
+
+	// Shinsoo M2, metin2_map_a3
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_3[12] = {
+		{ 394500, 848100, 0 }, { 355800, 855300, 0 }, { 386500, 855000, 0 },
+		{ 368100, 854200, 0 }, { 337000, 899900, 0 }, { 335900, 836400, 0 },
+		{ 348700, 860300, 0 }, { 329200, 842600, 0 }, { 323300, 846100, 0 },
+		{ 329700, 853900, 0 }, { 329100, 887500, 0 }, { 330100, 836000, 0 }
+	};
+	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_3[12] = {
+		{ 321300, 886400 }, { 387300, 898400 }, { 320700, 829700 },
+		{ 361100, 831000 }, { 329200, 836600 }, { 368500, 862900 },
+		{ 323900, 865100 }, { 354400, 870300 }, { 345700, 872600 },
+		{ 328900, 877400 }, { 392200, 880100 }, { 340000, 880700 }
+	};
+	const TPlayerBotMapPoint PLAYERBOT_GROUND_BESTIALS_3[2] = {
+		{ 330100, 875300 }, { 339400, 887400 }
+	};
+
+	// Chunjo M2, metin2_map_b3: the twelve spawn clusters Bokjung has rotated
+	// since before this table had a name.
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_23[12] = {
+		{ 173800, 218500, 0 }, { 182500, 224300, 0 }, { 188900, 234700, 0 },
+		{ 190000, 250200, 0 }, { 187300, 263200, 0 }, { 185500, 278700, 0 },
+		{ 175000, 286500, 0 }, { 162200, 288900, 0 }, { 149200, 289900, 0 },
+		{ 136900, 287300, 0 }, { 125700, 286800, 0 }, { 116500, 279800, 0 }
+	};
+	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_23[12] = {
+		{ 152600, 225700 }, { 135400, 263200 }, { 161400, 228700 },
+		{ 190000, 236700 }, { 141100, 270500 }, { 179400, 273400 },
+		{ 154300, 274300 }, { 171200, 287400 }, { 130000, 287500 },
+		{ 184800, 289400 }, { 156000, 290900 }, { 179100, 224700 }
+	};
+
+	// Jinno M1, metin2_map_c1
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_41[32] = {
+		{ 975700, 219600, 25 }, { 987800, 316300, 25 }, { 962900, 221200, 20 },
+		{ 968800, 221100, 23 }, { 982600, 222200, 20 }, { 950400, 244700, 3 },
+		{ 956600, 233500, 9 }, { 937600, 309500, 13 }, { 983100, 303600, 10 },
+		{ 970300, 291000, 3 }, { 956600, 246900, 3 }, { 982800, 272200, 3 },
+		{ 988700, 215900, 25 }, { 963800, 240000, 7 }, { 938300, 240000, 9 },
+		{ 937800, 296400, 9 }, { 976500, 291400, 6 }, { 993500, 317300, 25 },
+		{ 988800, 304200, 13 }, { 989000, 284200, 12 }, { 987700, 233900, 18 },
+		{ 986900, 220600, 20 }, { 943500, 284900, 3 }, { 963100, 290900, 3 },
+		{ 969500, 216800, 25 }, { 982700, 216900, 25 }, { 989700, 298000, 18 },
+		{ 940300, 304200, 12 }, { 956700, 225100, 18 }, { 995100, 277700, 13 },
+		{ 983600, 279100, 4 }, { 970400, 296900, 4 }
+	};
+	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_41[12] = {
+		{ 954200, 231300 }, { 941000, 284300 }, { 936700, 255300 },
+		{ 955600, 239500 }, { 945300, 217400 }, { 981800, 218600 },
+		{ 992900, 224100 }, { 961100, 233600 }, { 971100, 245600 },
+		{ 991000, 246800 }, { 963300, 250100 }, { 956500, 251700 }
+	};
+
+	// Jinno M2, metin2_map_c3
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_43[12] = {
+		{ 835800, 246500, 0 }, { 906700, 283800, 0 }, { 905700, 279400, 0 },
+		{ 873400, 291600, 0 }, { 834300, 227300, 0 }, { 848300, 290300, 0 },
+		{ 834600, 265800, 0 }, { 835200, 231900, 0 }, { 834900, 239100, 0 },
+		{ 878900, 272800, 0 }, { 892600, 271000, 0 }, { 898600, 285000, 0 }
+	};
+	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_43[12] = {
+		{ 886100, 218700 }, { 837900, 219400 }, { 860400, 217600 },
+		{ 867600, 221200 }, { 854700, 229000 }, { 903300, 245400 },
+		{ 883200, 268800 }, { 849300, 269600 }, { 876900, 276100 },
+		{ 847800, 286900 }, { 873300, 291300 }, { 851300, 293700 }
+	};
+	const TPlayerBotMapPoint PLAYERBOT_GROUND_BESTIALS_43[2] = {
+		{ 841100, 270400 }, { 861200, 275300 }
+	};
+
+	// The three guild maps. Same size, same eight monster types, three
+	// different layouts - which is why one table cannot serve all of them.
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_4[10] = {
+		{ 135600, 35400, 0 }, { 144300, 43200, 0 }, { 142000, 35000, 0 },
+		{ 151600, 35400, 0 }, { 150500, 43000, 0 }, { 156900, 23600, 0 },
+		{ 137400, 15500, 0 }, { 143700, 15600, 0 }, { 147800, 9700, 0 },
+		{ 170500, 40500, 0 }
+	};
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_24[10] = {
+		{ 189700, 6000, 0 }, { 196900, 7000, 0 }, { 206800, 7800, 0 },
+		{ 212600, 9400, 0 }, { 204200, 12400, 0 }, { 209200, 18800, 0 },
+		{ 195800, 18100, 0 }, { 187600, 15100, 0 }, { 216000, 15900, 0 },
+		{ 201500, 21700, 0 }
+	};
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_44[10] = {
+		{ 260800, 22100, 0 }, { 264300, 23000, 0 }, { 246900, 8600, 0 },
+		{ 270400, 46600, 0 }, { 234300, 10900, 0 }, { 259700, 29000, 0 },
+		{ 235100, 17400, 0 }, { 243500, 23200, 0 }, { 241000, 8000, 0 },
+		{ 241600, 24700, 0 }
+	};
+
+	// Joan's eight party camps, by hand, with the level band each was measured
+	// at. The other two first villages take the eight densest clusters of their
+	// own grinding table, which is what these eight are.
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_CAMPS_21[8] = {
+		{ 39000, 200200, 9 },  // South-West White Oath Camp
+		{ 37000, 168400, 10 }, // West White Oath Camp
+		{ 84600, 197500, 12 }, // South-East Bear / Tiger Camp
+		{ 61000, 203600, 6 },  // South Dense Boar / Wolf Plains
+		{ 80300, 135700, 9 },  // North-East Plateau Camp
+		{ 61600, 133500, 12 }, // North Meadow Camp
+		{ 35000, 135500, 21 }, // North-West Lykos Territory
+		{ 85800, 169700, 3 }   // East Cursed Beast Camp
+	};
+
+	// Joan's own thirty-two, kept where they were written.
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_21[32] = {
+		// 1. North Quadrant (Meadows & North Road)
+		{ 61600, 133500, 12 }, { 55600, 135200, 12 }, { 70600, 135800, 9 }, { 59500, 123600, 18 },
+		// 2. North-East Quadrant (Plateaus & Hills)
+		{ 80300, 135700, 9 }, { 83500, 130000, 12 }, { 75500, 143600, 6 }, { 87200, 147300, 12 },
+		// 3. East Quadrant (Cursed Animals & Tigers)
+		{ 85800, 169700, 3 }, { 80300, 165800, 1 }, { 88600, 162800, 9 }, { 82900, 178300, 3 },
+		// 4. South-East Quadrant (Brown Bears & Tiger Groves)
+		{ 84600, 197500, 12 }, { 78300, 191000, 3 }, { 89800, 195300, 12 }, { 86700, 209800, 20 },
+		// 5. South Quadrant (Wild Boars, Grey Wolves, Tigers)
+		{ 61000, 203600, 6 }, { 52700, 194700, 4 }, { 67400, 194700, 3 }, { 61100, 214300, 21 },
+		// 6. South-West Quadrant (White Oath Camps & Black Bears)
+		{ 39000, 200200, 9 }, { 29900, 196400, 16 }, { 46200, 206200, 10 }, { 33500, 209800, 18 },
+		// 7. West Quadrant (Valley of Mi-Jung, White Oath)
+		{ 37000, 168400, 10 }, { 30200, 164500, 12 }, { 44700, 165800, 3 }, { 32600, 178200, 12 },
+		// 8. North-West Quadrant (Lykos territory, Cursed Wolves)
+		{ 35000, 135500, 21 }, { 40600, 145000, 9 }, { 28500, 146900, 12 }, { 42100, 129300, 18 }
+	};
+
+	struct TPlayerBotVillageGround
+	{
+		long mapIndex;
+		const TPlayerBotVillageHub* hubs;
+		size_t hubCount;
+		const TPlayerBotVillageHub* camps;   // party ground, first villages only
+		size_t campCount;
+		const TPlayerBotMapPoint* metins;
+		size_t metinCount;
+		const TPlayerBotMapPoint* bestials;  // 533/534, second villages only
+		TPlayerBotMapPoint captain;          // 591, second villages only
+	};
+
+	const TPlayerBotVillageGround* GetPlayerBotVillageGround(long mapIndex)
+	{
+		static const TPlayerBotVillageGround rows[] = {
+			{ 1, PLAYERBOT_GROUND_HUBS_1, 32, PLAYERBOT_GROUND_HUBS_1, 8,
+				PLAYERBOT_GROUND_METINS_1, 12, NULL, { 0, 0 } },
+			{ 3, PLAYERBOT_GROUND_HUBS_3, 12, NULL, 0,
+				PLAYERBOT_GROUND_METINS_3, 12, PLAYERBOT_GROUND_BESTIALS_3, { 369700, 906200 } },
+			{ 4, PLAYERBOT_GROUND_HUBS_4, 10, NULL, 0, NULL, 0, NULL, { 0, 0 } },
+			{ 21, PLAYERBOT_GROUND_HUBS_21, 32, PLAYERBOT_GROUND_CAMPS_21, 8,
+				PLAYERBOT_METIN_HOTSPOTS, 12, NULL, { 0, 0 } },
+			{ 23, PLAYERBOT_GROUND_HUBS_23, 12, NULL, 0,
+				PLAYERBOT_GROUND_METINS_23, 12, PLAYERBOT_M2_BESTIAL_HOTSPOTS,
+				{ PLAYERBOT_M2_CAPTAIN_X, PLAYERBOT_M2_CAPTAIN_Y } },
+			{ 24, PLAYERBOT_GROUND_HUBS_24, 10, NULL, 0, NULL, 0, NULL, { 0, 0 } },
+			{ 41, PLAYERBOT_GROUND_HUBS_41, 32, PLAYERBOT_GROUND_HUBS_41, 8,
+				PLAYERBOT_GROUND_METINS_41, 12, NULL, { 0, 0 } },
+			{ 43, PLAYERBOT_GROUND_HUBS_43, 12, NULL, 0,
+				PLAYERBOT_GROUND_METINS_43, 12, PLAYERBOT_GROUND_BESTIALS_43, { 899600, 287800 } },
+			{ 44, PLAYERBOT_GROUND_HUBS_44, 10, NULL, 0, NULL, 0, NULL, { 0, 0 } },
+		};
+		for (size_t i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i)
+			if (rows[i].mapIndex == mapIndex)
+				return &rows[i];
+		return NULL;
+	}
+
+	// Yongan's bank and Pyongmoo's, measured the same way Joan's was, with
+	// tools/generate_fishing_bank.py: a dry standable cell centre within two
+	// cells of water, spaced so two anglers never share a tile, each carrying
+	// the water point it faces. Both are anchored on that village's own Rybak,
+	// because the bait trip and the fishing trip have to be one walk.
+	//
+	// They are shorter rows than Joan's eighty. That is the map: Yongan's shore
+	// near its bait merchant runs about three thousand units. More anglers than
+	// stands is a case the claim code already handles - it shares a stand rather
+	// than refusing to fish.
+	const TPlayerBotFishingStandPoint PLAYERBOT_FISHING_STANDS_1[] = {
+		{ 484025, 962025, 484125, 962125 }, { 484125, 962075, 484125, 962175 },
+		{ 484225, 962025, 484175, 962125 }, { 484325, 962075, 484225, 962125 },
+		{ 484425, 962025, 484325, 962125 }, { 484525, 962075, 484425, 962125 },
+		{ 484625, 962025, 484525, 962125 }, { 484725, 962075, 484625, 962125 },
+		{ 484825, 962025, 484725, 962125 }, { 484925, 962075, 484825, 962125 },
+		{ 485025, 962025, 484925, 962125 }, { 485125, 962075, 485025, 962125 },
+		{ 485225, 962025, 485125, 962125 }, { 485325, 962075, 485225, 962125 },
+		{ 485425, 962025, 485325, 962125 }, { 485525, 962075, 485425, 962125 },
+		{ 485625, 962025, 485525, 962125 }, { 485725, 962075, 485625, 962125 },
+		{ 485825, 962025, 485725, 962125 }, { 485925, 962075, 485825, 962125 },
+		{ 486025, 962025, 485925, 962125 }
+	};
+	const TPlayerBotFishingStandPoint PLAYERBOT_FISHING_STANDS_41[] = {
+		{ 964275, 252925, 964375, 253025 }, { 964375, 252975, 964425, 253025 },
+		{ 964525, 252975, 964425, 253075 }, { 964175, 252975, 964275, 253025 },
+		{ 964625, 252925, 964525, 253025 }, { 964125, 253075, 964225, 253025 },
+		{ 964025, 253025, 964125, 253125 }, { 963925, 253075, 964025, 253125 },
+		{ 963825, 253025, 963925, 253125 }, { 963725, 253075, 963825, 253125 },
+		{ 965225, 253025, 965125, 253025 }, { 963625, 253025, 963725, 253125 },
+		{ 963575, 253125, 963675, 253125 }, { 965325, 253075, 965225, 253125 },
+		{ 965425, 253025, 965325, 253125 }, { 963475, 253175, 963575, 253225 },
+		{ 963375, 253125, 963475, 253225 }, { 965525, 253075, 965425, 253125 },
+		{ 965625, 253025, 965525, 253125 }, { 963275, 253175, 963375, 253225 },
+		{ 965675, 252925, 965725, 253025 }, { 963175, 253125, 963275, 253225 },
+		{ 965775, 252975, 965775, 253025 }, { 963075, 253175, 963175, 253225 },
+		{ 965875, 252925, 965825, 253025 }, { 965975, 252975, 965875, 253025 },
+		{ 963025, 253275, 963125, 253225 }, { 966075, 252925, 965975, 253025 },
+		{ 962925, 253225, 963025, 253325 }, { 966175, 252975, 966075, 253025 },
+		{ 962825, 253275, 962925, 253325 }, { 966275, 252925, 966175, 253025 },
+		{ 966375, 252975, 966275, 253025 }, { 962725, 253225, 962825, 253325 },
+		{ 966475, 252925, 966375, 253025 }, { 962625, 253275, 962725, 253325 },
+		{ 966525, 253025, 966425, 253025 }, { 962525, 253225, 962625, 253325 },
+		{ 962425, 253275, 962525, 253325 }, { 966625, 253075, 966525, 253125 },
+		{ 962325, 253225, 962425, 253325 }, { 962275, 253325, 962375, 253325 },
+		{ 966725, 253025, 966625, 253125 }, { 966825, 253075, 966725, 253125 },
+		{ 966925, 253025, 966825, 253125 }, { 962175, 253375, 962275, 253425 },
+		{ 967025, 253075, 966925, 253125 }, { 962075, 253325, 962175, 253425 },
+		{ 962075, 253475, 962175, 253475 }, { 967125, 253025, 967025, 253125 },
+		{ 961975, 253425, 962075, 253525 }, { 967225, 253075, 967125, 253125 },
+		{ 967325, 253025, 967225, 253125 }, { 961875, 253475, 961975, 253525 },
+		{ 967425, 253075, 967325, 253125 }, { 961775, 253425, 961875, 253525 },
+		{ 961775, 253575, 961875, 253575 }, { 967525, 253025, 967425, 253125 },
+		{ 967625, 253075, 967525, 253125 }, { 961675, 253525, 961775, 253625 }
+	};
+
+	struct TPlayerBotFishingBank
+	{
+		long mapIndex;
+		const TPlayerBotFishingStandPoint* stands;
+		size_t standCount;
+		TPlayerBotMapPoint fisherman;   // 9009, the bait and rod merchant
+		TPlayerBotMapPoint centre;      // what "am I at the water yet" measures
+		int radius;
+	};
+
+	const TPlayerBotFishingBank* GetPlayerBotFishingBank(long mapIndex)
+	{
+		static const TPlayerBotFishingBank rows[] = {
+			{ 1, PLAYERBOT_FISHING_STANDS_1,
+				sizeof(PLAYERBOT_FISHING_STANDS_1) / sizeof(PLAYERBOT_FISHING_STANDS_1[0]),
+				{ 482700, 961900 }, { 485025, 962050 }, 2600 },
+			{ 21, PLAYERBOT_FISHING_STANDS, PLAYERBOT_FISHING_STAND_COUNT,
+				{ PLAYERBOT_FISHERMAN_X, PLAYERBOT_FISHERMAN_Y },
+				{ PLAYERBOT_FISHING_BANK_X, PLAYERBOT_FISHING_BANK_Y },
+				PLAYERBOT_FISHING_BANK_RADIUS },
+			{ 41, PLAYERBOT_FISHING_STANDS_41,
+				sizeof(PLAYERBOT_FISHING_STANDS_41) / sizeof(PLAYERBOT_FISHING_STANDS_41[0]),
+				{ 964400, 252800 }, { 964650, 253275 }, 3600 },
+		};
+		for (size_t i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i)
+			if (rows[i].mapIndex == mapIndex)
+				return &rows[i];
+		return NULL;
+	}
+
 
 	enum EPlayerBotRole
 	{

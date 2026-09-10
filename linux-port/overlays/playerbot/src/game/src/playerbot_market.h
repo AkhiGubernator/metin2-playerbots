@@ -377,7 +377,7 @@ namespace
 		// A walk to Joan that ran out of time counts as Joan looked at, or the
 		// next shopping pass would set off again from wherever it gave up.
 		if (ch && state.bMarketTrip &&
-				(ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M1 || state.bMarketToJoan))
+				(IsPlayerBotM1Map(ch->GetMapIndex()) || state.bMarketToJoan))
 			state.dwMarketM2AllowedUntil = get_dword_time() +
 					PLAYERBOT_MARKET_M2_FALLBACK;
 		state.bMarketTrip = false;
@@ -419,7 +419,7 @@ namespace
 		// with "Sohan" or "Monkey Dungeon" over their heads and rode off.
 		if (state.bMarketToJoan)
 		{
-			if (ch->GetMapIndex() != PLAYERBOT_MAP_CHUNJO_M2)
+			if (!IsPlayerBotM2Map(ch->GetMapIndex()))
 			{
 				state.bMarketToJoan = false;
 				state.dwMarketTripUntil = dwNow + PLAYERBOT_MARKET_TRIP_TIMEOUT;
@@ -432,10 +432,24 @@ namespace
 					EndPlayerBotMarketTrip(ch, state, "departure_set");
 					return false;
 				}
+				// This kingdom's own gate and this kingdom's own first village.
+				// The walk is the same one it has always been; which market it
+				// ends at is whichever one the bot's second village opens onto.
+				const int owner = playerbot_empire_rules::GetMapOwnerEmpire(ch->GetMapIndex());
+				const long firstVillage = playerbot_empire_rules::GetHomeMap(owner,
+						playerbot_empire_rules::MAP_ROLE_M1);
+				playerbot_empire_rules::TKingdomGate gate;
+				playerbot_empire_rules::TPoint pitch;
+				if (!playerbot_empire_rules::FindKingdomGate(owner, ch->GetMapIndex(),
+							firstVillage, gate) ||
+						!playerbot_empire_rules::GetTownPitch(firstVillage, pitch))
+				{
+					EndPlayerBotMarketTrip(ch, state, "no_gate_home");
+					return false;
+				}
 				return MovePlayerBotToWorldPortal(ch, state,
-						PLAYERBOT_M2_TO_M1_PORTAL_X, PLAYERBOT_M2_TO_M1_PORTAL_Y,
-						PLAYERBOT_MAP_CHUNJO_M1, PLAYERBOT_M1_GUARD_X,
-						PLAYERBOT_M1_GUARD_Y, dwNow, "market_to_m1");
+						gate.gate.x, gate.gate.y,
+						firstVillage, pitch.x, pitch.y, dwNow, "market_to_m1");
 			}
 		}
 		SetPlayerBotAction(state, BOT_ACTION_MARKET, dwNow);
@@ -571,7 +585,7 @@ namespace
 		// Only for a bot whose place is Bokjung: one that is leaving for the
 		// frontier, or is held back from it by an errand, shops in reach and
 		// goes - the same line the stall's walk to Joan draws.
-		if (!haveStallInReach && ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2 &&
+		if (!haveStallInReach && IsPlayerBotM2Map(ch->GetMapIndex()) &&
 				dwNow >= state.dwMarketM2AllowedUntil &&
 				state.lDepartureMap == 0 && GetPlayerBotFrontierMapForLevel(ch) == 0)
 		{
@@ -641,7 +655,7 @@ namespace
 			if (ch->GetMyShop() && !state.vecShopOffers.empty())
 			{
 				++stalls;
-				if (ch->GetMapIndex() == PLAYERBOT_MAP_CHUNJO_M2)
+				if (IsPlayerBotM2Map(ch->GetMapIndex()))
 					++s_iPlayerBotStallsInM2;
 				for (size_t k = 0; k < state.vecShopOffers.size(); ++k)
 				{

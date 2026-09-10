@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T17:50:00Z",
-  "statusMessage": "Aktualizacja 1.32.5. Suwak straganiarzy znowu cos znaczy: bot z nadmiarem ksiazek otwieral stragan bez wzgledu na ustawienie, a to czwarta czesc populacji. Panel przestal kazac instalowac integracje, ktorej ta wersja nie zawiera i nie potrzebuje.",
+  "publishedAt": "2026-09-10T20:10:00Z",
+  "statusMessage": "Aktualizacja 1.33.0. Gra znowu jest po polsku po kazdej aktualizacji: przelacznik jezyka podmienia pliki w obrazie, a kazda przebudowa je cofala, wiec swiat byl nazwany po polowie w kazdym jezyku. Haslo do panelu przestalo byc tajemnica przed wlascicielem serwera, strona jest domyslnie po polsku, boty nosz\u0105 ludzkie nicki, a panel GM na F9 dostal osiem nowych komend.",
   "server": {
-    "version": "1.32.5",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.32.5/metin2-server-update-1.32.5.zip",
-    "sha256": "087F8C59B69F9E3DD155DE7F901A21B65472E18885E933D93E1B08C25993D041"
+    "version": "1.33.0",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.0/metin2-server-update-1.33.0.zip",
+    "sha256": "4D993204A6E541D6FCC4D90ED9B8648CA52C54283F6560743A0B61025BAE555B"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "1.31.1",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.31.1/metin2-client-update-1.31.1.zip",
-    "sha256": "53C419421C9DA9F20C166C701932AFDD59C5EF5B5392C139766DE0086E6C13D4"
+    "version": "1.33.0",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.0/metin2-client-update-1.33.0.zip",
+    "sha256": "CE2C1362BCC34D9071EE844D143AF5673B82DC658E8ECC6AE383B4E73BF59B01"
   }
 }

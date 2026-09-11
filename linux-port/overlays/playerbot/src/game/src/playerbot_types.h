@@ -850,6 +850,21 @@ namespace
 	const BYTE PLAYERBOT_BATTLE_HORSE_LEVEL = 11;
 
 	const long PLAYERBOT_MAP_CHUNJO_M1 = 21;
+	// Joan's inner town is walled: the misc merchant and the blacksmith stand
+	// behind the gate at PLAYERBOT_TOWN_GATE_*, and the town visit walks that
+	// gate as a leg of its own (GATE_IN / GATE_OUT). Yongan and Pyongmoo keep
+	// the same eight services in open ground - measured on the mt2009
+	// server_attr of maps 1 and 41: the blacksmith and the misc merchant sit in
+	// the weapon merchant's own walkable component - so they take the direct
+	// phases a second village takes. Until 2.0.8 every first village walked
+	// Joan's gate coordinates, which on maps 1 and 41 are nowhere, so no
+	// Shinsoo or Jinno bot ever reached its blacksmith or misc merchant
+	// ("tylko boty z Chunjo ulepszaja ekwipunek", nerrvous_s). Named by map on
+	// purpose: this is one town's wall, not a kingdom's shape.
+	inline bool IsPlayerBotGatedVillage(long mapIndex)
+	{
+		return mapIndex == PLAYERBOT_MAP_CHUNJO_M1;
+	}
 	const long PLAYERBOT_MAP_CHUNJO_M2 = 23;
 	const long PLAYERBOT_MAP_CHUNJO_M3 = 24;
 	const long PLAYERBOT_MAP_MONKEY_EASY = 25;

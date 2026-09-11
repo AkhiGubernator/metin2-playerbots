@@ -2012,6 +2012,40 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   restart". Before adding a panel feature that talks to the game container,
   check `linux-port-mt2009/docker/game/bin/` for the consumer.
 
+- **Joan's gate is Joan's, and a first village is not a shape.** The town
+  visit in a first village had an exterior/interior split with one gate leg
+  at `PLAYERBOT_TOWN_GATE_*` - Joan's wall - taken for every first village, so
+  on maps 1 and 41 the leg walked to coordinates that are nowhere and the
+  misc merchant and the blacksmith were never reached: 0 blacksmith visits on
+  `first`/`game2` against 131 on `game1` in eight minutes, bots reading "Ide
+  do kowala" for good. Measured on the mt2009 `server_attr` (BFS at 50 units):
+  on maps 1, 21 and 41 the blacksmith and the misc merchant sit in the weapon
+  merchant's own walkable component, so `IsPlayerBotGatedVillage` names Joan
+  alone and every other village takes the direct phases (`bDirect` in
+  `playerbot_town.h`). When a per-map table replaces a constant, the walk
+  legs *between* the table's points have to be checked too.
+- **A function that returns an array of one returns an object, and under
+  StrictMode `.Count` on it throws.** `Get-M2DockerPreflight` took
+  `Get-M2ExcludedPortRanges` bare: a Windows with exactly one reserved port
+  range (or none) got "The property 'Count' cannot be found on this object"
+  from Start, StartDocker and Logs alike, because all three run the
+  preflight. Both launcher modules run `Set-StrictMode -Version 2.0`; wrap
+  every function result you count in `@()`, at the call site, every time.
+- **A crashed core leaves no core file on Docker Desktop.** The WSL kernel's
+  `core_pattern` is a pipe to `/wsl-capture-crash` and the container's core
+  limit is 0, so "(core dumped)" in the supervisor's log is all a support
+  bundle ever carried. `libthecore/src/signal.c` (via `linuxify.py`) catches
+  the fatal signals and writes `backtrace()` to `crash.txt` and stderr; the
+  cores link with `-rdynamic` so the frames carry names; `m2-supervise` prints
+  the file after `CORE DIED` and keeps it as `crash-<stamp>.txt`. Read the
+  frames with `c++filt`. No other way to see where a player's core died.
+- **`M2_PLAYERBOT_KINGDOMS` is 1 by default on the 2.x line since 2.0.8, and
+  an old `.env` is migrated once.** `.env` is written at install and never
+  rewritten, so a default flipped in `.env.example` reaches nobody who already
+  installed; `Assert-KingdomsDefault` in `start-server.ps1` sets 1 and marks
+  `M2_PLAYERBOT_KINGDOMS_DEFAULTED=1` exactly once, before
+  `Add-MissingDotEnvKeys` (which would otherwise add the marker from the
+  example and skip the migration). A 0 set after that is respected.
 - **An update never deletes a file, so removing a quest means removing it from
   the loop.** 2.0.6 took `linux-port-mt2009/docker/game/quest/high_risk.quest`
   out of the repository and the Dockerfile's `for q in ...` still named it;

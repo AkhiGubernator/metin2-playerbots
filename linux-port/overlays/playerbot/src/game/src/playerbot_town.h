@@ -212,6 +212,8 @@ namespace
 		// and the old woman are missing from is the role, and every kingdom's
 		// second village is missing them in the same way.
 		const bool inM2 = IsPlayerBotM2Map(ch->GetMapIndex());
+		// Which phase list: every village but Joan walks straight to each NPC.
+		const bool bDirect = inM2 || !IsPlayerBotGatedVillage(ch->GetMapIndex());
 
 		state.bTownNeedTrainer = !inM2 && ch->GetLevel() >= 5 && ch->GetSkillGroup() == 0 &&
 				ch->GetJob() <= JOB_SHAMAN;
@@ -236,10 +238,11 @@ namespace
 		}
 
 		state.bVisitingShop = true;
-		if (inM2)
+		if (bDirect)
 		{
-			// Bokjung has no decorative gate split: visit only the specialists which
-			// are needed and then walk straight back to the local hunting fields.
+			// Bokjung has no decorative gate split, and neither have Yongan and
+			// Pyongmoo: visit only the specialists which are needed and then walk
+			// straight back to the local hunting fields.
 			state.bTownVisitPhase = GetPlayerBotFirstDirectTownPhase(state);
 		}
 		else
@@ -2408,6 +2411,7 @@ namespace
 				!playerbot_empire_rules::GetTownServices(ch->GetMapIndex(), svc))
 			return false;
 		const bool inM2 = IsPlayerBotM2Map(ch->GetMapIndex());
+		const bool bDirect = inM2 || !IsPlayerBotGatedVillage(ch->GetMapIndex());
 		const long weaponNpcX = svc.weaponMerchant.x;
 		const long weaponNpcY = svc.weaponMerchant.y;
 		const long armorNpcX = svc.armourMerchant.x;
@@ -2438,12 +2442,12 @@ namespace
 
 		if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
 		{
-			state.bTownVisitPhase = inM2
+			state.bTownVisitPhase = bDirect
 					? GetPlayerBotFirstDirectTownPhase(state)
 					: GetPlayerBotFirstExteriorTownPhase(state);
-			if (!inM2 && state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
+			if (!bDirect && state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
 				state.bTownVisitPhase = BOT_TOWN_PHASE_GATE_IN;
-			if (inM2 && state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
+			if (bDirect && state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
 			{
 				FinishPlayerBotTownVisit(ch, state, dwNow, true);
 				return true;
@@ -2495,8 +2499,10 @@ namespace
 			{
 				state.dwTownWaitUntil = 0;
 				ClearPlayerBotRoute(state, true);
-				state.bTownVisitPhase = GetPlayerBotFirstExteriorTownPhase(state);
-				if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE &&
+				state.bTownVisitPhase = bDirect
+						? GetPlayerBotFirstDirectTownPhase(state)
+						: GetPlayerBotFirstExteriorTownPhase(state);
+				if (!bDirect && state.bTownVisitPhase == BOT_TOWN_PHASE_NONE &&
 						(state.bTownNeedMisc || state.bTownNeedBlacksmith))
 					state.bTownVisitPhase = BOT_TOWN_PHASE_GATE_IN;
 				if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
@@ -2542,8 +2548,9 @@ namespace
 				state.bTownVisitPhase = state.bTownNeedWeaponMerchant
 						? BOT_TOWN_PHASE_WEAPON_MERCHANT
 						: (state.bTownNeedArmorMerchant ? BOT_TOWN_PHASE_ARMOR_MERCHANT
-							: ((state.bTownNeedMisc || state.bTownNeedBlacksmith)
-								? BOT_TOWN_PHASE_GATE_IN : BOT_TOWN_PHASE_NONE));
+							: (bDirect ? GetPlayerBotFirstDirectTownPhase(state)
+								: ((state.bTownNeedMisc || state.bTownNeedBlacksmith)
+									? BOT_TOWN_PHASE_GATE_IN : BOT_TOWN_PHASE_NONE)));
 				state.dwTownWaitUntil = 0;
 				ClearPlayerBotRoute(state, true);
 				if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
@@ -2592,7 +2599,7 @@ namespace
 			{
 				state.bTownVisitPhase = state.bTownNeedArmorMerchant
 						? BOT_TOWN_PHASE_ARMOR_MERCHANT
-						: (inM2 ? GetPlayerBotFirstDirectTownPhase(state)
+						: (bDirect ? GetPlayerBotFirstDirectTownPhase(state)
 							: ((state.bTownNeedMisc || state.bTownNeedBlacksmith)
 								? BOT_TOWN_PHASE_GATE_IN : BOT_TOWN_PHASE_NONE));
 				state.dwTownWaitUntil = 0;
@@ -2632,7 +2639,7 @@ namespace
 			ch->SetPosition(POS_STANDING);
 			if (dwNow >= state.dwTownWaitUntil)
 			{
-				state.bTownVisitPhase = inM2
+				state.bTownVisitPhase = bDirect
 						? GetPlayerBotFirstDirectTownPhase(state)
 						: (state.bTownNeedSafebox ? BOT_TOWN_PHASE_SAFEBOX
 							: ((state.bTownNeedMisc || state.bTownNeedBlacksmith)
@@ -2669,7 +2676,7 @@ namespace
 						sys_log(0, "PLAYERBOT_TOWN: safebox unaffordable pid=%u name=%s gold=%d",
 								ch->GetPlayerID(), ch->GetName(), ch->GetGold());
 						state.bTownNeedSafebox = false;
-						state.bTownVisitPhase = inM2
+						state.bTownVisitPhase = bDirect
 								? GetPlayerBotFirstDirectTownPhase(state)
 								: ((state.bTownNeedMisc || state.bTownNeedBlacksmith)
 									? BOT_TOWN_PHASE_GATE_IN : BOT_TOWN_PHASE_NONE);
@@ -2726,7 +2733,7 @@ namespace
 			if (done)
 			{
 				state.bTownNeedSafebox = false;
-				state.bTownVisitPhase = inM2
+				state.bTownVisitPhase = bDirect
 						? GetPlayerBotFirstDirectTownPhase(state)
 						: ((state.bTownNeedMisc || state.bTownNeedBlacksmith)
 							? BOT_TOWN_PHASE_GATE_IN : BOT_TOWN_PHASE_NONE);
@@ -2790,7 +2797,7 @@ namespace
 			{
 				state.bTownVisitPhase = state.bTownNeedBlacksmith
 						? BOT_TOWN_PHASE_BLACKSMITH
-						: (inM2 ? BOT_TOWN_PHASE_NONE : BOT_TOWN_PHASE_GATE_OUT);
+						: (bDirect ? BOT_TOWN_PHASE_NONE : BOT_TOWN_PHASE_GATE_OUT);
 				state.dwTownWaitUntil = 0;
 				ClearPlayerBotRoute(state, true);
 				if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
@@ -2844,7 +2851,7 @@ namespace
 				// Always leave the NPC wearing the best surviving/refined equipment,
 				// even if materials, Yang or a failed roll ended the session early.
 				RestorePlayerBotEquipmentAfterRefining(ch, state, dwNow);
-				state.bTownVisitPhase = inM2
+				state.bTownVisitPhase = bDirect
 						? BOT_TOWN_PHASE_NONE : BOT_TOWN_PHASE_GATE_OUT;
 				state.dwTownWaitUntil = 0;
 				ClearPlayerBotRoute(state, true);

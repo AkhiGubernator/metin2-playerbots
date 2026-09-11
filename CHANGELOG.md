@@ -17,6 +17,71 @@ every version here.
 
 ---
 
+## 2.0.8 — (w przygotowaniu)
+
+### Boty Shinsoo i Jinno wreszcie chodzą do kowala i handlarki różności
+
+„Tylko boty z Chunjo ulepszają ekwipunek, do kowala nie podbiega żaden z
+innych królestw” (nerrvous_s, potwierdzone na 2.0.6). Odtworzone na stosie
+testowym z trzema królestwami: w osiem minut rdzeń Chunjo miał 131 wizyt u
+kowala i 3918 ulepszeń, rdzenie Shinsoo i Jinno zero — przy wizytach u
+handlarzy broni i zbroi u wszystkich. Przyczyna: wizyta w pierwszej wiosce
+ma osobną nogę „brama” do wnętrza Joan (handlarka różności i kowal stoją za
+murem), a jej współrzędne są Joan (60300, 169400) — na mapach 1 i 41 to
+nigdzie, więc noga kończyła się „unreachable” i faz wnętrza nigdy nie było.
+Zmierzone na `server_attr` mt2009: w Yongan i Pyongmoo kowal i handlarka
+różności stoją w tym samym spójnym obszarze co handlarz broni, bez muru,
+więc te wioski idą wprost do każdego NPC, jak druga wioska
+(`IsPlayerBotGatedVillage` — brama zostaje tylko dla Joan). Zmierzone po poprawce na tym samym stosie, dziewięć minut od startu:
+Shinsoo 308 wizyt u kowala i 4792 ulepszenia, Jinno 329 i 5475, Chunjo 134
+i 3920 — a handlarka różności odpowiednio 297, 309 i 169 wizyt.
+
+### Trzy królestwa domyślnie u każdego, boty dzielone po równo
+
+Do 2.0.7 `M2_PLAYERBOT_KINGDOMS=0` był domyślny, więc każdy świat 2.x miał
+boty tylko w Chunjo (paczka logów procedera: `shinsoo=0 chunjo=1500
+jinno=0`). Teraz domyślnie 1: migrator dosiewa kohorty Shinsoo i Jinno (po
+500, raz, także na istniejącym świecie — chwilę dłuższy start), a każdy
+rdzeń uruchamia swoje królestwo; liczba botów z suwaka dzieli się po równo
+(zmierzone: 970 → 324/323/323). Plik `.env` gracza jest pisany raz i nigdy
+nadpisywany, więc launcher przełącza stare `0` na `1` dokładnie raz i
+zapisuje to w `M2_PLAYERBOT_KINGDOMS_DEFAULTED`; kto potem ustawi 0, zostaje
+przy 0. „Żółci mają przewagę” (sosen94) bierze się z liczby powyżej 1500:
+Shinsoo i Jinno mają po 500 postaci, reszta idzie do Chunjo — do 1500 botów
+podział jest równy. Ściana poziomów Shinsoo/Jinno (36 lvl) bez zmian.
+
+### Padający rdzeń zapisuje własny backtrace
+
+„Wywala co 2 minuty” (proceder): rdzeń `ch1-game1` padał z sygnałem 11
+83–86 s po każdym starcie, a w paczce logów było tylko „Segmentation fault
+(core dumped)” — Docker Desktop kieruje zrzuty pamięci do WSL
+(`/wsl-capture-crash`), a limit rdzenia w kontenerze to 0, więc nie ma
+czego oglądać. Od teraz `libthecore` przechwytuje SIGSEGV/SIGBUS/SIGFPE/
+SIGILL/SIGABRT, zapisuje ślad stosu (`backtrace()`) do `crash.txt` w katalogu
+rdzenia i na stderr, po czym oddaje sygnał domyślnej obsłudze; rdzenie są
+linkowane z `-rdynamic`, więc ramki niosą nazwy funkcji (zmanglowane —
+`c++filt`). `m2-supervise` po „CORE DIED” drukuje ślad do logu kontenera
+(trafia do paczki logów) i odkłada go jako `crash-<data>.txt` obok syserr.
+Przyczyna padu u procedera nie jest jeszcze znana — następna paczka logów ją
+pokaże.
+
+### Launcher: „The property 'Count' cannot be found on this object”
+
+Start, URUCHOM DOCKER i paczka logów kończyły się tym błędem u co najmniej
+dwóch graczy (sykesal420). Wszystkie trzy uruchamiają sprawdzenie Dockera,
+które pyta Windows o zarezerwowane zakresy portów; funkcja zwracająca
+dokładnie jeden zakres (albo żadnego) oddaje pojedynczy obiekt (albo nic)
+zamiast tablicy, a moduł działa w trybie strict, w którym `.Count` na takim
+obiekcie to ten właśnie błąd. Wynik jest teraz zawsze tablicą. Osobna sprawa
+u drugiego gracza — „The Compose app is no longer running” — to uszkodzony
+Docker Desktop, nie launcher.
+
+### Dane do Navicat i inne drobiazgi
+
+Bez zmian w danych; patrz 2.0.7.
+
+---
+
 ## 2.0.7 — 2026-09-11
 
 ### Risk mode naprawdę znika (2.0.6 tylko usunęło plik)

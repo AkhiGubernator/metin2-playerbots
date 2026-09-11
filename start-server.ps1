@@ -404,6 +404,31 @@ function Get-DockerDesktopCandidates {
     return @($paths | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Unique)
 }
 
+function Assert-KingdomsDefault {
+    # Every 2.x world is meant to run all three kingdoms (the operator's call:
+    # "istotne, by tak bylo u kazdego"), but a .env is written once and kept,
+    # so every install made before 2.0.8 carries the old default
+    # M2_PLAYERBOT_KINGDOMS=0 and would stay a Chunjo-only world for ever.
+    # The switch is flipped to 1 exactly once, and M2_PLAYERBOT_KINGDOMS_DEFAULTED
+    # records that it was - an operator who sets 0 again afterwards keeps 0.
+    # Only on the mt2009 line: the r40250 tree keeps its opt-in.
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Content,
+        [Parameter(Mandatory = $true)][string]$EnvPath
+    )
+    $marker = Join-Path (Split-Path -Parent $EnvPath) 'ENGINE'
+    if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) { return $Content }
+    if ((Get-Content -LiteralPath $marker -Raw).Trim() -eq 'r40250') { return $Content }
+    if ([Regex]::IsMatch($Content, '(?m)^M2_PLAYERBOT_KINGDOMS_DEFAULTED=')) { return $Content }
+    $current = [Regex]::Match($Content, '(?m)^M2_PLAYERBOT_KINGDOMS=(.*)$')
+    if ($current.Success -and $current.Groups[1].Value.Trim() -ne '1') {
+        Write-Host 'Trzy krolestwa: M2_PLAYERBOT_KINGDOMS przelaczone na 1 (Shinsoo, Chunjo i Jinno; boty dzielone po rowno).' -ForegroundColor Cyan
+        Write-Host '  Przy tym starcie migrator dosieje boty dwoch nowych krolestw - to potrwa chwile dluzej.' -ForegroundColor Gray
+    }
+    $Content = Set-DotEnvValue -Content $Content -Name 'M2_PLAYERBOT_KINGDOMS' -Value '1'
+    return (Set-DotEnvValue -Content $Content -Name 'M2_PLAYERBOT_KINGDOMS_DEFAULTED' -Value '1')
+}
+
 function Assert-PanelPassphrase {
     # The one password an operator actually types, and the one way it can go
     # missing.
@@ -499,6 +524,9 @@ function Initialize-InstallationIdentity {
         [Text.UTF8Encoding]::new($false))
     $content = Set-DotEnvValue -Content $content -Name 'M2_COMPOSE_PROJECT_NAME' -Value $project
     $content = Set-DotEnvValue -Content $content -Name 'M2_CONTAINER_PREFIX' -Value $prefix
+    # Before the example's keys are added, because the marker it sets is one
+    # of them: an older .env is switched to all three kingdoms exactly once.
+    $content = Assert-KingdomsDefault -Content $content -EnvPath $envPath
     # Last, so anything the identity decides above wins over the example.
     $content = Add-MissingDotEnvKeys -Content $content -ExamplePath (
         Join-Path (Split-Path -Parent $envPath) '.env.example')

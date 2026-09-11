@@ -118,6 +118,58 @@ def main(root):
          '#elif __FreeBSD__\n',
          '#elif defined(__FreeBSD__) || defined(__linux__)\n')
 
+    # --- libthecore/src/signal.c: a crashing core says where it died --------
+    # Docker Desktop's kernel pipes core dumps to /wsl-capture-crash and the
+    # container's core limit is 0, so a segfault leaves nothing behind but
+    # "(core dumped)" in the supervisor's log - which is what every "wywala co
+    # 2 minuty" report arrives with. glibc's backtrace() needs no core file;
+    # with -rdynamic at link the frames carry function names (mangled - run
+    # them through c++filt). Written to crash.txt in the core's own directory
+    # (m2-supervise prints and rotates it) and to stderr, which the supervisor
+    # already keeps in container.log. Then the default action, so the exit
+    # status the supervisor sees is still the signal's.
+    edit(os.path.join(thecore, 'src', 'signal.c'),
+         '#define RETSIGTYPE void\n',
+         '#define RETSIGTYPE void\n'
+         '\n'
+         '#ifdef __linux__\n'
+         '#include <execinfo.h>\n'
+         '#include <fcntl.h>\n'
+         '#include <stdio.h>\n'
+         '#include <string.h>\n'
+         '#include <unistd.h>\n'
+         '\n'
+         'static void crashsig(int sig)\n'
+         '{\n'
+         '    void* frames[64];\n'
+         '    char head[160];\n'
+         '    int n = backtrace(frames, 64);\n'
+         '    int len = snprintf(head, sizeof(head), "=== fatal signal %d (%s), %d frames, pid %d ===\\n",\n'
+         '                       sig, strsignal(sig), n, (int) getpid());\n'
+         '    int fd = open("crash.txt", O_WRONLY | O_CREAT | O_APPEND, 0644);\n'
+         '    if (fd >= 0)\n'
+         '    {\n'
+         '        if (write(fd, head, len) < 0) {}\n'
+         '        backtrace_symbols_fd(frames, n, fd);\n'
+         '        close(fd);\n'
+         '    }\n'
+         '    if (write(2, head, len) < 0) {}\n'
+         '    backtrace_symbols_fd(frames, n, 2);\n'
+         '    signal(sig, SIG_DFL);\n'
+         '    raise(sig);\n'
+         '}\n'
+         '#endif\n')
+    edit(os.path.join(thecore, 'src', 'signal.c'),
+         '    signal(SIGUSR1, usrsig);\n',
+         '    signal(SIGUSR1, usrsig);\n'
+         '#ifdef __linux__\n'
+         '    signal(SIGSEGV, crashsig);\n'
+         '    signal(SIGBUS, crashsig);\n'
+         '    signal(SIGFPE, crashsig);\n'
+         '    signal(SIGILL, crashsig);\n'
+         '    signal(SIGABRT, crashsig);\n'
+         '#endif\n')
+
     # --- libthecore/src/main.c: srandomdev() is BSD-only --------------------
     edit(os.path.join(thecore, 'src', 'main.c'),
          '#else\n    srandom(time(0) + getpid() + getuid());\n    srandomdev();\n#endif\n',
@@ -147,6 +199,12 @@ def main(root):
         edit(mk,
              ' $(LIBS) -o $(MAIN_TARGET)\n',
              ' -Wl,--start-group $(LIBS) -Wl,--end-group -o $(MAIN_TARGET)\n')
+        # -rdynamic puts every function into the dynamic symbol table, which
+        # is what the crash handler's backtrace_symbols_fd() reads names from;
+        # `strip --strip-unneeded` in the image leaves that table alone.
+        edit(mk,
+             ' -Wl,--start-group $(LIBS) -Wl,--end-group -o $(MAIN_TARGET)\n',
+             ' -rdynamic -Wl,--start-group $(LIBS) -Wl,--end-group -o $(MAIN_TARGET)\n')
 
     # ======================================================================
     # game/ and db/: what the r40250 port found beyond libthecore, applied

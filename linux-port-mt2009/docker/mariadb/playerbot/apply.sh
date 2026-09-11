@@ -299,13 +299,15 @@ before=$(db -e "
 echo "[playerbot-migrate] applying deterministic Playerbot seed (PID $first_pid..$last_pid)"
 result=/tmp/playerbot-seed.out
 trap 'rm -f "$result"' EXIT HUP INT TERM
-# Shinsoo and Jinno are opt-in: M2_PLAYERBOT_KINGDOMS=1 lets the seed create
-# their cohorts, anything else keeps the file to the Chunjo cohort it has
-# always been. The variable goes in ahead of the file, in the same session,
+# Shinsoo and Jinno are on unless M2_PLAYERBOT_KINGDOMS says 0 (opt-in until
+# 2.0.7; the operator wants every world to run all three kingdoms). With the
+# switch on the seed creates their cohorts - on an existing world too, once,
+# because the seed is idempotent - and anything else keeps the file to the
+# Chunjo cohort. The variable goes in ahead of the file, in the same session,
 # because a SET is per-connection.
-kingdoms=0
-case "${M2_PLAYERBOT_KINGDOMS:-0}" in
-    1|true|TRUE|yes|YES) kingdoms=1 ;;
+kingdoms=1
+case "${M2_PLAYERBOT_KINGDOMS:-1}" in
+    0|false|FALSE|no|NO) kingdoms=0 ;;
 esac
 echo "[playerbot-migrate] kingdoms (Shinsoo/Jinno) cohorts: $kingdoms"
 if { printf 'SET @playerbot_seed_kingdoms = %s;

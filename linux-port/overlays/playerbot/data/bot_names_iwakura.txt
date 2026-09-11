@@ -1,9 +1,3 @@
-# Nicknames sent by Iwakura on 11 September 2026 (NICKI.txt, 1000 lines),
-# collected from the Discord with the patrons' own nicks in it - Tieru
-# agreed to those being in the pool ("pewnie ze nie" to davids998's
-# question the night before). One per line, as sent, duplicates and all;
-# what is dropped from it is dropped by generate_bot_names.py, so the
-# file stays a record of what was contributed.
 Rib1337
 Wlucznia98
 xDONAPRAWYx
@@ -56,7 +50,7 @@ MistrzLowienia
 HuraganBigosu
 XxSzukamZonyxX
 xXKradziejXx
-MistrzSzaman
+DajcieMiPiwo
 BodyxD
 KradziejDusz
 XxRzeznikRzeznik
@@ -70,7 +64,7 @@ DzikiLurer98
 BanZaDarmo
 StaryArcherXD
 KuzynGMa
-WalecznyWoj03
+Sabal
 kupsepsa
 BoskiWoj11
 PijanyCien
@@ -86,10 +80,10 @@ Kebab2000
 CyckiSzamankiPL
 xXPROtestantXx
 Szef
-KoxSzamanka
+WKoxu2117
 KebabMT2
 GrubyDuch
-SzalonyKoxuM2
+SzalonyyyGraczzz
 Miecz_PL
 PiratTanaka
 PL_Ziomek
@@ -99,8 +93,8 @@ KrwawyKarp46
 xgdzietebotyx
 EliteGumis
 Bicepsx3
-KrulTaboretKox
-ProMielonyWlucznia
+xKrulTaboretx
+ProWlucznia1997
 AlfaWilk2008
 OgnistaWiktoria
 OgnistyRzeznikPvP
@@ -110,7 +104,7 @@ xXPoteznyXx
 xXNiepokonanyXx
 Staryyyyy79
 ChybaTy
-NoobMental997
+BodyToNoby997
 SzukamZonyPL
 SzukamMezaPL
 PanAntonix330
@@ -125,9 +119,9 @@ xNieusTePliwyx
 OrkZDoliny
 BratNinja
 WszystkonaP
-SuperPies_PL
+SuperPiesPL
 Gumis123
-MrocznaSzamankaKozak
+PoteznyWiktor
 KsujeBoMogePL
 Bierzyn
 DavidS
@@ -532,7 +526,7 @@ SzpanPan
 StalowyWilk
 xStalowyWilkx
 bartek34
-DzikiSluga12
+DzikiSluga12 
 stefan420xpp
 xXxT0MaSZxXx
 xXDajPotyXx
@@ -911,7 +905,7 @@ TakToJa
 TieruMnieStworzyl
 Dayraise
 SynOjcaWuja
-zlewozmywak
+zlewozmywak 
 truskawaaa3
 malinaaa5
 poziomkowakrolowa

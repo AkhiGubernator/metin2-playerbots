@@ -17,6 +17,24 @@ every version here.
 
 ---
 
+## 2.0.2 — (w przygotowaniu)
+
+### Nicki botów: lista Iwakury, w całości i tylko ona
+
+Iwakura spisał 1000 nicków z polskich serwerów z lat 2010–2012 („tu jest
+postaranie”). Ta lista jest teraz jedyną pulą: znika poprzednia (lista
+jaksiezabica, pierwsza lista Iwakury i nicki składane z ich słów) i znika
+dopasowanie do klasy i płci — nazwy idą po kolei według PID, jak zostały
+napisane. Każdy bot, który nosił nick ze starej puli, dostaje nowy przy
+najbliższym starcie serwera (pula ma wersję; historia w
+`common.playerbot_name_history` pamięta nazwę z seeda, więc „restore” dalej
+działa). Gdy botów jest więcej niż nazw, lista idzie drugi raz z „v2” na
+końcu, potem „v3”; Iwakura dopisze kolejne nicki w tygodniu. Odrzucone: dwa
+wulgarne, dwa udające GM i pięć złożonych z samych cyfr. Podkreślniki są
+wycinane, bo klient ich nie przyjmuje.
+
+---
+
 ## 2.0.1 — 2026-09-11
 
 Pierwsza poprawka linii 2.x, z pierwszego dnia instalacji u graczy.

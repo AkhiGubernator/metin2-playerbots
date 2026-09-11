@@ -191,7 +191,7 @@ RUN set -eux; \
     for fn in mysql_direct_query; do \
       grep -qx "$fn" /tmp/qc-work/quest_functions || echo "$fn" >> /tmp/qc-work/quest_functions; \
     done; \
-    for q in web_admin speed_boost high_risk; do \
+    for q in web_admin speed_boost high_risk starter_chest; do \
       [ -f "/quest-add/$q.quest" ] || continue; \
       sed 's/\r$//' "/quest-add/$q.quest" > "/tmp/qc-work/$q.quest"; \
       ( cd /tmp/qc-work && /src/Server/game/src/quest/qc "$q.quest" ); \

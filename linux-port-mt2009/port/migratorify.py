@@ -73,6 +73,25 @@ def main():
                   '    fi\n'
                   'fi\n'
                   '\n' + anchor)
+    # The four game masters of the tester account (gm_characters.sql), before
+    # the generic "grant the oldest character" step: on a world whose admin
+    # account is still empty they are created with their gmlist rows, on a
+    # world where somebody plays on admin the file does nothing and the
+    # generic step grants that character.
+    anchor = ('# ---------------------------------------------------------------------------\n'
+              '# A game master for the tester account.\n')
+    assert s.count(anchor) == 1
+    s = s.replace(anchor,
+                  '# The tester account\'s own game masters, mt2009 only (see the file).\n'
+                  'if [ -s /opt/playerbot/gm_characters.sql ]; then\n'
+                  '    if gm_out=$(db < /opt/playerbot/gm_characters.sql 2>&1); then\n'
+                  '        echo "[playerbot-migrate] $gm_out"\n'
+                  '    else\n'
+                  '        echo "[playerbot-migrate] WARNING: gm_characters.sql failed:" >&2\n'
+                  '        echo "$gm_out" | head -3 >&2\n'
+                  '    fi\n'
+                  'fi\n'
+                  '\n' + anchor)
     head = ('#!/bin/sh\n'
             '# Rendered for the mt2009 world by linux-port-mt2009/port/migratorify.py from\n'
             '# linux-port/docker/mariadb/playerbot/apply.sh. DO NOT EDIT; edit the original.\n')

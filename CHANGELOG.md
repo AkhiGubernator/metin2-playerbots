@@ -17,6 +17,38 @@ every version here.
 
 ---
 
+## 2.0.4 — 2026-09-11
+
+Czwarta poprawka pierwszego dnia: cztery wyposażone postacie GM i skrzynia
+startowa dla gracza. Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Cztery postacie GM z pełnym wyposażeniem
+
+Zamiast jednej postaci Admin konto `admin` ma cztery, po jednej na klasę:
+**Admin** (wojownik), **AdminNinja**, **AdminSura** i **AdminSzaman**, każda
+90 poziomu z uprawnieniami IMPLEMENTOR. Każda nosi najlepszy zestaw +9, jaki
+ma ta paczka dla jej klasy (broń 87 poziomu, zbroja 90, hełm 80, Tarcza
+Tytanów, granatowa biżuteria, buty 65) z mocnymi bonusami — w tym linią
+średnich obrażeń 45% i obrażeń umiejętności 20% na broni — a w plecaku drugą
+broń (dwuręczna, łuk ze strzałami, wachlarz), po 200 mikstur XL, zwoje
+błogosławieństwa, Boga Smoków i teleportu, medale konne, 500 milionów yang,
+konia 21 poziomu i Księgę Wojskowego Konia do jego przywołania. Postacie
+powstają na świeżym świecie, a na istniejącym przy najbliższym starcie, o ile
+konto `admin` nie ma jeszcze żadnej postaci; konto, na którym ktoś już gra,
+zostaje jak było (jego pierwsza postać dostała GM w 2.0.2). PID-y 9001–9004,
+poza zakresem seeda botów.
+
+### Nowa postać gracza dostaje Skrzynię Ucznia
+
+Boty zaczynają ze Skrzynią Ucznia I w plecaku, gracz zaczynał z niczym
+(„gracz jest gorszy niż bot” — sizowski). Quest `starter_chest` daje ją przy
+pierwszym wejściu do gry postaci do 5 poziomu, według klasy (wojownik i sura
+50187, ninja 50212, szaman 50213) — dalsze skrzynie łańcucha otwierają się jak
+u botów, od 10 poziomu. Bot do 5 poziomu też dostanie jedną przy najbliższym
+logowaniu; quest nie odróżnia bota od gracza, a to garść skrzyń więcej.
+
+---
+
 ## 2.0.3 — 2026-09-11
 
 Trzecia poprawka pierwszego dnia: konto premium dla botów i tooltipy dla

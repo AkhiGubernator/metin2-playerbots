@@ -50,11 +50,25 @@ przerwa techniczna") at the last step. The GM command still closes the world.
 The package also ships an empty `common.gmlist` and no character on the tester
 account, where r40250 had `[SA]Admin` with an IMPLEMENTOR row. GM rights are
 the pair (account, character name) — `gm.cpp` checks the account and, under
-`GERMAN_GM_NOT_CHECK_HOST`, never the host — so `initdb.d/10-import-dumps.sh`
-creates `Admin` (a warrior of ninety on Joan, PID 1, columns as the seed's) on
-`admin` with the row, and `apply.sh` grants IMPLEMENTOR to the tester
-account's oldest character on a world whose list is empty (the 2.0.0/2.0.1
-installs). Once only, and never on a list that has anything in it.
+`GERMAN_GM_NOT_CHECK_HOST`, never the host — so
+`docker/mariadb/playerbot/gm_characters.sql` (run by `10-import-dumps.sh` on a
+fresh world and by `apply.sh` on every start, the directory is mounted into
+both containers) creates four: `Admin` (warrior), `AdminNinja`, `AdminSura`,
+`AdminSzaman`, PIDs 9001-9004, level ninety on Joan, each with the package's
+best +9 set for its class (bonus lines are POINT ids here — `item.attrtype`
+holds POINT numbers on this engine, and the two damage lines sit in slots 5
+and 6 as `item_addon.cpp` writes them), a second weapon, potions and scrolls,
+a level-21 horse (`c_aHorseStat[21]`: 35 health, 120 stamina) and its summon
+book 50053 — and gmlist rows for all four. Only when the admin account has no
+character at all; otherwise `apply.sh` grants IMPLEMENTOR to the account's
+oldest character on a world whose list is empty (the 2.0.0/2.0.1 installs).
+Once only, and never on a list that has anything in it.
+
+A player's new character gets its starter chest from `starter_chest.quest`
+(`files/`, copied into `docker/game/quest/` and named in the Dockerfile's
+quest list): one Skrzynia Ucznia I by class at the first login at level five
+or under, the chest the seed gives every bot. The db core of this package
+has no starting-item step, so without it a player started with nothing.
 
 An edit whose idempotency marker is its own inserted text stops being
 idempotent the moment a later edit changes that text: the bot-load struct and

@@ -382,6 +382,16 @@ else
     echo "[playerbot-migrate] no playerbot_names.sql; bots keep their seed names"
 fi
 
+# The tester account's own game masters, mt2009 only (see the file).
+if [ -s /opt/playerbot/gm_characters.sql ]; then
+    if gm_out=$(db < /opt/playerbot/gm_characters.sql 2>&1); then
+        echo "[playerbot-migrate] $gm_out"
+    else
+        echo "[playerbot-migrate] WARNING: gm_characters.sql failed:" >&2
+        echo "$gm_out" | head -3 >&2
+    fi
+fi
+
 # ---------------------------------------------------------------------------
 # A game master for the tester account.
 #

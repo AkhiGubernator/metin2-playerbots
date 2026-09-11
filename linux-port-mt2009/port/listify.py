@@ -82,6 +82,7 @@ linux-port-mt2009/docker/mariadb/playerbot/itemshop_schema.sql
 linux-port-mt2009/docker/mariadb/playerbot/log_schema.sql
 linux-port-mt2009/docker/mariadb/playerbot/playerbots_seed.sql
 linux-port-mt2009/docker/mariadb/playerbot/playerbot_names.sql
+linux-port-mt2009/docker/mariadb/playerbot/gm_characters.sql
 linux-port-mt2009/docker/game/Dockerfile
 linux-port-mt2009/docker/game/.dockerignore
 linux-port-mt2009/docker/game/build-deps-mt2009.sh

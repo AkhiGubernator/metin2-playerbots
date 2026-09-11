@@ -60,7 +60,7 @@ W przeciwieństwie do tradycyjnych botów-klientów, boty w tym projekcie są **
 Projekt jest w fazie aktywnego rozwoju.
 
 > [!NOTE]
-> **Obsługiwane Królestwo:** Obecnie autonomiczny świat obejmuje **Chunjo**: Joan (M1, mapa 21), Bokjung (M2, mapa 23), Waryong/M3 (mapa 24), Łatwy Loch Małp (mapa 25, poziomy 18–26), **Dolinę Orków** (mapa 64, wszystkie 23 wyspy z mostami), **Pustynię Yongbi** (mapa 63), **Górę Sohan** (mapa 61, od 48 poziomu) oraz **Loch Pająków V1** (mapa 104, od 48 poziomu). Obsługa pozostałych królestw (*Shinsoo – Czerwoni* oraz *Jinno – Niebiescy*) jest zaplanowana w dalszych etapach.
+> **Obsługiwane Królestwa:** Autonomiczny świat obejmuje **wszystkie trzy królestwa** (**Chunjo** – Żółci, **Shinsoo** – Czerwoni oraz **Jinno** – Niebiescy) wraz z mapami M1, M2, M3, Lochami Małp, **Doliną Orków**, **Pustynią Yongbi**, **Górą Sohan**, **Świątynią Hwang** oraz **Lochami Pająków**!
 
 ### Zużycie zasobów (pomiar przy 843 żywych botach)
 - **Serwer gry (`game core`)**: ~1.8 GiB RAM, ~25–38% jednego rdzenia (planer tras z własną siatką i pamięcią policzonych tras)

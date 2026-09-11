@@ -49,7 +49,7 @@ Unlike conventional external client-bot scripts, bots in this project are **firs
 The project is under active research and development.
 
 > [!NOTE]
-> **Supported Kingdom:** The autonomous world currently covers **Chunjo**: Joan (M1, map 21), Bokjung (M2, map 23), Waryong/M3 (map 24), the Easy Monkey Dungeon (map 25, levels 18–26), **Orc Valley** (map 64, all 23 islands and their bridges), the **Yongbi Desert** (map 63), **Mount Sohan** (map 61, from level 48) and the **Spider Dungeon V1** (map 104, from level 48). The other kingdoms (*Shinsoo – Reds* and *Jinno – Blues*) remain future work.
+> **Supported Kingdoms:** The autonomous world covers **all three kingdoms** (**Chunjo** – Yellows, **Shinsoo** – Reds, and **Jinno** – Blues) including M1, M2, M3, Monkey Dungeons, **Orc Valley**, **Yongbi Desert**, **Mount Sohan**, **Hwang Temple**, and **Spider Dungeons**!
 
 ### Resource Footprint (measured with 843 bots alive)
 - **Game Engine (`game core`)**: ~1.8 GiB RAM, ~25–38% of one core (a route planner on its own grid, with a memory of planned routes)

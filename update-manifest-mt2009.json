@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T12:45:19Z",
-  "statusMessage": "Wersja 2.0.1: polski mirror pakietów Ubuntu domyślnie (budowa nie stoi już na deps 7/7), nazwy straganów od społeczności, stragan od 15 poziomu i 800 zabić. Klient bez zmian. Kliknij ZAINSTALUJ AKTUALIZACJE.",
+  "publishedAt": "2026-09-11T14:34:42Z",
+  "statusMessage": "Wersja 2.0.2: postać GM na koncie admin, „Doładuj SM!” prowadzi na buycoffee, boty nie oglądają pustych straganów, nowe nicki botów (lista Iwakury). Kliknij ZAINSTALUJ AKTUALIZACJE, a potem AKTUALIZUJ KLIENTA.",
   "server": {
-    "version": "2.0.1",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.1/metin2-server-update-2.0.1.zip",
-    "sha256": "C22C9E09726C2031142567CECA14C27EFF6B177B8993D34B34AE24FF45502743"
+    "version": "2.0.2",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.2/metin2-server-update-2.0.2.zip",
+    "sha256": "B3F4177EE1D4827D162A6AFCDC92FF734613AF13EB1724D50ACB59F64DBDD856"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.0/metin2-client-update-2.0.0.zip",
-    "sha256": "0107E8D86CAA34F4FCE0C6B1D44F89B0D84BB45556ECED4A8DC281CF28FBEC8B"
+    "version": "2.0.2",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.2/metin2-client-update-2.0.2.zip",
+    "sha256": "CD72BA77FFA4BFCC0C454A56C0D728EA883E907C616973501E46B8627E7E84D0"
   }
 }

@@ -672,7 +672,8 @@ namespace
 			// half hour and its own anvil is still waiting.
 			if (!CanPlayerBotAffordMarket(ch))
 				continue;
-			wallets.push_back((DWORD)std::max(0, ch->GetGold() - GetPlayerBotReservedGold(ch)));
+			wallets.push_back((DWORD)std::max<long long>(0,
+					(long long)ch->GetGold() - (long long)GetPlayerBotReservedGold(ch)));
 			CollectPlayerBotWantedMaterials(ch, wanted);
 			if (wanted.empty())
 				continue;

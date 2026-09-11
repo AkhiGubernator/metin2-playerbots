@@ -7,6 +7,17 @@
 
 Lokalny świat Metin2 singleplayer, w którym po mapie biegają i autentycznie grają autonomiczne postacie (Playerbots): zdobywają poziomy, walczą solo i w party, zbierają łup, ulepszają ekwipunek u Kowala, polują na Metiny i zapisują swój postęp w standardowej bazie danych.
 
+## Wersja 2.0 — nowe pliki serwerowe (mt2009)
+
+Od 2.0.0 projekt działa na plikach serwerowych mt2009. To **pełna paczka**
+(klient + serwer w jednym zipie), do pobrania z Discorda:
+[discord.gg/pt5tvnrN6](https://discord.gg/pt5tvnrN6). Stary launcher i stary
+klient z linii 1.33 **nie pasują** do nowych plików — nie aktualizuj po staremu,
+pobierz całość. Po rozpakowaniu aktualizacje serwera i klienta przychodzą przez
+launcher, jak dotąd; linia 2.x ma własny kanał (`update-manifest-mt2009.json`),
+więc instalacje 1.33.x niczego z niej nie dostaną.
+Jak to jest zbudowane: [linux-port-mt2009/README.md](linux-port-mt2009/README.md).
+
 ## 💬 Społeczność i wsparcie projektu
 
 - **[Dołącz do serwera Discord](https://discord.gg/6v4WkDY6a)** — porozmawiaj o projekcie, podziel się testami i pomysłami oraz śledź aktualności z rozwoju botów.

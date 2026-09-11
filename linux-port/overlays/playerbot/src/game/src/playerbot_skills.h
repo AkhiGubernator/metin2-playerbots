@@ -509,7 +509,7 @@ namespace
 			return false;
 		const DWORD dwStuck = GetPlayerBotStuckSkill(ch);
 		const BYTE bOldGroup = ch->GetSkillGroup();
-		ch->PointChange(POINT_GOLD, (int)-cost);
+		PlayerBotChangeGold(ch, (int)-cost);
 		ch->ClearSkill();
 		ch->SetSkillGroup(0);
 		state.dwNextSkillResetTime = dwNow + PLAYERBOT_SKILL_RESET_COOLDOWN;
@@ -565,7 +565,7 @@ namespace
 		LPITEM scroll = ch->AutoGiveItem(PLAYERBOT_SKILL_FORGET_SCROLL_VNUM, 1, -1, false);
 		if (!scroll)
 			return false;
-		ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_SKILL_FORGET_SCROLL_PRICE);
+		PlayerBotChangeGold(ch, -(int)PLAYERBOT_SKILL_FORGET_SCROLL_PRICE);
 		sys_log(0, "PLAYERBOT_SKILL: forget scroll bought pid=%u name=%s level=%u skill=%u skill_level=%u price=%lld gold_left=%d",
 				ch->GetPlayerID(), ch->GetName(), (unsigned int)ch->GetLevel(), dwSkillVnum,
 				(unsigned int)ch->GetSkillLevel(dwSkillVnum), PLAYERBOT_SKILL_FORGET_SCROLL_PRICE,
@@ -588,7 +588,7 @@ namespace
 		LPITEM scroll = ch->AutoGiveItem(PLAYERBOT_SKILL_FORGET_SCROLL_VNUM, 1, -1, false);
 		if (!scroll)
 			return false;
-		ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_SKILL_REALLOCATE_PRICE);
+		PlayerBotChangeGold(ch, -(int)PLAYERBOT_SKILL_REALLOCATE_PRICE);
 		return true;
 	}
 

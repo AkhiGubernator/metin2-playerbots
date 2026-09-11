@@ -141,7 +141,7 @@ namespace
 		if (ch->GetGold() < (int)PLAYERBOT_BATTLE_HORSE_FEE)
 			return false;
 
-		ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_BATTLE_HORSE_FEE);
+		PlayerBotChangeGold(ch, -(int)PLAYERBOT_BATTLE_HORSE_FEE);
 		// The ordinary horse's paper goes back, as it does for a player. No bot
 		// has one - nothing in this world hands them out - so this is here for
 		// the day something does, not because it fires today.

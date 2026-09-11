@@ -1,0 +1,72 @@
+Metin2 Singleplayer (pliki serwerowe mt2009) + Playerbots
+Wersja paczki: 2.0.0 (2026-09-11)
+
+CO JEST W PACZCE
+  Klient\   gotowy klient gry, wskazuje ten komputer (127.0.0.1)
+  Serwer\   serwer, launcher, panele i boty — ten folder
+
+NAJPROSTSZE URUCHOMIENIE NA WINDOWS
+1. Zainstaluj Docker Desktop i uruchom go.
+2. Poczekaj, aż Docker pokaże „Engine running”.
+3. Uruchom Serwer\Metin2-Launcher-GUI.bat — zalecany launcher okienkowy.
+4. Kliknij „ZAINSTALUJ / PRZYGOTUJ” (sprawdza paczkę i tworzy skrót na
+   pulpicie; klienta znajduje sam, bo leży obok), a potem „GRAJ”.
+   Pierwsza lokalna kompilacja może potrwać kilkanaście minut.
+5. Panel i mapa botów: http://127.0.0.1:7788/map
+   Panel zaawansowany: http://127.0.0.1:7790
+6. Launcher po starcie serwera uruchamia klienta z folderu Klient.
+
+Możesz również użyć start.bat do samego uruchomienia oraz stop.bat do
+zatrzymania serwera.
+
+DOMYŚLNE KONTO TESTOWE GRY
+  login: admin
+  hasło: admin
+
+Boty zaludniają królestwo Chunjo (żółte), dlatego tam najlepiej utworzyć
+własną postać. Serwer domyślnie nasłuchuje wyłącznie na 127.0.0.1.
+
+LAUNCHER, AKTUALIZACJE I LOGI
+Metin2-Launcher-GUI.bat ma duże przyciski przeznaczone dla początkujących:
+- ZAINSTALUJ / PRZYGOTUJ — sprawdza paczkę, klienta i tworzy skrót,
+- GRAJ — uruchamia Docker, serwer i klienta,
+- URUCHOM DOCKER,
+- ZATRZYMAJ I ZAPISZ — bezpiecznie zatrzymuje usługi bez kasowania postępu,
+- OTWÓRZ PANEL WWW, WYBIERZ KLIENTA i ZBIERZ LOGI (ZIP),
+- SPRAWDŹ AKTUALIZACJE — tylko porównuje numery wersji i nie zmienia plików,
+- ZAINSTALUJ AKTUALIZACJE — po potwierdzeniu pobiera i instaluje opublikowaną
+  paczkę serwera,
+- AKTUALIZUJ KLIENTA — podmienia skrypty gry w folderze Klient,
+- OTWÓRZ LOG W NOTATNIKU.
+
+Ta paczka ma własny kanał aktualizacji (linia 2.x). Aktualizacje serwera są
+małe i przychodzą z GitHuba; tej paczki nie trzeba pobierać ponownie.
+
+Każdy rozpakowany egzemplarz serwera otrzymuje własny identyfikator projektu
+Docker i osobny wolumen bazy. Dzięki temu testowa kopia w innym folderze nie
+nadpisuje kont, postaci ani postępu botów z wcześniejszej instalacji.
+
+CO ZAWIERA TA WERSJA
+- pełne pliki serwerowe mt2009 przeniesione na Linuksa i budowane w Dockerze,
+- całą logikę Playerbots: M1, M2, M3, Loch Małp, Dolina Orków, pustynia,
+  Sohan, Loch Pająków, walkę, loot, ekwipunek, ulepszanie, stragany, gildie,
+  profesje, skille, PT, Biologa i rozwój konia,
+- panel WWW z mapą na żywo, rankingami i ekwipunkiem, panel Sebana, ItemShop,
+- klienta gotowego do gry na tym komputerze.
+
+WAŻNE
+- Paczka nie zawiera prywatnej bazy autora ani postępu jego botów. Czysta baza
+  tworzy 1500 botów rozpoczynających od pierwszego poziomu; suwak w launcherze
+  decyduje, ile z nich wchodzi do gry.
+- Nie wyłączaj globalnie programu antywirusowego. Zweryfikuj sumę SHA-256
+  pobranego archiwum i przeskanuj plik. Wyjątek dodawaj tylko dla dokładnie
+  zweryfikowanego pliku, jeśli wykrycie okaże się fałszywe.
+
+Projekt i aktualizacje:
+https://github.com/TieruYT/metin2-playerbots
+
+Discord:
+https://discord.gg/6v4WkDY6a
+
+Wsparcie projektu:
+https://zrzutka.pl/rw4g7p

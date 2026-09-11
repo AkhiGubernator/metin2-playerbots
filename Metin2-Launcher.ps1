@@ -262,15 +262,7 @@ function Rebuild-Server {
     # why a broken install still shows a plausible src/server/game and a build
     # context of about 1.6 MB where a complete one is hundreds of megabytes.
     $gameContext = Join-Path $serverRoot 'linux-port\docker\game\src'
-    $requiredContext = @(
-        'build-deps-40250.sh', 'extern',
-        'server\common', 'server\db', 'server\game', 'server\libgame',
-        'server\liblua', 'server\libpoly', 'server\libserverkey',
-        'server\libsql', 'server\libthecore',
-        'serverfiles\share\conf', 'serverfiles\share\data',
-        'serverfiles\share\locale', 'serverfiles\share\package',
-        'serverfiles\mark-default'
-    )
+    $requiredContext = @(Get-M2RequiredGameContext -ServerRoot $serverRoot)
     $missingContext = @()
     foreach ($entry in $requiredContext) {
         if (-not (Test-Path -LiteralPath (Join-Path $gameContext $entry))) {

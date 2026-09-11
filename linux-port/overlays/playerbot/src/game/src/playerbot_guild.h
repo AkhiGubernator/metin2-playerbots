@@ -157,7 +157,7 @@ namespace
 			// The engine charges this in CInputMain::GuildCreate, not in
 			// CreateGuild, so a caller that is not the packet handler has to pay
 			// it - otherwise a bot founds a guild for nothing.
-			ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_GUILD_CREATE_FEE);
+			PlayerBotChangeGold(ch, -(int)PLAYERBOT_GUILD_CREATE_FEE);
 			sys_log(0, "PLAYERBOT_GUILD: founded pid=%u name=%s guild=%s id=%u gold=%d",
 					ch->GetPlayerID(), ch->GetName(), szName, dwGuildID,
 					(int)(ch->GetGold() / 1000));

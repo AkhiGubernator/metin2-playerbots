@@ -2856,6 +2856,34 @@ CATS = ["all","weapon","armor","usable","ds","metin","special","other"]
 APPLY_SKILL_DAMAGE_BONUS = 71
 APPLY_NORMAL_HIT_DAMAGE_BONUS = 72
 
+# Which engine this panel is looking at. The mt2009 (martysama0134) engine
+# keeps an item's bonus lines as POINT_* numbers - player.item.attrtype is
+# a point, world.item_attr.apply is an enum of POINT_ names - so the two
+# damage lines are 121 and 122 there, and every attrtype has to go through
+# POINT_TO_APPLY before APPLY_META can name it. account.account carries no
+# empire column on that schema either; player_index.empire is the only one.
+PANEL_ENGINE = os.environ.get("M2PANEL_ENGINE", "r40250").strip().lower()
+ENGINE_MT2009 = PANEL_ENGINE == "mt2009"
+if ENGINE_MT2009:
+    APPLY_SKILL_DAMAGE_BONUS = 121
+    APPLY_NORMAL_HIT_DAMAGE_BONUS = 122
+POINT_TO_APPLY = {6: 1, 8: 2, 13: 3, 15: 4, 12: 5, 14: 6, 17: 7, 19: 8, 21: 9, 32: 10, 33: 11,
+ 37: 12, 38: 13, 39: 14, 40: 15, 41: 16, 43: 17, 44: 18, 45: 19, 46: 20, 47: 21,
+ 48: 22, 63: 23, 64: 24, 65: 25, 66: 26, 67: 27, 68: 28, 69: 29, 70: 30, 71: 31,
+ 72: 32, 73: 33, 74: 34, 75: 35, 76: 36, 77: 37, 78: 38, 79: 39, 81: 41, 82: 42,
+ 83: 43, 84: 44, 85: 45, 86: 46, 87: 47, 88: 48, 89: 49, 90: 50, 28: 51, 34: 52,
+ 95: 53, 96: 54, 22: 55, 23: 56, 42: 57, 10: 58, 54: 59, 55: 60, 56: 61, 57: 62,
+ 53: 63, 114: 64, 115: 65, 116: 66, 117: 67, 118: 68, 119: 69, 120: 70, 121: 71,
+ 122: 72, 123: 73, 124: 74, 125: 75, 126: 76, 59: 78, 60: 79, 61: 80, 62: 81,
+ 128: 82, 16: 83, 130: 84, 131: 85, 132: 86, 133: 87, 134: 88, 135: 89, 136: 90,
+ 137: 91}
+
+
+def apply_key(attr_type):
+    """The APPLY_META key for an attribute type, on either engine."""
+    t = int(attr_type or 0)
+    return POINT_TO_APPLY.get(t, t) if ENGINE_MT2009 else t
+
 
 def lang():
     """Polish, unless somebody chose otherwise in the header.
@@ -3001,6 +3029,9 @@ def inject_i18n():
             "has_accounts": accounts_exist(),
             "pp_min": PASSPHRASE_MIN,
             "max_level": MAX_LEVEL,
+            # Empty on r40250; on mt2009 the POINT->APPLY table the JS
+            # side puts every attrtype through before APPLY_META.
+            "point_to_apply": POINT_TO_APPLY if ENGINE_MT2009 else {},
             # The language the GAME is in -- see the note above GAME_LANGS. The
             # front page uses it too, next to the download button, so it goes in
             # the shared context rather than into one route.
@@ -5420,6 +5451,12 @@ fetch('/static/item_icons.json')
 // print the value: %d%% is a percentage, %d a plain number, %.1f a
 // multiplier, and no placeholder at all means the client shows the line with no
 // number after it. Ids the client has no text for are absent on purpose.
+// The mt2009 engine numbers these lines as POINT_* (player.item.attrtype
+// carries a point there); APPLY_META is keyed by the APPLY_* numbers both
+// clients use, so a type goes through this table first. Empty on r40250.
+var POINT_TO_APPLY = {{ point_to_apply|tojson }};
+function applyKey(type) { var k = POINT_TO_APPLY[type]; return k === undefined ? type : k; }
+
 var APPLY_META = {
   1: {pl: "Max PŻ: +%d", en: "Max. HP +%d", f: "flat"},
   2: {pl: "Max PE: +%d", en: "Max. SP +%d", f: "flat"},
@@ -5516,7 +5553,7 @@ var APPLY_META = {
 // "+" the value is meant to read as a gain, so a negative value drops that "+"
 // instead of printing "+-10".
 function formatApply(type, val, lg) {
-  var meta = APPLY_META[type];
+  var meta = APPLY_META[applyKey(type)];
   if (!meta) return 'Bonus #' + type + ': ' + (val > 0 ? '+' : '') + val;
   var text = meta[lg] || meta.en;
   if (meta.f === 'boolean') return text;
@@ -5533,7 +5570,7 @@ function formatApply(type, val, lg) {
   }).replace(/%%/g, '%');
 }
 
-function applyIsHidden(type) { return !APPLY_META[type]; }
+function applyIsHidden(type) { return !APPLY_META[applyKey(type)]; }
 
 function skillIconImg(vnum, rank, size) {
   // A rank beginning with M, G or P means the skill is trained past normal, and
@@ -6361,6 +6398,10 @@ def _bot_identity(alias, pct):
 # wrote a literal 2 into it for the whole cohort.
 def _empire_of(alias):
     ref = (alias + ".") if alias else ""
+    if ENGINE_MT2009:
+        # No account.empire on this schema; the index is the only source.
+        return ("COALESCE(NULLIF((SELECT bpi.empire FROM player.player_index bpi"
+                " WHERE bpi.id = " + ref + "account_id), 0), 0)")
     return ("COALESCE(NULLIF((SELECT bpi.empire FROM player.player_index bpi"
             " WHERE bpi.id = " + ref + "account_id), 0),"
             " (SELECT bea.empire FROM account.account bea"

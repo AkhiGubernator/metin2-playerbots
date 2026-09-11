@@ -263,7 +263,7 @@ namespace
 		if (rewardItem != 0)
 			ch->AutoGiveItem(rewardItem, 1, -1, false);
 		if (mission.rewardGold > 0)
-			ch->PointChange(POINT_GOLD, mission.rewardGold);
+			PlayerBotChangeGold(ch, mission.rewardGold);
 		if (mission.rewardExp > 0)
 			ch->PointChange(POINT_EXP, mission.rewardExp, true);
 	}
@@ -1989,11 +1989,17 @@ namespace
 			}
 			// The bot buys its stall like anything else it carries.
 			if (ch->GetGold() >= PLAYERBOT_SHOP_BUNDLE_PRICE)
-				ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_SHOP_BUNDLE_PRICE);
+				PlayerBotChangeGold(ch, -(int)PLAYERBOT_SHOP_BUNDLE_PRICE);
 			ch->AutoGiveItem(50200, 1);
 		}
 
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// The fourth argument is the offline-shop duration index; zero is the
+		// ordinary counter that closes when the keeper leaves.
+		ch->OpenMyShop(sign, table, tableCount, 0);
+#else
 		ch->OpenMyShop(sign, table, tableCount);
+#endif
 		if (!ch->GetMyShop())
 		{
 			// OpenMyShop refuses silently, and it refuses the whole shop over one
@@ -2484,7 +2490,7 @@ namespace
 							FinishPlayerBotTownVisit(ch, state, dwNow, true);
 						return true;
 					}
-					ch->PointChange(POINT_GOLD, -PLAYERBOT_SAFEBOX_FEE);
+					PlayerBotChangeGold(ch, -PLAYERBOT_SAFEBOX_FEE);
 					TSafeboxChangeSizePacket page;
 					page.dwID = ch->GetDesc()->GetAccountTable().id;
 					page.bSize = 1;

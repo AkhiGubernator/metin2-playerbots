@@ -4,14 +4,37 @@ $ErrorActionPreference = 'Stop'
 # Fallback used when the manifest carries no support block (offline, or an old manifest).
 $script:M2_DEFAULT_SUPPORT_CONTACT = 'https://discord.gg/pt5tvnrN6'
 
+function Get-M2SiblingClientExecutable {
+    # The full package (Metin2-Singleplayer-<version>.zip) unpacks as Klient\
+    # beside Serwer\; a launcher that finds the client there asks nobody for
+    # it. Empty when there is no such folder.
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
+    $parent = Split-Path -Parent ([IO.Path]::GetFullPath($ServerRoot).TrimEnd('\'))
+    if (-not $parent) { return '' }
+    foreach ($folder in @('Klient', 'Client')) {
+        $candidate = Join-Path $parent "$folder\metin2client.exe"
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return [IO.Path]::GetFullPath($candidate) }
+    }
+    return ''
+}
+
 function Get-M2DefaultLauncherConfig {
     param([Parameter(Mandatory = $true)][string]$ServerRoot)
 
+    # The mt2009 line has its own manifest: an update meant for one engine
+    # dropped onto the other's tree would put ENGINE, world.sql and eighty
+    # engine files where they do not belong, and the launcher would then
+    # refuse to start the world it had.
+    $manifest = 'https://raw.githubusercontent.com/TieruYT/metin2-playerbots/main/update-manifest.json'
+    if ((Get-M2ServerEngine -ServerRoot $ServerRoot) -eq 'mt2009') {
+        $manifest = 'https://raw.githubusercontent.com/TieruYT/metin2-playerbots/main/update-manifest-mt2009.json'
+    }
+    $sibling = Get-M2SiblingClientExecutable -ServerRoot $ServerRoot
     [pscustomobject]@{
         schema = 1
-        manifestUrl = 'https://raw.githubusercontent.com/TieruYT/metin2-playerbots/main/update-manifest.json'
-        clientRoot = ''
-        clientExecutable = ''
+        manifestUrl = $manifest
+        clientRoot = $(if ($sibling) { Split-Path -Parent $sibling } else { '' })
+        clientExecutable = $sibling
         supportUploadUrl = ''
         # Interface language: 'pl' or 'en'. More and more of the Discord is
         # English-speaking, and a launcher nobody can read is a launcher nobody
@@ -36,6 +59,16 @@ function Get-M2LauncherConfig {
     foreach ($name in @('manifestUrl', 'clientRoot', 'clientExecutable', 'supportUploadUrl', 'language')) {
         if ($null -ne $loaded.PSObject.Properties[$name]) {
             $defaults.$name = [string]$loaded.$name
+        }
+    }
+    # A config saved before the client was unpacked beside the server, or
+    # pointing at a client that has since moved, still gets the sibling.
+    if (-not [string]$defaults.clientExecutable -or
+        -not (Test-Path -LiteralPath ([string]$defaults.clientExecutable) -PathType Leaf)) {
+        $sibling = Get-M2SiblingClientExecutable -ServerRoot $ServerRoot
+        if ($sibling) {
+            $defaults.clientExecutable = $sibling
+            $defaults.clientRoot = Split-Path -Parent $sibling
         }
     }
     return $defaults
@@ -545,6 +578,12 @@ function Invoke-M2EnginePatches {
     #>
     param([Parameter(Mandatory = $true)][string]$ServerRoot)
 
+    # The patches are r40250's. The mt2009 tree ships already ported and
+    # patched (linux-port-mt2009/port/*.py did that where the engine source
+    # is), and a hunk written for r40250's char.cpp has nothing to match in
+    # it; the staged files themselves travel in the update instead.
+    if ((Get-M2ServerEngine -ServerRoot $ServerRoot) -ne 'r40250') { return 0 }
+
     $patchDir = Join-Path $ServerRoot 'linux-port\overlays\playerbot\patches'
     $target = Join-Path $ServerRoot 'linux-port\docker\game\src\server'
     if (-not (Test-Path -LiteralPath $patchDir -PathType Container)) { return 0 }
@@ -755,7 +794,12 @@ function Sync-M2PlayerbotOverlay {
     # the container reads.
     $seedSource = Join-Path $ServerRoot 'linux-port\overlays\playerbot\sql\playerbots_seed.sql'
     $seedStaged = Join-Path $ServerRoot 'linux-port\docker\mariadb\playerbot\playerbots_seed.sql'
-    if ((Test-Path -LiteralPath $seedSource -PathType Leaf) -and
+    if ((Get-M2ServerEngine -ServerRoot $ServerRoot) -ne 'r40250') {
+        # mt2009's seed is rendered from the overlay's by port/seedify.py and
+        # ships where the migrate container mounts it; the overlay's own would
+        # write columns this schema does not have. Nothing to copy over it.
+    }
+    elseif ((Test-Path -LiteralPath $seedSource -PathType Leaf) -and
         (Test-Path -LiteralPath (Split-Path -Parent $seedStaged) -PathType Container)) {
         $seedStagedHash = $null
         if (Test-Path -LiteralPath $seedStaged -PathType Leaf) {
@@ -1219,6 +1263,62 @@ function Get-M2DbDataVolumes {
     finally { $ErrorActionPreference = $previous }
 }
 
+function Get-M2ServerEngine {
+    <#
+        Which engine the tree under linux-port\docker was built for. 'r40250'
+        is the original port; the mt2009 tree (linux-port-mt2009 in the
+        repository, deployed under the same linux-port name so that every
+        path in the launcher stays one path) carries an ENGINE file naming
+        itself. Everything engine-specific asks here: which dumps make a
+        world, whether the r40250 engine patches are applied, what a complete
+        build context holds.
+    #>
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
+    $marker = Join-Path $ServerRoot 'linux-port\docker\ENGINE'
+    if (Test-Path -LiteralPath $marker -PathType Leaf) {
+        $engine = ([IO.File]::ReadAllText($marker)).Trim().ToLowerInvariant()
+        if ($engine -match '^[a-z0-9]+$') { return $engine }
+    }
+    return 'r40250'
+}
+
+function Get-M2RequiredSqlDumps {
+    # The per-database dumps MariaDB imports on its first start. r40250's
+    # package ships hotbackup (legitimately empty); mt2009's keeps the protos
+    # in a sixth database, world, and has no hotbackup dump at all.
+    param([Parameter(Mandatory = $true)][string]$Engine)
+    if ($Engine -eq 'mt2009') { return @('account', 'common', 'player', 'log', 'world') }
+    return @('account', 'common', 'player', 'log', 'hotbackup')
+}
+
+function Get-M2RequiredGameContext {
+    # What linux-port\docker\game\src has to hold for the image to build,
+    # relative to it: the modules the Dockerfile COPYs and the share
+    # directories. mt2009 keeps its protos in the database, so it has no
+    # share\conf, and its dependency script sits one level up, in game\.
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
+    if ((Get-M2ServerEngine -ServerRoot $ServerRoot) -eq 'mt2009') {
+        return @(
+            '..\build-deps-mt2009.sh', 'extern\include', 'extern\cryptopp', 'extern-tarballs',
+            'server\__REVISION__',
+            'server\common', 'server\db', 'server\game', 'server\libgame',
+            'server\liblua', 'server\libpoly', 'server\libsql', 'server\libthecore',
+            'serverfiles\share\CMD', 'serverfiles\share\data',
+            'serverfiles\share\locale', 'serverfiles\share\package',
+            'serverfiles\mark-default'
+        )
+    }
+    return @(
+        'build-deps-40250.sh', 'extern',
+        'server\common', 'server\db', 'server\game', 'server\libgame',
+        'server\liblua', 'server\libpoly', 'server\libserverkey',
+        'server\libsql', 'server\libthecore',
+        'serverfiles\share\conf', 'serverfiles\share\data',
+        'serverfiles\share\locale', 'serverfiles\share\package',
+        'serverfiles\mark-default'
+    )
+}
+
 function Get-M2MissingSqlDumps {
     # The five SQL dumps MariaDB imports on its very first start. They come out
     # of the operator's own r40250 package (Server/metin2_mysql_dump.zip) and
@@ -1230,7 +1330,8 @@ function Get-M2MissingSqlDumps {
     param([Parameter(Mandatory = $true)][string]$ServerRoot)
     $dumpDir = Join-Path $ServerRoot 'linux-port\docker\mariadb\initdb.d\dumps'
     $missing = @()
-    foreach ($db in @('account', 'common', 'player', 'log', 'hotbackup')) {
+    $engine = Get-M2ServerEngine -ServerRoot $ServerRoot
+    foreach ($db in (Get-M2RequiredSqlDumps -Engine $engine)) {
         $f = Join-Path $dumpDir "$db.sql"
         if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { $missing += "$db.sql"; continue }
         # hotbackup is legitimately empty (its Readme says so); the rest carry
@@ -1746,6 +1847,10 @@ Export-ModuleMember -Function @(
     'Repair-M2GameDbUser',
     'Test-M2VolumeInitialized',
     'Get-M2MissingSqlDumps',
+    'Get-M2ServerEngine',
+    'Get-M2SiblingClientExecutable',
+    'Get-M2RequiredSqlDumps',
+    'Get-M2RequiredGameContext',
     'Test-M2DockerRunning',
     'Sync-M2PlayerbotOverlay',
     'Set-M2PlayerbotsVersionEnvironment',

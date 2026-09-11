@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "channel": "stable",
+  "publishedAt": "2026-09-11T12:00:00Z",
+  "statusMessage": "Linia 2.x: pliki serwerowe mt2009. Pełna paczka (klient + serwer) jest na hostingu; ten kanał niesie tylko aktualizacje.",
+  "server": {
+    "version": "2.0.0",
+    "url": "",
+    "sha256": ""
+  },
+  "support": {
+    "contactUrl": "https://discord.gg/pt5tvnrN6",
+    "uploadUrl": ""
+  },
+  "client": {
+    "version": "2.0.0",
+    "url": "",
+    "sha256": ""
+  }
+}

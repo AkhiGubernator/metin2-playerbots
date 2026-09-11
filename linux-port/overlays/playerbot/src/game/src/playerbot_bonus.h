@@ -472,7 +472,7 @@ namespace
 			return false;
 		if (!ch->AutoGiveItem(vnum, 1, -1, false))
 			return false;
-		ch->PointChange(POINT_GOLD, -(int)PLAYERBOT_BONUS_STONE_PRICE);
+		PlayerBotChangeGold(ch, -(int)PLAYERBOT_BONUS_STONE_PRICE);
 		return true;
 	}
 
@@ -564,7 +564,7 @@ namespace
 			++stonesUsed;
 
 			const int newScore = ScorePlayerBotItemBonuses(ch, item, wearCell);
-			if (!ch->EquipItem(item))
+			if (!PlayerBotEquipItem(ch, item))
 			{
 				sys_err("PLAYERBOT_BONUS: could not re-equip pid=%u name=%s vnum=%u slot=%u",
 						ch->GetPlayerID(), ch->GetName(), item->GetVnum(),

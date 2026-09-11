@@ -382,7 +382,7 @@ namespace
 		LPITEM worn = ch->GetWear(WEAR_WEAPON);
 		if (worn && !ch->UnequipItem(worn))
 			return false;
-		if (ch->EquipItem(best))
+		if (PlayerBotEquipItem(ch, best))
 		{
 			sys_log(0, "PLAYERBOT_FISHING: rod equipped pid=%u name=%s vnum=%u",
 					ch->GetPlayerID(), ch->GetName(), best->GetVnum());
@@ -771,7 +771,7 @@ namespace
 		}
 		if (!ch->AutoGiveItem(vnum, count, -1, false))
 			return false;
-		ch->PointChange(POINT_GOLD, -price);
+		PlayerBotChangeGold(ch, -price);
 		sys_log(0, "PLAYERBOT_FISHING: bought %s pid=%u name=%s vnum=%u count=%d price=%lld",
 				what, ch->GetPlayerID(), ch->GetName(), vnum, count, price);
 		return true;
@@ -815,7 +815,7 @@ namespace
 						ch->GetEmptyInventory(1) >= 0 &&
 						ch->AutoGiveItem(PLAYERBOT_CAMPFIRE_VNUM, 1, -1, false))
 				{
-					ch->PointChange(POINT_GOLD, -price);
+					PlayerBotChangeGold(ch, -price);
 					sys_log(0, "PLAYERBOT_FISHING: bought campfire pid=%u name=%s price=%lld",
 							ch->GetPlayerID(), ch->GetName(), price);
 				}
@@ -1036,15 +1036,30 @@ namespace
 			return true;
 		}
 
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// mt2009 fishing is a reaction test and then a minigame, both driven
+		// from the client. The pre-event bites 17 s after the cast: the engine
+		// stamps m_bPlayerFishReactTime and the take has to come 1.7-3.5 s later
+		// (fishing::Take), or four seconds after the bite the cast is failed. A
+		// take in the window rolls the rod's chance; on a hit the minigame
+		// starts: a bar climbing 0..100 at 5-9 per half second, a fish sinking 2
+		// per half second and rising 8 per take, and the fish has to stay inside
+		// the bar until the bar's top reaches 100. The catch itself comes from
+		// the fishing quest, so it is read off the bag exactly as before.
+		const bool bPreCast = ch->m_pkPreFishingEvent != NULL;
+		const bool bCastLive = bPreCast || ch->IsPlayingFishGame();
+#else
 		// The engine holds the whole cast in one event: step 0 is the line in the
 		// water, step 1 means a fish is on and starts the 6 s window to pull.
 		fishing::fishing_event_info* info = ch->m_pkFishingEvent
 				? dynamic_cast<fishing::fishing_event_info*>(ch->m_pkFishingEvent->info)
 				: NULL;
+		const bool bCastLive = info != NULL;
+#endif
 
-		if (!state.bIsFishing || !info)
+		if (!state.bIsFishing || !bCastLive)
 		{
-			if (info)
+			if (bCastLive)
 			{
 				// A cast survived from an earlier pass; adopt it rather than
 				// stacking a second one.
@@ -1085,8 +1100,17 @@ namespace
 			GetPlayerBotFishingFacing(ch->GetPlayerID(), ch->GetMapIndex(),
 					waterX, waterY);
 			ch->SetRotationToXY(waterX, waterY != 0 ? waterY : ch->GetY());
+#if defined(PLAYERBOT_ENGINE_MT2009)
+			// The onboarding quest's flag is what fishing() checks; a bot never
+			// talks to the fisherman, so it is set here once.
+			if (ch->GetQuestFlag("fishing_onboarding.completed") < 1)
+				ch->SetQuestFlag("fishing_onboarding.completed", 1);
+			ch->fishing();
+			if (!ch->m_pkPreFishingEvent)
+#else
 			ch->fishing();
 			if (!ch->m_pkFishingEvent)
+#endif
 			{
 				// Blocked tile or missing bait; step away and try again shortly.
 				state.dwNextFishingActionTime = dwNow + number(4000, 8000);
@@ -1097,6 +1121,45 @@ namespace
 			return true;
 		}
 
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		if (bPreCast)
+		{
+			const DWORD react = ch->m_bPlayerFishReactTime;
+			if (react >= state.dwFishingCastTime && react <= dwNow &&
+					dwNow - react >= PLAYERBOT_MT2009_FISHING_REACT_MIN &&
+					dwNow - react <= PLAYERBOT_MT2009_FISHING_REACT_MAX)
+			{
+				ch->fishing_take();
+				state.dwLastMeaningfulActivityTime = dwNow;
+				return true;
+			}
+			if (dwNow - state.dwFishingCastTime > PLAYERBOT_FISHING_CAST_TIMEOUT)
+			{
+				// A take outside the window cancels both events.
+				ch->fishing_take();
+				state.bIsFishing = false;
+				state.dwNextFishingActionTime = dwNow + number(2000, 4000);
+				sys_log(0, "PLAYERBOT_FISHING: cast timed out pid=%u name=%s",
+						ch->GetPlayerID(), ch->GetName());
+			}
+			return true;
+		}
+
+		// The minigame. This pass runs every quarter second and the bar moves at
+		// most 13 per half second, so a fish put just under the top of the bar
+		// on each pass is still inside it on the next.
+		fishing::fishing_event_info* game = ch->m_pkFishingEvent
+				? dynamic_cast<fishing::fishing_event_info*>(ch->m_pkFishingEvent->info)
+				: NULL;
+		if (game && ch->m_biFishGameState >= PLAYERBOT_MT2009_FISHING_GAME_IN_PROGRESS)
+		{
+			const int top = (int)game->bar_position + (int)game->bar_height;
+			for (int presses = 0; presses < 16 && ch->m_iFish_position + 8 <= top + 2; ++presses)
+				fishing::Take(game, ch);
+		}
+		state.dwLastMeaningfulActivityTime = dwNow;
+		return true;
+#else
 		if (info->step < 1)
 		{
 			// Still waiting for a bite. The engine takes 10-40 s; anything past a
@@ -1129,6 +1192,7 @@ namespace
 		sys_log(0, "PLAYERBOT_FISHING: pulled pid=%u name=%s hooked_ms=%u fish=%d",
 				ch->GetPlayerID(), ch->GetName(), (unsigned int)hooked, info->fish_id);
 		return true;
+#endif
 	}
 }
 

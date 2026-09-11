@@ -807,7 +807,7 @@ namespace
 				price = item->GetProto() ? item->GetProto()->dwGold : 100;
 			price = std::max<DWORD>(10, price / 5);
 			totalSoldGold += price;
-			ch->PointChange(POINT_GOLD, price);
+			PlayerBotChangeGold(ch, price);
 			ITEM_MANAGER::instance().RemoveItem(item, "PLAYERBOT_SHOP_SELL");
 			++soldCount;
 		}
@@ -1162,7 +1162,7 @@ namespace
 		ch->ClearRefineMode();
 		LPITEM after = ch->GetInventoryItem(cell);
 		if (after)
-			ch->EquipItem(after);
+			PlayerBotEquipItem(ch, after);
 		if (attempted)
 		{
 			const bool success = ch->CountSpecifyItem(nextVnum) > before;
@@ -1217,13 +1217,13 @@ namespace
 		{
 			if (redCount < 30 && ch->GetGold() >= 300)
 			{
-				ch->PointChange(POINT_GOLD, -240);
+				PlayerBotChangeGold(ch, -240);
 				ch->AutoGiveItem(27001, 30); // Red Potion (S) 30x
 				boughtRed += 30;
 			}
 			if (isMage && blueCount < 20 && ch->GetGold() >= 400)
 			{
-				ch->PointChange(POINT_GOLD, -360);
+				PlayerBotChangeGold(ch, -360);
 				ch->AutoGiveItem(27004, 15); // Blue Potion (S) 15x
 				boughtBlue += 15;
 			}
@@ -1268,7 +1268,7 @@ namespace
 					buy = redRoom;
 				if (buy > 0)
 				{
-					ch->PointChange(POINT_GOLD, -(int)(buy * RED_UNIT));
+					PlayerBotChangeGold(ch, -(int)(buy * RED_UNIT));
 					ch->AutoGiveItem(RED_VNUM, buy);
 					boughtRed += buy;
 				}
@@ -1284,7 +1284,7 @@ namespace
 					buy = blueRoom;
 				if (buy > 0)
 				{
-					ch->PointChange(POINT_GOLD, -(int)(buy * BLUE_UNIT));
+					PlayerBotChangeGold(ch, -(int)(buy * BLUE_UNIT));
 					ch->AutoGiveItem(BLUE_VNUM, buy);
 					boughtBlue += buy;
 				}

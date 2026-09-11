@@ -1,0 +1,155 @@
+# linux-port-mt2009
+
+The suite on the mt2009 / Martysama r41023 server files (`__REVISION__` 41023,
+full C++ source, FreeBSD/clang Makefiles, Lua 5.0 in-tree, cryptopp 7.0, protos
+in the database). What is shared with `linux-port/` is shared by reference —
+the launcher, the panels, the ItemShop, the updater and the playerbot overlay
+under `linux-port/overlays/playerbot/` — and what differs is rendered from the
+r40250 originals by the scripts in `port/`, never edited by hand.
+
+## What is where
+
+| Path | What |
+|---|---|
+| `docker/game/src/` | **Not in the repository** (`.gitignore`): `server/` (the engine, staged from the package's `Server Source/Server` minus `.o`/`.vcxproj`/`.sln`), `extern/` (`include/` + `cryptopp/`), `extern-tarballs/` (DevIL 1.8.0), `serverfiles/` (the runtime tree from `new_ftp.tar.gz`, binaries removed; `mark-default/` from `chs/ch11/mark`). |
+| `docker/game/Dockerfile`, `build-deps-mt2009.sh` | The four-stage build: deps (apt, `APT_MIRROR`), libs (Lua, libsql/libgame/libpoly/libthecore, the db core), builder (game core), quests (`qc` compiles `quest/*.quest`), runtime. |
+| `docker/game/bin/` | `m2-render-config` (conf.txt with six SQL handles, `PROTO_FROM_DB`, the map split), `entrypoint.sh`, `m2-supervise`, `m2-healthcheck`, `m2ctl` — copies of r40250's where nothing differs. |
+| `docker/mariadb/initdb.d/` | `10-import-dumps.sh` (five per-database dumps, the `player.item_proto`/`mob_proto` views over `world`, `social_id` widened to 18, mileage/jackpot, tester accounts), `20-log-schema.sql`, `dumps/*.sql` (**not in the repository**, from the package's `sql/`). |
+| `docker/mariadb/playerbot/` | `apply.sh`, `playerbots_seed.sql`, `playerbot_names.sql`, `itemshop_schema.sql`, `log_schema.sql` — all rendered (see below). |
+| `docker/docker-compose.yml` | The stack; the panel/ItemShop/updater block is rendered from r40250's compose with contexts pointing back at `../../linux-port/docker/<name>`. `docker-compose.deploy.yml` is the same file with `./<name>` contexts, published as the player's `docker-compose.yml`. |
+| `docker/ENGINE` | The word `mt2009`. The launcher reads `linux-port\docker\ENGINE` to know which engine it is looking at. |
+| `docker/.env.example` | r40250's plus `M2_APT_MIRROR`. |
+| `docker/game/{mob_drop_item.m3.append.txt,special_item_group.moonlight.txt,special_item_group.starter.txt}` | What the image appends to the package's `locale/poland` share. |
+| `client-root/serverinfo.py` | The client's server list pointing at 127.0.0.1 (auth 11000, channel 13000). Packed into `pack/root.{index,data}` with `tools/eterpack.py --profile mt2009 repack <orig>/root <out>/root linux-port-mt2009/client-root`. The profile is PackMakerLite's layout, and it is not optional: this client has `ENABLE_CRC32_CHECK`, so `data_crc` must be the CRC32 of the object's on-disk bytes (r40250 left garbage there and the r40250 layout put the real size in it) — a root packed the r40250 way opens not one script and the client dies at `RunMain Error` with nothing else in `syserr.txt`. Verified byte-for-byte against the stock pack: same slots (rounded to 256), same ciphered lengths, same CRCs for every untouched file. |
+| `tools/game-compile.sh` | Syntax-checks the overlay inside the `m2mt2009-libs:dev` image with the game directory bind-mounted. It sees the image's copy of `common/`, so a change to `common/tables.h` only shows in a full `docker compose build game`. |
+
+## The port scripts, in the order they run
+
+Every one is idempotent and re-runnable after editing the r40250 original it
+reads. They never touch anything by hand-maintained list where a measurement
+will do.
+
+| Script | Reads | Writes |
+|---|---|---|
+| `port/linuxify.py <server>` | the staged engine | Linux fixes in place: epoll `fdwatch` from `linux-port`, the `signal.h` shadow guard, `optreset`, `<md5.h>` from libmd, the `bind_ip`/`listen_ip`/`public_ip` split, `-Wl,--start-group` links, CRLF stripped from Makefiles and `__REVISION__`. |
+| `port/playerbotify.py <server>` | `linux-port/overlays/playerbot/` | copies `playerbot_*` into `game/src`, `CFLAGS += -DPLAYERBOT_ENGINE_MT2009`, and ports patches 0001–0008, 0010–0015 as exact-string edits (0004 is already in this engine, 0009 — the F9 GM panel — is deliberately left out for now). The bot load packet carries the account id here (`TBotPlayerLoadPacket.account_id`): the db core loads special flags with `pid=%d or aid=%d`, and aid 0 matched every bot's flags at once. |
+| `port/seedify.py` | r40250's `playerbots_seed.sql` | the seed without `is_testor`/`empire`/`name_checked`/`bank_value`, the `account.empire` update dropped. |
+| `port/migratorify.py` | r40250's `apply.sh` | the migrator probing `log.hack_log`, the hosted-map list of this stack, the `social_id` widening, mileage/jackpot, `log_schema.sql`. |
+| `port/logschemify.py` | r40250's `log.sql` dump | the 23 log tables the engine writes and the package lacks, plus `log.log.ip`. |
+| `port/composify.py` | r40250's `docker-compose.yml` | the shared services block, `docker-compose.deploy.yml`. |
+| `port/shareify.py` | `linux-port/docker/game/*.txt`, the world dump | the three share additions and the Dockerfile step; refuses an item the package does not have (one unknown vnum fails the whole `special_item_group.txt` at boot). |
+| `port/envify.py` | r40250's `.env.example` | this stack's. |
+| `port/rulesify.py` | `client-locale-src/rules.pl.txt` (UTF-8, editable) | `client-locale/locale/pl/rules.txt` — the client's terms-of-use window, CP1250/CRLF, pairs of lines with `[ENTER]` between points: ours (what the project is, buycoffee, Discord) instead of the public Mt2009 server's. Repacked into the `locale` pack. |
+| `port/clientrootify.py --root <extracted stock root>` | the stock root scripts | `client-root/gamerules.py` (`RULES_VERSION` bumped so the new terms show once) and `client-root/intrologin.py` (login-window buttons: GitHub, buycoffee, our Discord). |
+
+`playerbotify.py` also flips the db core's `m_bMaintenance(TRUE)` to `FALSE`:
+the package boots every world closed until a GM types `/maintenance 0`, and an
+ordinary login — `admin` included — was answered `MAINTENA` ("Obecnie trwa
+przerwa techniczna") at the last step. The GM command still closes the world.
+
+An edit whose idempotency marker is its own inserted text stops being
+idempotent the moment a later edit changes that text: the bot-load struct and
+its db case were inserted twice that way (two `SBotPlayerLoadPacket`s, two
+`case` labels). Such an edit names a marker that survives — a line the later
+edit leaves alone — and `playerbotify.py` run twice over a pristine tree must
+leave every file identical; that is checked, not assumed.
+| `port/listify.py [--pristine <Server Source\Server>]` | the staged engine against the pristine package | `launcher/server-update-files.mt2009.txt`: every engine file the port changed or added (76 at the time of writing) plus the tree's own files and the shared ones. |
+
+## Why the player's tree is still called `linux-port`
+
+`Metin2-Launcher.ps1`, the GUI, `start-server.ps1`, the diagnostics module and
+the packager name `linux-port\docker` in some ninety places. Rather than
+parameterise all of them, the mt2009 tree is *deployed* under that name: the
+packager is run with
+
+```
+-FileList launcher\server-update-files.mt2009.txt
+-PathMap @{ 'linux-port-mt2009/docker/docker-compose.deploy.yml' = 'linux-port/docker/docker-compose.yml';
+            'linux-port-mt2009/' = 'linux-port/' }
+```
+
+and the launcher tells the two apart by `linux-port\docker\ENGINE`
+(`Get-M2ServerEngine`). Engine-specific in the launcher: the dumps a world is
+made from (`world.sql` instead of `hotbackup.sql`), the r40250 engine patches
+(never applied here — the tree ships patched), the overlay seed (never copied
+over the rendered one) and what a complete build context holds
+(`Get-M2RequiredGameContext`; `start-server.ps1` carries the same lists because
+it imports no module). `tools/check-update-covers-build.py --docker
+linux-port-mt2009/docker --list launcher/server-update-files.mt2009.txt` is the
+release-time check.
+
+## How it reaches a player
+
+This line is versioned on its own (`VERSION`, 2.x) and has its own update
+channel, `update-manifest-mt2009.json` at the repository root: the launcher
+picks it by the `ENGINE` marker (`Get-M2DefaultLauncherConfig`), so an r40250
+install (1.33.x, `update-manifest.json`) never sees these releases and this
+one never sees those. `CHANGELOG.md` is shared; `PACZKA_INFO.txt` is this
+line's own.
+
+There is no installer that fetches sources. What a player downloads from the
+hosting is **one full zip** — `Metin2 Singleplayer\{CZYTAJ.txt, Klient\, Serwer\}`
+— built by two tools in `tools/`:
+
+- `New-M2DeployTree.ps1 -Deploy <dir>` renders `Serwer\`: the update package
+  (packager with the `-PathMap` above) unpacked, plus what no update carries —
+  the staged engine, externals, runtime share, SQL dumps, docs, installer.
+- `New-M2FullPackage.ps1 -Deploy <dir> -Client <Klient-127> -OutputDirectory <dir>`
+  zips that beside the client (7-Zip), leaving out `.env`, the installation
+  identity, logs, backups, and the client's credentials, settings and
+  screenshots. The player's launcher creates a fresh `.env` and identity on
+  first start; `..\Klient\metin2client.exe` is found without a dialog
+  (`Get-M2SiblingClientExecutable`), and the client-update button is the plain
+  client update, not the GM panel.
+
+The zip never has to be re-uploaded for a server update: the update package
+on GitHub carries every engine file the port changed (76 at the time of
+writing, `port/listify.py` measures them) and overwrites the copies the zip
+brought.
+
+**Adoption is per engine.** `start-server.ps1` adopts the one existing Docker
+installation it finds when the tree has no identity yet — right for a second
+unpacked copy of the same line, wrong across lines: a player coming from
+r40250 has exactly one existing stack, and adopting it would start mt2009
+against a database volume with no `world` schema and an initdb that never
+runs. `Select-SameEngineInstallations` reads the candidate's `ENGINE` file and
+keeps only stacks of the same engine; another line's stack is neither adopted
+nor counted as ambiguity.
+
+## What the overlay does differently under `PLAYERBOT_ENGINE_MT2009`
+
+`linux-port/overlays/playerbot/src/game/src/playerbot_engine_compat.h`, included
+before `playerbot_types.h`:
+
+- `APPLY_*` are `POINT_*` here (the engine has no `EApplyTypes`; `item_proto`
+  applytype holds POINT numbers, `item_attr.apply` is an enum of POINT names,
+  the two damage lines are 121/122 rather than 71/72 — the panels switch on
+  `M2PANEL_ENGINE` / `PLAYERBOTS_ENGINE`); `AFF_*` names differ
+  (`AFF_SKILL_BERSERK` and friends).
+- `PlayerBotChangeGold` — `PointChange(POINT_GOLD, ..)` is refused outright
+  ("unknown point change type 11"); `ChangeGold(YANG)` is the way.
+- `PlayerBotCanEquipNow` / `PlayerBotEquipItem` — `CanEquipNow` is rate-limited
+  to six answers per half second per pid (`PulseManager`, `ePulse::ItemEquip`);
+  the gear pass asks once per bag piece, so the clock is cleared before every
+  ask. 63 000 refused upgrades an hour before, none after.
+- Fishing is a reaction test plus a bar minigame (`m_pkPreFishingEvent` bites
+  after 17 s, take within 1700–3500 ms, then `fishing::Take` climbs the bar);
+  `fishing()` wants level 50, maps 1/21/41 and the pass 27620. The overlay's
+  pass drives it; the gate in `WantsPlayerBotFishingTrip` means bots do not
+  fish here yet — a world decision, not a bug.
+- `OpenMyShop` takes a time index, `SetSkillNextReadTime` a success flag,
+  there is no `HEADER_GD_FLUSH_CACHE`, `SAFEBOX_PAGE_SIZE` is derived.
+
+Known, not yet done: the `levelup` quest the hunting missions drive does not
+exist in this package (its `hunting` quest is another shape), the desert boss
+and other Phase-6 world measurements, `updater`/`client-builder`/`wsbridge`,
+the F9 GM panel (patch 0009 and its client side).
+
+## Running it
+
+Test stack on the development machine: `docker compose` in `docker/` with the
+`.env` there (project `m2mt`, containers `m2mt-*`). The deploy directory the
+launcher runs is `C:\Users\dawio\Downloads\Metin2 Singleplayer\Serwer`
+(project `m2dep`). Both bind the same ports; stop one before starting the
+other. `M2_APT_MIRROR` is set in both `.env` files because archive.ubuntu.com
+is unreachable from this network.

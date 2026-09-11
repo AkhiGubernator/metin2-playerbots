@@ -2089,3 +2089,13 @@ implemented differently from what it describes.
   * Tested live with 350 running bots: 14-33 stalls active around the market in Bokjung with zero rejections, and successfully recover after server/container restarts.
 - **Next Roadmap Priorities:**
   * From PLAYERBOTS_FEATURE_SPECS.md: Module 2 (Mounted combat tuning against Metin stones), Module 4 (Bot guilds and guild marks), Module 5 (Live AI Config sliders in admin panel without recompilation), Module 6 (Weekly season analytics).
+
+## The mt2009 tree (second engine)
+
+`linux-port-mt2009/` is the same suite on the mt2009 / Martysama r41023 server
+files: the launcher, the panels and the playerbot overlay are shared, the engine
+port, the container scripts and the database bootstrap are its own. Read
+`linux-port-mt2009/README.md` before touching it - it says which port script
+renders which file, why the player's tree is still called `linux-port` (the
+`ENGINE` marker), and what the overlay does differently under
+`PLAYERBOT_ENGINE_MT2009` (`playerbot_engine_compat.h`).

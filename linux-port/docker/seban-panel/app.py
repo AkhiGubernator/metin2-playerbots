@@ -163,6 +163,27 @@ APPLY_LABELS = {
 # są odwrotne" - nic ich nie odwraca. Uzasadnienie było nieprawdziwe, a samo
 # nadpisanie sięgało tylko opisów przedmiotów, więc ranking - który bierze
 # dane z osobnego zapytania - pokazywał je zamienione jeszcze długo potem.
+# Which engine the panel looks at (PLAYERBOTS_ENGINE). mt2009 keeps an
+# item's bonus lines as POINT_* numbers: the two damage lines are 121 and
+# 122 there, every attrtype goes through POINT_TO_APPLY before APPLY_LABELS,
+# account.account has no empire column and player.player no bank_value.
+PANEL_ENGINE = os.environ.get("PLAYERBOTS_ENGINE", "r40250").strip().lower()
+ENGINE_MT2009 = PANEL_ENGINE == "mt2009"
+ATTR_SKILL_DAMAGE = 121 if ENGINE_MT2009 else 71
+ATTR_AVG_DAMAGE = 122 if ENGINE_MT2009 else 72
+POINT_TO_APPLY = {6: 1, 8: 2, 13: 3, 15: 4, 12: 5, 14: 6, 17: 7, 19: 8, 21: 9, 32: 10, 33: 11,
+ 37: 12, 38: 13, 39: 14, 40: 15, 41: 16, 43: 17, 44: 18, 45: 19, 46: 20, 47: 21,
+ 48: 22, 63: 23, 64: 24, 65: 25, 66: 26, 67: 27, 68: 28, 69: 29, 70: 30, 71: 31,
+ 72: 32, 73: 33, 74: 34, 75: 35, 76: 36, 77: 37, 78: 38, 79: 39, 81: 41, 82: 42,
+ 83: 43, 84: 44, 85: 45, 86: 46, 87: 47, 88: 48, 89: 49, 90: 50, 28: 51, 34: 52,
+ 95: 53, 96: 54, 22: 55, 23: 56, 42: 57, 10: 58, 54: 59, 55: 60, 56: 61, 57: 62,
+ 53: 63, 114: 64, 115: 65, 116: 66, 117: 67, 118: 68, 119: 69, 120: 70, 121: 71,
+ 122: 72, 123: 73, 124: 74, 125: 75, 126: 76, 59: 78, 60: 79, 61: 80, 62: 81,
+ 128: 82, 16: 83, 130: 84, 131: 85, 132: 86, 133: 87, 134: 88, 135: 89, 136: 90,
+ 137: 91}
+# The kingdom of a character: the index, then (r40250 only) the account.
+EMPIRE_EXPR = "COALESCE(NULLIF(pi.empire,0),0)" if ENGINE_MT2009 else "COALESCE(NULLIF(pi.empire,0),a.empire,0)"
+
 JOB_NAMES = ("Wojownik", "Ninja", "Sura", "Szaman")
 SKILLS = {
     # Exact vnum/name pairs from Tieru's current panel. The old mapping put
@@ -400,7 +421,10 @@ def is_stationary_activity(status):
 
 
 def apply_text(apply_type, value):
-    name, suffix = APPLY_LABELS.get(int(apply_type or 0), (f"Bonus #{apply_type}", ""))
+    key = int(apply_type or 0)
+    if ENGINE_MT2009:
+        key = POINT_TO_APPLY.get(key, key)
+    name, suffix = APPLY_LABELS.get(key, (f"Bonus #{apply_type}", ""))
     value = int(value or 0)
     return f"{name} {value:+d}{suffix}"
 
@@ -1030,8 +1054,8 @@ def bot_ranking(kind, sort_by="avg"):
         # wybieral pierwsza setke po niewlasciwej kolumnie i poprawianie
         # samego sortowania w Pythonie nic by nie dalo.
         result = rows(f"""SELECT p.id,p.name,p.level,p.gold,i.vnum,COALESCE(ip.locale_name,CONCAT('VNUM ',i.vnum)) AS item_name,
-            IF(GREATEST(CASE WHEN i.attrtype0=71 THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1=71 THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2=71 THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3=71 THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4=71 THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5=71 THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6=71 THEN i.attrvalue6 ELSE -999 END)=-999,0,GREATEST(CASE WHEN i.attrtype0=71 THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1=71 THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2=71 THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3=71 THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4=71 THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5=71 THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6=71 THEN i.attrvalue6 ELSE -999 END)) AS skill_damage,
-            IF(GREATEST(CASE WHEN i.attrtype0=72 THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1=72 THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2=72 THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3=72 THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4=72 THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5=72 THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6=72 THEN i.attrvalue6 ELSE -999 END)=-999,0,GREATEST(CASE WHEN i.attrtype0=72 THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1=72 THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2=72 THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3=72 THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4=72 THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5=72 THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6=72 THEN i.attrvalue6 ELSE -999 END)) AS avg_damage
+            IF(GREATEST(CASE WHEN i.attrtype0={ATTR_SKILL_DAMAGE} THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1={ATTR_SKILL_DAMAGE} THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2={ATTR_SKILL_DAMAGE} THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3={ATTR_SKILL_DAMAGE} THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4={ATTR_SKILL_DAMAGE} THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5={ATTR_SKILL_DAMAGE} THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6={ATTR_SKILL_DAMAGE} THEN i.attrvalue6 ELSE -999 END)=-999,0,GREATEST(CASE WHEN i.attrtype0={ATTR_SKILL_DAMAGE} THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1={ATTR_SKILL_DAMAGE} THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2={ATTR_SKILL_DAMAGE} THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3={ATTR_SKILL_DAMAGE} THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4={ATTR_SKILL_DAMAGE} THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5={ATTR_SKILL_DAMAGE} THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6={ATTR_SKILL_DAMAGE} THEN i.attrvalue6 ELSE -999 END)) AS skill_damage,
+            IF(GREATEST(CASE WHEN i.attrtype0={ATTR_AVG_DAMAGE} THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1={ATTR_AVG_DAMAGE} THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2={ATTR_AVG_DAMAGE} THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3={ATTR_AVG_DAMAGE} THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4={ATTR_AVG_DAMAGE} THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5={ATTR_AVG_DAMAGE} THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6={ATTR_AVG_DAMAGE} THEN i.attrvalue6 ELSE -999 END)=-999,0,GREATEST(CASE WHEN i.attrtype0={ATTR_AVG_DAMAGE} THEN i.attrvalue0 ELSE -999 END,CASE WHEN i.attrtype1={ATTR_AVG_DAMAGE} THEN i.attrvalue1 ELSE -999 END,CASE WHEN i.attrtype2={ATTR_AVG_DAMAGE} THEN i.attrvalue2 ELSE -999 END,CASE WHEN i.attrtype3={ATTR_AVG_DAMAGE} THEN i.attrvalue3 ELSE -999 END,CASE WHEN i.attrtype4={ATTR_AVG_DAMAGE} THEN i.attrvalue4 ELSE -999 END,CASE WHEN i.attrtype5={ATTR_AVG_DAMAGE} THEN i.attrvalue5 ELSE -999 END,CASE WHEN i.attrtype6={ATTR_AVG_DAMAGE} THEN i.attrvalue6 ELSE -999 END)) AS avg_damage
             FROM player.item i JOIN player.player p ON p.id=i.owner_id LEFT JOIN player.item_proto ip ON ip.vnum=i.vnum
             WHERE {base} AND ((i.vnum BETWEEN 290 AND 299) OR (i.vnum BETWEEN 1170 AND 1179) OR (i.vnum BETWEEN 2150 AND 2159) OR (i.vnum BETWEEN 3210 AND 3219) OR (i.vnum BETWEEN 5110 AND 5119) OR (i.vnum BETWEEN 7160 AND 7169))
             ORDER BY {weapon30_order} LIMIT 100""")
@@ -1326,7 +1350,7 @@ def guild(guild_id):
 @app.route("/player/<int:pid>")
 @login_required
 def player(pid):
-    character = one("SELECT p.id,p.account_id,p.name,p.level,p.job,p.exp,p.gold,p.hp,p.mp,p.x,p.y,p.horse_level,p.alignment,p.st,p.ht,p.dx,p.iq,p.stat_point,p.skill_point,p.skill_group,p.skill_level,p.map_index,p.playtime,COALESCE(NULLIF(pi.empire,0),a.empire,0) AS empire FROM player.player p LEFT JOIN account.account a ON a.id=p.account_id LEFT JOIN player.player_index pi ON pi.id=p.account_id WHERE p.id=%s", (pid,))
+    character = one("SELECT p.id,p.account_id,p.name,p.level,p.job,p.exp,p.gold,p.hp,p.mp,p.x,p.y,p.horse_level,p.alignment,p.st,p.ht,p.dx,p.iq,p.stat_point,p.skill_point,p.skill_group,p.skill_level,p.map_index,p.playtime," + EMPIRE_EXPR + " AS empire FROM player.player p LEFT JOIN account.account a ON a.id=p.account_id LEFT JOIN player.player_index pi ON pi.id=p.account_id WHERE p.id=%s", (pid,))
     if not character:
         abort(404)
     live = live_statuses().get(pid)
@@ -1506,8 +1530,8 @@ def accounts():
                             st, ht, dx, iq, hp, mp = GM_JOB_STARTS[gm_job]
                             character_race = GM_RACE_BY_CLASS_GENDER[(gm_job, gm_gender)]
                             cur.execute("""INSERT INTO player.player
-                              (account_id,name,job,dir,x,y,map_index,exit_x,exit_y,exit_map_index,hp,mp,stamina,random_hp,random_sp,level,st,ht,dx,iq,stat_point,skill_point,sub_skill_point,part_main,part_base,part_hair,skill_group,horse_hp,horse_stamina,horse_level,horse_hp_droptime,horse_riding,horse_skill_point,bank_value)
-                              VALUES (%s,%s,%s,0,%s,%s,%s,%s,%s,%s,%s,%s,1000,0,0,1,%s,%s,%s,%s,0,0,0,0,0,0,0,0,0,0,0,0,0,0)""",
+                              (account_id,name,job,dir,x,y,map_index,exit_x,exit_y,exit_map_index,hp,mp,stamina,random_hp,random_sp,level,st,ht,dx,iq,stat_point,skill_point,sub_skill_point,part_main,part_base,part_hair,skill_group,horse_hp,horse_stamina,horse_level,horse_hp_droptime,horse_riding,horse_skill_point""" + ("" if ENGINE_MT2009 else ",bank_value") + """)
+                              VALUES (%s,%s,%s,0,%s,%s,%s,%s,%s,%s,%s,%s,1000,0,0,1,%s,%s,%s,%s,0,0,0,0,0,0,0,0,0,0,0,0,0""" + ("" if ENGINE_MT2009 else ",0") + """)""",
                               (account_id, gm_name, character_race, x, y, map_index, x, y, map_index, hp, mp, st, ht, dx, iq))
                             player_id = cur.lastrowid
                             # Metin reads character slots from player_index.  A player row
@@ -1549,7 +1573,7 @@ def accounts():
     if account_query:
         where.append("(a.login LIKE %s OR EXISTS (SELECT 1 FROM player.player p WHERE p.account_id=a.id AND p.name LIKE %s))")
         params.extend([f"%{account_query}%", f"%{account_query}%"])
-    query_sql = "SELECT a.id,a.login,a.email,a.empire,a.create_time,a.last_play FROM account.account a"
+    query_sql = "SELECT a.id,a.login,a.email," + ("0 AS empire" if ENGINE_MT2009 else "a.empire") + ",a.create_time,a.last_play FROM account.account a"
     if where:
         query_sql += " WHERE " + " AND ".join(where)
     query_sql += " ORDER BY a.id DESC"
@@ -1644,7 +1668,7 @@ def rankings():
         # the account's own copy was left at Chunjo for the whole cohort.
         marks = ",".join(["%s"] * len(ids))
         empire_rows = rows(
-            "SELECT p.id, COALESCE(NULLIF(pi.empire,0),a.empire,0) AS empire"
+            "SELECT p.id, " + EMPIRE_EXPR + " AS empire"
             " FROM player.player p"
             " LEFT JOIN player.player_index pi ON pi.id=p.account_id"
             " LEFT JOIN account.account a ON a.id=p.account_id"

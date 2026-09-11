@@ -52,6 +52,10 @@ extern int passes_per_sec;
 // client descriptor of its own to send to.
 extern void SendShout(const char* szText, BYTE bEmpire);
 
+// The names the fragments below were written against, on an engine that
+// spells some of them differently. Empty on r40250.
+#include "playerbot_engine_compat.h"
+
 #include "playerbot_types.h"
 #include "playerbot_log.h"
 #include "playerbot_config.h"
@@ -490,7 +494,7 @@ namespace
 				: after == PLAYERBOT_BROKEN_SOUL_STONE_VNUM ? "CRACKED"
 				: stoneGone ? "CONSUMED" : "REFUSED";
 
-		ch->EquipItem(bestGear);
+		PlayerBotEquipItem(ch, bestGear);
 		SetPlayerBotAction(state, BOT_ACTION_SOCKET_STONE, dwNow);
 		sys_log(0, "PLAYERBOT_AI: soul stone %s pid=%u name=%s kd_vnum=%u gear_vnum=%u socket=%d now=%u score=%d",
 				outcome, ch->GetPlayerID(), ch->GetName(), kdVnum, gearVnum,
@@ -658,7 +662,11 @@ namespace
 		// third of them and still needs ten that land.
 		if (IsPlayerBotFastBooksEnabled() &&
 				get_global_time() < ch->GetSkillNextReadTime(bestSkillVnum))
+#if defined(PLAYERBOT_ENGINE_MT2009)
+			ch->SetSkillNextReadTime(bestSkillVnum, get_global_time(), true);
+#else
 			ch->SetSkillNextReadTime(bestSkillVnum, get_global_time());
+#endif
 		// Still waiting, and no scroll to wave the wait away: asking the engine
 		// anyway cost a refusal every eight seconds and a "read" line that read
 		// nothing - a hundred and ninety of them in eight minutes.
@@ -970,6 +978,11 @@ bool CPlayerBotManager::Spawn(DWORD dwPlayerID, BYTE bEmpire)
 	TBotPlayerLoadPacket packet;
 	packet.player_id = dwPlayerID;
 	packet.empire = bEmpire;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+	// The db core keys the special flags on (pid or aid); a zero aid there
+	// matched every bot's own flags at once and the load refused them all.
+	packet.account_id = d->GetAccountTable().id;
+#endif
 
 	db_clientdesc->DBPacket(HEADER_GD_BOT_PLAYER_LOAD, d->GetHandle(), &packet, sizeof(packet));
 	sys_log(0, "PLAYERBOT: requested player load pid=%u empire=%u handle=%u",

@@ -435,6 +435,14 @@ namespace
 	{
 		if (!IsPlayerBotAngler(ch, state))
 			return false;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// CHARACTER::fishing() here wants level 50, the fishing pass (unique
+		// item 27620) worn, water in front of the rod and the onboarding quest
+		// done. The last two are the bank's and the session's business; the
+		// first two are asked here so a bot without them never walks to the water.
+		if (ch->GetLevel() < 50 || !ch->IsEquipUniqueItem(UNIQUE_ITEM_FISHING_PASS))
+			return false;
+#endif
 		// A trip to a village with no measured bank is a walk to nowhere: the
 		// fishing pass would refuse on arrival and the bot would stand there.
 		if (GetPlayerBotFishingBank(playerbot_empire_rules::GetHomeMap(
@@ -933,7 +941,7 @@ namespace
 				return false;
 			if (fee > 0)
 			{
-				ch->PointChange(POINT_GOLD, -fee);
+				PlayerBotChangeGold(ch, -fee);
 				sys_log(0, "PLAYERBOT_WORLD: teleporter fee pid=%u name=%s level=%u fee=%d to=%ld gold_left=%d",
 						ch->GetPlayerID(), ch->GetName(), (unsigned int)ch->GetLevel(), fee, targetMap, ch->GetGold());
 			}

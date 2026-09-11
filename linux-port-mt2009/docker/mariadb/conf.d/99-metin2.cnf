@@ -1,0 +1,21 @@
+# =============================================================================
+#  MariaDB settings the mt2009 server files require.
+# =============================================================================
+[mysqld]
+
+# The schema carries '0000-00-00 00:00:00' defaults and the cores write values
+# strict mode rejects; the db core is built with live assert()s and aborts on
+# a refused write rather than warning.
+sql_mode = NO_ENGINE_SUBSTITUTION
+
+# The game connects with SET NAMES cp1250 (locale poland) and every dumped
+# table names its own charset; this is only the default for what gets created
+# afterwards.
+character-set-server = cp1250
+collation-server     = cp1250_general_ci
+
+max_connections = 200
+
+# The twelve log tables are MyISAM and do not survive an unclean stop; FORCE
+# runs the full repair, BACKUP keeps the damaged file beside it.
+myisam_recover_options = BACKUP,FORCE

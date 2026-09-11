@@ -168,6 +168,7 @@ $script:Strings = @{
         repairDb     = 'NAPRAW DOSTEP DO BAZY'
         dbAccess     = 'DANE DO BAZY (NAVICAT)'
         gmPanel      = 'PANEL GM F9 (TEST)'
+        updateClient = 'AKTUALIZUJ KLIENTA'
         dbAccessTitle = 'Dane do polaczenia z baza'
         dbAccessHint = 'Wpisz te dane w Navicat, HeidiSQL albo DBeaver (typ MySQL/MariaDB, polaczenie TCP). Konto root widzi wszystko, konto gry tylko bazy gry. Baza slucha wylacznie na tym komputerze. Jesli baza odrzuca haslo, kliknij NAPRAW DOSTEP DO BAZY - ustawia oba konta na hasla z pliku .env. Nie wklejaj tych hasel na Discordzie.'
         dbAccessOpenEnv = 'OTWORZ PLIK .ENV'
@@ -216,6 +217,7 @@ $script:Strings = @{
         repairDb     = 'REPAIR DATABASE ACCESS'
         dbAccess     = 'DATABASE LOGIN (NAVICAT)'
         gmPanel      = 'GM PANEL F9 (BETA)'
+        updateClient = 'UPDATE CLIENT'
         dbAccessTitle = 'Database connection details'
         dbAccessHint = 'Enter these in Navicat, HeidiSQL or DBeaver (MySQL/MariaDB, TCP connection). root sees everything, the game account only the game databases. The database listens on this computer only. If it rejects the password, click REPAIR DATABASE ACCESS - it sets both accounts to the passwords in .env. Never paste these passwords on Discord.'
         dbAccessOpenEnv = 'OPEN .ENV FILE'
@@ -808,15 +810,7 @@ function Install-Or-Prepare {
     # the installer through Install in GUI did not restore the sources" - it
     # could not have, this is not the installer. Say which it is.
     $gameContext = Join-Path $root 'linux-port\docker\game\src'
-    $requiredContext = @(
-        'build-deps-40250.sh', 'extern',
-        'server\common', 'server\db', 'server\game', 'server\libgame',
-        'server\liblua', 'server\libpoly', 'server\libserverkey',
-        'server\libsql', 'server\libthecore',
-        'serverfiles\share\conf', 'serverfiles\share\data',
-        'serverfiles\share\locale', 'serverfiles\share\package',
-        'serverfiles\mark-default'
-    )
+    $requiredContext = @(Get-M2RequiredGameContext -ServerRoot $root)
     $missingContext = @($requiredContext | Where-Object { -not (Test-Path -LiteralPath (Join-Path $gameContext $_)) })
     # The database dumps are the other half of what the installer takes out
     # of the package, and the half nobody saw missing until MariaDB came up
@@ -913,6 +907,10 @@ $dbAccessButton = New-Button (T 'dbAccess') 28 418 218 32 ([Drawing.Color]::From
 # rides in every update, this button fetches the client package from the
 # manifest's `client` component and swaps pack/root.eix + root.epk.
 $gmPanelButton = New-Button (T 'gmPanel') 262 418 218 32 ([Drawing.Color]::FromArgb(120, 70, 130))
+# On the mt2009 line the client update is the ordinary one - the packs the
+# server's root points at - and not the experimental GM panel.
+$script:clientUpdateIsPlain = ((Get-M2ServerEngine -ServerRoot $root) -ne 'r40250')
+if ($script:clientUpdateIsPlain) { $gmPanelButton.Text = (T 'updateClient') }
 # Backup, restore and "start over" behind one button: reported from the
 # Discord as "the launcher can import a database but nothing says how to
 # export one", together with a wish to get back to a fresh install.
@@ -1235,6 +1233,14 @@ $gmPanelButton.Add_Click({
     $config = Get-M2LauncherConfig -ServerRoot $root -ConfigPath $configPath
     if (-not [string]$config.clientRoot) {
         [Windows.Forms.MessageBox]::Show('Najpierw wskaż folder klienta przyciskiem WYBIERZ KLIENTA.', 'Brak klienta', 'OK', 'Information') | Out-Null
+        return
+    }
+    if ($script:clientUpdateIsPlain) {
+        $answer = [Windows.Forms.MessageBox]::Show(
+            "Zaktualizować klienta w $($config.clientRoot)?`r`n`r`nPodmienia pack\root.index i pack\root.data (skrypty gry). Poprzednie wersje trafiają do backups\client w folderze serwera.",
+            'Aktualizacja klienta', 'YesNo', 'Question')
+        if ($answer -ne [Windows.Forms.DialogResult]::Yes) { return }
+        Start-LauncherAction -Action 'UpdateClient' -Yes
         return
     }
     $answer = [Windows.Forms.MessageBox]::Show(

@@ -17,6 +17,96 @@ every version here.
 
 ---
 
+## 2.0.0 — 2026-09-11
+
+**Nowa linia serwera: pliki serwerowe mt2009 (Martysama r41023) zamiast r40250.**
+To osobna, pełna paczka — klient i serwer razem — i osobny kanał aktualizacji.
+Instalacja 1.33.x niczego z tej wersji nie dostanie i nie powinna: stary
+launcher i stary klient nie pasują do nowych plików. Pełną paczkę pobierasz z
+Discorda (discord.gg/pt5tvnrN6), a od tej chwili aktualizacje serwera i klienta
+przychodzą już przez launcher, jak dotąd.
+
+### Podziękowania
+
+To wydanie powstało dzięki ostatnim wpłatom. Bez nich nie byłoby czasu ani
+środków na to, co się tu wydarzyło: dziesiątki tysięcy linii kodu, zmiana
+architektury serwera i zbudowanie jej od nowa na innym silniku — przy
+zachowaniu wszystkiego, co boty i panele potrafiły do tej pory. Dziękuję.
+Wsparcie projektu: buycoffee.to/metin2-playerbots.
+
+### Serwer
+
+- Silnik mt2009 przeniesiony na Linuksa i budowany w Dockerze tak jak
+  dotąd: cztery etapy obrazu, protosy w bazie (`PROTO_FROM_DB`), sześć baz na
+  MariaDB 11.8, te same porty, ten sam launcher.
+- Port jest zapisany jako skrypty, nie jako ręczne poprawki: każdy plik
+  silnika, bazy, compose i share, który różni się od paczki, jest renderowany
+  z oryginału r40250 albo z pakietu i da się odtworzyć jedną komendą.
+- Świat startuje otwarty. Pakiet uruchamiał każdy serwer w „przerwie
+  technicznej” do czasu, aż GM wpisze `/maintenance 0`; zwykłe konto widziało
+  na ostatnim kroku logowania „Obecnie trwa przerwa techniczna”.
+- Schemat logów uzupełniony o 23 tabele, które silnik zapisuje, a których
+  pakiet nie miał; `account.social_id` poszerzony do 18 znaków (identyfikatory
+  botów były ucinane); kolumny `mileage`/`jackpot` dla ItemShopu.
+- Skrzynie startowe botów, skrzynia księżycowa i drop broni 30 poziomu na
+  mapie gildii dopisane do plików pakietu; brakujący przedmiot w takiej
+  grupie wywraca cały plik przy starcie, więc render sprawdza vnumy względem
+  zrzutu świata.
+
+### Playerbots
+
+- Cała logika botów bez zmian w zachowaniu. Różnice silnika są zamknięte w
+  jednym nagłówku (`playerbot_engine_compat.h`): numeracja bonusów
+  (`POINT_*` zamiast `APPLY_*`), nazwy afektów, złoto (`ChangeGold` zamiast
+  `PointChange`, który tu jest odrzucany), zakładanie przedmiotów, flagi
+  specjalne postaci, wędkowanie.
+- Zakładanie ekwipunku: mt2009 odpowiada na `CanEquipNow` sześć razy na pół
+  sekundy na postać, a przebieg ekwipunku pytał o każdy przedmiot w torbie —
+  63 tysiące odrzuconych ulepszeń na godzinę. Zegar jest zerowany przed
+  każdym pytaniem; po poprawce 6940 założeń i 213 odmów w tym samym czasie.
+- Flagi specjalne postaci (statystyki `stat_*`) ładują się dla botów: pakiet
+  ładowania bota niesie id konta, bez którego rdzeń db odpowiadał flagami
+  wszystkich botów naraz i gra je odrzucała.
+- Panele klasyczny, Sebana i ItemShop działają na obu silnikach z jednym
+  przełącznikiem (`M2PANEL_ENGINE` / `PLAYERBOTS_ENGINE`); ranking broni
+  liczy właściwe linie obrażeń.
+
+### Klient
+
+- Klient w paczce jest gotowy do gry na tym komputerze (127.0.0.1); launcher
+  znajduje go sam w folderze `Klient` obok `Serwer` i nie pyta o plik EXE.
+- Własny regulamin w oknie logowania: co to za projekt, zasady, wsparcie na
+  buycoffee, Discord, prywatność. Przyciski okna logowania prowadzą do
+  GitHuba projektu, buycoffee i naszego Discorda.
+- Narzędzie do packów klienta rozumie układ PackMakerLite: ten klient
+  sprawdza CRC32 każdego pliku typu 2 i root spakowany po staremu nie
+  uruchamiał gry (`RunMain Error`).
+
+### Launcher i paczka
+
+- Jeden zip na hosting (`Metin2-Singleplayer-2.0.0.zip`): `Klient\`,
+  `Serwer\` i `CZYTAJ.txt`. Bez haseł, tożsamości instalacji, logów i kopii —
+  launcher tworzy je przy pierwszym starcie.
+- Launcher rozpoznaje silnik po pliku `linux-port\docker\ENGINE`: własny
+  kanał aktualizacji (`update-manifest-mt2009.json`), lista zrzutów, brak
+  łatek r40250, lista modułów kontekstu budowania.
+- Adopcja istniejącej instalacji Dockera tylko tego samego silnika: kto
+  przechodzi z r40250, ma na dysku jedną instalację — starą — i launcher
+  podpiąłby nowy serwer pod jej bazę. Teraz stara instalacja zostaje obok,
+  nietknięta, a nowa dostaje własną.
+- Przycisk „PANEL GM F9” na tej linii to zwykłe „AKTUALIZUJ KLIENTA”.
+
+### Czego jeszcze nie ma
+
+- Panel GM F9 (część serwerowa i kliencka) — celowo pominięty, żeby nie
+  kolidować z klientem; wróci osobno.
+- Misje poziomowe botów: ten pakiet nie ma questa `levelup`, boty pomijają
+  ten etap rozwoju.
+- Wędkowanie: silnik wymaga 50 poziomu i przepustki wędkarskiej; boty na razie
+  nie łowią.
+
+---
+
 ## 1.33.3 — 2026-09-11
 
 Poranek po nocy zgłoszeń: siedem poprawek, każda sprawdzona na żywym serwerze

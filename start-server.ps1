@@ -81,6 +81,18 @@ function Add-MissingDotEnvKeys {
     return $Content
 }
 
+function Get-ServerEngine {
+    # Which engine sits under linux-port\docker - see Get-M2ServerEngine in
+    # launcher\Metin2Launcher.psm1. This script is standalone and imports no
+    # module, so it reads the same marker itself.
+    $marker = Join-Path $PSScriptRoot 'linux-port\docker\ENGINE'
+    if (Test-Path -LiteralPath $marker -PathType Leaf) {
+        $engine = ([IO.File]::ReadAllText($marker)).Trim().ToLowerInvariant()
+        if ($engine -match '^[a-z0-9]+$') { return $engine }
+    }
+    return 'r40250'
+}
+
 function Get-DotEnvValue {
     param(
         [Parameter(Mandatory = $true)][string]$Content,
@@ -222,9 +234,38 @@ function Get-CompatibleDockerVolumes {
     return $result.ToArray()
 }
 
+function Get-InstallationEngine {
+    # The engine of another installation, read the way Get-ServerEngine reads
+    # ours: an ENGINE file in its linux-port\docker, r40250 when there is none.
+    param([AllowEmptyString()][string]$DockerDirectory)
+    if (-not $DockerDirectory) { return 'r40250' }
+    $marker = Join-Path $DockerDirectory 'ENGINE'
+    if (Test-Path -LiteralPath $marker -PathType Leaf) {
+        $engine = ([IO.File]::ReadAllText($marker)).Trim().ToLowerInvariant()
+        if ($engine -match '^[a-z0-9]+$') { return $engine }
+    }
+    return 'r40250'
+}
+
+function Select-SameEngineInstallations {
+    # Only a stack of the same engine can be adopted. An mt2009 tree taking
+    # over an r40250 project would start against a database volume whose
+    # schema it cannot use (no `world', another log layout), and initdb would
+    # never run because the volume is already initialised - which is exactly
+    # what a player coming from the r40250 line would hit, their old install
+    # being the one existing stack on the PC. Another line's stack is simply
+    # somebody else's server, side by side, and never counts as ambiguity.
+    param([object[]]$Candidates)
+    $mine = Get-ServerEngine
+    return @($Candidates | Where-Object {
+        $directory = if ($_.environmentPath) { Split-Path -Parent ([string]$_.environmentPath) } else { [string]$_.workingDirectory }
+        (Get-InstallationEngine -DockerDirectory $directory) -eq $mine
+    })
+}
+
 function Find-CompatibleDockerInstallation {
-    $candidates = @(Get-CompatibleDockerInstallations)
-    if ($candidates.Count -eq 0) { $candidates = @(Get-CompatibleDockerVolumes) }
+    $candidates = @(Select-SameEngineInstallations -Candidates @(Get-CompatibleDockerInstallations))
+    if ($candidates.Count -eq 0) { $candidates = @(Select-SameEngineInstallations -Candidates @(Get-CompatibleDockerVolumes)) }
     if ($candidates.Count -eq 0) { return $null }
 
     # One database volume may have a stopped and a replaced DB container in a
@@ -770,7 +811,12 @@ if ((Test-Path -LiteralPath $overlaySource -PathType Container) -and
     # here. Left alone it stays at whatever the distribution shipped.
     $seedSource = Join-Path $PSScriptRoot 'linux-port\overlays\playerbot\sql\playerbots_seed.sql'
     $seedStaged = Join-Path $PSScriptRoot 'linux-port\docker\mariadb\playerbot\playerbots_seed.sql'
-    if ((Test-Path -LiteralPath $seedSource -PathType Leaf) -and
+    if ((Get-ServerEngine) -ne 'r40250') {
+        # mt2009's seed is rendered from the overlay's by port/seedify.py and
+        # ships where the migrate container mounts it; the overlay's own would
+        # write columns this schema does not have. Nothing to copy over it.
+    }
+    elseif ((Test-Path -LiteralPath $seedSource -PathType Leaf) -and
         (Test-Path -LiteralPath (Split-Path -Parent $seedStaged) -PathType Container)) {
         $seedHash = $null
         if (Test-Path -LiteralPath $seedStaged -PathType Leaf) {
@@ -815,16 +861,31 @@ if ((Test-Path -LiteralPath $overlaySource -PathType Container) -and
 #
 # So say it here, once, in words, before Docker gets a chance to say it badly.
 $gameContext = Join-Path $PSScriptRoot 'linux-port\docker\game\src'
-$requiredContext = @(
-    'build-deps-40250.sh',
-    'extern',
-    'server\common', 'server\db', 'server\game', 'server\libgame',
-    'server\liblua', 'server\libpoly', 'server\libserverkey',
-    'server\libsql', 'server\libthecore',
-    'serverfiles\share\conf', 'serverfiles\share\data',
-    'serverfiles\share\locale', 'serverfiles\share\package',
-    'serverfiles\mark-default'
-)
+# Per engine, the same list as Get-M2RequiredGameContext in the module:
+# mt2009 keeps its protos in the database (no share\conf) and its
+# dependency script one level up, in game\.
+$requiredContext = if ((Get-ServerEngine) -eq 'mt2009') {
+    @(
+        '..\build-deps-mt2009.sh', 'extern\include', 'extern\cryptopp', 'extern-tarballs',
+        'server\__REVISION__',
+        'server\common', 'server\db', 'server\game', 'server\libgame',
+        'server\liblua', 'server\libpoly', 'server\libsql', 'server\libthecore',
+        'serverfiles\share\CMD', 'serverfiles\share\data',
+        'serverfiles\share\locale', 'serverfiles\share\package',
+        'serverfiles\mark-default'
+    )
+} else {
+    @(
+        'build-deps-40250.sh',
+        'extern',
+        'server\common', 'server\db', 'server\game', 'server\libgame',
+        'server\liblua', 'server\libpoly', 'server\libserverkey',
+        'server\libsql', 'server\libthecore',
+        'serverfiles\share\conf', 'serverfiles\share\data',
+        'serverfiles\share\locale', 'serverfiles\share\package',
+        'serverfiles\mark-default'
+    )
+}
 $missingContext = @()
 foreach ($entry in $requiredContext) {
     if (-not (Test-Path -LiteralPath (Join-Path $gameContext $entry))) {
@@ -837,7 +898,11 @@ foreach ($entry in $requiredContext) {
 # MariaDB that reports healthy while playerbot-migrate waits thirty minutes.
 $dumpDir = Join-Path $PSScriptRoot 'linux-port\docker\mariadb\initdb.d\dumps'
 $missingDumps = @()
-foreach ($db in @('account', 'common', 'player', 'log', 'hotbackup')) {
+# r40250's package ships hotbackup (empty by design); mt2009's keeps the
+# protos in a sixth database, world, and has no hotbackup dump.
+$requiredDumps = if ((Get-ServerEngine) -eq 'mt2009') { @('account', 'common', 'player', 'log', 'world') }
+                 else { @('account', 'common', 'player', 'log', 'hotbackup') }
+foreach ($db in $requiredDumps) {
     $f = Join-Path $dumpDir "$db.sql"
     if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { $missingDumps += "$db.sql" }
     elseif ($db -ne 'hotbackup' -and (Get-Item -LiteralPath $f).Length -eq 0) { $missingDumps += "$db.sql (pusty)" }

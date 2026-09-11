@@ -677,7 +677,7 @@ namespace
 			if (oldItem && IS_SET(oldItem->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 				continue;
 
-			if (!ch->CanEquipNow(item, TItemPos(INVENTORY, cell)))
+			if (!PlayerBotCanEquipNow(ch, item, TItemPos(INVENTORY, cell)))
 				continue;
 
 			const long long itemScore = GetPlayerBotEquipmentScore(item, ch);
@@ -739,7 +739,7 @@ namespace
 			}
 		}
 
-		if (ch->EquipItem(bestItem))
+		if (PlayerBotEquipItem(ch, bestItem))
 		{
 			sys_log(0, "PLAYERBOT_AI: equipped upgrade pid=%u name=%s wear=%d old_vnum=%u new_vnum=%u old_score=%lld new_score=%lld",
 					ch->GetPlayerID(), ch->GetName(), bestWearCell, oldVnum, newVnum, oldScore, bestScore);
@@ -1427,7 +1427,7 @@ namespace
 		LPITEM item = ch->AutoGiveItem(vnum, 1, -1, false);
 		if (!item)
 			return false;
-		ch->PointChange(POINT_GOLD, -price);
+		PlayerBotChangeGold(ch, -price);
 		sys_log(0, "PLAYERBOT_GEAR: bought progression %s pid=%u name=%s vnum=%u required_level=%d price=%lld",
 				category ? category : "gear", ch->GetPlayerID(), ch->GetName(), vnum,
 				item->GetLevelLimit(), price);
@@ -1474,7 +1474,7 @@ namespace
 		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
-			if (IsPlayerBotUsableArrow(ch, item) && ch->EquipItem(item, WEAR_ARROW))
+			if (IsPlayerBotUsableArrow(ch, item) && PlayerBotEquipItem(ch, item, WEAR_ARROW))
 				return true;
 		}
 		return false;
@@ -1659,7 +1659,7 @@ namespace
 		LPITEM worn = ch->GetWear((BYTE)wearCell);
 		if (worn && IS_SET(worn->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 			return false;
-		if (!ch->CanEquipNow(item, TItemPos(INVENTORY, cell)))
+		if (!PlayerBotCanEquipNow(ch, item, TItemPos(INVENTORY, cell)))
 			return false;
 		return !worn || GetPlayerBotEquipmentScore(item, ch) >
 				GetPlayerBotEquipmentScore(worn, ch);
@@ -1829,7 +1829,7 @@ namespace
 						continue;
 					const DWORD count = std::min<DWORD>(excess, item->GetCount());
 					item->SetCount(item->GetCount() - count);
-					ch->PointChange(POINT_GOLD, (long long)unitPrice * count);
+					PlayerBotChangeGold(ch, (long long)unitPrice * count);
 					excess -= count;
 					soldUnits += count;
 					earnedGold += (long long)unitPrice * count;
@@ -1875,7 +1875,7 @@ namespace
 				DWORD count = (DWORD)((deficit + price - 1) / price);
 				count = std::max<DWORD>(1, std::min<DWORD>(count, available));
 				item->SetCount(item->GetCount() - count);
-				ch->PointChange(POINT_GOLD, (long long)price * count);
+				PlayerBotChangeGold(ch, (long long)price * count);
 				sys_log(0, "PLAYERBOT_GEAR: emergency sale pid=%u name=%s reason=%s vnum=%u count=%u earned=%lld total_gold=%lld required=%lld",
 						ch->GetPlayerID(), ch->GetName(), reason ? reason : "supply",
 						potionVnums[v], count, (long long)price * count,
@@ -1930,7 +1930,7 @@ namespace
 				PLAYERBOT_WOODEN_ARROW_VNUM, bundle, -1, false);
 		if (!arrows)
 			return false;
-		ch->PointChange(POINT_GOLD, -price);
+		PlayerBotChangeGold(ch, -price);
 		const bool equipped = EnsurePlayerBotArrowsEquipped(ch);
 		sys_log(0, "PLAYERBOT_GEAR: bought wooden arrows pid=%u name=%s vnum=%u count=%d price=%lld equipped=%d",
 				ch->GetPlayerID(), ch->GetName(), PLAYERBOT_WOODEN_ARROW_VNUM,
@@ -1950,7 +1950,7 @@ namespace
 				continue;
 
 			const DWORD vnum = item->GetVnum();
-			if (ch->CanEquipNow(item, TItemPos(INVENTORY, cell)) && ch->EquipItem(item))
+			if (PlayerBotCanEquipNow(ch, item, TItemPos(INVENTORY, cell)) && PlayerBotEquipItem(ch, item))
 			{
 				sys_log(0, "PLAYERBOT_AI: equipped weapon pid=%u name=%s vnum=%u",
 						ch->GetPlayerID(), ch->GetName(), vnum);
@@ -1979,8 +1979,8 @@ namespace
 		if (!weapon)
 			return false;
 
-		ch->PointChange(POINT_GOLD, -price);
-		const bool equipped = ch->EquipItem(weapon);
+		PlayerBotChangeGold(ch, -price);
+		const bool equipped = PlayerBotEquipItem(ch, weapon);
 
 		sys_log(0, "PLAYERBOT_AI: bought emergency weapon pid=%u name=%s vnum=%u price=%lld equipped=%d",
 				ch->GetPlayerID(), ch->GetName(), vnum, price, equipped ? 1 : 0);

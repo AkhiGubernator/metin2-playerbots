@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T12:00:00Z",
-  "statusMessage": "Linia 2.x: pliki serwerowe mt2009. Pełna paczka (klient + serwer) jest na hostingu; ten kanał niesie tylko aktualizacje.",
+  "publishedAt": "2026-09-11T11:16:34Z",
+  "statusMessage": "Wersja 2.0.0: nowe pliki serwerowe mt2009. Ta instalacja jest aktualna. Kto ma jeszcze linię 1.33, pobiera pełną paczkę (klient + serwer) z Discorda: https://discord.gg/pt5tvnrN6 - stary launcher i stary klient nie pasują do 2.0.",
   "server": {
     "version": "2.0.0",
-    "url": "",
-    "sha256": ""
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.0/metin2-server-update-2.0.0.zip",
+    "sha256": "99085DAC5E49F49432E14FEC2B99D0E84C66351AE78C49476C35734DBF000BB6"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
@@ -14,7 +14,7 @@
   },
   "client": {
     "version": "2.0.0",
-    "url": "",
-    "sha256": ""
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.0/metin2-client-update-2.0.0.zip",
+    "sha256": "0107E8D86CAA34F4FCE0C6B1D44F89B0D84BB45556ECED4A8DC281CF28FBEC8B"
   }
 }

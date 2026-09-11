@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T18:59:07Z",
-  "statusMessage": "Wersja 2.0.6: mnożniki EXP/dropu/yang i rangi GM naprawdę działają na 2.x, kolejka panelu klasycznego (przedmioty, teleport, szybkość) naprawiona, Risk mode zdjęty, skrzynie czekają na miejsce w plecaku. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-11T20:22:40Z",
+  "statusMessage": "Wersja 2.0.7: Risk mode naprawdę znika, launcher pyta o aktualizację przy starcie, dane do Navicat uzupełnione, nadawanie nie staje na botach offline, stragany mówią, dlaczego stoją. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.6",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.6/metin2-server-update-2.0.6.zip",
-    "sha256": "C497E5C5B2FBF1CDEE4C03BF4408FCC66AA7C4EB94FCC2C57F004F2F067A815B"
+    "version": "2.0.7",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.7/metin2-server-update-2.0.7.zip",
+    "sha256": "C7646C880716F1AE6013632CF569D6719C48689F00E50808508BC19C012F2B1B"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

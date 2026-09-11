@@ -506,24 +506,18 @@ namespace
 		if (IsPlayerBotSpecialLevel30Weapon(item))
 			return false;
 
-		// Whatever else it is, a +7 or better is not something to hand an NPC for
-		// a fifth of the shop price. The reserve rule below keeps one spare per
-		// slot and sold the rest; that is how a Riba +9 went to a merchant
-		// because the same bot was carrying an axe +9. These go on a stall.
-		if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
-			return false;
-
 		// The Archer's one stone weapon (playerbot_gear.h) is kept.
 		if (IsPlayerBotArcherBuild(ch) && IsPlayerBotStoneMeleeWeapon(ch, item) &&
 				FindPlayerBotStoneWeapon(ch, false) == item)
 			return false;
 
-		// A scrap keeper's low refines are its stock, not its junk - until the
-		// bag runs short, and then the merchant gets them like anyone else's.
 		// Gear the counter could not sell in six stands is scrap, whatever the
-		// keeper rules below would keep it for. Above the precious refine it
-		// never gets here.
-		if (item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR)
+		// rules below would keep it for - up to PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE.
+		// This has to come before the precious-refine keep below, or it never
+		// applies to the +4 and +5 the counter actually keeps, which is what it
+		// was written for: with it underneath, a bag of unsold +5 was for life.
+		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+				item->GetRefineLevel() <= PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE)
 		{
 			TPlayerBotAIStateMap::const_iterator st = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
 			if (st != s_mapPlayerBotAIStates.end())
@@ -534,6 +528,17 @@ namespace
 					return true;
 			}
 		}
+
+		// Whatever else it is, a +7 or better is not something to hand an NPC for
+		// a fifth of the shop price. The reserve rule below keeps one spare per
+		// slot and sold the rest; that is how a Riba +9 went to a merchant
+		// because the same bot was carrying an axe +9. These go on a stall -
+		// and, up to +6, only for as many stands as somebody might buy them.
+		if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
+			return false;
+
+		// A scrap keeper's low refines are its stock, not its junk - until the
+		// bag runs short, and then the merchant gets them like anyone else's.
 
 		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
 				IsPlayerBotScrapKeeper(ch->GetPlayerID()) &&

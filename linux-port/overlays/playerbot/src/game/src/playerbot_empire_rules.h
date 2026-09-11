@@ -463,8 +463,21 @@ namespace playerbot_empire_rules
 	inline bool GetTeleportArrival(int empire, ETeleportDestination where, TPoint& out)
 	{
 		// [destination][empire - 1]
+		//
+		// The guild-map row is each map's own Town.txt, not the Teleporter
+		// quest's empire table: for Chunjo that table said (179500, 1000),
+		// which is cell (3, 10) of metin2_map_guild_02 - the unwalkable
+		// north-west corner. A bot warped there had no route to anything,
+		// the watchdog reset it every ninety seconds at the same spot, and
+		// nothing could move it (greess, 11 September: pid 16 at
+		// (179500, 1000), nav_out=1, confirmed twice more). playerbot_types.h
+		// had already learned this for Chunjo; the kingdom table reintroduced
+		// the quest's number when the three-kingdom travel replaced the
+		// constant. Town.txt: guild_01 base (128000,0) + (74,55),
+		// guild_02 base (179200,0) + (427,92), guild_03 base (230400,0) +
+		// (405,127).
 		static const TPoint table[TELEPORT_DESTINATIONS][3] = {
-			{ { 135600, 4300 },   { 179500, 1000 },   { 271800, 13000 } },
+			{ { 135400, 5500 },   { 221900, 9200 },   { 270900, 12700 } },
 			{ { 402100, 673900 }, { 270400, 739900 }, { 321300, 808000 } },
 			{ { 217800, 627200 }, { 221900, 502700 }, { 344000, 502500 } },
 			{ { 434200, 290600 }, { 375200, 174900 }, { 491800, 173600 } },

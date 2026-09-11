@@ -1062,6 +1062,14 @@ namespace
 				return true;
 			}
 
+			// A catch goes through AutoGiveItem, and AutoGiveItem never refuses a
+			// full bag: it puts the fish on the grass and reports success. That is
+			// what "the anglers drop their catch and every bot runs for it" was
+			// (bierzyn, 10 September, with the photograph). A session with no
+			// cell left ends here; the planner sends the bot to empty the bag.
+			if (ch->GetEmptyInventory(1) < 0)
+				return EndPlayerBotFishingSession(ch, state, dwNow, "bag_full");
+
 			// CHARACTER::fishing() dereferences the sectree map and the tile under
 			// the bot without checking either, so never call it blind.
 			if (!ch->GetSectree() ||

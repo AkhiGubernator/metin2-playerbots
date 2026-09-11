@@ -137,6 +137,15 @@ int main()
 	assert(arrival.x == 221900 && arrival.y == 502700);
 	assert(GetTeleportArrival(EMPIRE_CHUNJO, TELEPORT_ORC_VALLEY, arrival));
 	assert(arrival.x == 270400 && arrival.y == 739900);
+	// The guild map lands on each map's own Town.txt cell, never on the
+	// Teleporter quest's (179500, 1000) - that is the unwalkable corner of
+	// metin2_map_guild_02 and stranded every bot sent there.
+	assert(GetTeleportArrival(EMPIRE_CHUNJO, TELEPORT_GUILD_MAP, arrival));
+	assert(arrival.x == 221900 && arrival.y == 9200);
+	assert(GetTeleportArrival(EMPIRE_SHINSOO, TELEPORT_GUILD_MAP, arrival));
+	assert(arrival.x == 135400 && arrival.y == 5500);
+	assert(GetTeleportArrival(EMPIRE_JINNO, TELEPORT_GUILD_MAP, arrival));
+	assert(arrival.x == 270900 && arrival.y == 12700);
 	// Each kingdom lands somewhere else on the same shared map.
 	assert(GetTeleportArrival(EMPIRE_SHINSOO, TELEPORT_ORC_VALLEY, arrival));
 	assert(GetTeleportArrival(EMPIRE_JINNO, TELEPORT_ORC_VALLEY, other));

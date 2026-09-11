@@ -538,6 +538,15 @@ namespace
 	const int PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT = 10;
 	const int PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_STANDS = 4;
 	const int PLAYERBOT_SHOP_UNSOLD_SCRAP_STANDS = 6;
+	// ...and up to this refine. The rule used to sit below "+4 and up never
+	// goes to an NPC", so it applied to nothing the counter actually keeps:
+	// a +5 nobody bought in six stands stayed in the bag for good, and a bot
+	// with a bag of them stood in Joan opening stalls instead of hunting -
+	// "ciule wszystko +5 wystawiaja i od wczoraj zaden nie wbil nawet lvla"
+	// (gregoszky), "boty maja zapchane eq, nie wiedza co z tym robic"
+	// (davids998), both on 10-11 September. +7 and up is still never scrap:
+	// that is the price bracket a player crosses a market for.
+	const BYTE PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE = 6;
 	// The ride from Bokjung's square to the Joan gate is 38 km.
 	const DWORD PLAYERBOT_MARKET_JOAN_WALK_TIMEOUT = 300000;
 	// And how far away the stalls may be before it is not worth setting off:

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T20:22:40Z",
-  "statusMessage": "Wersja 2.0.7: Risk mode naprawdę znika, launcher pyta o aktualizację przy starcie, dane do Navicat uzupełnione, nadawanie nie staje na botach offline, stragany mówią, dlaczego stoją. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-11T21:12:42Z",
+  "statusMessage": "Wersja 2.0.8: trzy królestwa domyślnie u każdego (boty po równo), boty Shinsoo i Jinno chodzą do kowala, padający rdzeń zapisuje ślad, naprawiony błąd .Count launchera. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.7",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.7/metin2-server-update-2.0.7.zip",
-    "sha256": "C7646C880716F1AE6013632CF569D6719C48689F00E50808508BC19C012F2B1B"
+    "version": "2.0.8",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.8/metin2-server-update-2.0.8.zip",
+    "sha256": "2AC4FAEF9EEA249657D2E9A278B10EDCE1F7C9E3C4B8F8E00D1A31B8875C04CC"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

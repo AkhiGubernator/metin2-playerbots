@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-10T22:04:53Z",
-  "statusMessage": "Aktualizacja 1.33.2. Trzy zgłoszenia z Discorda: suwak liczby botów wreszcie znaczy to, co pokazuje (rdzeń ścinał go do 1000, teraz sufit to 2500 jak na suwaku, a zmiana działa po restarcie serwera); launcher mówi, dlaczego nie mógł zapisać pliku klienta, zamiast powtarzać „odmowa dostępu”; a zaawansowany panel nazywa uszkodzoną tabelę bazy i podaje komendę naprawy, zamiast pokazywać sam błąd serwera. Klient bez zmian.",
+  "publishedAt": "2026-09-11T07:06:09Z",
+  "statusMessage": "Aktualizacja 1.33.3. Poprawki z nocy zgłoszeń, i po raz pierwszy od 1.33.0 zmienia się też klient. Panel GM nie zatrzymuje już ładowania gry (gdy się nie zbuduje, gra wchodzi bez niego, a powód trafia do syserr.txt). Kanał nie pokazuje FULL przy 2500 botach. Boty nie grzęzną po wejściu do M3. Znika koreański tekst przy śmierci z błogosławieństwem. Wędkarze nie rozrzucają ryb, martwy towar w końcu trafia do handlarza, a ItemShop nie odpowiada 400. Boty noszą nicki od Iwakury, dopasowane do klasy i płci. Kliknij AKTUALIZUJ i zaktualizuj też klient pod F9/w launcherze.",
   "server": {
-    "version": "1.33.2",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.2/metin2-server-update-1.33.2.zip",
-    "sha256": "25076221C0E97048D0FEA556B98EF3B195F964CE98ADBE3653D0B7575E33D7FE"
+    "version": "1.33.3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.3/metin2-server-update-1.33.3.zip",
+    "sha256": "0191D06C06948F7101C7DD6041067366B8B9B9AA8A1DDB411A079E827F97D5B4"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "1.33.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.0/metin2-client-update-1.33.0.zip",
-    "sha256": "CE2C1362BCC34D9071EE844D143AF5673B82DC658E8ECC6AE383B4E73BF59B01"
+    "version": "1.33.3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v1.33.3/metin2-client-update-1.33.3.zip",
+    "sha256": "F8DFBBEB9210BEA4E2211F4906743F69ABBFB4894436BD7B8AB73EEEE8F16368"
   }
 }

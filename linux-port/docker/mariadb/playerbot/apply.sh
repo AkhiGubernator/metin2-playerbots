@@ -355,3 +355,43 @@ if [ -s "$names" ]; then
 else
     echo "[playerbot-migrate] no playerbot_names.sql; bots keep their seed names"
 fi
+
+# ---------------------------------------------------------------------------
+# A game master for the tester account.
+#
+# GM rights are one row in common.gmlist naming an account AND a character,
+# and the mt2009 package ships neither a row nor a character on `admin' - so
+# a world initialised before initdb created one (2.0.0, 2.0.1) has an admin
+# who can log in and command nothing, and the first report was exactly that:
+# "loguje sie admin admin, a tam nie ma postaci gm". The character the player
+# made in the meantime is the one they want the rights on, so this grants
+# IMPLEMENTOR to the tester account's oldest character, once, and only while
+# the list is empty: a world that has ever named a GM is left as it is, and a
+# world whose tester account was removed (M2_KEEP_DEMO_ACCOUNTS=0) has nothing
+# to grant to. A world that has no character on the account yet gets the row
+# on the first start after one is created. The db core reads the list at
+# boot, and this runs before the game container starts.
+# ---------------------------------------------------------------------------
+gm_rows=$(db -e "SELECT COUNT(*) FROM common.gmlist;" 2>/dev/null || echo x)
+if [ "$gm_rows" = "0" ]; then
+    gm_name=$(db -e "
+        SELECT p.name
+          FROM player.player AS p
+          JOIN account.account AS a ON a.id = p.account_id
+         WHERE a.login = 'admin'
+         ORDER BY p.id
+         LIMIT 1;
+    " 2>/dev/null || true)
+    if [ -n "$gm_name" ]; then
+        if db -e "
+            INSERT INTO common.gmlist (mAccount, mName, mContactIP, mServerIP, mAuthority)
+            VALUES ('admin', '$gm_name', '', 'ALL', 'IMPLEMENTOR');
+        "; then
+            echo "[playerbot-migrate] gmlist was empty: '$gm_name' on the admin account is IMPLEMENTOR now"
+        else
+            echo "[playerbot-migrate] WARNING: could not grant GM rights to '$gm_name'" >&2
+        fi
+    else
+        echo "[playerbot-migrate] gmlist is empty and the admin account has no character yet; the first one it gets becomes GM on the next start"
+    fi
+fi

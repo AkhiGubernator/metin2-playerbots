@@ -133,6 +133,48 @@ VALUES ('admin', CONCAT('*', UPPER(SHA1(UNHEX(SHA1('admin'))))), '1234567', 'OK'
        ('test',  CONCAT('*', UPPER(SHA1(UNHEX(SHA1('test'))))),  '1234567', 'OK')
 ON DUPLICATE KEY UPDATE status = 'OK';
 SQL
+
+  # A game master to go with the account. The r40250 package shipped
+  # `[SA]Admin' on `admin' and a gmlist row for it; this one ships an empty
+  # gmlist and no character at all, so the first player to log in as admin
+  # found "no GM character" (archded, 11 September). GM rights here are the
+  # pair (account, character name) - the engine checks the account and never
+  # the host (gm.cpp, GERMAN_GM_NOT_CHECK_HOST) - so the row needs a character
+  # to name, and this creates one: `Admin', a warrior of ninety standing where
+  # the Chunjo cohort is seeded, on Joan. Columns as playerbots_seed.sql; the
+  # rest of the row takes the table's defaults. PID 1 is free - the seed
+  # starts its cohort at 4, as it always has.
+  echo "[initdb] creating the game-master character 'Admin' on the admin account"
+  mysql_do <<'SQL'
+INSERT INTO player.player
+    (id, account_id, name, job, voice, dir, x, y, z, map_index,
+     exit_x, exit_y, exit_map_index, hp, mp, stamina, level, level_step,
+     st, ht, dx, iq, exp, gold, stat_point, skill_point, skill_group,
+     sub_skill_point, stat_reset_count, horse_hp, horse_stamina,
+     horse_level, horse_hp_droptime, horse_riding, horse_skill_point,
+     last_play)
+SELECT 1, a.id, 'Admin', 0, 0, 0, 59513, 171123, 0, 21,
+       59513, 171123, 21, 15178, 760, 800, 90, 0,
+       90, 90, 90, 90, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, UTC_TIMESTAMP()
+  FROM account.account AS a
+ WHERE a.login = 'admin'
+   AND NOT EXISTS (SELECT 1 FROM player.player WHERE id = 1 OR name = 'Admin');
+
+INSERT INTO player.player_index (id, pid1, pid2, pid3, pid4, empire)
+SELECT a.id, p.id, 0, 0, 0, 2
+  FROM account.account AS a
+  JOIN player.player AS p ON p.account_id = a.id AND p.name = 'Admin'
+ WHERE a.login = 'admin'
+   AND NOT EXISTS (SELECT 1 FROM player.player_index WHERE id = a.id);
+
+INSERT INTO common.gmlist (mAccount, mName, mContactIP, mServerIP, mAuthority)
+SELECT 'admin', 'Admin', '', 'ALL', 'IMPLEMENTOR'
+  FROM player.player AS p
+  JOIN account.account AS a ON a.id = p.account_id AND a.login = 'admin'
+ WHERE p.name = 'Admin'
+   AND NOT EXISTS (SELECT 1 FROM common.gmlist WHERE mName = 'Admin');
+SQL
 fi
 
 echo "[initdb] database initialisation complete"

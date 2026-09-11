@@ -123,7 +123,7 @@ namespace
 			case BOT_ACTION_STALL: return "prowadze stragan";
 			case BOT_ACTION_MARKET: return "jestem na zakupach";
 			case BOT_ACTION_LURE: return "podciagam moby dla PT";
-			case BOT_ACTION_TOWN_REST: return "chodze po straganach";
+			case BOT_ACTION_TOWN_REST: return "odpoczywam w miescie";
 			default: return "mysle";
 		}
 	}
@@ -402,7 +402,13 @@ namespace
 					snprintf(status, statusSize, "%sZakladam przynete na wedke", prefix);
 				break;
 			case BOT_ACTION_TOWN_REST:
-				snprintf(status, statusSize, "%sOgladam stragany", prefix);
+				// The linger after a town errand. It reads as browsing only
+				// where there are counters to browse; on a world too young
+				// for a single stall it was "what stalls, there are none".
+				if (GetPlayerBotStallsOnMap(ch->GetMapIndex()) > 0)
+					snprintf(status, statusSize, "%sOgladam stragany", prefix);
+				else
+					snprintf(status, statusSize, "%sOdpoczywam w miescie", prefix);
 				break;
 			case BOT_ACTION_MARKET:
 				if (state.dwMarketStallVID != 0)

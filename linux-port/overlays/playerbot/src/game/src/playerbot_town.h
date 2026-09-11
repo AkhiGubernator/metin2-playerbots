@@ -1762,6 +1762,7 @@ namespace
 		// eight keepers arriving in the same minute would all read six.
 		if (IsPlayerBotM2Map(ch->GetMapIndex()))
 			++s_iPlayerBotStallsInM2;
+		++s_mapPlayerBotStallsByMap[ch->GetMapIndex()];
 
 		// OpenMyShop refuses a character whose main part is not its own body, so
 		// the horse has to go before the stall can be set up.

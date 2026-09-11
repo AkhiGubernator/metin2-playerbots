@@ -47,6 +47,15 @@ the package boots every world closed until a GM types `/maintenance 0`, and an
 ordinary login — `admin` included — was answered `MAINTENA` ("Obecnie trwa
 przerwa techniczna") at the last step. The GM command still closes the world.
 
+The package also ships an empty `common.gmlist` and no character on the tester
+account, where r40250 had `[SA]Admin` with an IMPLEMENTOR row. GM rights are
+the pair (account, character name) — `gm.cpp` checks the account and, under
+`GERMAN_GM_NOT_CHECK_HOST`, never the host — so `initdb.d/10-import-dumps.sh`
+creates `Admin` (a warrior of ninety on Joan, PID 1, columns as the seed's) on
+`admin` with the row, and `apply.sh` grants IMPLEMENTOR to the tester
+account's oldest character on a world whose list is empty (the 2.0.0/2.0.1
+installs). Once only, and never on a list that has anything in it.
+
 An edit whose idempotency marker is its own inserted text stops being
 idempotent the moment a later edit changes that text: the bot-load struct and
 its db case were inserted twice that way (two `SBotPlayerLoadPacket`s, two

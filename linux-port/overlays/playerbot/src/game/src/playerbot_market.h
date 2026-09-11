@@ -577,6 +577,18 @@ namespace
 		// off. That is the difference between a market and a vending machine.
 		if (!haveStallInReach && !PlayerBotWantsAnythingFromMarket(ch))
 			return false;
+		// A market is counters, and the ledger counts them once a minute. With
+		// none in reach and none on this map there is nothing to walk to, and
+		// with none in the first village either there is nothing to cross for:
+		// on a young world no bot is old enough to open one, and the trip was
+		// a walk to an empty pitch under "Szukam czegos na straganach".
+		const int owner = playerbot_empire_rules::GetMapOwnerEmpire(ch->GetMapIndex());
+		const long firstVillage = playerbot_empire_rules::GetHomeMap(owner,
+				playerbot_empire_rules::MAP_ROLE_M1);
+		const bool stallsHere = GetPlayerBotStallsOnMap(ch->GetMapIndex()) > 0;
+		const bool stallsInJoan = GetPlayerBotStallsOnMap(firstVillage) > 0;
+		if (!haveStallInReach && !stallsHere && !stallsInJoan)
+			return false;
 		// Joan first. A shopper standing in Bokjung crosses to the quieter market
 		// before browsing the one under its nose: that is what gives the Joan
 		// counters customers, and it is also what stops five hundred bots
@@ -585,7 +597,7 @@ namespace
 		// Only for a bot whose place is Bokjung: one that is leaving for the
 		// frontier, or is held back from it by an errand, shops in reach and
 		// goes - the same line the stall's walk to Joan draws.
-		if (!haveStallInReach && IsPlayerBotM2Map(ch->GetMapIndex()) &&
+		if (!haveStallInReach && stallsInJoan && IsPlayerBotM2Map(ch->GetMapIndex()) &&
 				dwNow >= state.dwMarketM2AllowedUntil &&
 				state.lDepartureMap == 0 && GetPlayerBotFrontierMapForLevel(ch) == 0)
 		{
@@ -598,6 +610,8 @@ namespace
 					ch->GetPlayerID(), ch->GetName(), ch->GetX(), ch->GetY());
 			return ContinuePlayerBotMarketTrip(ch, state, dwNow, pitchX, pitchY);
 		}
+		if (!haveStallInReach && !stallsHere)
+			return false; // the only counters are in Joan, and Joan was looked at
 		if (!haveStallInReach &&
 				DISTANCE_APPROX(ch->GetX() - pitchX, ch->GetY() - pitchY) >
 					PLAYERBOT_MARKET_TRIP_RANGE)
@@ -643,6 +657,7 @@ namespace
 
 		DWORD stalls = 0, lines = 0, demandBots = 0;
 		s_iPlayerBotStallsInM2 = 0;
+		s_mapPlayerBotStallsByMap.clear();
 		std::set<DWORD> wanted;
 		std::vector<DWORD> wallets;
 		for (TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.begin();
@@ -657,6 +672,7 @@ namespace
 				++stalls;
 				if (IsPlayerBotM2Map(ch->GetMapIndex()))
 					++s_iPlayerBotStallsInM2;
+				++s_mapPlayerBotStallsByMap[ch->GetMapIndex()];
 				for (size_t k = 0; k < state.vecShopOffers.size(); ++k)
 				{
 					const TPlayerBotShopOffer& offer = state.vecShopOffers[k];

@@ -5222,6 +5222,16 @@ function fetchBotPositions() {
     .catch(function(err) { console.error('Map fetch error:', err); });
 }
 
+// A refused answer has to reach the page. The list opened on the loading
+// text and was only ever replaced by a successful answer, so an API error -
+// or a world whose positions had not arrived yet, which is the only thing
+// that used to trigger the first fetch - left "Ladowanie..." on screen for
+// good, and that was read as "the ranking does not load bots".
+function showRankingNote(text) {
+  var listEl = document.getElementById('topBotsList');
+  if (listEl) listEl.innerHTML = '<p class="muted" style="font-size:12px;text-align:center">' + text + '</p>';
+}
+
 function fetchRankings() {
   fetch('/api/bot_rankings?type=' + encodeURIComponent(g_selectedRankCategory) +
         '&limit=' + g_rankLimit)
@@ -5230,9 +5240,14 @@ function fetchRankings() {
       if (data && data.ok) {
         g_rankData = data.rankings || [];
         renderRankings();
+      } else {
+        showRankingNote(I18N.error + ': ' + ((data && data.error) || I18N.rank_empty));
       }
     })
-    .catch(function(err) { console.error('Ranking fetch error:', err); });
+    .catch(function(err) {
+      console.error('Ranking fetch error:', err);
+      showRankingNote(I18N.error + ': ' + err);
+    });
 }
 
 function updateStats() {

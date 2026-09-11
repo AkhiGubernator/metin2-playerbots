@@ -11,4 +11,4 @@ Start:
   3. ZAINSTALUJ / PRZYGOTUJ, potem GRAJ. Pierwszy start buduje serwer
      (kilkanaście minut); kolejne trwają chwilę.
 
-Konto testowe: admin / admin. Szczegóły: Serwer\PACZKA_INFO.txt.
+Konto testowe: admin / admin, z postacią GM „Admin”. Szczegóły: Serwer\PACZKA_INFO.txt.

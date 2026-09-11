@@ -11,7 +11,10 @@ Writes into client-root/ (beside serverinfo.py, which is hand-written):
                     server's terms is shown ours once (client-locale-src/rules.pl.txt);
   * intrologin.py - the three buttons of the login window: the home page is
                     the project's GitHub, the Discord is ours, and the Facebook
-                    button - there is no Facebook - opens the buycoffee page.
+                    button - there is no Facebook - opens the buycoffee page;
+  * uiitemshop.py, itemshop_subscriptionwindow.py - "Doladuj SM!" and the
+                    subscription button open the buycoffee page, not mt2009.pl;
+  * uisystem.py   - the system menu's support button opens our Discord.
 
 Exact-string edits on the stock CP1250/CRLF files, byte for byte otherwise.
 Idempotent; re-run after a new client package.
@@ -26,6 +29,23 @@ OUT = os.path.normpath(os.path.join(HERE, '..', 'client-root'))
 EDITS = {
     'gamerules.py': [
         (b'RULES_VERSION = 3\r\n', b'RULES_VERSION = 4\r\n'),
+    ],
+    # The ItemShop's "Doladuj SM!" and the subscription window's button both
+    # opened the public server's site, and the system menu's support button
+    # its account page. Nothing on this server sells coins; the two shop
+    # buttons open the buycoffee page (the players' own suggestion) and
+    # support is the Discord.
+    'uiitemshop.py': [
+        (b'\t\t\t"type" : "open_url",\r\n\t\t\t"value" : "https://mt2009.pl/"\r\n',
+         b'\t\t\t"type" : "open_url",\r\n\t\t\t"value" : "https://buycoffee.to/metin2-playerbots"\r\n'),
+    ],
+    'itemshop_subscriptionwindow.py': [
+        (b'\t\tutils.open_url("https://mt2009.pl/")\r\n',
+         b'\t\tutils.open_url("https://buycoffee.to/metin2-playerbots")\r\n'),
+    ],
+    'uisystem.py': [
+        (b'\t\tutils.open_url("https://mt2009.pl/Identity/Account/Manage/Support")\r\n',
+         b'\t\tutils.open_url("https://discord.gg/pt5tvnrN6")\r\n'),
     ],
     'intrologin.py': [
         (b'\t\tself.homePageButton.SAFE_SetEvent(self.OpenURL, "https://mt2009.pl/")\r\n',

@@ -1837,6 +1837,18 @@ namespace
 	// keepers in the same minute cannot walk past the cap together. A stale
 	// count can only be too high, which errs towards sending a keeper to Joan.
 	int s_iPlayerBotStallsInM2 = 0;
+	// Counters standing on each map right now, kept the same way. What it
+	// answers is "is there a market here at all": on a young world nothing
+	// can open a stall (mt2009 asks for level fifteen and eight hundred
+	// kills), and a bot that set off to browse counters that did not exist
+	// was reported as "jakie stragany ogladaja jak zadnego nie ma".
+	std::map<long, int> s_mapPlayerBotStallsByMap;
+
+	int GetPlayerBotStallsOnMap(long lMapIndex)
+	{
+		std::map<long, int>::const_iterator it = s_mapPlayerBotStallsByMap.find(lMapIndex);
+		return it == s_mapPlayerBotStallsByMap.end() ? 0 : it->second;
+	}
 	const int PLAYERBOT_SHOP_RING_MIN = 400;
 	const int PLAYERBOT_SHOP_RING_RADIUS = 1700;
 	// The shop bundle (item 50200) carries LIMIT_NONE in item_proto, so the game

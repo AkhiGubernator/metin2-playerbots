@@ -17,7 +17,51 @@ every version here.
 
 ---
 
-## 2.0.2 — (w przygotowaniu)
+## 2.0.2 — 2026-09-11
+
+Druga poprawka z pierwszego dnia: zgłoszenia z Discorda po południu, nowa
+pula nicków i aktualizacja klienta (przycisk „AKTUALIZUJ KLIENTA” w
+launcherze — dwa pliki pakietu `root`).
+
+### Konto admin ma postać GM
+
+Paczka mt2009 przychodzi z pustą listą GM i bez żadnej postaci na koncie
+`admin`, więc kto zalogował się na konto testowe, dostawał zwykłego gracza
+(archded: „loguję się admin admin, a tam nie ma postaci GM”). Świeży świat
+tworzy teraz na tym koncie postać **Admin** (wojownik 90 poziomu, stoi w
+Joan) z uprawnieniami IMPLEMENTOR. Świat założony na 2.0.0 lub 2.0.1 dostaje
+to przy najbliższym starcie: pierwsza postać konta `admin` zostaje GM (jeśli
+na koncie nie ma jeszcze postaci — pierwsza, którą utworzysz, po kolejnym
+starcie). Nadanie jest jednorazowe i tylko na pustej liście; świat, który
+kiedykolwiek miał własnego GM, zostaje jak był.
+
+### „Doładuj SM!” prowadzi na buycoffee, nie na mt2009.pl
+
+Przycisk „Doładuj SM!” w sklepie z przedmiotami i przycisk w oknie
+abonamentu otwierały stronę publicznego serwera mt2009 (sizowski, matthaeu;
+„powinno przenosić na buycoffee” — kuszaa). Oba prowadzą teraz na
+https://buycoffee.to/metin2-playerbots, a „Wsparcie” w menu systemowym na nasz
+Discord. To zmiana w kliencie: w launcherze kliknij „AKTUALIZUJ KLIENTA”.
+Smoczych Monet na tym serwerze nikt nie sprzedaje — dopisujesz je sobie w
+bazie (`account.account.cash`).
+
+### Boty nie oglądają straganów, których nie ma
+
+Po załatwieniu spraw w mieście bot chwilę zostaje na placu, a nad głową
+miał „Ogladam stragany” — także na świecie, na którym żaden bot nie dorósł
+jeszcze do otwarcia sklepu („jakie stragany oglądają jak żadnego nie ma” —
+.christoff). Bez lady na mapie mówi teraz „Odpoczywam w miescie”. To samo z
+zakupami: wyprawa na targ („Szukam czegos na straganach”) rusza tylko wtedy,
+gdy na tej mapie albo w pierwszej wiosce królestwa stoi jakiś stragan;
+wcześniej bot szedł na pusty pitch i przeglądał powietrze.
+
+### Panel: ranking nie wisi na „Ładowanie…”
+
+Lista rankingu w panelu klasycznym zmieniała się tylko po udanej odpowiedzi
+API, a pierwsze pobranie ruszało dopiero po pozycjach botów — na świecie,
+który jeszcze nie miał botów w grze, albo po błędzie API napis „Ładowanie…”
+zostawał na zawsze (davids998). Odmowa API jest teraz wypisywana w miejscu
+listy, a ranking pobiera się od razu.
 
 ### Nicki botów: lista Iwakury, w całości i tylko ona
 

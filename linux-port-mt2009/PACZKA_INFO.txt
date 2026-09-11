@@ -1,5 +1,5 @@
 Metin2 Singleplayer (pliki serwerowe mt2009) + Playerbots
-Wersja paczki: 2.0.1 (2026-09-11)
+Wersja paczki: 2.0.2 (2026-09-11)
 
 CO JEST W PACZCE
   Klient\   gotowy klient gry, wskazuje ten komputer (127.0.0.1)
@@ -22,6 +22,9 @@ zatrzymania serwera.
 DOMYŚLNE KONTO TESTOWE GRY
   login: admin
   hasło: admin
+  Na koncie jest postać Admin (wojownik 90 poziomu) z uprawnieniami GM
+  (IMPLEMENTOR). Na świecie założonym na 2.0.0 lub 2.0.1 uprawnienia dostaje
+  przy najbliższym starcie serwera pierwsza postać konta admin.
 
 Boty zaludniają królestwo Chunjo (żółte), dlatego tam najlepiej utworzyć
 własną postać. Serwer domyślnie nasłuchuje wyłącznie na 127.0.0.1.

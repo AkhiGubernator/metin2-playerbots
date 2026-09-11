@@ -4133,9 +4133,23 @@ class Interface(object):
 		wndChatLog = uiChat.ChatLogWindow()
 		wndChatLog.BindInterface(self)
 
-		wndGMPanel = GMPanelWindow()
-		wndGMPanel.Hide()
-		self.wndGMPanel = wndGMPanel
+		# The GM panel is optional and must never be the reason the game does
+		# not load. Its window is built here, inside MakeInterface, so any
+		# exception in it - a widget this client's binary does not have, a
+		# locale key missing from this client's locale pack - aborted the
+		# whole interface and the loading bar stopped at 100% for good
+		# (Dixdros, jaroszv2, .unright, ligivanastrea, 10-11 September). The
+		# stock root loaded on the same machines. So: build it, and if it
+		# cannot be built, say so in syserr.txt and carry on without it -
+		# every caller below treats wndGMPanel as possibly absent.
+		self.wndGMPanel = None
+		try:
+			wndGMPanel = GMPanelWindow()
+			wndGMPanel.Hide()
+			self.wndGMPanel = wndGMPanel
+		except:
+			import dbg
+			dbg.TraceError("GM panel (F9) could not be built - the game loads without it")
 
 		self.wndCharacter = wndCharacter
 		self.wndInventory = wndInventory
@@ -4935,6 +4949,10 @@ class Interface(object):
 		# przy kazdym nacisnieciu F9, wiec nie ma tu juz zadnej bramki
 		# client-side do sprawdzenia - ta linia w ogole nie wykona sie dla
 		# zwyklego gracza, bo "OpenGMPanelWindow" nigdy do niego nie dotrze.
+		if not self.wndGMPanel:
+			import chat
+			chat.AppendChat(chat.CHAT_TYPE_INFO, "Panel GM nie zaladowal sie w tym kliencie - szczegoly w syserr.txt")
+			return
 		if False == self.wndGMPanel.IsShow():
 			self.wndGMPanel.Show()
 			self.wndGMPanel.SetTop()
@@ -4947,6 +4965,8 @@ class Interface(object):
 	# Called from game.py, wired to uitarget.TargetBoard's "Sprawdz" button
 	# (GM-only, next to Zapr. Grupy - see uitarget.py RefreshButton).
 	def OpenGMLookupFor(self, name):
+		if not self.wndGMPanel:
+			return
 		self.wndGMPanel.Show()
 		self.wndGMPanel.SetTop()
 		self.wndGMPanel.OpenLookupFor(name)

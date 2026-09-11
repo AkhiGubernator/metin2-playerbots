@@ -47,6 +47,13 @@ try {
         if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE) for $tree" }
     }
 
+    # Which client the full package ships beside this tree. Read by the
+    # launcher as the installed client version until the first client update
+    # records one in .m2launcher-state.json - without it a fresh install said
+    # "unknown" and the startup check offered the client package it already had.
+    # Deliberately NOT in the server update list: a server update must not
+    # overwrite what a player's client actually is.
+    Copy-Item -LiteralPath (Join-Path $mt 'CLIENT_VERSION') -Destination (Join-Path $Deploy 'CLIENT_VERSION') -Force
     # Docs and the installer travel with a full package, never with an update.
     foreach ($f in @('README.md', 'README_EN.md', 'TUTORIAL.md', 'UNINSTALL.md', 'UPDATING.md', 'LICENSE', 'NOTICE.md', 'CONTRIBUTING.md')) {
         $p = Join-Path $Repo $f

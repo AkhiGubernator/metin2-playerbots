@@ -161,8 +161,12 @@ RUN set -eux; \
 
 # -----------------------------------------------------------------------------
 # quests: the panel's in-game helper (web_admin.quest), the movement-speed
-# bonus and High Risk, compiled by the tree's own qc into object files the
-# cores load at boot. qc ships as a FreeBSD binary in the package's quest
+# bonus and the starter chest, compiled by the tree's own qc into object files
+# the cores load at boot. High Risk is NOT on the list on purpose: an update
+# never deletes a file, so every 2.0.0-2.0.5 tree still carries
+# quest/high_risk.quest, and 2.0.6 - which only removed the file from the
+# repository - kept compiling it on every player's machine ("po wgraniu update
+# risk mode nadal jest"). The loop is the gate, not the directory. qc ships as a FreeBSD binary in the package's quest
 # directory, so it is built here from game/src/quest against the in-tree Lua
 # 5.0. The 300-odd stock quests keep the object files they came with; this
 # stage produces only its own three and they are copied over as an addition.
@@ -191,7 +195,7 @@ RUN set -eux; \
     for fn in mysql_direct_query; do \
       grep -qx "$fn" /tmp/qc-work/quest_functions || echo "$fn" >> /tmp/qc-work/quest_functions; \
     done; \
-    for q in web_admin speed_boost high_risk starter_chest; do \
+    for q in web_admin speed_boost starter_chest; do \
       [ -f "/quest-add/$q.quest" ] || continue; \
       sed 's/\r$//' "/quest-add/$q.quest" > "/tmp/qc-work/$q.quest"; \
       ( cd /tmp/qc-work && /src/Server/game/src/quest/qc "$q.quest" ); \

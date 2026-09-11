@@ -538,6 +538,13 @@ namespace
 	const int PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT = 10;
 	const int PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_STANDS = 4;
 	const int PLAYERBOT_SHOP_UNSOLD_SCRAP_STANDS = 6;
+	// Gear the merchant may never have (above PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE
+	// - a shaman's warrior steel +9) used to have no end at all: discounted to
+	// this many stands, then carried round the stones for ever, and a bag of it
+	// is "plecak pelen rzeczy innych klas" (audit D14). After this many stands
+	// unsold it goes to the storekeeper with the surplus books, under bag
+	// pressure - kept, never scrapped, and out of the bag.
+	const int PLAYERBOT_SHOP_UNSOLD_SAFEBOX_STANDS = 8;
 	// ...and up to this refine. The rule used to sit below "+4 and up never
 	// goes to an NPC", so it applied to nothing the counter actually keeps:
 	// a +5 nobody bought in six stands stayed in the bag for good, and a bot
@@ -1894,6 +1901,50 @@ namespace
 	// that genuinely kept some of them open.
 	const DWORD PLAYERBOT_SHOP_MIN_DURATION = 600000;    // 10 min
 	const DWORD PLAYERBOT_SHOP_MAX_DURATION = 1500000;   // 25 min
+	// Why a counter is open. The first four are the exceptions the operator's
+	// TRADE slider does not touch - a trader trades, a bot that cannot afford
+	// its potions or has no room left sells, a dropper under bag pressure
+	// sells - and the last three are the rolls the slider stretches. A stall
+	// remembers its reason, shows it in the status ("Prowadze stragan (los)"),
+	// and a rolled one re-asks the roll when the weights file changes, spread
+	// over PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS so a hundred keepers do not
+	// pack up in one second (audit D11: "minimalny suwak, a 180 z 280 botow
+	// handluje" - the stalls that stood were never asked again).
+	enum EPlayerBotShopReason
+	{
+		PLAYERBOT_SHOP_REASON_NONE = 0,
+		PLAYERBOT_SHOP_REASON_MERCHANT,
+		PLAYERBOT_SHOP_REASON_POOR,
+		PLAYERBOT_SHOP_REASON_BAG_FULL,
+		PLAYERBOT_SHOP_REASON_DROPPER_PRESSURE,
+		PLAYERBOT_SHOP_REASON_BOOKS,
+		PLAYERBOT_SHOP_REASON_DROPPER_ROLL,
+		PLAYERBOT_SHOP_REASON_ROLL,
+		PLAYERBOT_SHOP_REASON_MAX
+	};
+	const DWORD PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS = 300000;   // 5 min
+
+	inline bool IsPlayerBotShopReasonRolled(BYTE bReason)
+	{
+		return bReason == PLAYERBOT_SHOP_REASON_BOOKS ||
+				bReason == PLAYERBOT_SHOP_REASON_DROPPER_ROLL ||
+				bReason == PLAYERBOT_SHOP_REASON_ROLL;
+	}
+
+	inline const char* GetPlayerBotShopReasonName(BYTE bReason)
+	{
+		switch (bReason)
+		{
+			case PLAYERBOT_SHOP_REASON_MERCHANT:         return "handlarz";
+			case PLAYERBOT_SHOP_REASON_POOR:             return "brak yang na mikstury";
+			case PLAYERBOT_SHOP_REASON_BAG_FULL:         return "pelny plecak";
+			case PLAYERBOT_SHOP_REASON_DROPPER_PRESSURE: return "dropper, pelny plecak";
+			case PLAYERBOT_SHOP_REASON_BOOKS:            return "nadmiar ksiag";
+			case PLAYERBOT_SHOP_REASON_DROPPER_ROLL:     return "dropper";
+			case PLAYERBOT_SHOP_REASON_ROLL:             return "los";
+			default:                                     return "?";
+		}
+	}
 	// What a bot pays itself for the stall it sets up.
 	const DWORD PLAYERBOT_SHOP_BUNDLE_PRICE = 2000;
 	const DWORD PLAYERBOT_SHOP_REST_MIN = 1800000;
@@ -3060,6 +3111,8 @@ namespace
 			dwShopCloseTime(0),
 			bShopStandsInRow(0),
 			bShopLastStandSold(false),
+			bShopOpenReason(0),
+			dwShopWeightsGeneration(0),
 			dwNextShopKeepTime(0),
 			dwNextShoppingTime(0),
 			dwMarketTripUntil(0),
@@ -3307,6 +3360,10 @@ namespace
 		// one sold anything - see PLAYERBOT_SHOP_STANDS_IN_ROW.
 		BYTE bShopStandsInRow;
 		bool bShopLastStandSold;
+		// EPlayerBotShopReason of the stand that is up, and the weights file
+		// generation it was judged under - see ManagePlayerBotShopLifetime.
+		BYTE bShopOpenReason;
+		DWORD dwShopWeightsGeneration;
 		DWORD dwNextShopKeepTime;
 		DWORD dwNextShoppingTime;
 		// The shopping trip: when it must be over, when the counters may be read
@@ -3326,6 +3383,10 @@ namespace
 		// piece of gear under the precious refine that nobody wanted for
 		// PLAYERBOT_SHOP_UNSOLD_SCRAP_STANDS stands goes to the merchant.
 		std::map<DWORD, BYTE> mapStallUnsold;
+		// When each counter line was first put up (item id -> tick time), so
+		// the age of a piece of stock is known when it is discounted, deposited
+		// or scrapped. Pruned with mapStallUnsold.
+		std::map<DWORD, DWORD> mapStockFirstListed;
 		DWORD dwNextShopDebugTime;
 		DWORD dwMonkeyReversePortalBlockUntil;
 		// Since when this bot has been working its current Monkey Dungeon chamber.

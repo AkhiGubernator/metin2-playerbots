@@ -2012,6 +2012,51 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   restart". Before adding a panel feature that talks to the game container,
   check `linux-port-mt2009/docker/game/bin/` for the consumer.
 
+- **An update never deletes a file, so removing a quest means removing it from
+  the loop.** 2.0.6 took `linux-port-mt2009/docker/game/quest/high_risk.quest`
+  out of the repository and the Dockerfile's `for q in ...` still named it;
+  every player's tree kept the file from 2.0.0-2.0.5 and compiled it on the
+  next build ("po wgraniu update risk mode nadal jest"). Whatever a build
+  reads from the player's tree is gated by the list in the Dockerfile, never
+  by what the repository happens to contain.
+- **Stock above the merchant's ceiling needs its own exit.** The junk rule
+  scraps gear up to `PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE` after six unsold
+  stands and the counter discounts to four stands; a +5 of another class had
+  neither, so it rode round the stones for life (audit D14). After
+  `PLAYERBOT_SHOP_UNSOLD_SAFEBOX_STANDS` unsold stands, under bag pressure,
+  `CollectPlayerBotSafeboxDeadStock` sends it to the storekeeper with the
+  surplus books - never scrapped, never worn (`IsPlayerBotWearableUpgrade`
+  refuses it first). `mapStockFirstListed` is the registry: when a line first
+  went up, so `PLAYERBOT_STOCK: to safebox` can say how long it was for sale,
+  and the open line says what qualified and stayed in the bag
+  (`no_line`/`no_slot`/`antiflag`). A new way for goods to leave the bag has
+  to erase both maps.
+- **A slider that only gates new decisions leaves the old ones standing.**
+  `ShouldPlayerBotKeepShop` was asked when a stall opened and when a stand
+  expired; a keeper standing on a roll taken under TRADE=250 kept standing
+  after the operator set 25, for up to 25 minutes, and the four exceptions
+  (Merchant, poor, full bag, dropper pressure) were never written down, so
+  "minimalny suwak, a 180 z 280 handluje" had no answer. A stall carries its
+  `EPlayerBotShopReason` now (status, open log, `PLAYERBOT_SHOP: census`
+  every ten minutes), and `ManagePlayerBotShopLifetime` re-asks a rolled
+  reason when `GetPlayerBotWeightsGeneration()` moves, ending a losing stand
+  within `PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS` by pid. Any other decision the
+  weights file steers and then leaves standing for minutes wants the same
+  generation check.
+- **A queue whose head is offline looks like a queue that stopped.** The
+  grants worker hands `MAX_PENDING` (ten) rows to the game and the quest's
+  player timer serves only a row that names an online character; an offline
+  one sits 30 s for the sweep, 60 s for the worker's withdrawal and comes
+  back two minutes later. Measured with 1500 registered bots and 349 in the
+  world: done=350 in two minutes, then queued=10 for good - the ten places
+  were all offline names, and every online recipient waited behind them.
+  That is the audit's "stops at 333". `pick_waiting` in `item_grants.py`
+  serves the collector's snapshot of live bots first and lets offline probes
+  hold at most `OFFLINE_MAX_PENDING` places; the page shows the worker's
+  heartbeat and the age of the oldest row in each state, so the next report
+  can say which of "worker dead", "nobody in game reads the queue" and "the
+  rest are offline" it is.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

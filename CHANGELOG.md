@@ -17,6 +17,101 @@ every version here.
 
 ---
 
+## 2.0.7 — 2026-09-11
+
+### Risk mode naprawdę znika (2.0.6 tylko usunęło plik)
+
+Sizowski po 2.0.6: „risk mode nadal jest”. Aktualizacja nigdy nie kasuje
+plików, więc każde drzewo z 2.0.0–2.0.5 wciąż ma `quest/high_risk.quest`, a
+pętla kompilacji w obrazie gry nadal miała `high_risk` na liście — 2.0.6
+zdjęło plik z repozytorium i nic więcej, więc u graczy quest kompilował się
+dalej. Bramką jest lista w Dockerfile, nie katalog: `high_risk` zniknęło z
+listy, a plik zostawiony w drzewie gracza jest ignorowany. Po tej aktualizacji
+nowe konto nie dostaje już wyboru High Risk / No Risk.
+
+### Launcher sam pyta o aktualizację przy starcie
+
+Po otwarciu okna launcher czyta kanał aktualizacji (jak dotąd, raz na sesję)
+i gdy serwer w kanale jest nowszy niż zainstalowany, pyta od razu: „Znaleziono
+nowszą wersję serwera X — czy chcesz dokonać aktualizacji teraz? Tak / Nie”.
+TAK uruchamia tę samą aktualizację, co przycisk AKTUALIZUJ; NIE odkłada
+pytanie do następnej wersji (zapamiętane w `.m2launcher-offers.json`), a
+przycisk działa zawsze. To samo dla klienta na linii 2.x: po aktualizacji
+serwera (albo od razu, gdy serwer jest aktualny) pyta o nowszą wersję
+klienta i podmienia packi przyciskiem AKTUALIZUJ KLIENTA. Świeża instalacja z
+pełnej paczki wie, jaki klient dostała: plik `CLIENT_VERSION` obok `VERSION`
+(dotąd launcher mówił „nieznana” i pytałby o klienta, który już jest);
+instalacje z 2.0.0–2.0.6 nie mają tego pliku, więc pytanie o klienta 2.0.3
+pojawi się u nich raz — TAK jest nieszkodliwe (podmienia te same packi),
+NIE zapamiętuje.
+
+### Dane do Navicat sprawdzone i uzupełnione
+
+Sprawdzone na plikach 2.x: host 127.0.0.1, port z `M2_DB_PUBLISH_PORT`
+(domyślnie 3306), konto root z `M2_DB_ROOT_PASSWORD`, konto gry (`M2_DB_USER`,
+domyślnie `metin2`) z `M2_DB_PASSWORD` — wszystko czytane z `.env` tej
+instalacji, więc zgadza się z tym, na czym stoi baza. Dopisana uwaga, której
+brakowało osobom edytującym bazę ręcznie: na 2.x przedmioty i potwory
+(`item_proto`, `mob_proto`) są w bazie `world`, a `player.item_proto` i
+`player.mob_proto` to tylko widoki; zmiany w `world` zostają po restarcie
+(inaczej niż na 1.33, gdzie tabele były nadpisywane z plików txt).
+
+### Suwak „Stragany” ma jawną umowę i dosięga stojących straganów (audyt D11)
+
+„Minimalny suwak, a 180 z 280 botów handluje”: stragan, który już stał, nigdy
+nie był pytany ponownie, a cztery wyjątki od suwaka nie były nigdzie
+opisane. Teraz stragan pamięta powód otwarcia — Handlarz, brak yang na
+mikstury, pełny plecak, dropper pod presją plecaka (te cztery suwak omija,
+bo lada to jedyny sposób opróżnienia plecaka), nadmiar ksiąg, los droppera,
+„jeden na dziesięciu” (te trzy suwak rusza). Status bota mówi „Prowadze
+stragan (los)” zamiast samego „Prowadze stragan”, log otwarcia niesie powód,
+a co dziesięć minut rdzeń pisze spis `PLAYERBOT_SHOP: census` z liczbą
+straganów według powodu i obowiązującą wagą. Po zmianie suwaka każdy
+stojący stragan z losowanego powodu jest sądzony ponownie pod nową wagą
+(los jest po PID, więc odpowiedź jest ta sama, jaką dostałby nowy stragan)
+i ten, który przegrał, zwija się w ciągu pięciu minut, rozłożonych po PID,
+zamiast wszystkie w jednej sekundzie. Opis suwaka w obu panelach mówi to
+samo, co kod.
+
+### Martwy zapas ma koniec: magazyn, nie handlarz (audyt D14)
+
+„Szaman trzyma stal wojownika +9, sura przedmioty innych klas”: ekwipunek
+powyżej +4, którego handlarz nigdy nie bierze, po czterech stoiskach bez
+kupca miał już pełny rabat i żadnej dalszej drogi — jechał w plecaku po
+kamieniach do końca życia bota. Teraz każdy wiersz lady ma zapisany czas
+pierwszego wystawienia (`mapStockFirstListed`), a przedmiot niesprzedany
+przez osiem stoisk (`PLAYERBOT_SHOP_UNSOLD_SAFEBOX_STANDS`) idzie pod
+presją plecaka do magazynu razem z nadwyżką ksiąg — zachowany, nigdy
+złomowany, poza plecakiem; log `PLAYERBOT_STOCK: to safebox` mówi ile
+stoisk i minut za sobą miał. Przedmiot, który bot powinien nosić, nigdy nie
+trafia do magazynu. Linia otwarcia straganu mówi też, co się nie zmieściło
+i dlaczego (`left_behind no_line= no_slot= antiflag=`), czyli rejestr
+powodów niewystawienia z audytu. Skompilowane na obu silnikach; na
+serwerach testowych z młodymi botami (poziom 2–4, brak straganów) nie
+zaobserwowane w ruchu.
+
+### Masowe nadawanie nie zatrzymuje się na botach offline (audyt D02)
+
+Zmierzone na 1500 zarejestrowanych botach, z których 349 było w świecie:
+paczka dla wszystkich doszła do 350 nadanych w dwie minuty i stanęła na
+`queued=10` na stałe. Dziesięć miejsc kolejki gry (`MAX_PENDING`) zajmowały
+postacie offline — każda czeka 30 s na sweep questa, 60 s na wycofanie przez
+workera i wraca po dwóch minutach — więc dziesięć nieobecnych nazwisk
+blokowało każdego obecnego za nimi. To „zatrzymanie po 333” z audytu: nie
+stan końcowy, tylko kolejka z głową offline. Worker czyta pięciominutową
+migawkę kolektora (kto jest w świecie), obecnych wysyła pierwszych, a sondy
+dla nieobecnych zajmują najwyżej cztery z dziesięciu miejsc, po dwie na tick.
+Zmierzone po zmianie: 40 obecnych botów nadanych w 15 s przy 1146
+nieobecnych w ogonie, `pending` w kolejce gry nie przekracza czterech.
+
+Strona nadawania pokazuje stan workera: bicie serca co tick (kontener
+`seban-item-grants` stoi → wprost, z poleceniem uruchomienia), ostatni błąd,
+liczby i wiek najstarszego zlecenia w każdym stanie, oraz ostrzeżenie, gdy
+zlecenie w kolejce gry leży ponad 45 s bez odbioru (pomocnik w grze budzi się
+przy pierwszym logowaniu po starcie).
+
+---
+
 ## 2.0.6 — 2026-09-11
 
 ### Panel klasyczny: przedmioty, teleport, szybkość, poziom znów działają na 2.x

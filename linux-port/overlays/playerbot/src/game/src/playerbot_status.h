@@ -498,7 +498,8 @@ namespace
 				// The head carries the sign in the world; the panel read
 				// "Planuje: poziom" for a keeper at its counter and an operator
 				// counted thirty-nine idle bots in the Joan square.
-				snprintf(status, statusSize, "%sProwadze stragan", prefix);
+				snprintf(status, statusSize, "%sProwadze stragan (%s)", prefix,
+						GetPlayerBotShopReasonName(state.bShopOpenReason));
 				break;
 			default:
 				snprintf(status, statusSize, "%sPlanuje: %s", prefix, goal);

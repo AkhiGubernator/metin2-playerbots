@@ -2817,10 +2817,10 @@ T.update({
                   "de":"Wie viele Bots überhaupt angeln. Einmal pro Bot entschieden, eine Änderung trifft also die nächsten Angler.",
                   "tr":"Kaç botun balık tuttuğu. Bot başına bir kez belirlenir, değişiklik sonraki balıkçılara işler."},
  "aiw_TRADE":    {"en":"Market stalls","pl":"Stragany","de":"Marktstände","tr":"Pazar tezgahları"},
- "aih_TRADE":    {"en":"How many bots keep a private shop open. Merchants always do, whatever this says.",
-                  "pl":"Ilu botów trzyma otwarty stragan. Handlarze robią to zawsze, niezależnie od tego suwaka.",
-                  "de":"Wie viele Bots einen Laden offen halten. Händler tun es immer, egal was hier steht.",
-                  "tr":"Kaç botun tezgahı açık tuttuğu. Tüccarlar bundan bağımsız olarak hep açar."},
+ "aih_TRADE":    {"en":"How many bots keep a private shop open. Four cases ignore this slider: a Merchant personality, a bot that cannot afford its potions, a full bag, and a dropper under bag pressure (the counter is how they empty it). The slider moves the rest: the surplus-books stall, the dropper's roll and the one-in-ten. Stalls already standing re-check within five minutes of a change; the status says why each one is open.",
+                  "pl":"Ilu botów trzyma otwarty stragan. Cztery przypadki nie słuchają tego suwaka: osobowość Handlarz, bot bez yang na mikstury, pełny plecak i dropper pod presją plecaka (lada to jedyny sposób, żeby go opróżnić). Suwak rusza resztę: stragan z nadmiaru ksiąg, los droppera i „jeden na dziesięciu”. Stojące już stragany sprawdzają się ponownie do pięciu minut po zmianie; status mówi, dlaczego każdy jest otwarty.",
+                  "de":"Wie viele Bots einen Laden offen halten. Vier Fälle ignorieren den Regler: die Händler-Persönlichkeit, ein Bot ohne Yang für Tränke, ein voller Beutel und ein Dropper unter Beuteldruck. Der Regler bewegt den Rest: den Bücher-Stand, den Dropper-Wurf und den Einen-von-zehn. Stehende Läden prüfen sich binnen fünf Minuten neu; der Status sagt, warum jeder offen ist.",
+                  "tr":"Kaç botun tezgahı açık tuttuğu. Dört durum bu kaydırıcıyı dinlemez: Tüccar kişiliği, iksir parası olmayan bot, dolu çanta ve çanta baskısındaki dropper. Kaydırıcı gerisini oynatır: fazla kitap tezgahı, dropper zarı ve onda bir. Açık tezgahlar değişiklikten sonra beş dakika içinde yeniden bakar; durum her birinin neden açık olduğunu söyler."},
 })
 
 

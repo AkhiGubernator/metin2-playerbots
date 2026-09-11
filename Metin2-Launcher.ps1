@@ -82,15 +82,26 @@ function Read-State {
     if (Test-RebuildPending) {
         return [pscustomobject]@{ schema = 1; server = 'unknown'; client = 'unknown' }
     }
+    # The client the full package shipped, until a client update records a
+    # newer one: New-M2DeployTree.ps1 puts CLIENT_VERSION beside VERSION.
+    $clientMarker = Join-Path $serverRoot 'CLIENT_VERSION'
+    $shippedClient = if (Test-Path -LiteralPath $clientMarker -PathType Leaf) {
+        (Get-Content -LiteralPath $clientMarker -Raw).Trim()
+    }
+    else { 'unknown' }
     if (Test-Path -LiteralPath $statePath -PathType Leaf) {
-        return Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
+        $state = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ((-not [string]$state.client -or [string]$state.client -eq 'unknown') -and $shippedClient -ne 'unknown') {
+            $state.client = $shippedClient
+        }
+        return $state
     }
     $versionFile = Join-Path $serverRoot 'VERSION'
     $serverVersion = if (Test-Path -LiteralPath $versionFile) {
         (Get-Content -LiteralPath $versionFile -Raw).Trim()
     }
     else { 'unknown' }
-    return [pscustomobject]@{ schema = 1; server = $serverVersion; client = 'unknown' }
+    return [pscustomobject]@{ schema = 1; server = $serverVersion; client = $shippedClient }
 }
 
 function Save-State {
@@ -845,6 +856,10 @@ function Show-DatabaseAccessAction {
     Write-Host "  Plik .env: $($creds.EnvPath)"
     Write-Host ''
     Write-Host 'Baza słucha tylko na tym komputerze (127.0.0.1), więc klient musi działać na nim.' -ForegroundColor Gray
+    if ((Get-M2ServerEngine -ServerRoot $serverRoot) -ne 'r40250') {
+        Write-Host 'Na plikach 2.x przedmioty i potwory (item_proto, mob_proto) są w bazie world; player.item_proto' -ForegroundColor Gray
+        Write-Host 'i player.mob_proto to tylko widoki. Zmiany w world zostają po restarcie serwera.' -ForegroundColor Gray
+    }
     Write-Host 'Jeśli baza odrzuca hasło z .env („Access denied"), użyj akcji RepairDb (przycisk' -ForegroundColor Gray
     Write-Host '„NAPRAW DOSTĘP DO BAZY"): ustawia konta root i metin2 na hasła z tego pliku.' -ForegroundColor Gray
     Write-Host 'Nie wklejaj haseł z .env na Discordzie ani do paczki z logami.' -ForegroundColor Yellow

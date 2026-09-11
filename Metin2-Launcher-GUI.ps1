@@ -171,6 +171,10 @@ $script:Strings = @{
         updateClient = 'AKTUALIZUJ KLIENTA'
         dbAccessTitle = 'Dane do polaczenia z baza'
         dbAccessHint = 'Wpisz te dane w Navicat, HeidiSQL albo DBeaver (typ MySQL/MariaDB, polaczenie TCP). Konto root widzi wszystko, konto gry tylko bazy gry. Baza slucha wylacznie na tym komputerze. Jesli baza odrzuca haslo, kliknij NAPRAW DOSTEP DO BAZY - ustawia oba konta na hasla z pliku .env. Nie wklejaj tych hasel na Discordzie.'
+        dbAccessProtoNote = 'Na plikach 2.x przedmioty i potwory (item_proto, mob_proto) sa w bazie world; player.item_proto i player.mob_proto to tylko widoki. Zmiany w world zostaja po restarcie serwera.'
+        startupUpdateTitle = 'Dostepna aktualizacja'
+        startupServerUpdate = 'Znaleziono nowsza wersje serwera: {0}' + [Environment]::NewLine + '(zainstalowana: {1})' + [Environment]::NewLine + [Environment]::NewLine + 'Czy chcesz dokonac aktualizacji teraz?' + [Environment]::NewLine + [Environment]::NewLine + 'Postacie, przedmioty i boty zostana bez zmian. Serwer zostanie przebudowany - postep w logu na dole. Odpowiedz NIE odklada pytanie do nastepnej wersji; przycisk AKTUALIZUJ dziala zawsze.'
+        startupClientUpdate = 'Znaleziono nowsza wersje klienta: {0}' + [Environment]::NewLine + '(zainstalowana: {1})' + [Environment]::NewLine + [Environment]::NewLine + 'Czy chcesz zaktualizowac klienta teraz?' + [Environment]::NewLine + [Environment]::NewLine + 'Podmienia pliki pack w folderze klienta; poprzednie trafiaja do backups\client. Odpowiedz NIE odklada pytanie do nastepnej wersji; przycisk AKTUALIZUJ KLIENTA dziala zawsze.'
         dbAccessOpenEnv = 'OTWORZ PLIK .ENV'
         dbAccessNoEnv = 'Brak pliku linux-port\docker\.env - uruchom najpierw serwer (GRAJ), launcher go utworzy.'
         language     = 'JEZYK: POLSKI'
@@ -220,6 +224,10 @@ $script:Strings = @{
         updateClient = 'UPDATE CLIENT'
         dbAccessTitle = 'Database connection details'
         dbAccessHint = 'Enter these in Navicat, HeidiSQL or DBeaver (MySQL/MariaDB, TCP connection). root sees everything, the game account only the game databases. The database listens on this computer only. If it rejects the password, click REPAIR DATABASE ACCESS - it sets both accounts to the passwords in .env. Never paste these passwords on Discord.'
+        dbAccessProtoNote = 'On the 2.x files items and monsters (item_proto, mob_proto) live in the world database; player.item_proto and player.mob_proto are views. Changes in world survive a server restart.'
+        startupUpdateTitle = 'Update available'
+        startupServerUpdate = 'A newer server version was found: {0}' + [Environment]::NewLine + '(installed: {1})' + [Environment]::NewLine + [Environment]::NewLine + 'Update now?' + [Environment]::NewLine + [Environment]::NewLine + 'Characters, items and bots stay as they are. The server is rebuilt - progress in the log below. NO postpones the question until the next version; the UPDATE button always works.'
+        startupClientUpdate = 'A newer client version was found: {0}' + [Environment]::NewLine + '(installed: {1})' + [Environment]::NewLine + [Environment]::NewLine + 'Update the client now?' + [Environment]::NewLine + [Environment]::NewLine + 'Replaces the pack files in the client folder; the previous ones go to backups\client. NO postpones the question until the next version; the UPDATE CLIENT button always works.'
         dbAccessOpenEnv = 'OPEN .ENV FILE'
         dbAccessNoEnv = 'No linux-port\docker\.env yet - start the server (PLAY) once, the launcher creates it.'
         language     = 'LANGUAGE: ENGLISH'
@@ -543,6 +551,10 @@ function Complete-LauncherAction {
         $script:launcherFingerprint = Get-LauncherFingerprint
     }
     if ($exitCode -eq 0 -and $launchClient) { Start-ConfiguredClient }
+    if ($script:offerClientAfterAction) {
+        $script:offerClientAfterAction = $false
+        if ($exitCode -eq 0) { Offer-ClientUpdate }
+    }
     if ($exitCode -eq 0 -and $openSupport -and (Test-Path $supportDirectory)) {
         Start-Process explorer.exe -ArgumentList ('"{0}"' -f $supportDirectory)
         if ($contactUrl) { Start-Process $contactUrl }
@@ -632,6 +644,113 @@ function Get-InstalledServerVersion {
         return (Get-Content -LiteralPath $versionFile -Raw).Trim()
     }
     return 'unknown'
+}
+
+function Get-InstalledClientVersion {
+    # What a client update recorded, else what the full package shipped
+    # (CLIENT_VERSION beside VERSION, put there by New-M2DeployTree.ps1).
+    $statePath = Join-Path $root '.m2launcher-state.json'
+    if (Test-Path -LiteralPath $statePath -PathType Leaf) {
+        try {
+            $state = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ([string]$state.client -and [string]$state.client -ne 'unknown') { return ([string]$state.client).Trim() }
+        }
+        catch { }
+    }
+    $marker = Join-Path $root 'CLIENT_VERSION'
+    if (Test-Path -LiteralPath $marker -PathType Leaf) {
+        return (Get-Content -LiteralPath $marker -Raw).Trim()
+    }
+    return 'unknown'
+}
+
+# The versions the player said NO to at startup, so the same question is not
+# asked at every start - a newer version asks again. Its own file: Save-State
+# in the text launcher rewrites .m2launcher-state.json with three fields only.
+$script:offersPath = Join-Path $root '.m2launcher-offers.json'
+function Read-DeclinedOffers {
+    $declined = @{ server = ''; client = '' }
+    if (Test-Path -LiteralPath $script:offersPath -PathType Leaf) {
+        try {
+            $saved = Get-Content -LiteralPath $script:offersPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ([string]$saved.server) { $declined.server = [string]$saved.server }
+            if ([string]$saved.client) { $declined.client = [string]$saved.client }
+        }
+        catch { }
+    }
+    return $declined
+}
+function Save-DeclinedOffer {
+    param([string]$Component, [string]$Version)
+    $declined = Read-DeclinedOffers
+    $declined[$Component] = $Version
+    try {
+        [pscustomobject]$declined | ConvertTo-Json | Set-Content -LiteralPath $script:offersPath -Encoding UTF8
+    }
+    catch { }
+}
+
+function Test-VersionNewer {
+    param([string]$Installed, [string]$Available)
+    if (-not $Available) { return $false }
+    if (-not $Installed -or $Installed -eq 'unknown') { return $true }
+    return -not $Installed.Trim().Equals($Available.Trim(), [StringComparison]::OrdinalIgnoreCase)
+}
+
+$script:latestManifest = $null
+$script:offerClientAfterAction = $false
+$script:startupOfferDone = $false
+
+function Offer-ClientUpdate {
+    # Only on the 2.x line: there the manifest's client component is the
+    # ordinary client package. On r40250 it is the experimental GM panel,
+    # which nobody should be nagged into at startup.
+    if (-not $script:clientUpdateIsPlain -or -not $script:latestManifest) { return }
+    $clientProperty = $script:latestManifest.PSObject.Properties['client']
+    if (-not $clientProperty -or -not $clientProperty.Value -or -not [string]$clientProperty.Value.version) { return }
+    $available = ([string]$clientProperty.Value.version).Trim()
+    $installed = Get-InstalledClientVersion
+    if (-not (Test-VersionNewer -Installed $installed -Available $available)) { return }
+    if ((Read-DeclinedOffers).client -eq $available) { return }
+    $config = Get-LauncherConfig
+    if (-not [string]$config.clientRoot) {
+        Write-LocalLog "Dostepna wersja klienta $available, ale folder klienta nie jest ustawiony - pomijam pytanie."
+        return
+    }
+    $answer = [Windows.Forms.MessageBox]::Show(
+        ((T 'startupClientUpdate') -f $available, $installed),
+        (T 'startupUpdateTitle'), 'YesNo', 'Question')
+    if ($answer -ne [Windows.Forms.DialogResult]::Yes) {
+        Save-DeclinedOffer -Component 'client' -Version $available
+        Write-LocalLog "Aktualizacja klienta $available odlozona."
+        return
+    }
+    Start-LauncherAction -Action 'UpdateClient' -Yes
+}
+
+function Offer-StartupUpdates {
+    # Once per session, on the first manifest read: the server first, and the
+    # client after the server action has finished (two actions cannot run at
+    # once), or right away when the server is current.
+    if ($script:startupOfferDone -or -not $script:latestManifest) { return }
+    $script:startupOfferDone = $true
+    if ($script:activeProcess -and -not $script:activeProcess.HasExited) { return }
+    $installed = Get-InstalledServerVersion
+    $available = $script:latestServerVersion
+    if ($available -and (Test-VersionNewer -Installed $installed -Available $available) -and
+            (Read-DeclinedOffers).server -ne $available) {
+        $answer = [Windows.Forms.MessageBox]::Show(
+            ((T 'startupServerUpdate') -f $available, $installed),
+            (T 'startupUpdateTitle'), 'YesNo', 'Question')
+        if ($answer -eq [Windows.Forms.DialogResult]::Yes) {
+            $script:offerClientAfterAction = $true
+            Start-LauncherAction -Action 'UpdateServer' -Yes
+            return
+        }
+        Save-DeclinedOffer -Component 'server' -Version $available
+        Write-LocalLog "Aktualizacja serwera $available odlozona."
+    }
+    Offer-ClientUpdate
 }
 
 function Show-BotCountDialog {
@@ -995,6 +1114,7 @@ function Read-LatestServerVersion {
     try {
         $config = Get-M2LauncherConfig -ServerRoot $root -ConfigPath $configPath
         $manifest = Get-M2UpdateManifest -Source ([string]$config.manifestUrl) -TimeoutSec 8
+        $script:latestManifest = $manifest
         $serverProperty = $manifest.PSObject.Properties['server']
         if ($serverProperty -and $serverProperty.Value -and [string]$serverProperty.Value.version) {
             $script:latestServerVersion = ([string]$serverProperty.Value.version).Trim()
@@ -1002,6 +1122,7 @@ function Read-LatestServerVersion {
     }
     catch { }
     Update-VersionFooter
+    Offer-StartupUpdates
 }
 
 $installButton.Add_Click({ Install-Or-Prepare })
@@ -1215,6 +1336,7 @@ $updateButton.Add_Click({
         return
     }
     $available = ([string]$server.version).Trim()
+    $script:latestManifest = $manifest
     $script:latestServerVersion = $available
     $script:latestVersionChecked = $true
     Update-VersionFooter
@@ -1492,18 +1614,20 @@ $dbAccessButton.Add_Click({
     }
     $hint = [Windows.Forms.Label]::new()
     $hint.Text = (T 'dbAccessHint')
+    if ($script:clientUpdateIsPlain) { $hint.Text = (T 'dbAccessHint') + [Environment]::NewLine + [Environment]::NewLine + (T 'dbAccessProtoNote') }
     $hint.Location = [Drawing.Point]::new(18, $y + 8)
-    $hint.Size = [Drawing.Size]::new(510, 120)
+    $hint.Size = [Drawing.Size]::new(510, 160)
     $dlg.Controls.Add($hint)
+    $dlg.Size = [Drawing.Size]::new(560, 412)
     $openButton = [Windows.Forms.Button]::new()
     $openButton.Text = (T 'dbAccessOpenEnv')
-    $openButton.Location = [Drawing.Point]::new(18, 290)
+    $openButton.Location = [Drawing.Point]::new(18, 330)
     $openButton.Size = [Drawing.Size]::new(170, 32)
     $openButton.Add_Click({ Start-Process notepad.exe -ArgumentList ('"' + $envPath + '"') }.GetNewClosure())
     $dlg.Controls.Add($openButton)
     $okButton = [Windows.Forms.Button]::new()
     $okButton.Text = 'OK'
-    $okButton.Location = [Drawing.Point]::new(433, 290)
+    $okButton.Location = [Drawing.Point]::new(433, 330)
     $okButton.Size = [Drawing.Size]::new(95, 32)
     $okButton.DialogResult = [Windows.Forms.DialogResult]::OK
     $dlg.Controls.Add($okButton)

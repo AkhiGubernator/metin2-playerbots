@@ -79,21 +79,58 @@ namespace
 		return surplus;
 	}
 
-	bool HasPlayerBotSafeboxDeposit(LPCHARACTER ch)
+	// Gear nobody bought in PLAYERBOT_SHOP_UNSOLD_SAFEBOX_STANDS stands and the
+	// merchant may not have: the piece a player photographs in a bag of the
+	// wrong class. Only under bag pressure, like the books - with room in the
+	// bag it is still counter goods - and never a piece the bot ought to wear.
+	void CollectPlayerBotSafeboxDeadStock(LPCHARACTER ch, const TPlayerBotAIState& state,
+			std::vector<WORD>& cells)
+	{
+		cells.clear();
+		if (!ch || state.mapStallUnsold.empty() || (!IsPlayerBotBagFull(ch) &&
+				CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_BAG_PRESSURE_FREE_CELLS))
+			return;
+		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->IsEquipped() || item->isLocked())
+				continue;
+			if (item->GetType() != ITEM_WEAPON && item->GetType() != ITEM_ARMOR)
+				continue;
+			if (item->GetRefineLevel() <= PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE)
+				continue;   // the merchant's rule has that one
+			std::map<DWORD, BYTE>::const_iterator unsold = state.mapStallUnsold.find(item->GetID());
+			if (unsold == state.mapStallUnsold.end() || unsold->second < PLAYERBOT_SHOP_UNSOLD_SAFEBOX_STANDS)
+				continue;
+			if (IsPlayerBotWearableUpgrade(ch, item, cell))
+				continue;
+			cells.push_back(cell);
+		}
+	}
+
+	bool HasPlayerBotSafeboxDeposit(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
 		std::vector<WORD> cells;
 		CollectPlayerBotSafeboxBooks(ch, cells);
+		if (!cells.empty())
+			return true;
+		CollectPlayerBotSafeboxDeadStock(ch, state, cells);
 		return !cells.empty();
 	}
 
 	// Into the open safebox, the way CInputMain::SafeboxCheckin does it: off the
 	// character, onto the first empty slot of the grid. Returns how many books
 	// went in; the rest stay in the bag as goods when the page is full.
-	int DepositPlayerBotSafeboxBooks(LPCHARACTER ch, CSafebox* box)
+	int DepositPlayerBotSafeboxBooks(LPCHARACTER ch, TPlayerBotAIState& state, CSafebox* box)
 	{
 		std::vector<WORD> cells;
 		CollectPlayerBotSafeboxBooks(ch, cells);
+		const size_t books = cells.size();
+		std::vector<WORD> dead;
+		CollectPlayerBotSafeboxDeadStock(ch, state, dead);
+		cells.insert(cells.end(), dead.begin(), dead.end());
 		int deposited = 0;
+		const DWORD dwNow = get_dword_time();
 		for (size_t i = 0; i < cells.size(); ++i)
 		{
 			LPITEM item = ch->GetInventoryItem(cells[i]);
@@ -107,6 +144,18 @@ namespace
 				char szHint[128];
 				snprintf(szHint, sizeof(szHint), "%s %u", item->GetName(), (unsigned int)item->GetCount());
 				LogManager::instance().ItemLog(ch, item, "SAFEBOX PUT", szHint);
+				if (i >= books)
+				{
+					// The registry says how long this piece was for sale.
+					std::map<DWORD, BYTE>::const_iterator unsold = state.mapStallUnsold.find(item->GetID());
+					std::map<DWORD, DWORD>::const_iterator first = state.mapStockFirstListed.find(item->GetID());
+					sys_log(0, "PLAYERBOT_STOCK: to safebox pid=%u name=%s vnum=%u+%u stands_unsold=%u listed_for=%u min",
+							ch->GetPlayerID(), ch->GetName(), item->GetVnum(), (unsigned int)item->GetRefineLevel(),
+							unsold != state.mapStallUnsold.end() ? (unsigned int)unsold->second : 0U,
+							first != state.mapStockFirstListed.end() ? (unsigned int)((dwNow - first->second) / 60000) : 0U);
+					state.mapStallUnsold.erase(item->GetID());
+					state.mapStockFirstListed.erase(item->GetID());
+				}
 				item->RemoveFromCharacter();
 				box->Add(pos, item);
 				placed = true;
@@ -177,7 +226,7 @@ namespace
 				NeedsPlayerBotProgressionArmor(ch) || NeedsPlayerBotProgressionShield(ch) ||
 				NeedsPlayerBotProgressionHelmet(ch);
 		state.bTownNeedBlacksmith = HasPlayerBotRefineOpportunity(ch);
-		state.bTownNeedSafebox = HasPlayerBotSafeboxDeposit(ch);
+		state.bTownNeedSafebox = HasPlayerBotSafeboxDeposit(ch, state);
 		if (!state.bTownNeedTrainer && !state.bTownNeedSkillReset && !state.bTownNeedMisc &&
 				!state.bTownNeedWeaponMerchant && !state.bTownNeedSafebox &&
 				!state.bTownNeedArmorMerchant && !state.bTownNeedBlacksmith)
@@ -571,19 +620,25 @@ namespace
 				PLAYERBOT_SHOP_POOR_ROTATION_SHARE == 0;
 	}
 
-	bool ShouldPlayerBotKeepShop(LPCHARACTER ch, const TPlayerBotAIState& state)
+	// Why this bot would keep a counter right now - PLAYERBOT_SHOP_REASON_NONE
+	// when it would not. The four exceptions come first and ignore the TRADE
+	// weight on purpose (see EPlayerBotShopReason); the three rolls after them
+	// are what the slider moves.
+	BYTE GetPlayerBotShopReason(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
 		if (!ch || ch->GetLevel() < PLAYERBOT_SHOP_MIN_LEVEL)
-			return false;
+			return PLAYERBOT_SHOP_REASON_NONE;
 		// A bot that cannot afford its potions sells what it has, whatever its
 		// personality rolled. So does one whose bag is full: the counter is
 		// where the spares a collector will not scrap can go.
-		if (IsPlayerBotPoorKeeper(ch) || IsPlayerBotBagFull(ch))
-			return true;
+		if (IsPlayerBotPoorKeeper(ch))
+			return PLAYERBOT_SHOP_REASON_POOR;
+		if (IsPlayerBotBagFull(ch))
+			return PLAYERBOT_SHOP_REASON_BAG_FULL;
 		// A trader always has the stall open when it can. For everyone else it
 		// stays what it was: an occasional thing one bot in ten does with a spare.
 		if (IsPlayerBotMerchant(state))
-			return true;
+			return PLAYERBOT_SHOP_REASON_MERCHANT;
 		// A stock of surplus books is a counter, whatever the personality
 		// rolled: a book never goes to the merchant, so the counter is the
 		// only way it leaves the bag - and the roll left nine bots in ten
@@ -601,17 +656,18 @@ namespace
 				PlayerBotWeightedRoll(
 					PlayerBotNavHash(ch->GetPlayerID() ^ 0x424f4f4bU) % 1000U,
 					PLAYERBOT_SHOP_BOOK_ROLL, PLAYERBOT_WEIGHT_TRADE))
-			return true;
+			return PLAYERBOT_SHOP_REASON_BOOKS;
 		if (IsPlayerBotDropper(state.bPersonality))
 		{
 			// A dropper whose bag is under pressure sells whatever the roll said:
 			// the goods are the point of the personality, and a dropper that lost
 			// the roll carried eighty books and picked up nothing.
 			if (CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS)
-				return true;
+				return PLAYERBOT_SHOP_REASON_DROPPER_PRESSURE;
 			return PlayerBotWeightedRoll(
 					PlayerBotNavHash(ch->GetPlayerID() ^ 0x44524f50U) % 1000U,
-					PLAYERBOT_DROPPER_SHOP_ROLL, PLAYERBOT_WEIGHT_TRADE);
+					PLAYERBOT_DROPPER_SHOP_ROLL, PLAYERBOT_WEIGHT_TRADE)
+					? PLAYERBOT_SHOP_REASON_DROPPER_ROLL : PLAYERBOT_SHOP_REASON_NONE;
 		}
 		// One bot in ten, stretched or shrunk by the TRADE weight. Drawn against a
 		// thousand rather than ten so that the weight has somewhere to move: the
@@ -621,7 +677,13 @@ namespace
 		return PlayerBotWeightedRoll(
 				PlayerBotNavHash(ch->GetPlayerID() ^ 0x53484f50U) % 1000U,
 				IsPlayerBotFullyEquipped(ch) ? PLAYERBOT_FULL_GEAR_SHOP_ROLL : 100,
-				PLAYERBOT_WEIGHT_TRADE);
+				PLAYERBOT_WEIGHT_TRADE)
+				? PLAYERBOT_SHOP_REASON_ROLL : PLAYERBOT_SHOP_REASON_NONE;
+	}
+
+	bool ShouldPlayerBotKeepShop(LPCHARACTER ch, const TPlayerBotAIState& state)
+	{
+		return GetPlayerBotShopReason(ch, state) != PLAYERBOT_SHOP_REASON_NONE;
 	}
 
 	// What a bot asks for what it puts up. A refined item has no price in the
@@ -1404,6 +1466,14 @@ namespace
 				else
 					++it;
 			}
+			for (std::map<DWORD, DWORD>::iterator it = state.mapStockFirstListed.begin();
+					it != state.mapStockFirstListed.end(); )
+			{
+				if (state.mapStallUnsold.find(it->first) == state.mapStallUnsold.end())
+					state.mapStockFirstListed.erase(it++);
+				else
+					++it;
+			}
 		}
 		state.dwShopOpenedTime = 0;
 		state.dwShopCloseTime = 0;
@@ -1631,6 +1701,32 @@ namespace
 			return false;
 		}
 
+		// The operator moved the TRADE slider while this stand was up. A stand
+		// that stood on a roll is judged again under the new weight - the roll
+		// is by pid, so the answer is the one a fresh open would get - and one
+		// that lost packs up within PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS, spread
+		// by pid, rather than all of them in the same tick. The four exceptions
+		// are not asked: the slider never applied to them and the UI says so.
+		const DWORD dwWeightsGeneration = GetPlayerBotWeightsGeneration();
+		if (state.dwShopWeightsGeneration != dwWeightsGeneration)
+		{
+			state.dwShopWeightsGeneration = dwWeightsGeneration;
+			if (IsPlayerBotShopReasonRolled(state.bShopOpenReason) &&
+					!ShouldPlayerBotKeepShop(ch, state))
+			{
+				const DWORD dwEndBy = dwNow + PlayerBotNavHash(ch->GetPlayerID() ^ 0x57454947U) %
+						PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS;
+				if (dwEndBy < state.dwShopCloseTime)
+				{
+					state.dwShopCloseTime = dwEndBy;
+					sys_log(0, "PLAYERBOT_SHOP: weights changed pid=%u name=%s reason=%s stand ends in %u s",
+							ch->GetPlayerID(), ch->GetName(),
+							GetPlayerBotShopReasonName(state.bShopOpenReason),
+							(unsigned int)((dwEndBy - dwNow) / 1000));
+				}
+			}
+		}
+
 		if (dwNow < state.dwShopCloseTime && !bOffPitch)
 		{
 			// Standing at a stall is the activity, not the absence of one. Without
@@ -1656,8 +1752,12 @@ namespace
 		if (ch->GetMyShop())
 			return true;
 
-		if (!ShouldPlayerBotKeepShop(ch, state))
+		const BYTE bShopReason = GetPlayerBotShopReason(ch, state);
+		if (bShopReason == PLAYERBOT_SHOP_REASON_NONE)
 			return false;
+		// Kept from here rather than from the open itself: the walk to the pitch
+		// runs this pass every tick, and the reason it acts on is this one.
+		state.bShopOpenReason = bShopReason;
 #if defined(PLAYERBOT_ENGINE_MT2009)
 		// This engine grants the counter at level 15 and 800 kills (CanOpenShop);
 		// before that OpenMyShop refuses with a chat line nobody reads, and a
@@ -1809,8 +1909,17 @@ namespace
 		BYTE bGearRefine = 0;
 		bool grid[PLAYERBOT_SHOP_GRID_CELLS];
 		memset(grid, 0, sizeof(grid));
-		for (size_t i = 0; i < scored.size() && tableCount < tableLimit; ++i)
+		// What qualified and still stayed in the bag, by reason - the audit's
+		// "why was it not put up": no line left on the counter, no cell of the
+		// right height on the grid, an anti-flag. Said on the open line.
+		unsigned int uNoLine = 0, uNoSlot = 0, uAntiFlag = 0;
+		for (size_t i = 0; i < scored.size(); ++i)
 		{
+			if (tableCount >= tableLimit)
+			{
+				++uNoLine;
+				continue;
+			}
 			const WORD cell = scored[i].second;
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->IsEquipped() || item->isLocked())
@@ -1818,14 +1927,22 @@ namespace
 			const TItemTable* proto = item->GetProto();
 			if (!proto || IS_SET(proto->dwAntiFlags,
 					ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP))
+			{
+				++uAntiFlag;
 				continue;
+			}
 			// Placed on the engine's grid by height, or the engine drops the
 			// line and every buyer who comes for it is refused at an empty slot.
 			const int height = std::max<int>(1, std::min<int>(PLAYERBOT_SHOP_GRID_ROWS, item->GetSize()));
 			const int slot = FindPlayerBotShopSlot(grid, height);
 			if (slot < 0)
+			{
+				++uNoSlot;
 				continue;
+			}
 			PutPlayerBotShopSlot(grid, slot, height);
+			if (state.mapStockFirstListed.find(item->GetID()) == state.mapStockFirstListed.end())
+				state.mapStockFirstListed[item->GetID()] = dwNow;
 			DWORD price = GetPlayerBotShopAskingPrice(item);
 			// The clearance discount. Applied to the price as asked, so the sale
 			// memory still learns the real price the market would have paid.
@@ -2102,6 +2219,7 @@ namespace
 		ch->RemoveGoodAffect();
 
 		state.dwShopOpenedTime = dwNow;
+		state.dwShopWeightsGeneration = GetPlayerBotWeightsGeneration();
 		state.dwShopCloseTime = dwNow + (IsPlayerBotMerchant(state)
 				? number(PLAYERBOT_SHOP_MERCHANT_MIN_DURATION,
 						PLAYERBOT_SHOP_MERCHANT_MAX_DURATION)
@@ -2115,8 +2233,9 @@ namespace
 		// AddPlayerBotMarketSupply for the three keepers this is about.
 		for (size_t i = 0; i < offers.size(); ++i)
 			AddPlayerBotMarketSupply(offers[i].dwVnum, offers[i].wCount);
-		sys_log(0, "PLAYERBOT_SHOP: opened pid=%u name=%s items=%u first_vnum=%u first_price=%u pos=(%ld,%ld) sign=\"%s\"",
-				ch->GetPlayerID(), ch->GetName(), (unsigned int)tableCount,
+		sys_log(0, "PLAYERBOT_SHOP: opened pid=%u name=%s reason=%s items=%u left_behind no_line=%u no_slot=%u antiflag=%u first_vnum=%u first_price=%u pos=(%ld,%ld) sign=\"%s\"",
+				ch->GetPlayerID(), ch->GetName(), GetPlayerBotShopReasonName(state.bShopOpenReason),
+				(unsigned int)tableCount, uNoLine, uNoSlot, uAntiFlag,
 				offers[0].dwVnum, offers[0].dwPrice, ch->GetX(), ch->GetY(), sign);
 		// Worth crossing town for is worth a line on the world channel - the
 		// same bar the sign uses for a stall that carries one thing.
@@ -2590,7 +2709,7 @@ namespace
 			CSafebox* box = ch->GetSafebox();
 			if (box)
 			{
-				const int deposited = DepositPlayerBotSafeboxBooks(ch, box);
+				const int deposited = DepositPlayerBotSafeboxBooks(ch, state, box);
 				ch->CloseSafebox();
 				sys_log(0, "PLAYERBOT_TOWN: safebox deposit pid=%u name=%s deposited=%d books_left=%d free_cells=%d",
 						ch->GetPlayerID(), ch->GetName(), deposited, CountPlayerBotSkillBooks(ch),

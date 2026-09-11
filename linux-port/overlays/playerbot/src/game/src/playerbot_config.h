@@ -126,6 +126,9 @@ namespace
 	DWORD s_dwPlayerBotWeightNextCheck = 0;
 	time_t s_tPlayerBotWeightMtime = 0;
 	long s_lPlayerBotWeightSize = -1;
+	// Bumped every time the weights change (a new file, or the file gone), so
+	// a decision taken under the old numbers can tell it is stale.
+	DWORD s_dwPlayerBotWeightsGeneration = 0;
 
 	const char* GetPlayerBotWeightPath()
 	{
@@ -137,6 +140,7 @@ namespace
 
 	void ResetPlayerBotWeights()
 	{
+		++s_dwPlayerBotWeightsGeneration;
 		for (int i = 0; i < PLAYERBOT_WEIGHT_MAX; ++i)
 			s_aiPlayerBotWeights[i] = PLAYERBOT_WEIGHT_NEUTRAL;
 		s_bPlayerBotOverheadChat = true;
@@ -521,6 +525,14 @@ namespace
 		s_tPlayerBotWeightMtime = st.st_mtime;
 		s_lPlayerBotWeightSize = (long)st.st_size;
 		ReadPlayerBotWeightFile(szPath);
+		++s_dwPlayerBotWeightsGeneration;
+	}
+
+	DWORD GetPlayerBotWeightsGeneration()
+	{
+		if (!s_bPlayerBotWeightsInitialised)
+			ResetPlayerBotWeights();
+		return s_dwPlayerBotWeightsGeneration;
 	}
 
 	// Whether this bot is one of the scrap keepers: a fixed share by pid, so

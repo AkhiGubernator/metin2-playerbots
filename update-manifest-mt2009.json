@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T21:12:42Z",
-  "statusMessage": "Wersja 2.0.8: trzy królestwa domyślnie u każdego (boty po równo), boty Shinsoo i Jinno chodzą do kowala, padający rdzeń zapisuje ślad, naprawiony błąd .Count launchera. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-11T22:09:48Z",
+  "statusMessage": "Wersja 2.0.9: zakładanie kont w panelu Sebana naprawione, suwak odpoczynku botów (poniżej 18 lv nikt nie odpoczywa), cztery postacie GM także na zajętym koncie admin, stopka launchera z wersjami. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.8",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.8/metin2-server-update-2.0.8.zip",
-    "sha256": "2AC4FAEF9EEA249657D2E9A278B10EDCE1F7C9E3C4B8F8E00D1A31B8875C04CC"
+    "version": "2.0.9",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.9/metin2-server-update-2.0.9.zip",
+    "sha256": "88A5533F39DEAAE1A8A0AF886017E82480F7C1EF3B153F5719750C0F86BEA83F"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

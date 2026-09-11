@@ -1100,7 +1100,7 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `common.playerbot_name_history` now and require both halves to agree, so a
   second, hand-made rename is still somebody's deliberate choice.
   `M2_PLAYERBOT_HUMAN_NAMES` is 1/0/`restore`; the pool is
-  `tools/generate_bot_names.py` over `data/bot_names_iwakura.txt` - one written list, no class or sex pairing since 2.0.2, the list again with v2/v3 behind the names when the cohort is larger, and a pool version that renames every bot named from an older list.
+  `tools/generate_bot_names.py` over `data/bot_names_iwakura.txt` - one written list, no class or sex pairing since 2.0.2, since 2.0.10 dealt by kingdom: the list shuffled once by its own hash and cut into three equal shares (`player_index.empire` says whose a bot is), a kingdom larger than its share (Chunjo, 1500 seeded) continuing with its own names and `2`/`v2`, then `3`/`v3`, then v4 from the whole list; and a pool version that renames every bot named from an older list or by the older scheme. **A waiting bot must never be dealt a name a settled bot wears**: the plan used to number waiting bots from one and free names from the top of the list, excluding only people's characters, so the thousand Shinsoo/Jinno bots seeded by 2.0.8 into an already-named world got the first thousand Chunjo names - 999 duplicates measured. A name worn by a bot with a current history row is not free.
 - **`account.account.empire` is not where a bot's kingdom lives.** The seed
   wrote a literal 2 into it for the whole cohort while `player_index.empire` -
   the column the core actually reads - was right, so every Shinsoo and Jinno bot

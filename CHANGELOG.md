@@ -17,6 +17,47 @@ every version here.
 
 ---
 
+## 2.0.10 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Bonusy przedmiotów w panelach mają nazwy, nie numery
+
+„Zamiast nazwy bonusu jest numer #139” (djariczek): silnik mt2009 ma 31
+linii bonusów, których stary silnik nie znał — od 138 do 168 w `length.h`
+(regeneracja wytrzymałości, czas trwania umiejętności, silny przeciw
+Metinom/bossom, pochłanianie obrażeń, przełamania odporności…) — i nie mają
+one numeru APPLY, przez który oba panele nazywają linie. Panel klasyczny i
+panel Sebana dostały etykiety dla wszystkich 31 (po polsku i po angielsku,
+z właściwą jednostką); 139 to „Regeneracja wytrzymałości”, 147 „Czas
+trwania umiejętności”. Sprawdzone: tabela etykiet parsuje się (118 wpisów),
+oba panele kompilują się.
+
+### Nowa lista nicków Iwakury, po królestwach, bez duplikatów
+
+Iwakura dopisała listę do 1500 nicków (po 500 na królestwo, w tym nicki
+wspierających; „te generowane przez AI są okropne”, więc wszystko ręcznie)
+i podała zasadę: nicki brane z listy w losowej kolejności, po równo na
+królestwo, a dopiero gdy królestwo ma więcej botów niż nicków, do jego
+nicków dopisywane „2”, „v2”, „3” lub „v3”. Do tej pory pula szła po kolei od
+Chunjo, które brało pierwszy tysiąc nazw, a Shinsoo i Jinno dostawały kopie
+z v2/v3. Teraz lista (1475 poprawnych nazw; odrzucone: same cyfry, „GM…”,
+dwa wulgarne) jest tasowana raz, dzielona na trzy równe udziały po 491, i
+tylko Chunjo — 1500 zasianych postaci — dostaje dalej swoje nazwy z „2”/„v2”,
+potem „3”/„v3”. Każdy bot zostanie przemianowany przy pierwszym starcie po
+aktualizacji (nowa wersja puli); `M2_PLAYERBOT_HUMAN_NAMES=0` zostawia nazwy,
+`restore` przywraca zasiane.
+
+Przy okazji naprawiony błąd, który dotyczy każdego świata po 2.0.8:
+**dosiane boty Shinsoo i Jinno dostały te same nicki co boty Chunjo**. SQL
+numerował czekające boty od jedynki i dawał im nazwy od początku listy, nie
+patrząc, czy inny bot już je nosi — na świecie testowym 999 nazw było
+zdublowanych (np. 000Achtung000 na dwóch postaciach). Nazwa noszona przez
+bota, który nie czeka na nową, nie jest już wolna. Sprawdzone na tym
+świecie: 2499 botów przemianowanych, zero duplikatów, postać gracza na koncie
+admin nietknięta, drugi start nic nie zmienia, trzy boty pozbawione nicku
+dostają wolne nazwy bez kolizji.
+
 ## 2.0.9 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

@@ -14,11 +14,22 @@ Tieru asked for the list as written, for everybody, and for every bot named
 from the old pool to be renamed from this one ("te wszystkie stare nicki z
 bazy powinny zostac wywalone, ta lista powinna byc aktywna").
 
-A cohort larger than the list gets the list again with v2, then v3 behind the
-name, as Tieru asked, until more names are written. Names are handed out in
-list order by PID, so a bot keeps its name across regenerations as long as the
-list in front of it does not change; a changed list is a new pool version, and
-every bot whose name came from an older version is renamed on the next start.
+Since 2.0.10 the list is dealt out by kingdom, the way Iwakura asked when the
+1500-name list arrived ("przypisz po 500 losowych nickow na krolestwo, a
+potem, jesli gracz ma wiecej niz 500 botow w danym krolestwie, do obecnych
+nickow dopisuj 2, v2, 3 lub v3"): the list is shuffled once - by a seed
+derived from its own content, so a regeneration deals the same hand - and
+cut into three equal shares, one per kingdom. A kingdom whose cohort is
+larger than its share (Chunjo's 1500 seeded identities) continues with its
+own names and a "2" or "v2" behind them, then "3"/"v3", then v4 and so on
+from the whole list. Before this the pool ran Chunjo first, in list order,
+so Chunjo took the first thousand names and Shinsoo and Jinno were named
+from the v2/v3 rounds while a third of the list stood idle.
+
+Names are handed out by PID within a kingdom, so a bot keeps its name across
+regenerations as long as the list does not change; a changed list is a new
+pool version, and every bot whose name came from an older version is renamed
+on the next start.
 
 Nothing about renaming is dangerous, and it is worth writing down why:
 CPlayerBotManager::LoadRegisteredBots accepts a character by its account login
@@ -35,6 +46,7 @@ from __future__ import print_function
 import hashlib
 import io
 import os
+import random
 import re
 import sys
 
@@ -46,8 +58,11 @@ OUT_SQL = os.path.join(OVERLAY, 'sql', 'playerbot_names.sql')
 MIRROR_SQL = os.path.join(REPO, 'linux-port', 'docker', 'mariadb', 'playerbot',
                           'playerbot_names.sql')
 
-# Room for the 2500 seeded bots and for an operator who grows the cohort.
-TARGET = 3600
+# Names per kingdom: room for Chunjo's 1500 seeded identities and for an
+# operator who grows a cohort. The three kingdoms of playerbot_empire_rules.h,
+# in the order the seed numbers them (Chunjo's PIDs come first).
+KINGDOMS = (2, 1, 3)
+PER_KINGDOM = 1800
 # common/length.h: CHARACTER_NAME_MAX_LEN is 24 on both engines.
 MAX_LEN = 24
 # A name that gets a v2/v3 behind it must still fit.
@@ -99,22 +114,41 @@ def read_list(path):
     return out, dropped
 
 
-def extend(base, target):
-    """The list again with v2, v3 ... behind the names, up to target."""
-    pool = list(base)
-    seen = set(n.lower() for n in base)
-    suffix = 2
-    while len(pool) < target and suffix < 10:
-        for name in base:
-            if len(pool) >= target:
+def build_pool(base, version):
+    """(empire, name) rows: each kingdom's random share of the list first,
+    then that share again with 2/v2, then 3/v3, then v4.. from the whole
+    list, up to PER_KINGDOM per kingdom. One name appears once in the whole
+    pool, whichever kingdom it landed in."""
+    order = list(base)
+    random.Random(version).shuffle(order)
+    share = len(order) // len(KINGDOMS)
+    shares = {}
+    for i, empire in enumerate(KINGDOMS):
+        shares[empire] = order[i * share:(i + 1) * share]
+    # The remainder (at most two names) goes to Chunjo, the largest cohort.
+    shares[KINGDOMS[0]].extend(order[share * len(KINGDOMS):])
+    seen = set(n.lower() for n in order)
+    rows = []
+    for empire in KINGDOMS:
+        own = shares[empire]
+        out = list(own)
+        # "2" and "v2" by turns, then "3" and "v3": what Iwakura asked for.
+        rounds = [(own, ('2', 'v2')), (own, ('3', 'v3'))]
+        rounds += [(order, ('v%d' % k,)) for k in range(4, 10)]
+        for source, suffixes in rounds:
+            if len(out) >= PER_KINGDOM:
                 break
-            candidate = name[:SUFFIX_MAX_BASE] + 'v%d' % suffix
-            if candidate.lower() in seen:
-                continue
-            seen.add(candidate.lower())
-            pool.append(candidate)
-        suffix += 1
-    return pool
+            for i, name in enumerate(source):
+                if len(out) >= PER_KINGDOM:
+                    break
+                suffix = suffixes[i % len(suffixes)]
+                candidate = name[:MAX_LEN - len(suffix)] + suffix
+                if candidate.lower() in seen:
+                    continue
+                seen.add(candidate.lower())
+                out.append(candidate)
+        rows.extend((empire, name) for name in out)
+    return rows
 
 
 def sql_literal(value):
@@ -138,6 +172,9 @@ TEMPLATE = u"""-- Nicknames for the playerbots. GENERATED - edit
 -- change; a bot whose name came from an older version of the pool is renamed
 -- on the next start (common.playerbot_name_history.pool_version says which).
 -- The seed name stays in that table, which is what makes 'restore' possible.
+-- Each kingdom deals from its own share of the list (player_index.empire says
+-- whose a bot is), so Shinsoo and Jinno get written names and not the v2/v3
+-- copies of Chunjo's.
 
 -- A temporary table needs a default database and the client this is fed to has
 -- selected none; playerbots_seed.sql opens the same way and for the same
@@ -179,26 +216,40 @@ SELECT CONCAT('playerbot names: restored ', ROW_COUNT(), ' seed name(s)')
  WHERE @playerbot_human_names = 'restore';
 
 -- --------------------------------------------------------------------------
--- The pool: @@BASE@@ names as written, then the same names with v2, v3 behind
--- them up to @@COUNT@@, in the order they were written.
+-- The pool: @@BASE@@ names as written, shuffled once and cut into a share per
+-- kingdom, then each share again with 2/v2 and 3/v3 behind the names and the
+-- whole list with v4.. after that, @@PER_KINGDOM@@ names a kingdom (@@COUNT@@
+-- in all).
 -- --------------------------------------------------------------------------
 DROP TEMPORARY TABLE IF EXISTS playerbot_name_pool;
 CREATE TEMPORARY TABLE playerbot_name_pool (
-    n    INT UNSIGNED NOT NULL PRIMARY KEY,
-    name VARCHAR(24) NOT NULL,
-    UNIQUE KEY name (name)
+    n      INT UNSIGNED NOT NULL PRIMARY KEY,
+    empire TINYINT UNSIGNED NOT NULL,
+    name   VARCHAR(24) NOT NULL,
+    UNIQUE KEY name (name),
+    KEY empire (empire, n)
 ) ENGINE=MEMORY DEFAULT CHARSET=latin1;
 
 @@VALUES@@
 
 -- --------------------------------------------------------------------------
 -- Who gets one, and which. Every bot without a name from this version of the
--- pool waits, numbered by PID; every pool name not worn by somebody's own
--- character is free, numbered by its place in the list; the two are joined
--- on the number. One statement, stable: the first free name goes to the
--- lowest waiting PID. A bot's current name never blocks a pool name - all
--- of them are being renamed at once - and player.name is indexed, not
--- unique, so the check against people's characters is the only one there is.
+-- pool waits, numbered by PID within its kingdom; every pool name of that
+-- kingdom's share not worn by anybody who is not waiting is free, numbered by
+-- its place in the share; the two are joined on kingdom and number. One
+-- statement, stable: the first free name goes to the lowest waiting PID.
+--
+-- "Not worn by anybody who is not waiting" is the whole point of the free
+-- side. It used to exclude only people's characters, on the argument that
+-- every bot was being renamed at once - which was true of a version change
+-- and false of the other way a bot comes to wait: a cohort seeded later.
+-- 2.0.8 switched the kingdoms on and seeded a thousand Shinsoo and Jinno
+-- bots into worlds whose Chunjo bots were already named; those thousand
+-- were numbered from one and dealt the names of the first thousand Chunjo
+-- bots, so a world had two of each. A settled bot - a history row of this
+-- version whose name it still wears - keeps its name off the free list;
+-- on a version change nobody is settled and the whole pool is dealt afresh.
+-- player.name is indexed, not unique, so nothing else would have caught it.
 -- --------------------------------------------------------------------------
 DROP TEMPORARY TABLE IF EXISTS playerbot_name_plan;
 CREATE TEMPORARY TABLE playerbot_name_plan (
@@ -213,9 +264,13 @@ SELECT waiting.pid, waiting.seed_name, free.name
   FROM (
         SELECT p.id AS pid,
                IFNULL(h.seed_name, p.name) AS seed_name,
-               ROW_NUMBER() OVER (ORDER BY p.id) AS rn
+               CASE WHEN pi.empire IN (1, 2, 3) THEN pi.empire ELSE 2 END AS empire,
+               ROW_NUMBER() OVER (
+                   PARTITION BY CASE WHEN pi.empire IN (1, 2, 3) THEN pi.empire ELSE 2 END
+                   ORDER BY p.id) AS rn
           FROM player.player AS p
           JOIN account.account AS a ON a.id = p.account_id
+          LEFT JOIN player.player_index AS pi ON pi.id = p.account_id
           LEFT JOIN common.playerbot_name_history AS h ON h.pid = p.id
          WHERE LEFT(a.login, 10) = 'playerbot_'
            AND (h.pid IS NULL
@@ -223,16 +278,19 @@ SELECT waiting.pid, waiting.seed_name, free.name
                 OR BINARY p.name <> BINARY h.human_name)
        ) AS waiting
   JOIN (
-        SELECT np.name,
-               ROW_NUMBER() OVER (ORDER BY np.n) AS rn
+        SELECT np.name, np.empire,
+               ROW_NUMBER() OVER (PARTITION BY np.empire ORDER BY np.n) AS rn
           FROM playerbot_name_pool AS np
          WHERE NOT EXISTS (SELECT 1
                              FROM player.player AS px
                              JOIN account.account AS ax ON ax.id = px.account_id
+                             LEFT JOIN common.playerbot_name_history AS hx ON hx.pid = px.id
                             WHERE px.name = np.name
-                              AND LEFT(ax.login, 10) <> 'playerbot_')
+                              AND (LEFT(ax.login, 10) <> 'playerbot_'
+                                   OR (hx.pool_version = @playerbot_pool_version
+                                       AND BINARY px.name = BINARY hx.human_name)))
        ) AS free
-    ON free.rn = waiting.rn
+    ON free.empire = waiting.empire AND free.rn = waiting.rn
  WHERE @playerbot_human_names = '1';
 
 INSERT INTO common.playerbot_name_history (pid, seed_name, human_name, pool_version, renamed_at)
@@ -252,10 +310,11 @@ SELECT CONCAT('playerbot names: gave ', COUNT(*), ' bot(s) a name from pool @@VE
   FROM playerbot_name_plan
 HAVING @playerbot_human_names = '1';
 
--- A cohort larger than the pool is the one way this runs out; say so rather
--- than leaving an operator to wonder why some bots kept their old names.
+-- A cohort larger than its kingdom's share is the one way this runs out; say
+-- so rather than leaving an operator to wonder why some bots kept their old
+-- names.
 SELECT CONCAT('playerbot names: WARNING ', COUNT(*),
-              ' bot(s) got no name - the pool of @@COUNT@@ is used up')
+              ' bot(s) got no name - a kingdom used up its @@PER_KINGDOM@@ names')
        AS playerbot_names_note
   FROM player.player AS p
   JOIN account.account AS a ON a.id = p.account_id
@@ -271,15 +330,16 @@ DROP TEMPORARY TABLE IF EXISTS playerbot_name_pool;
 
 
 def render(base, pool, version):
-    rows = ['(%d,%s)' % (i, sql_literal(n)) for i, n in enumerate(pool, start=1)]
+    rows = ['(%d,%d,%s)' % (i, e, sql_literal(n)) for i, (e, n) in enumerate(pool, start=1)]
     chunks = []
     for start in range(0, len(rows), 100):
-        chunks.append('INSERT INTO playerbot_name_pool (n, name) VALUES\n    ' +
+        chunks.append('INSERT INTO playerbot_name_pool (n, empire, name) VALUES\n    ' +
                       ',\n    '.join(rows[start:start + 100]) + ';')
     text = TEMPLATE
     text = text.replace('@@VERSION_LITERAL@@', sql_literal(version))
     text = text.replace('@@VERSION@@', version)
     text = text.replace('@@BASE@@', str(len(base)))
+    text = text.replace('@@PER_KINGDOM@@', str(PER_KINGDOM))
     text = text.replace('@@COUNT@@', str(len(pool)))
     text = text.replace('@@VALUES@@', '\n'.join(chunks))
     return text
@@ -290,16 +350,20 @@ def main():
     if not base:
         print('brak nickow w %s' % SOURCE)
         return 1
-    version = hashlib.sha256('\n'.join(n.lower() for n in base).encode('utf-8')).hexdigest()[:12]
-    pool = extend(base, TARGET)
+    # The dealing scheme is part of the version: the same list dealt by
+    # kingdom is a different hand, and every bot named by the old scheme has
+    # to be renamed.
+    version = hashlib.sha256(('kingdoms\n' + '\n'.join(n.lower() for n in base)).encode('utf-8')).hexdigest()[:12]
+    pool = build_pool(base, version)
     text = render(base, pool, version)
     for path in (OUT_SQL, MIRROR_SQL):
         directory = os.path.dirname(path)
         if not os.path.isdir(directory):
             os.makedirs(directory)
         io.open(path, 'w', encoding='utf-8', newline='\n').write(text)
-    print('napisano %s: pula %s, %d nickow z listy, %d z dopiskiem vN (razem %d); odrzucone: %d'
-          % (OUT_SQL, version, len(base), len(pool) - len(base), len(pool), len(dropped)))
+    plain = len(base)
+    print('napisano %s: pula %s, %d nickow z listy po %d na krolestwo, %d z dopiskiem (razem %d, po %d na krolestwo); odrzucone: %d'
+          % (OUT_SQL, version, plain, plain // len(KINGDOMS), len(pool) - plain, len(pool), PER_KINGDOM, len(dropped)))
     for d in dropped:
         print('  odrzucony: %r' % d)
     print('kopia:   %s' % MIRROR_SQL)

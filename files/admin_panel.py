@@ -2910,7 +2910,11 @@ POINT_TO_APPLY = {6: 1, 8: 2, 13: 3, 15: 4, 12: 5, 14: 6, 17: 7, 19: 8, 21: 9, 3
  53: 63, 114: 64, 115: 65, 116: 66, 117: 67, 118: 68, 119: 69, 120: 70, 121: 71,
  122: 72, 123: 73, 124: 74, 125: 75, 126: 76, 59: 78, 60: 79, 61: 80, 62: 81,
  128: 82, 16: 83, 130: 84, 131: 85, 132: 86, 133: 87, 134: 88, 135: 89, 136: 90,
- 137: 91}
+ 137: 91,
+ # mt2009 points with no APPLY id at all (length.h 138..168 - the engine
+ # applies them straight from the item). A pseudo key of 1000 + point, so
+ # the label tables can name them; without it the panel wrote "Bonus #139".
+ 138: 1138, 139: 1139, 140: 1140, 141: 1141, 142: 1142, 143: 1143, 144: 1144, 145: 1145, 146: 1146, 147: 1147, 148: 1148, 149: 1149, 150: 1150, 151: 1151, 152: 1152, 153: 1153, 154: 1154, 155: 1155, 156: 1156, 157: 1157, 158: 1158, 159: 1159, 160: 1160, 161: 1161, 162: 1162, 163: 1163, 164: 1164, 165: 1165, 166: 1166, 167: 1167, 168: 1168}
 
 
 def apply_key(attr_type):
@@ -5676,7 +5680,38 @@ var APPLY_META = {
   88: {pl: "Odporność na ziemię +%d%%", en: "Earth resistance +%d%%", f: "percent"},
   89: {pl: "Odporność na mrok +%d%%", en: "Resistance against darkness +%d%%", f: "percent"},
   90: {pl: "Odporność na cios krytyczny +%d%%", en: "Resistance against critical hits +%d%%", f: "percent"},
-  91: {pl: "Odporność na przeszywający cios +%d%%", en: "Resistance against piercing hits +%d%%", f: "percent"}
+  91: {pl: "Odporność na przeszywający cios +%d%%", en: "Resistance against piercing hits +%d%%", f: "percent"},
+  1138: {pl: "Terror +%d%%", en: "Terror +%d%%", f: "percent"},
+  1139: {pl: "Regeneracja wytrzymałości +%d%%", en: "Stamina regeneration +%d%%", f: "percent"},
+  1140: {pl: "Atak sztyletem przeciw potworom +%d", en: "Dagger attack against monsters +%d", f: "flat"},
+  1141: {pl: "Wartość ataku przeciw potworom +%d", en: "Attack value against monsters +%d", f: "flat"},
+  1142: {pl: "Odporność na potwory +%d‰", en: "Resistance against monsters +%d‰", f: "flat"},
+  1143: {pl: "Pochłanianie obrażeń +%d%%", en: "Damage absorption +%d%%", f: "percent"},
+  1144: {pl: "Pochłanianie obrażeń od potworów +%d%%", en: "Damage absorption from monsters +%d%%", f: "percent"},
+  1145: {pl: "Przełamanie odporności na ogłuszenie", en: "Breaks stun immunity", f: "boolean"},
+  1146: {pl: "Przełamanie klątwy świątyni", en: "Breaks the temple curse", f: "boolean"},
+  1147: {pl: "Czas trwania umiejętności +%d%%", en: "Skill duration +%d%%", f: "percent"},
+  1148: {pl: "Silny przeciw potworom z Doliny Orków +%d%%", en: "Strong against Orc Valley monsters +%d%%", f: "percent"},
+  1149: {pl: "Silny przeciw Metinom +%d%%", en: "Strong against Metin stones +%d%%", f: "percent"},
+  1150: {pl: "Silny przeciw bossom +%d%%", en: "Strong against bosses +%d%%", f: "percent"},
+  1151: {pl: "Magiczny atak przeciw potworom +%d%%", en: "Magic attack against monsters +%d%%", f: "percent"},
+  1152: {pl: "Przełamanie odporności na miecz +%d%%", en: "Breaks sword resistance +%d%%", f: "percent"},
+  1153: {pl: "Przełamanie odporności na broń dwuręczną +%d%%", en: "Breaks two-handed resistance +%d%%", f: "percent"},
+  1154: {pl: "Przełamanie odporności na sztylet +%d%%", en: "Breaks dagger resistance +%d%%", f: "percent"},
+  1155: {pl: "Przełamanie odporności na dzwonek +%d%%", en: "Breaks bell resistance +%d%%", f: "percent"},
+  1156: {pl: "Przełamanie odporności na wachlarz +%d%%", en: "Breaks fan resistance +%d%%", f: "percent"},
+  1157: {pl: "Przełamanie odporności na łuk +%d%%", en: "Breaks bow resistance +%d%%", f: "percent"},
+  1158: {pl: "Szansa na zbieranie +%d%%", en: "Collecting chance +%d%%", f: "percent"},
+  1159: {pl: "Szansa na naukę +%d%%", en: "Learning chance +%d%%", f: "percent"},
+  1160: {pl: "Odporność na ludzi +%d%%", en: "Resistance against humans +%d%%", f: "percent"},
+  1161: {pl: "Magiczny atak +%d", en: "Magic attack +%d", f: "flat"},
+  1162: {pl: "Szansa na podpalenie +%d%%", en: "Chance of burning +%d%%", f: "percent"},
+  1163: {pl: "Zamiana obrażeń na PE +%d%%", en: "Damage converted to SP +%d%%", f: "percent"},
+  1164: {pl: "Szansa na rzadki łup +%d%%", en: "Rare drop chance +%d%%", f: "percent"},
+  1165: {pl: "Magiczna wartość ataku przeciw potworom +%d", en: "Magic attack value against monsters +%d", f: "flat"},
+  1166: {pl: "Szansa na unieruchomienie +%d%%", en: "Chance of rooting +%d%%", f: "percent"},
+  1167: {pl: "Atak specjalny +%d", en: "Special attack +%d", f: "flat"},
+  1168: {pl: "Kara za śmierć +%d%%", en: "Death penalty +%d%%", f: "percent"}
 };
 
 // One formatter for both the fixed bonuses an item is made with and the random

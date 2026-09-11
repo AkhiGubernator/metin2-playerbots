@@ -1163,6 +1163,12 @@ bool CPlayerBotManager::IsRegistered(DWORD dwPlayerID)
 			m_setRegisteredBots.find(dwPlayerID) != m_setRegisteredBots.end();
 }
 
+bool CPlayerBotManager::IsRegisteredBotPID(DWORD dwPlayerID) const
+{
+	return m_bRegistryLoaded && m_bRegistryAvailable &&
+			m_setRegisteredBots.find(dwPlayerID) != m_setRegisteredBots.end();
+}
+
 // Queues the first `count` registered identities and sends the first batch.
 // The rest go out from Update, a batch a second, so the cohort takes
 // PLAYERBOT_SPAWN_WINDOW to arrive instead of one second. Returns how many

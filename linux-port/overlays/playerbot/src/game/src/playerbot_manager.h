@@ -32,6 +32,10 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 
 		bool	IsManaged(DWORD dwPlayerID) const;
 		bool	IsRegistered(DWORD dwPlayerID);
+		// The same question answered from the registry as it is, never by
+		// loading it: false until the bootstrap has loaded it. For callers
+		// that may run before that and must not trigger the load (p2p.cpp).
+		bool	IsRegisteredBotPID(DWORD dwPlayerID) const;
 		size_t	GetCount() const;
 		// Registered identities not spawned right now, ascending, at most
 		// `limit` of them - the F9 panel's "bots ready to spawn" list.

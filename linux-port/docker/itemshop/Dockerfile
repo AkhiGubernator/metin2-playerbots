@@ -13,6 +13,15 @@ FROM php:8.2-apache-bookworm
 
 RUN docker-php-ext-install mysqli
 
+# The official image ships no php.ini at all, which means display_errors
+# on: a fatal error came back as HTTP 200 with the stack trace as the page,
+# the healthcheck below called that healthy, and the client's embedded
+# IE cached the error page so that even a repaired shop kept showing it
+# (archded, 10 September, with the Apache log). The production ini turns
+# display_errors off and log_errors on, so a fatal is a 500 with nothing
+# cacheable in it and the trace lands in the container log instead.
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
 COPY app/ /var/www/html/
 
 # COPY keeps the source's modes, and a ZIP unpacked under a strict umask on
@@ -40,5 +49,9 @@ RUN a2enmod rewrite \
 
 EXPOSE 80/tcp
 
+# file_get_contents is false on any 4xx/5xx, and with display_errors off a
+# PHP fatal is a 500 - so this fails on a broken application, not only on
+# a dead web server. The body test is the belt to those braces: a warning
+# printed into an otherwise successful page is still a broken shop.
 HEALTHCHECK --interval=20s --timeout=5s --start-period=20s --retries=3 \
-    CMD php -r 'exit(@file_get_contents("http://127.0.0.1/itemshop/") === false ? 1 : 0);'
+    CMD php -r '$b=@file_get_contents("http://127.0.0.1/itemshop/"); exit($b===false || strpos($b,"Fatal error")!==false || strpos($b,"Warning:")!==false ? 1 : 0);'

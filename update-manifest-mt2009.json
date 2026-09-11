@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T16:27:23Z",
-  "statusMessage": "Wersja 2.0.5: ikony przedmiotów w panelu, historia ekwipunku, pełny plecak botów (handlarz tylko do +4), postacie GM w zestawie widocznym w kliencie, Olejek Wygnania. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-11T18:59:07Z",
+  "statusMessage": "Wersja 2.0.6: mnożniki EXP/dropu/yang i rangi GM naprawdę działają na 2.x, kolejka panelu klasycznego (przedmioty, teleport, szybkość) naprawiona, Risk mode zdjęty, skrzynie czekają na miejsce w plecaku. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.5",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.5/metin2-server-update-2.0.5.zip",
-    "sha256": "7673F4B5C665F340B11768F52D205FB5DC3165970DBC5DDF15E9C79A5A604842"
+    "version": "2.0.6",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.6/metin2-server-update-2.0.6.zip",
+    "sha256": "C497E5C5B2FBF1CDEE4C03BF4408FCC66AA7C4EB94FCC2C57F004F2F067A815B"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

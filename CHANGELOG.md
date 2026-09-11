@@ -17,6 +17,60 @@ every version here.
 
 ---
 
+## 2.0.5 — 2026-09-11
+
+### Postacie GM w zestawie, który klient umie pokazać
+
+Zbroja 90 poziomu i broń 87 poziomu z 2.0.4 istnieją w `item_proto` serwera,
+ale nie w kliencie: jego `pc2/*.msm` znają kształty zbroi 0–12, 14–22 i 24
+(Pancerz Diabelskiego Rogu to 13, Zbroja z Niebieskiej Stali to 26), a
+pakiet `item` ma modele broni tylko do zestawu 75 poziomu. Postać w takiej
+zbroi była niewidzialna i nie mogła się ruszać (Iwakura). Czwórka GM nosi
+teraz zbroję 66 poziomu +9 swojej klasy (Zbroja z Czarnej Stali, Ubranie
+Czarnego Wiatru, Zbroja Płytowa Czarnej Magii, Czarna Szata) i broń 75
+poziomu +9 (Zatruty Miecz, Skrzydła Demona Chakram, Lwi Miecz, Bambusowy
+Dzwon; w plecaku Miecz Żalu, Stalowy Łuk Kruka, Wachlarz Ośmiu Trigramów),
+a do tego Olejek Wygnania do zmiany królestwa. Świat, który dostał czwórkę w
+2.0.4, ma podmieniane te same sloty przy najbliższym starcie — bonusy
+zostają, zmienia się tylko vnum.
+
+### Panel: ikony przedmiotów u każdego, historia ekwipunku działa
+
+Panel klasyczny pokazywał u każdego gracza przekreślony obrazek zamiast
+ikony przedmiotu: 1572 ikony generował na 1.33 instalator na maszynie
+operatora i nigdy nie były w repozytorium ani w paczce, a linia 2.x nie
+generowała ich nigdzie. Ikony są teraz robione z pakietu `icon` klienta
+mt2009 (`port/iconify.py`: 1557 ikon per-item z klienta plus 253 ze starego
+zestawu dla przedmiotów, których klient trzyma tylko w atlasach — mikstury
+startowe, księga umiejętności, skrzynie ucznia) i jadą w `files/static/icons`
+(8,6 MB w każdej aktualizacji serwera). Przedmiot bez ikony (741 z 6001
+vnumów świata, prawie żaden w obiegu) dostaje szare pole zamiast
+przekreślonego obrazka.
+
+„Historia ekwipunku” pokazywała `startswith first arg must be bytes…`: na
+mt2009 kolumny `how`, `hint` i `type` w `log.log` są `varbinary` i przychodzą
+jako bajty. Oba panele dekodują je teraz (CP1250) przed użyciem.
+
+### Pełny plecak: bot nie udaje, że podnosi, i robi miejsce
+
+Bot z zerem wolnych kratek podchodził do każdego dropu, pokazywał „Podnosze
+lup”, dostawał odmowę od silnika i próbował następnego — a między tym
+polował dalej („bot dropi, itemki pod nim leżą, mówi że podnosi łup, ale nie
+robi nic, bo nie ma miejsca” — JaroszV2). Zbieracz łupu pomija teraz
+przedmioty, które nie zmieszczą się w plecaku (zostaje tylko to, co dołoży
+się do istniejącego stosu), a raz na minutę pisze do logu
+`PLAYERBOT_LOOT: bag full pid= name= drops_in_reach= can_open_shop=`.
+
+Handlarz może dostać ekwipunek tylko do +4 — także z reguły „niesprzedane
+przez sześć straganów” (dotąd do +6). +5 i wyżej nigdy nie idzie do NPC: to
+towar na stragan, a co bot nosi sam, kowal podnosi dalej. Gdy plecak jest
+pod presją (8 wolnych kratek lub mniej) i bot nie może otworzyć straganu (na
+mt2009 przed 15 poziomem i 800 zabiciami), ekwipunek do +4, którego sam by
+nie założył, i nadwyżka materiałów idą do handlarza — wcześniej „towar na
+ladę” bez lady był plecakiem na zawsze.
+
+---
+
 ## 2.0.4 — 2026-09-11
 
 Czwarta poprawka pierwszego dnia: cztery wyposażone postacie GM i skrzynia

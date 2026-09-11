@@ -544,9 +544,14 @@ namespace
 	// with a bag of them stood in Joan opening stalls instead of hunting -
 	// "ciule wszystko +5 wystawiaja i od wczoraj zaden nie wbil nawet lvla"
 	// (gregoszky), "boty maja zapchane eq, nie wiedza co z tym robic"
-	// (davids998), both on 10-11 September. +7 and up is still never scrap:
-	// that is the price bracket a player crosses a market for.
-	const BYTE PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE = 6;
+	// (davids998), both on 10-11 September.
+	// The operator's line (11 September evening): the merchant may have gear
+	// up to +4 and nothing above it - a +5 goes on a counter, or to the
+	// blacksmith first and then on a counter. So the unsold-stands rule stops
+	// at +4 too, and PLAYERBOT_MERCHANT_MAX_REFINE is the one number both
+	// rules read.
+	const BYTE PLAYERBOT_MERCHANT_MAX_REFINE = 4;
+	const BYTE PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE = PLAYERBOT_MERCHANT_MAX_REFINE;
 	// The ride from Bokjung's square to the Joan gate is 38 km.
 	const DWORD PLAYERBOT_MARKET_JOAN_WALK_TIMEOUT = 300000;
 	// And how far away the stalls may be before it is not worth setting off:
@@ -3113,6 +3118,7 @@ namespace
 			bMultiPullGroups(0),
 			bMultiPullDesiredGroups(0),
 			bLootThreatNearby(false),
+			dwNextBagFullLogTime(0),
 			bEquipPending(false),
 			bMeleeForStone(false),
 			bVisitingShop(false),
@@ -3383,6 +3389,9 @@ namespace
 		BYTE bMultiPullGroups;
 		BYTE bMultiPullDesiredGroups;
 		bool bLootThreatNearby;
+		// When the "bag full, nothing on the ground fits" line may be written
+		// again for this bot: once a minute, not once per drop.
+		DWORD dwNextBagFullLogTime;
 		bool bEquipPending;
 		// An Archer with a Metin stone for a target has its dagger or sword in
 		// hand instead of the bow, and takes the bow back when the stone is

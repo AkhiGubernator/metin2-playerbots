@@ -1,5 +1,5 @@
 Metin2 Singleplayer (pliki serwerowe mt2009) + Playerbots
-Wersja paczki: 2.0.4 (2026-09-11)
+Wersja paczki: 2.0.5 (2026-09-11)
 
 CO JEST W PACZCE
   Klient\   gotowy klient gry, wskazuje ten komputer (127.0.0.1)
@@ -23,9 +23,10 @@ DOMYŚLNE KONTO TESTOWE GRY
   login: admin
   hasło: admin
   Na koncie są cztery postacie GM (IMPLEMENTOR) 90 poziomu: Admin (wojownik),
-  AdminNinja, AdminSura i AdminSzaman — każda w pełnym zestawie +9 z bonusami,
-  z drugą bronią, miksturami, zwojami, medalami konnymi, koniem 21 poziomu
-  i Księgą Wojskowego Konia do jego przywołania. Na świecie założonym przed
+  AdminNinja, AdminSura i AdminSzaman — każda w zbroi 66 poziomu +9 i broni
+  75 poziomu +9 z bonusami (najlepsze, które ten klient umie pokazać), z drugą
+  bronią, miksturami, zwojami, medalami konnymi, Olejkiem Wygnania, koniem
+  21 poziomu i Księgą Wojskowego Konia do jego przywołania. Na świecie założonym przed
   2.0.4 postacie powstają przy najbliższym starcie, jeśli konto admin nie ma
   jeszcze żadnej postaci; jeśli ma, uprawnienia GM dostaje pierwsza z nich.
   Nowa postać gracza dostaje przy pierwszym wejściu do gry Skrzynię Ucznia I,

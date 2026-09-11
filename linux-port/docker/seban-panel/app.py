@@ -509,7 +509,9 @@ def news_feed_events():
       ORDER BY l.time DESC LIMIT 900""")
     events, seen = [], set()
     for row in raw:
-        how, hint, name = str(row.get("how") or ""), game_text(row.get("hint")), game_text(row.get("name"))
+        # `how` is VARBINARY on mt2009 and arrives as bytes; str() of that is
+        # "b'GET'" and matches nothing below.
+        how, hint, name = game_text(row.get("how")), game_text(row.get("hint")), game_text(row.get("name"))
         key = f"{how}:{row.get('who')}:{row.get('what')}:{row.get('time')}"
         if key in seen or not name:
             continue

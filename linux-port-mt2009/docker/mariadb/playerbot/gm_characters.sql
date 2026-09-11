@@ -3,9 +3,21 @@
 -- The mt2009 package ships an empty gmlist and no character on `admin'.
 -- This file creates Admin (warrior), AdminNinja, AdminSura and AdminSzaman
 -- at level ninety, each with IMPLEMENTOR rights, the best +9 set the
--- package has for its class with strong bonus lines, a second weapon, a
--- bag of potions and scrolls, and a level-21 horse with its summon book
--- (50053, what the stable keeper hands out for a grade-3 horse).
+-- CLIENT can show for its class with strong bonus lines, a second weapon,
+-- a bag of potions and scrolls, the Oil of Banishment (71054, changes the
+-- kingdom), and a level-21 horse with its summon book (50053, what the
+-- stable keeper hands out for a grade-3 horse).
+--
+-- "The best the client can show" is not "the best item_proto has": the
+-- server's proto goes to level 90 (Pancerz Diabelskiego Rogu, shape 13;
+-- Zbroja z Niebieskiej Stali, shape 26) and to level-87 weapons (Runiczny
+-- Miecz 460...), but the client's pc2/*.msm know shapes 0-12, 14-22 and 24
+-- only and its item pack carries weapon models up to the level-75 set
+-- (00180, 00190, 01130, 02170, 03160, 05120, 07180). A character in an
+-- armour the client cannot draw is invisible and cannot move (Iwakura,
+-- 11 September, on 2.0.4's set). So: the level-66 "black" armour (shape 12)
+-- and the level-75 weapons, and the repair block at the end swaps them in
+-- on a world that already has the four with the old set.
 --
 -- Runs on a fresh world from initdb.d (10-import-dumps.sh) and on every
 -- start from apply.sh; it does nothing unless the admin account exists AND
@@ -71,15 +83,15 @@ SELECT g.owner_id, 'EQUIPMENT', g.pos, 1, g.vnum,
        g.a0, g.v0, g.a1, g.v1, g.a2, g.v2, g.a3, g.v3, g.a4, g.v4, g.a5, g.v5, g.a6, g.v6
   FROM (
     -- weapons: crit 10, pierce 10, vs monsters 20, vs humans 10, casting speed 20; average 45, skill 20
-    SELECT 9001 AS owner_id, 4 AS pos,  469 AS vnum, 40 AS a0, 10 AS v0, 41 AS a1, 10 AS v1, 53 AS a2, 20 AS v2, 43 AS a3, 10 AS v3, 21 AS a4, 20 AS v4, 122 AS a5, 45 AS v5, 121 AS a6, 20 AS v6 UNION ALL
-    SELECT 9002, 4, 1349, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
-    SELECT 9003, 4,  479, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
-    SELECT 9004, 4, 5349, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
+    SELECT 9001 AS owner_id, 4 AS pos,  189 AS vnum, 40 AS a0, 10 AS v0, 41 AS a1, 10 AS v1, 53 AS a2, 20 AS v2, 43 AS a3, 10 AS v3, 21 AS a4, 20 AS v4, 122 AS a5, 45 AS v5, 121 AS a6, 20 AS v6 UNION ALL
+    SELECT 9002, 4, 1139, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
+    SELECT 9003, 4,  199, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
+    SELECT 9004, 4, 5129, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
     -- body: hp 1500, steal hp 10, attack value 50, casting speed 20, magic resistance 15
-    SELECT 9001, 0, 20009, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
-    SELECT 9002, 0, 20259, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
-    SELECT 9003, 0, 20509, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
-    SELECT 9004, 0, 20759, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
+    SELECT 9001, 0, 11299, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
+    SELECT 9002, 0, 11499, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
+    SELECT 9003, 0, 11699, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
+    SELECT 9004, 0, 11899, 6, 1500, 63, 10, 95, 50, 21, 20, 77, 15, 0, 0, 0, 0 UNION ALL
     -- head: hp regen 12, attack speed 8, dodge 15, magic resistance 15, vs humans 10
     SELECT 9001, 1, 12289, 32, 12, 17, 8, 68, 15, 77, 15, 43, 10, 0, 0, 0, 0 UNION ALL
     SELECT 9002, 1, 12409, 32, 12, 17, 8, 68, 15, 77, 15, 43, 10, 0, 0, 0, 0 UNION ALL
@@ -129,7 +141,8 @@ SELECT p.id, 'INVENTORY', b.pos, b.cnt, b.vnum,
     SELECT 3,  50, 25045, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
     SELECT 4,  50, 22030, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
     SELECT 5,  50, 50050, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
-    SELECT 6,   1, 50053, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    SELECT 6,   1, 50053, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
+    SELECT 8,   1, 71054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   ) AS b
  WHERE @go AND p.id BETWEEN 9001 AND 9004
    AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = p.id AND i.window = 'INVENTORY');
@@ -142,12 +155,33 @@ INSERT INTO player.item
 SELECT w.owner_id, 'INVENTORY', w.pos, w.cnt, w.vnum,
        w.a0, w.v0, w.a1, w.v1, w.a2, w.v2, w.a3, w.v3, w.a4, w.v4, w.a5, w.v5, w.a6, w.v6
   FROM (
-    SELECT 9001 AS owner_id, 10 AS pos, 1 AS cnt, 3199 AS vnum, 40 AS a0, 10 AS v0, 41 AS a1, 10 AS v1, 53 AS a2, 20 AS v2, 43 AS a3, 10 AS v3, 21 AS a4, 20 AS v4, 122 AS a5, 45 AS v5, 121 AS a6, 20 AS v6 UNION ALL
-    SELECT 9002, 10,   1, 2379, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
+    SELECT 9001 AS owner_id, 10 AS pos, 1 AS cnt, 3169 AS vnum, 40 AS a0, 10 AS v0, 41 AS a1, 10 AS v1, 53 AS a2, 20 AS v2, 43 AS a3, 10 AS v3, 21 AS a4, 20 AS v4, 122 AS a5, 45 AS v5, 121 AS a6, 20 AS v6 UNION ALL
+    SELECT 9002, 10,   1, 2179, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
     SELECT 9002,  7, 200, 8009,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,   0,  0 UNION ALL
-    SELECT 9004, 10,   1, 7379, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20
+    SELECT 9004, 10,   1, 7189, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20
   ) AS w
  WHERE @go AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = w.owner_id AND i.window = 'INVENTORY' AND i.pos = w.pos);
+
+-- Repair for a world that got the four in 2.0.4 with the set the client
+-- cannot draw: the same slot, the same bonus lines, the drawable vnum.
+-- Keyed on owner, slot and the old vnum, so a second run changes nothing
+-- and a GM who has since chosen other gear is left alone.
+UPDATE player.item AS i
+  JOIN player.player AS p ON p.id = i.owner_id AND p.id BETWEEN 9001 AND 9004
+   SET i.vnum = CASE i.vnum
+                  WHEN 20009 THEN 11299 WHEN 20259 THEN 11499 WHEN 20509 THEN 11699 WHEN 20759 THEN 11899
+                  WHEN   469 THEN   189 WHEN  1349 THEN  1139 WHEN   479 THEN   199 WHEN  5349 THEN  5129
+                  WHEN  3199 THEN  3169 WHEN  2379 THEN  2179 WHEN  7379 THEN  7189
+                  ELSE i.vnum END
+ WHERE i.vnum IN (20009, 20259, 20509, 20759, 469, 1349, 479, 5349, 3199, 2379, 7379);
+
+INSERT INTO player.item (owner_id, window, pos, count, vnum)
+SELECT p.id, 'INVENTORY', 8, 1, 71054
+  FROM player.player AS p
+ WHERE p.id BETWEEN 9001 AND 9004
+   AND p.name IN ('Admin', 'AdminNinja', 'AdminSura', 'AdminSzaman')
+   AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = p.id AND i.vnum = 71054)
+   AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = p.id AND i.window = 'INVENTORY' AND i.pos = 8);
 
 SELECT CONCAT('gm characters: ', IF(@go, 'created Admin, AdminNinja, AdminSura, AdminSzaman on the admin account',
                                        IF(@admin_id IS NULL, 'no admin account, nothing to do',

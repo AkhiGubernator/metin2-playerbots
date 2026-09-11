@@ -135,6 +135,19 @@ inline void PlayerBotChangeGold(LPCHARACTER ch, long long delta)
 #endif
 }
 
+// Whether this character may open a private shop at all. mt2009 grants the
+// counter at level 15 and 800 kills (CHARACTER::CanOpenShop); r40250 to
+// anybody. The junk rule asks, because a bag that cannot be sold from a
+// counter has only the merchant left.
+inline bool PlayerBotCanOpenShop(LPCHARACTER ch)
+{
+#if defined(PLAYERBOT_ENGINE_MT2009)
+	return ch && ch->CanOpenShop();
+#else
+	return ch != NULL;
+#endif
+}
+
 // Putting a piece on. mt2009 answers CanEquipNow() six times per half
 // second per pid and then says no (PulseManager, ePulse::ItemEquip - an
 // anti-flood for a client, and a bot has none). The gear pass asks once per

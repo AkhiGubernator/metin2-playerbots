@@ -424,6 +424,33 @@ namespace
 		return occupied * 100 >= INVENTORY_MAX_NUM * PLAYERBOT_BAG_FULL_PERCENT;
 	}
 
+	// Fewer free cells than the loot and the chests need to land in. The
+	// junk rule below reads this together with PlayerBotCanOpenShop: a bag
+	// under pressure with a counter to sell from keeps its goods, a bag
+	// under pressure with no counter (mt2009 before level 15 and 800 kills)
+	// has nowhere but the merchant, and a bot that kept hunting with a full
+	// bag "mowi ze podnosi lup ale nie robi nic" (JaroszV2, 11 September).
+	bool IsPlayerBotBagUnderPressure(LPCHARACTER ch)
+	{
+		return ch && ch->IsItemLoaded() &&
+				CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS;
+	}
+
+	// A bag piece this bot would put on: its slot is empty or it outscores
+	// what is worn there. Everything else the junk rule may let go under
+	// pressure.
+	bool IsPlayerBotUpgradeForSelf(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item || !IsPlayerBotEquipmentCandidate(ch, item) ||
+				item->GetLevelLimit() > ch->GetLevel())
+			return false;
+		const int wearCell = item->FindEquipCell(ch);
+		if (wearCell < 0 || wearCell >= WEAR_MAX_NUM)
+			return false;
+		LPITEM worn = ch->GetWear(wearCell);
+		return !worn || GetPlayerBotEquipmentScore(item, ch) > GetPlayerBotEquipmentScore(worn, ch);
+	}
+
 	// Books of one skill in the cells before this one. Cell order decides, so
 	// the same books stay put from one town visit to the next.
 	int CountPlayerBotSkillBooksAhead(LPCHARACTER ch, LPITEM item, DWORD skillVnum)
@@ -529,11 +556,27 @@ namespace
 			}
 		}
 
-		// Whatever else it is, a +7 or better is not something to hand an NPC for
+		// A full bag with no counter to sell from. On mt2009 a bot under level
+		// 15 or 800 kills cannot open a stall, so "goods for the counter" was
+		// a bag for life: full, every drop refused, the bot hunting on with
+		// "Podnosze lup" over its head. Gear the merchant may have (up to +4,
+		// the operator's line) goes to him now when the bag is under pressure
+		// and no counter is possible - unless this bot would wear it.
+		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+				item->GetRefineLevel() <= PLAYERBOT_MERCHANT_MAX_REFINE &&
+				IsPlayerBotBagUnderPressure(ch) && !PlayerBotCanOpenShop(ch) &&
+				!IsPlayerBotUpgradeForSelf(ch, item))
+			return true;
+
+		// Whatever else it is, a +5 or better is not something to hand an NPC for
 		// a fifth of the shop price. The reserve rule below keeps one spare per
 		// slot and sold the rest; that is how a Riba +9 went to a merchant
 		// because the same bot was carrying an axe +9. These go on a stall -
-		// and, up to +6, only for as many stands as somebody might buy them.
+		// or to the blacksmith first and then on a stall - and never to him.
+		if (item->GetRefineLevel() > PLAYERBOT_MERCHANT_MAX_REFINE)
+			return false;
+		// +4 exactly is the counter's own threshold: kept as goods while the
+		// counter can sell it, scrap after six unsold stands (above).
 		if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
 			return false;
 
@@ -669,11 +712,13 @@ namespace
 		// A material somebody on this world is short of is counter goods,
 		// not merchant scrap: a Scorpion Tail went to the merchant for a
 		// few hundred yang while the next stall along sold one for 58 894.
-		// Only a material nobody wants, and only under bag pressure.
+		// Only a material nobody wants, and only under bag pressure - or a
+		// material this bot has no counter to sell from, whoever wants it.
 		if (IsPlayerBotTradeableMaterial(item))
 			return !PlayerBotNeedsRefineMaterial(ch, vnum) &&
 					IsPlayerBotSurplusMaterial(ch, item) &&
-					GetPlayerBotLedgerDemand(vnum) == 0;
+					(GetPlayerBotLedgerDemand(vnum) == 0 ||
+					 (IsPlayerBotBagUnderPressure(ch) && !PlayerBotCanOpenShop(ch)));
 		// The rest of the 30000 block is eight gift boxes and two quest items.
 		// No counter would carry those, so there junk still means junk.
 		if (vnum >= 30000 && vnum <= 30200)

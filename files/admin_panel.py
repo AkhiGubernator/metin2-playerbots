@@ -5297,7 +5297,7 @@ function renderRankings() {
       var winBadge = b.item_window === 'EQUIPMENT' ? '<span style="background:#15803d;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px">EQ</span>'
                                                    : '<span style="background:#374151;color:#bbb;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px">Plecak</span>';
       var iconUrl = b.weapon_vnum ? getItemIconUrl(b.weapon_vnum) : null;
-      var iconImg = iconUrl ? '<img src="' + iconUrl + '" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;image-rendering:pixelated">' : '';
+      var iconImg = iconUrl ? '<img src="' + iconUrl + '" onerror="' + ICON_ONERROR + '" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;image-rendering:pixelated">' : '';
       detailStr = '<div>' + iconImg + '<span style="color:#ffd700;font-weight:700">' + (b.weapon_name || 'Broń 30 Lv') + '</span> ' + winBadge + '</div><div>' + srStr + umStr + '</div>';
     } else if (g_selectedRankCategory === 'weapon') {
       detailStr = '<span style="color:#38bdf8;font-weight:700">' + (b.weapon_name || I18N.none) + '</span>';
@@ -5326,7 +5326,7 @@ function renderRankings() {
       var p9win = b.item_window === 'EQUIPMENT'
           ? '<span style="background:#15803d;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px">EQ</span>'
           : '<span style="background:#374151;color:#bbb;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px">Plecak</span>';
-      var p9icon = b.weapon_vnum ? '<img src="' + getItemIconUrl(b.weapon_vnum) + '" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;image-rendering:pixelated">' : '';
+      var p9icon = b.weapon_vnum ? '<img src="' + getItemIconUrl(b.weapon_vnum) + '" onerror="' + ICON_ONERROR + '" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;image-rendering:pixelated">' : '';
       detailStr = p9icon + '<span style="color:#f97316;font-weight:700">' + (b.weapon_name || '+9') + '</span>' + p9win;
     } else {
       detailStr = '<span style="color:var(--gold);font-weight:700">Lv ' + b.level + '</span>';
@@ -5637,6 +5637,7 @@ function renderSafeboxGrid(items) {
     el.style.height = (size * 34) + 'px';
 
     var img = document.createElement('img');
+    img.onerror = iconFallback;
     img.src = getItemIconUrl(it.vnum);
     img.style.maxWidth = '32px';
     img.style.maxHeight = (size * 32) + 'px';
@@ -5741,6 +5742,15 @@ function toggleBotSafebox(pid, name) {
     document.addEventListener('touchend', onPointerUp);
   }
 })();
+
+// An item with no icon in the set shows a grey box, not the browser's broken
+// image. The set is generated from the client's icon pack (port/iconify.py)
+// and 741 of the world's 6001 vnums have no per-item TGA there.
+var ICON_ONERROR = "this.onerror=null;this.src='/static/icons/_unknown.png'";
+function iconFallback() {
+  this.onerror = null;
+  this.src = '/static/icons/_unknown.png';
+}
 
 function getItemIconUrl(vnum) {
   var vStr = String(vnum);
@@ -5923,6 +5933,7 @@ function renderInventoryGrid(invItems) {
 
     var iconUrl = getItemIconUrl(it.vnum);
     var img = document.createElement('img');
+    img.onerror = iconFallback;
     img.src = iconUrl;
     img.style.maxWidth = '32px';
     img.style.maxHeight = (size * 32) + 'px';
@@ -6475,6 +6486,20 @@ def api_admin_warp_me():
 # wear slot (PLAYERBOT_EQUIP), both ends of a gift, the keeper's side of a
 # stall sale and the storekeeper deposit. Asked for by a player who wanted to
 # know why his top Sura "suddenly flies without her +8".
+def log_text(value):
+    """A text column of log.log as a str. On mt2009 `type`, `how`, `hint` and
+    `ip` are VARBINARY and the driver hands them over as bytes; the game writes
+    CP1250 into them. r40250's big5 columns come back as str already."""
+    if isinstance(value, (bytes, bytearray)):
+        for encoding in ("cp1250", "utf-8", "latin1"):
+            try:
+                return bytes(value).decode(encoding)
+            except UnicodeDecodeError:
+                pass
+        return bytes(value).decode("cp1250", "replace")
+    return value or ""
+
+
 GEAR_HISTORY_HOWS = {
     "REFINE SUCCESS":        ("refine_ok",   {"pl": "Ulepszenie udane",   "en": "Refine succeeded"}),
     "REFINE FAIL":           ("refine_fail", {"pl": "Ulepszenie nieudane", "en": "Refine failed"}),
@@ -6518,11 +6543,11 @@ def api_bot_gear_history(pid):
             )
             rows = []
             for r in cur.fetchall():
-                how = r.get("how") or ""
+                how = log_text(r.get("how"))
                 kind, labels = GEAR_HISTORY_HOWS.get(how, ("other", {"pl": how, "en": how}))
                 vnum = int(r.get("vnum") or 0)
                 item = localized_item_name(vnum, language) if vnum else ""
-                hint = (r.get("hint") or "").strip()
+                hint = log_text(r.get("hint")).strip()
                 detail = ""
                 if how in ("PLAYERBOT_GIFT_OUT",):
                     detail = ("→ " if lang_key == "en" else "→ ") + hint

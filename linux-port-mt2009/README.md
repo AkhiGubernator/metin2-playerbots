@@ -40,6 +40,7 @@ will do.
 | `port/shareify.py` | `linux-port/docker/game/*.txt`, the world dump | the three share additions and the Dockerfile step; refuses an item the package does not have (one unknown vnum fails the whole `special_item_group.txt` at boot). |
 | `port/envify.py` | r40250's `.env.example` | this stack's. |
 | `port/rulesify.py` | `client-locale-src/rules.pl.txt` (UTF-8, editable) | `client-locale/locale/pl/rules.txt` — the client's terms-of-use window, CP1250/CRLF, pairs of lines with `[ENTER]` between points: ours (what the project is, buycoffee, Discord) instead of the public Mt2009 server's. Repacked into the `locale` pack. |
+| `port/iconify.py --icon-pack <extracted icon pack> --item-list <949item_list.txt from the item pack> --vnums <vnum list from player.item_proto> [--fallback <r40250 panel static>]` | the client's `icon/item/NNNNN.tga`, its `item_list.txt` (`.sub` names), the world's item_proto | `files/static/icons/*.png` and `files/static/item_icons.json` for the classic panel: a per-item TGA where the client has one (a refine level shares its +0's), the older set under `r40250-` names for what the client keeps only in atlases, a grey `_unknown.png` for the rest. Needs Pillow — run it in the `m2-eterpack` image. |
 | `port/clientrootify.py --root <extracted stock root>` | the stock root scripts | `client-root/gamerules.py` (`RULES_VERSION` bumped so the new terms show once) and `client-root/intrologin.py` (login-window buttons: GitHub, buycoffee, our Discord), `uiitemshop.py` + `itemshop_subscriptionwindow.py` (the coin and subscription buttons open buycoffee), `uisystem.py` (support opens the Discord), `uitooltip.py` (the GM branch guarded - it killed every item tooltip for a GM). |
 
 `playerbotify.py` also flips the db core's `m_bMaintenance(TRUE)` to `FALSE`:
@@ -54,8 +55,12 @@ the pair (account, character name) — `gm.cpp` checks the account and, under
 `docker/mariadb/playerbot/gm_characters.sql` (run by `10-import-dumps.sh` on a
 fresh world and by `apply.sh` on every start, the directory is mounted into
 both containers) creates four: `Admin` (warrior), `AdminNinja`, `AdminSura`,
-`AdminSzaman`, PIDs 9001-9004, level ninety on Joan, each with the package's
-best +9 set for its class (bonus lines are POINT ids here — `item.attrtype`
+`AdminSzaman`, PIDs 9001-9004, level ninety on Joan, each with the best +9 set
+**the client can draw** for its class — the level-66 armour (shape 12) and the
+level-75 weapon: the client's `pc2/*.msm` know armour shapes 0-12, 14-22 and 24
+only and its `item` pack has weapon models up to the level-75 set, so 2.0.4's
+level-90 armour (shape 13) made the character invisible and immobile (bonus
+lines are POINT ids here — `item.attrtype`
 holds POINT numbers on this engine, and the two damage lines sit in slots 5
 and 6 as `item_addon.cpp` writes them), a second weapon, potions and scrolls,
 a level-21 horse (`c_aHorseStat[21]`: 35 health, 120 stamina) and its summon

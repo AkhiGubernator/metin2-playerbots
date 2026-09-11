@@ -17,6 +17,98 @@ every version here.
 
 ---
 
+## 1.33.3 — 2026-09-11
+
+Poranek po nocy zgłoszeń: siedem poprawek, każda sprawdzona na żywym serwerze
+testowym. Tym razem **zmienia się też klient** — paczka klienta 1.33.3.
+
+### Panel GM nie może już zatrzymać ładowania gry
+
+Po zainstalowaniu panelu GM u części graczy pasek ładowania stawał na 100% i
+gra nie wchodziła (Dixdros, jaroszv2, .unright, ligivanestrea). Okno panelu
+było budowane bezwarunkowo w środku budowy całego interfejsu, więc jakikolwiek
+wyjątek w nim — kontrolka, której nie ma w innej wersji klienta, klucz, którego
+nie ma w innym pakiecie językowym — przerywał budowę wszystkiego. Stockowy root
+wchodził na tych samych maszynach.
+
+Teraz panel buduje się w osobnym bloku: jeśli się nie zbuduje, gra wchodzi bez
+niego, a powód trafia do `syserr.txt` w folderze klienta. F9 mówi wtedy na
+czacie, że panelu nie ma i gdzie szukać przyczyny. **Sama przyczyna jest wciąż
+nieznana** — nikt jeszcze nie przysłał `syserr.txt`. To zabezpieczenie zamienia
+„gra nie wchodzi" w zgłoszenie, które niesie odpowiedź.
+
+### Pełny kanał przy 2500 botach
+
+Lista kanałów pokazywała FULL, a klient odmawiał wejścia, gdy botów było więcej
+niż 1200 — silnik liczył boty jak graczy, i przy statusie kanału, i przy limicie
+logowania. Boty nie są graczami w tej rachubie: liczone są tylko postacie ludzi,
+także te zalogowane na innych rdzeniach. Rdzeń wypisuje co pięć minut
+`CHANNEL_STATUS: players=… status=…`, więc następny zrzut ekranu będzie miał
+liczbę.
+
+### Boty przestały grzęznąć w M3
+
+Po wejściu na mapę gildii bot lądował w punkcie (179500, 1000) — to komórka
+(3, 10) mapy, nieprzechodni północno-zachodni róg. Nie miał trasy do niczego,
+watchdog resetował go co półtorej minuty w tym samym miejscu i nic nie mogło go
+ruszyć; teleport z panelu też nie, bo bot nie ma klienta, który mógłby przeżyć
+zmianę mapy po stronie klienta. Zgłoszone z logiem przez greessa, potwierdzone
+przez dwie kolejne osoby.
+
+Ten punkt pochodził z tabeli questu Teleportera; stała w kodzie miała już od
+dawna właściwy, z `Town.txt` mapy. Tabela dla trzech królestw przywróciła stary
+numer. Wszystkie trzy mapy gildii lądują teraz na własnym punkcie z `Town.txt`
+i test jednostkowy to przypina. Sprawdzone: ten sam bot, który rano utknął w
+rogu, po poprawce wylądował na (221900, 9200), zaatakował i dosiadł konia.
+
+### Koreański tekst zamiast „nie straciłeś doświadczenia"
+
+Jeden plik silnika trafił do paczki przekodowany na UTF-8. Gra szuka
+komunikatów po ich koreańskim kluczu, bajt w bajt, a pliki tłumaczeń są w
+kodowaniu koreańskim — więc trzynaście komunikatów z tego pliku nie trafiało w
+tłumaczenie i wracało po koreańsku, a każda śmierć z błogosławieństwem Boga
+Smoków zostawiała błąd w logu (276 w jednym zgłoszeniu). Od 1.31.6. Plik wrócił
+do właściwego kodowania; po restarcie zero takich błędów.
+
+### Wędkarze nie rozrzucają ryb po trawie
+
+Złowiona ryba idzie do plecaka funkcją, która pełnego plecaka nie odmawia —
+kładzie rybę na ziemi i zgłasza sukces. Stąd zdjęcie od bierzyna: wędkarze
+„upuszczają drop", a potem wszystkie boty biegną po niego. Sesja wędkowania
+kończy się teraz, gdy w plecaku nie ma wolnego pola, i bot idzie go opróżnić.
+
+### Nicki botów: 1000 od Iwakury, klasa i płeć się zgadzają
+
+Iwakura przysłał tysiąc nicków z prośbą, żeby były „bardziej różne". Po
+odsianiu duplikatów i tego, czego silnik nie przyjmie, 747 nowych trafiło do
+puli. Reszta puli jest składana ze słów wyjętych z obu list i w ich kształtach —
+poprzednia wersja składała wszystko w jednej gramatyce z czterdziestu słów.
+
+Nick, który mówi o klasie — Włócznia, Szaman, Sura, Woj, Fms, Ninja — trafia do
+bota tej klasy, a nick wyraźnie kobiecy — Szamanka, Królowa, Marysia — do postaci
+kobiecej. „Ninja szamanka, ale to sura" było prawdziwym zrzutem ekranu. Zmierzone
+na 2500 botach: wojownicy dostali wojownicze nicki w 80%, nicki kobiece trafiły
+wyłącznie na postacie kobiece. Boty, które nick już mają, zachowują go.
+
+### Martwy towar w końcu idzie do handlarza
+
+Reguła „czego nikt nie kupił przez sześć stoisk, to złom" stała pod regułą „+4
+i wyżej nigdy do NPC", więc nigdy nie dotyczyła tego, co stragan naprawdę
+trzyma. Plecak pełen +5, których nikt nie kupuje, był plecakiem na zawsze — i to
+jest bot, który „siedzi w M1, ogląda stragany i od wczoraj nie wbił poziomu".
+Reguła działa teraz do +6; +7 i wyżej nadal nigdy nie idzie do NPC.
+
+### ItemShop: moneta i zdrowie kontenera
+
+Adres sklepu z gry miał na końcu losowy bajt zamiast kodu kraju, bo zmienna nie
+była zainicjalizowana dla locale spoza listy silnika — Apache odpowiadał 400,
+zanim PHP w ogóle wystartowało (archded, z logiem). Ma teraz wartość domyślną.
+Do tego błąd PHP zwraca 500 zamiast 200 z treścią błędu, więc healthcheck
+przestaje nazywać zepsuty sklep zdrowym, a wbudowana przeglądarka klienta nie
+zapamiętuje strony błędu na stałe.
+
+---
+
 ## 1.33.2 — 2026-09-11
 
 Trzy zgłoszenia z Discorda z jednego wieczoru. Wszystkie sprawdzone odtworzonym

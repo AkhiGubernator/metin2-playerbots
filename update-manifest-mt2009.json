@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T14:34:42Z",
-  "statusMessage": "Wersja 2.0.2: postać GM na koncie admin, „Doładuj SM!” prowadzi na buycoffee, boty nie oglądają pustych straganów, nowe nicki botów (lista Iwakury). Kliknij ZAINSTALUJ AKTUALIZACJE, a potem AKTUALIZUJ KLIENTA.",
+  "publishedAt": "2026-09-11T14:50:45Z",
+  "statusMessage": "Wersja 2.0.3: każdy bot ma konto premium, GM widzi tooltipy przedmiotów. Kliknij ZAINSTALUJ AKTUALIZACJE, a potem AKTUALIZUJ KLIENTA.",
   "server": {
-    "version": "2.0.2",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.2/metin2-server-update-2.0.2.zip",
-    "sha256": "B3F4177EE1D4827D162A6AFCDC92FF734613AF13EB1724D50ACB59F64DBDD856"
+    "version": "2.0.3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.3/metin2-server-update-2.0.3.zip",
+    "sha256": "335F6E970D9CA9C45BE4F36004BC12F6C95B57EDD3713ED26D231DB5D64E720C"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.2",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.2/metin2-client-update-2.0.2.zip",
-    "sha256": "CD72BA77FFA4BFCC0C454A56C0D728EA883E907C616973501E46B8627E7E84D0"
+    "version": "2.0.3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.3/metin2-client-update-2.0.3.zip",
+    "sha256": "02C1492C48F409CC89F172DCD2DD34680474981B674059CB80E98C72E51C2803"
   }
 }

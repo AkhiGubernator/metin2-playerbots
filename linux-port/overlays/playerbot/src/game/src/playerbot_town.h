@@ -546,12 +546,11 @@ namespace
 			state.dwServiceSince = 0;
 		}
 		// Half the bots that finish an errand in Joan stay a while instead of
-		// walking straight back out. See PLAYERBOT_TOWN_LINGER_PERCENT: a town
+		// walking straight back out. See RollPlayerBotTownRest: a town
 		// with four hundred bots on its map and two dozen in its square does not
 		// look like a town, and the stalls that now open there have nobody to
 		// stand among. Bokjung is left out on purpose - it is crowded already.
-		if (completed && ch && IsPlayerBotM1Map(ch->GetMapIndex()) &&
-				number(1, 100) <= PLAYERBOT_TOWN_LINGER_PERCENT)
+		if (completed && RollPlayerBotTownRest(ch))
 			state.dwTownLingerUntil = dwNow + number(
 					(int)PLAYERBOT_TOWN_LINGER_MIN, (int)PLAYERBOT_TOWN_LINGER_MAX);
 		// Free, standing in town, errands done: the one moment this bot is the
@@ -1094,10 +1093,11 @@ namespace
 	{
 		if (!ch || state.dwTownLingerUntil == 0)
 			return false;
-		// Over for good: the clock ran out, the bot left Joan, it opened a stall
-		// of its own, or it is busy staying alive.
+		// Over for good: the clock ran out, the bot left Joan or may no longer
+		// rest there (the REST key moved to zero, the last counter packed up),
+		// it opened a stall of its own, or it is busy staying alive.
 		if (dwNow >= state.dwTownLingerUntil ||
-				!IsPlayerBotM1Map(ch->GetMapIndex()) ||
+				!MayPlayerBotRestInTown(ch) ||
 				ch->GetMyShop() || state.bTacticalRetreat || state.bRecoveringAfterDeath)
 		{
 			state.dwTownLingerUntil = 0;

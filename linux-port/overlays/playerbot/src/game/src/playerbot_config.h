@@ -102,6 +102,11 @@ namespace
 	// Percent of stall keepers that sell scrap gear. Zero is off, and the
 	// default: it is the "hard server" flavour, asked for by name.
 	int s_iPlayerBotScrapPercent = 0;
+	// Percent of the bots that finish an errand in a first village and stay
+	// a while on the market ring (PLAYERBOT_TOWN_LINGER_*). A hundred is the
+	// author's town; zero is the operator who wants every bot hunting, asked
+	// for by name. The level floor beside it is PLAYERBOT_TOWN_REST_MIN_LEVEL.
+	int s_iPlayerBotRestPercent = 100;
 	// Whether a bot reads its books without the engine's day between them.
 	// On by default: the day is what makes a book a month's project, and the
 	// books were rotting in the bags of bots that could not read them yet.
@@ -145,6 +150,7 @@ namespace
 			s_aiPlayerBotWeights[i] = PLAYERBOT_WEIGHT_NEUTRAL;
 		s_bPlayerBotOverheadChat = true;
 		s_iPlayerBotScrapPercent = 0;
+		s_iPlayerBotRestPercent = 100;
 		s_bPlayerBotFastBooks = true;
 		s_bPlayerBotNight = true;
 		if (s_iPlayerBotChestConfigPermille < 0)
@@ -241,6 +247,14 @@ namespace
 			s_iPlayerBotScrapPercent = percent;
 			return;
 		}
+		if (PlayerBotWeightNameEquals(szKey, "REST"))
+		{
+			const int percent = value < 0 ? 0 : (value > 100 ? 100 : (int)value);
+			if (percent != s_iPlayerBotRestPercent)
+				sys_log(0, "PLAYERBOT_CONFIG: town rest %d%%", percent);
+			s_iPlayerBotRestPercent = percent;
+			return;
+		}
 		for (size_t i = 0; i < sizeof(PLAYERBOT_WEIGHT_NAMES) /
 				sizeof(PLAYERBOT_WEIGHT_NAMES[0]); ++i)
 		{
@@ -319,7 +333,7 @@ namespace
 	const char* const PLAYERBOT_PANEL_WEIGHT_ORDER[] = {
 		"RESTOCK", "REFINE", "SKILL", "HORSE", "BIOLOG", "METIN", "PARTY",
 		"HUNTING", "LEVEL", "FISHING", "TRADE",
-		"CHAT", "BOOKS", "NIGHT", "SCRAP", "CHEST", "CHEST_STONE",
+		"CHAT", "BOOKS", "NIGHT", "SCRAP", "CHEST", "CHEST_STONE", "REST",
 	};
 	const size_t PLAYERBOT_PANEL_WEIGHT_COUNT =
 			sizeof(PLAYERBOT_PANEL_WEIGHT_ORDER) / sizeof(PLAYERBOT_PANEL_WEIGHT_ORDER[0]);
@@ -338,6 +352,8 @@ namespace
 			return s_bPlayerBotNight ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "SCRAP"))
 			return s_iPlayerBotScrapPercent;
+		if (PlayerBotWeightNameEquals(szKey, "REST"))
+			return s_iPlayerBotRestPercent;
 		if (PlayerBotWeightNameEquals(szKey, "CHEST"))
 			return s_bPlayerBotChestFromFile ? g_iMoonlightChestPermille : -1;
 		if (PlayerBotWeightNameEquals(szKey, "CHEST_STONE"))
@@ -545,6 +561,38 @@ namespace
 		if (s_iPlayerBotScrapPercent <= 0)
 			return false;
 		return (int)((dwPID * 2654435761U) % 100U) < s_iPlayerBotScrapPercent;
+	}
+
+	int GetPlayerBotRestPercent()
+	{
+		if (!s_bPlayerBotWeightsInitialised)
+			ResetPlayerBotWeights();
+		return s_iPlayerBotRestPercent;
+	}
+
+	// The market ledger's count of open counters on a map (playerbot_market.h,
+	// which comes long after this fragment).
+	int GetPlayerBotStallsOnMap(long lMapIndex);
+
+	// Whether this bot may stand about in town at all: in a first village, old
+	// enough, the REST key above zero, and counters on the map to stand among.
+	// A rest is a stroll between stalls, and with none open it was a walk
+	// between empty pitches under "Odpoczywam w miescie" - "jak nie ma zadnego
+	// sklepu wystawionego, to niech nie ogladaja straganow, bo ich nie ma".
+	// Asked when a rest is rolled and on every tick of one, so a slider moved
+	// to zero ends the rests already running rather than waiting them out.
+	bool MayPlayerBotRestInTown(LPCHARACTER ch)
+	{
+		return ch && IsPlayerBotM1Map(ch->GetMapIndex()) &&
+				ch->GetLevel() >= PLAYERBOT_TOWN_REST_MIN_LEVEL &&
+				GetPlayerBotRestPercent() > 0 &&
+				GetPlayerBotStallsOnMap(ch->GetMapIndex()) > 0;
+	}
+
+	bool RollPlayerBotTownRest(LPCHARACTER ch)
+	{
+		return MayPlayerBotRestInTown(ch) &&
+				number(1, 100) <= GetPlayerBotRestPercent();
 	}
 
 	bool IsPlayerBotOverheadChatEnabled()

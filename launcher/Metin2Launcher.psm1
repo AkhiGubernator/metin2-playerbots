@@ -131,6 +131,33 @@ function Get-M2UpdateManifest {
     if (-not [Uri]::TryCreate($Source, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https') {
         throw 'Manifest musi być lokalnym plikiem albo adresem HTTPS.'
     }
+    # raw.githubusercontent.com is a CDN with a five-minute cache
+    # (Cache-Control: max-age=300), and for a while after a release it hands
+    # out the previous manifest: measured five minutes after 2.0.8 was pushed,
+    # "Masz juz najnowsza wersje (2.0.7)" from a launcher that had just read
+    # it. The contents API answers from the repository itself (its cache is a
+    # minute), so for the repository's own manifest it is asked first, with
+    # the raw URL as the fallback - the API's anonymous budget is sixty
+    # requests an hour per address, and a session reads the manifest once.
+    $apiUri = $null
+    if ($uri.Host -eq 'raw.githubusercontent.com') {
+        $parts = $uri.AbsolutePath.Trim('/') -split '/', 4
+        if ($parts.Count -eq 4) {
+            [void][Uri]::TryCreate(('https://api.github.com/repos/{0}/{1}/contents/{3}?ref={2}' -f $parts[0], $parts[1], $parts[2], $parts[3]),
+                [UriKind]::Absolute, [ref]$apiUri)
+        }
+    }
+    if ($null -ne $apiUri) {
+        try {
+            $response = Invoke-WebRequest -Uri $apiUri -Method Get -UseBasicParsing -TimeoutSec $TimeoutSec `
+                -Headers @{ Accept = 'application/vnd.github.raw+json'; 'User-Agent' = 'metin2-playerbots-launcher' }
+            $text = [string]$response.Content
+            if ($text.TrimStart().StartsWith('{')) {
+                return ConvertFrom-M2ManifestText -Text $text -Origin ([string]$apiUri)
+            }
+        }
+        catch { }
+    }
     try {
         # Invoke-WebRequest, not Invoke-RestMethod: the REST variant parses for
         # us and silently degrades to a string when it cannot, which is exactly

@@ -89,7 +89,7 @@ AI_WEIGHT_KEYS = (
 AI_WEIGHT_MIN, AI_WEIGHT_MAX, AI_WEIGHT_NEUTRAL = 25, 250, 100
 # These values share the live weight file with goal weights, but the core treats
 # them as switches or direct settings rather than 25–250% goal weights.
-AI_LIVE_DEFAULTS = {"CHAT": 1, "BOOKS": 1, "NIGHT": 1, "SCRAP": 0, "CHEST": None, "CHEST_STONE": None}
+AI_LIVE_DEFAULTS = {"CHAT": 1, "BOOKS": 1, "NIGHT": 1, "SCRAP": 0, "REST": 100, "CHEST": None, "CHEST_STONE": None}
 AI_SPECIAL_WEIGHT_KEYS = frozenset(AI_LIVE_DEFAULTS)
 BIOLOGIST_COMPLETE_STATE = 557528158
 # Tieru 1.29.10 adds the Orc Tooth task after the six classic Biologist
@@ -776,7 +776,7 @@ def read_ai_weights():
                     key, raw_value = fields[0].upper(), fields[1]
                     if key in ("CHAT", "BOOKS", "NIGHT"):
                         values[key] = 0 if raw_value.lower() in ("0", "off", "no") else 1
-                    elif key == "SCRAP":
+                    elif key in ("SCRAP", "REST"):
                         values[key] = max(0, min(100, int(raw_value)))
                     elif key in ("CHEST", "CHEST_STONE"):
                         values[key] = max(0, min(1000, int(raw_value)))
@@ -819,6 +819,7 @@ def write_ai_weights(values):
     content.append(f"BOOKS\t{1 if values.get('BOOKS', 1) else 0}")
     content.append(f"NIGHT\t{1 if values.get('NIGHT', 1) else 0}")
     content.append(f"SCRAP\t{max(0, min(100, int(values.get('SCRAP', 0))))}")
+    content.append(f"REST\t{max(0, min(100, int(values.get('REST', 100))))}")
     for key in ("CHEST", "CHEST_STONE"):
         if values.get(key) is not None:
             content.append(f"{key}\t{max(0, min(1000, int(values[key])))}")
@@ -1536,8 +1537,11 @@ def accounts():
         except ValueError:
             gm_job = -1
         gm_gender = request.form.get("gm_gender", "classic")
-        if not (3 <= len(login) <= 30 and login.replace("_", "").isalnum() and len(password) >= 6 and authority in authorities):
-            flash("Login ma mieć 3–30 znaków (litery, cyfry, _), a hasło minimum 6 znaków.", "error")
+        # account.login is varchar(16) on mt2009 and varchar(30) on r40250; a
+        # longer one is "Data too long" from the database, not a form error.
+        login_max = 16 if ENGINE_MT2009 else 30
+        if not (3 <= len(login) <= login_max and login.replace("_", "").isalnum() and len(password) >= 6 and authority in authorities):
+            flash(f"Login ma mieć 3–{login_max} znaków (litery, cyfry, _), a hasło minimum 6 znaków.", "error")
         elif not (deletion_code.isdigit() and len(deletion_code) == 7):
             flash("Kod usunięcia postaci ma zawierać dokładnie 7 cyfr.", "error")
         elif authority != "PLAYER" and not re.fullmatch(GM_NAME_PATTERN, gm_name):
@@ -1557,7 +1561,15 @@ def accounts():
                             if cur.fetchone():
                                 raise ValueError("Taki nick postaci już istnieje.")
                         con.begin()
-                        cur.execute("INSERT INTO account.account (login,password,social_id,email,status,empire) VALUES (%s,PASSWORD(%s),%s,%s,'OK',%s)", (login, password, deletion_code, email, empire if authority != "PLAYER" else 0))
+                        # The mt2009 account table has no empire column (the kingdom
+                        # lives in player_index, written below for a GM character and
+                        # by the game itself for a player's first character); naming
+                        # it refused every account on the 2.x line ("Unknown column
+                        # 'empire' in 'INSERT INTO'", NieBijOddam, 11 September).
+                        if ENGINE_MT2009:
+                            cur.execute("INSERT INTO account.account (login,password,social_id,email,status) VALUES (%s,PASSWORD(%s),%s,%s,'OK')", (login, password, deletion_code, email))
+                        else:
+                            cur.execute("INSERT INTO account.account (login,password,social_id,email,status,empire) VALUES (%s,PASSWORD(%s),%s,%s,'OK',%s)", (login, password, deletion_code, email, empire if authority != "PLAYER" else 0))
                         if authority != "PLAYER":
                             account_id = cur.lastrowid
                             x, y, map_index = GM_EMPIRE_STARTS[empire]
@@ -1916,6 +1928,10 @@ def manage_behavior():
         values["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", values.get("SCRAP", 0)))))
     except (TypeError, ValueError):
         values["SCRAP"] = 0
+    try:
+        values["REST"] = max(0, min(100, int(request.form.get("REST", values.get("REST", 100)))))
+    except (TypeError, ValueError):
+        values["REST"] = 100
     for key in ("CHEST", "CHEST_STONE"):
         if key not in request.form:
             continue

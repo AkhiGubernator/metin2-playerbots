@@ -12,6 +12,36 @@ $supportDirectory = Join-Path $root 'support-bundles'
 $composeFile = Join-Path $root 'linux-port\docker\docker-compose.yml'
 $sessionLog = Join-Path $logDirectory ('launcher-{0}.log' -f (Get-Date -Format 'yyyyMMdd'))
 
+function Write-StartupFailure {
+    # Straight to the file: this runs before (or instead of) the window, so
+    # Write-LocalLog and its on-screen box may not exist yet.
+    param([string]$Text)
+    try {
+        New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
+        [IO.File]::AppendAllText($sessionLog,
+            ('{0}  BLAD LAUNCHERA: {1}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Text) + [Environment]::NewLine,
+            [Text.UTF8Encoding]::new($false))
+    }
+    catch { }
+}
+
+trap {
+    # A launcher that dies before its first log line left nothing behind but a
+    # dialog nobody could copy from - after the 2.0.8 restart the session log
+    # ended at "Uruchamiam launcher ponownie" and the player saw an error box
+    # (11 September). Whatever stops the script is written down first, then
+    # shown with its text, so the next report carries the reason.
+    Write-StartupFailure ($_ | Out-String)
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        [Windows.Forms.MessageBox]::Show(
+            ("Launcher nie wystartowal:`r`n`r`n{0}`r`n`r`nSzczegoly sa w folderze launcher-logs." -f $_.Exception.Message),
+            'Blad launchera', 'OK', 'Error') | Out-Null
+    }
+    catch { }
+    break
+}
+
 foreach ($required in @($cliLauncher, $modulePath, $diagnosticsModulePath, $composeFile)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
         throw "Brakuje wymaganego pliku: $required"
@@ -24,6 +54,20 @@ New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName Microsoft.VisualBasic
+# Before the first control exists: an exception thrown inside a button or
+# timer handler is logged with its stack and shown with its text, instead of
+# the .NET "Unhandled exception has occurred" dialog and an empty log.
+[Windows.Forms.Application]::SetUnhandledExceptionMode([Windows.Forms.UnhandledExceptionMode]::CatchException)
+[Windows.Forms.Application]::add_ThreadException([System.Threading.ThreadExceptionEventHandler]{
+    param($sender, $eventArgs)
+    Write-StartupFailure ('w oknie: ' + $eventArgs.Exception.ToString())
+    try {
+        [Windows.Forms.MessageBox]::Show(
+            ("Blad w oknie launchera:`r`n`r`n{0}`r`n`r`nSzczegoly sa w folderze launcher-logs. Okno dziala dalej." -f $eventArgs.Exception.Message),
+            'Blad launchera', 'OK', 'Error') | Out-Null
+    }
+    catch { }
+})
 
 if ($SelfTest) {
     $cliErrors = $null
@@ -1082,13 +1126,44 @@ $script:form.Controls.Add($footer)
 
 $script:versionLabel = [Windows.Forms.Label]::new()
 $script:versionLabel.Location = [Drawing.Point]::new(28, 674)
-$script:versionLabel.Size = [Drawing.Size]::new(700, 22)
+$script:versionLabel.Size = [Drawing.Size]::new(470, 54)
 $script:versionLabel.ForeColor = [Drawing.Color]::Silver
 $script:versionLabel.Font = [Drawing.Font]::new('Segoe UI Semibold', 9)
 $script:form.Controls.Add($script:versionLabel)
 
 $script:latestServerVersion = $null
+$script:latestClientVersion = $null
 $script:latestVersionChecked = $false
+
+function Get-LauncherVersionOnDisk {
+    # The launcher ships inside the server package, so the VERSION file beside
+    # it is its version. Read at startup for what this window runs, and again
+    # for the footer: after an update applied in this session the file is
+    # ahead of the process, and the footer says so.
+    $path = Join-Path $root 'VERSION'
+    try {
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            $text = (Get-Content -LiteralPath $path -Raw -ErrorAction Stop).Trim()
+            if ($text) { return $text }
+        }
+    }
+    catch { }
+    return 'nieznana'
+}
+$script:launcherVersion = Get-LauncherVersionOnDisk
+
+function Set-LatestVersionsFromManifest {
+    param($Manifest)
+    if (-not $Manifest) { return }
+    $serverProperty = $Manifest.PSObject.Properties['server']
+    if ($serverProperty -and $serverProperty.Value -and [string]$serverProperty.Value.version) {
+        $script:latestServerVersion = ([string]$serverProperty.Value.version).Trim()
+    }
+    $clientProperty = $Manifest.PSObject.Properties['client']
+    if ($clientProperty -and $clientProperty.Value -and [string]$clientProperty.Value.version) {
+        $script:latestClientVersion = ([string]$clientProperty.Value.version).Trim()
+    }
+}
 
 function Update-VersionFooter {
     # The manifest lives behind GitHub's anonymous per-IP budget, so it is read
@@ -1099,7 +1174,20 @@ function Update-VersionFooter {
     $latestText = if ($script:latestServerVersion) { $script:latestServerVersion }
         elseif ($script:latestVersionChecked) { 'nie udalo sie sprawdzic' }
         else { 'sprawdzanie...' }
-    $script:versionLabel.Text = "Aktualna wersja: $installedText     |     Najnowsza wersja: $latestText"
+    $latestClientText = if ($script:latestClientVersion) { $script:latestClientVersion }
+        elseif ($script:latestVersionChecked) { 'nie udalo sie sprawdzic' }
+        else { 'sprawdzanie...' }
+    # Three lines, asked for on the Discord: the server, the launcher itself
+    # (its newest version is the server package's) and the client.
+    $onDisk = Get-LauncherVersionOnDisk
+    $launcherText = $script:launcherVersion
+    if ($onDisk -ne $script:launcherVersion) {
+        $launcherText = '{0} (na dysku {1} - uruchom launcher ponownie)' -f $script:launcherVersion, $onDisk
+    }
+    $clientInstalled = Get-InstalledClientVersion
+    $clientText = if ($clientInstalled -and $clientInstalled -ne 'unknown') { $clientInstalled } else { 'nieznana' }
+    $script:versionLabel.Text = ("Serwer: {0}   |   najnowszy: {1}`r`nLauncher: {2}   |   najnowszy: {3}`r`nKlient: {4}   |   najnowszy: {5}" -f
+        $installedText, $latestText, $launcherText, $latestText, $clientText, $latestClientText)
     $upToDate = $script:latestServerVersion -and $installed -and $installed -ne 'unknown' -and
         $installed.Equals($script:latestServerVersion, [StringComparison]::OrdinalIgnoreCase)
     $script:versionLabel.ForeColor = if ($upToDate) { [Drawing.Color]::LightGreen }
@@ -1115,10 +1203,7 @@ function Read-LatestServerVersion {
         $config = Get-M2LauncherConfig -ServerRoot $root -ConfigPath $configPath
         $manifest = Get-M2UpdateManifest -Source ([string]$config.manifestUrl) -TimeoutSec 8
         $script:latestManifest = $manifest
-        $serverProperty = $manifest.PSObject.Properties['server']
-        if ($serverProperty -and $serverProperty.Value -and [string]$serverProperty.Value.version) {
-            $script:latestServerVersion = ([string]$serverProperty.Value.version).Trim()
-        }
+        Set-LatestVersionsFromManifest -Manifest $manifest
     }
     catch { }
     Update-VersionFooter
@@ -1338,6 +1423,7 @@ $updateButton.Add_Click({
     $available = ([string]$server.version).Trim()
     $script:latestManifest = $manifest
     $script:latestServerVersion = $available
+    Set-LatestVersionsFromManifest -Manifest $manifest
     $script:latestVersionChecked = $true
     Update-VersionFooter
     Write-LocalLog "Dostępna wersja serwera: $available"

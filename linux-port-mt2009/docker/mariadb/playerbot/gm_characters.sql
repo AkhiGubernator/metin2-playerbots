@@ -20,11 +20,22 @@
 -- on a world that already has the four with the old set.
 --
 -- Runs on a fresh world from initdb.d (10-import-dumps.sh) and on every
--- start from apply.sh; it does nothing unless the admin account exists AND
--- has no character at all, so a world where somebody already plays on that
--- account is left exactly as it is. PIDs 9001-9004: the playerbot seed uses
--- 4..2503 with explicit ids, and player.player's AUTO_INCREMENT would have
--- handed a fresh world 1..4 and collided with the seed's pid 4.
+-- start from apply.sh. Until 2.0.8 it did nothing unless the admin account
+-- had no character at all, so the operator who had made his own character
+-- on it before the four existed never got them ("na moim koncie admin nie
+-- ma postaci GM, tylko moja Tieru"). Now it fills the account's free slots
+-- (an account holds four characters) with the classes the account does
+-- not have yet, in the order above; a class somebody already plays there
+-- is skipped, and an account with four characters gets nothing. Whatever
+-- is already on the account is left exactly as it is. PIDs 9001-9004: the
+-- playerbot seed uses 4..2503 with explicit ids, and player.player's
+-- AUTO_INCREMENT would have handed a fresh world 1..4 and collided with
+-- the seed's pid 4.
+--
+-- The new characters stand in their kingdom's first village - the market
+-- pitch of playerbot_empire_rules.h (Joan for Chunjo, Yongan for Shinsoo,
+-- Pyongmoo for Jinno) - because player_index carries one empire for the
+-- whole account and a character in the wrong kingdom's town is stuck there.
 --
 -- Columns of player.player as playerbots_seed.sql writes them; the rest
 -- takes the table's defaults. Bonus lines are POINT numbers (common/length.h):
@@ -33,11 +44,29 @@
 -- item_addon.cpp writes them.
 
 SET @admin_id = (SELECT id FROM account.account WHERE login = 'admin');
-SET @admin_has_chars = (SELECT COUNT(*) FROM player.player WHERE account_id = @admin_id);
-SET @gm_names_free = (SELECT COUNT(*) FROM player.player
-                       WHERE name IN ('Admin', 'AdminNinja', 'AdminSura', 'AdminSzaman')
-                          OR id BETWEEN 9001 AND 9004);
-SET @go = (@admin_id IS NOT NULL AND @admin_has_chars = 0 AND @gm_names_free = 0);
+SET @admin_chars = IFNULL((SELECT COUNT(*) FROM player.player WHERE account_id = @admin_id), 0);
+SET @empire = IFNULL((SELECT empire FROM player.player_index WHERE id = @admin_id), 2);
+SET @home_map = CASE @empire WHEN 1 THEN 1 WHEN 3 THEN 41 ELSE 21 END;
+SET @home_x = CASE @empire WHEN 1 THEN 473625 WHEN 3 THEN 961212 ELSE 59513 END;
+SET @home_y = CASE @empire WHEN 1 THEN 954925 WHEN 3 THEN 270162 ELSE 171123 END;
+
+-- The classes the account is short of, in order, as many as it has room for.
+-- player.job is the race (0..7); the class is race % 4.
+DROP TEMPORARY TABLE IF EXISTS player.tmp_gm;
+SET @n := 0;
+CREATE TEMPORARY TABLE player.tmp_gm AS
+SELECT c.id, c.name, c.job, (@n := @n + 1) AS rn
+  FROM (SELECT 9001 AS id, 'Admin'       AS name, 0 AS job UNION ALL
+        SELECT 9002,       'AdminNinja',         1        UNION ALL
+        SELECT 9003,       'AdminSura',          2        UNION ALL
+        SELECT 9004,       'AdminSzaman',        3) AS c
+ WHERE @admin_id IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM player.player AS p WHERE p.id = c.id OR p.name = c.name)
+   AND NOT EXISTS (SELECT 1 FROM player.player AS p WHERE p.account_id = @admin_id AND p.job % 4 = c.job)
+ ORDER BY c.id;
+DELETE FROM player.tmp_gm WHERE rn > 4 - @admin_chars;
+SET @created = (SELECT COUNT(*) FROM player.tmp_gm);
+SET @created_names = (SELECT GROUP_CONCAT(name ORDER BY id SEPARATOR ', ') FROM player.tmp_gm);
 
 -- Level 21 horse: c_aHorseStat[21] in horse_rider.cpp is 35 health, 120 stamina.
 INSERT INTO player.player
@@ -47,29 +76,45 @@ INSERT INTO player.player
      sub_skill_point, stat_reset_count, horse_hp, horse_stamina,
      horse_level, horse_hp_droptime, horse_riding, horse_skill_point,
      last_play)
-SELECT c.id, @admin_id, c.name, c.job, 0, 0, 59513, 171123, 0, 21,
-       59513, 171123, 21, 20000, 5000, 800, 90, 0,
+SELECT c.id, @admin_id, c.name, c.job, 0, 0, @home_x, @home_y, 0, @home_map,
+       @home_x, @home_y, @home_map, 20000, 5000, 800, 90, 0,
        90, 90, 90, 90, 0, 500000000, 0, 0, 1,
        0, 0, 35, 120,
        21, 0, 0, 0,
        UTC_TIMESTAMP()
-  FROM (SELECT 9001 AS id, 'Admin'       AS name, 0 AS job UNION ALL
-        SELECT 9002,       'AdminNinja',         1        UNION ALL
-        SELECT 9003,       'AdminSura',          2        UNION ALL
-        SELECT 9004,       'AdminSzaman',        3) AS c
- WHERE @go;
+  FROM player.tmp_gm AS c;
 
--- The character screen reads player_index, and the account has no row yet.
+-- The character screen reads player_index: the characters already there
+-- keep their order, the new ones take the free slots after them.
+SET @p1 = IFNULL((SELECT pid1 FROM player.player_index WHERE id = @admin_id), 0);
+SET @p2 = IFNULL((SELECT pid2 FROM player.player_index WHERE id = @admin_id), 0);
+SET @p3 = IFNULL((SELECT pid3 FROM player.player_index WHERE id = @admin_id), 0);
+SET @p4 = IFNULL((SELECT pid4 FROM player.player_index WHERE id = @admin_id), 0);
+DROP TEMPORARY TABLE IF EXISTS player.tmp_gm_slots;
+SET @k := 0;
+CREATE TEMPORARY TABLE player.tmp_gm_slots AS
+SELECT s.pid, (@k := @k + 1) AS slot
+  FROM (SELECT @p1 AS pid, 1 AS ord UNION ALL
+        SELECT @p2, 2 UNION ALL
+        SELECT @p3, 3 UNION ALL
+        SELECT @p4, 4 UNION ALL
+        SELECT id, 10 + rn FROM player.tmp_gm) AS s
+ WHERE s.pid > 0
+ ORDER BY s.ord;
+SET @s1 = IFNULL((SELECT pid FROM player.tmp_gm_slots WHERE slot = 1), 0);
+SET @s2 = IFNULL((SELECT pid FROM player.tmp_gm_slots WHERE slot = 2), 0);
+SET @s3 = IFNULL((SELECT pid FROM player.tmp_gm_slots WHERE slot = 3), 0);
+SET @s4 = IFNULL((SELECT pid FROM player.tmp_gm_slots WHERE slot = 4), 0);
 INSERT INTO player.player_index (id, pid1, pid2, pid3, pid4, empire)
-SELECT @admin_id, 9001, 9002, 9003, 9004, 2
+SELECT @admin_id, @s1, @s2, @s3, @s4, @empire
   FROM DUAL
- WHERE @go AND NOT EXISTS (SELECT 1 FROM player.player_index WHERE id = @admin_id);
+ WHERE @created > 0
+ON DUPLICATE KEY UPDATE pid1 = VALUES(pid1), pid2 = VALUES(pid2), pid3 = VALUES(pid3), pid4 = VALUES(pid4);
 
 INSERT INTO common.gmlist (mAccount, mName, mContactIP, mServerIP, mAuthority)
-SELECT 'admin', p.name, '', 'ALL', 'IMPLEMENTOR'
-  FROM player.player AS p
- WHERE @go AND p.id BETWEEN 9001 AND 9004
-   AND NOT EXISTS (SELECT 1 FROM common.gmlist AS g WHERE g.mName = p.name);
+SELECT 'admin', c.name, '', 'ALL', 'IMPLEMENTOR'
+  FROM player.tmp_gm AS c
+ WHERE NOT EXISTS (SELECT 1 FROM common.gmlist AS g WHERE g.mName = c.name);
 
 -- Worn set. pos is the wear slot: 0 body, 1 head, 2 foots, 3 wrist, 4 weapon,
 -- 5 neck, 6 ear, 10 shield. Jewellery, bracelet and shield are the same for
@@ -123,7 +168,8 @@ SELECT g.owner_id, 'EQUIPMENT', g.pos, 1, g.vnum,
     SELECT 9003, 10, 13149, 67, 15, 12, 12, 13, 12, 43, 10, 79, 10, 0, 0, 0, 0 UNION ALL
     SELECT 9004, 10, 13149, 67, 15, 12, 12, 13, 12, 43, 10, 79, 10, 0, 0, 0, 0
   ) AS g
- WHERE @go AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = g.owner_id);
+ WHERE g.owner_id IN (SELECT id FROM player.tmp_gm)
+   AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = g.owner_id);
 
 -- The bag (5 columns; a weapon is three cells tall, so the second weapon sits
 -- at 10 and covers 10, 15, 20). Stacks of two hundred where the item stacks.
@@ -131,9 +177,9 @@ INSERT INTO player.item
     (owner_id, window, pos, count, vnum,
      attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2,
      attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5, attrtype6, attrvalue6)
-SELECT p.id, 'INVENTORY', b.pos, b.cnt, b.vnum,
+SELECT c.id, 'INVENTORY', b.pos, b.cnt, b.vnum,
        b.a0, b.v0, b.a1, b.v1, b.a2, b.v2, b.a3, b.v3, b.a4, b.v4, b.a5, b.v5, b.a6, b.v6
-  FROM player.player AS p
+  FROM player.tmp_gm AS c
   JOIN (
     SELECT 0 AS pos, 200 AS cnt, 27007 AS vnum, 0 AS a0, 0 AS v0, 0 AS a1, 0 AS v1, 0 AS a2, 0 AS v2, 0 AS a3, 0 AS v3, 0 AS a4, 0 AS v4, 0 AS a5, 0 AS v5, 0 AS a6, 0 AS v6 UNION ALL
     SELECT 1, 200, 27008, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
@@ -144,8 +190,7 @@ SELECT p.id, 'INVENTORY', b.pos, b.cnt, b.vnum,
     SELECT 6,   1, 50053, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
     SELECT 8,   1, 71054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   ) AS b
- WHERE @go AND p.id BETWEEN 9001 AND 9004
-   AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = p.id AND i.window = 'INVENTORY');
+ WHERE NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = c.id AND i.window = 'INVENTORY');
 
 -- Second weapon per class: the two-handed sword, the bow (with arrows), the fan.
 INSERT INTO player.item
@@ -160,7 +205,8 @@ SELECT w.owner_id, 'INVENTORY', w.pos, w.cnt, w.vnum,
     SELECT 9002,  7, 200, 8009,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,   0,  0 UNION ALL
     SELECT 9004, 10,   1, 7189, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20
   ) AS w
- WHERE @go AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = w.owner_id AND i.window = 'INVENTORY' AND i.pos = w.pos);
+ WHERE w.owner_id IN (SELECT id FROM player.tmp_gm)
+   AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = w.owner_id AND i.window = 'INVENTORY' AND i.pos = w.pos);
 
 -- Repair for a world that got the four in 2.0.4 with the set the client
 -- cannot draw: the same slot, the same bonus lines, the drawable vnum.
@@ -183,6 +229,11 @@ SELECT p.id, 'INVENTORY', 8, 1, 71054
    AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = p.id AND i.vnum = 71054)
    AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = p.id AND i.window = 'INVENTORY' AND i.pos = 8);
 
-SELECT CONCAT('gm characters: ', IF(@go, 'created Admin, AdminNinja, AdminSura, AdminSzaman on the admin account',
-                                       IF(@admin_id IS NULL, 'no admin account, nothing to do',
-                                          'the admin account already has characters, left as they are'))) AS note;
+SELECT CONCAT('gm characters: ',
+              IF(@created > 0, CONCAT('created ', @created_names, ' on the admin account'),
+                 IF(@admin_id IS NULL, 'no admin account, nothing to do',
+                    IF(@admin_chars >= 4, 'the admin account holds four characters already, nothing to add',
+                       'the admin account already has every class the four would add (or their names are taken), left as it is')))) AS note;
+
+DROP TEMPORARY TABLE IF EXISTS player.tmp_gm_slots;
+DROP TEMPORARY TABLE IF EXISTS player.tmp_gm;

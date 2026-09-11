@@ -1871,9 +1871,14 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `SkillLevelDown` refunds the point and refuses a skill at Master, which
   is why Master skills stay where they are. Only when there is no free
   point: a free point goes to the same place for nothing.
-- **The town crowd is deliberate, and it is not capped.**
-  `PLAYERBOT_TOWN_LINGER_PERCENT` is 100 and its comment does the arithmetic
-  for the angler trigger alone - a session ends about once a minute, so
+- **The town crowd is deliberate, and it is not capped - but it is the
+  operator's to switch off.** The share of bots that rest after an errand is
+  the `REST` key of the weights file (`GetPlayerBotRestPercent`, 100 by
+  default, a slider in both panels since 2.0.9), nobody under
+  `PLAYERBOT_TOWN_REST_MIN_LEVEL` (18) rests, and a rest needs counters on
+  the map (`MayPlayerBotRestInTown` is the whole rule, asked when a rest is
+  rolled and on every tick of one). The comment on the level floor does the
+  arithmetic for the angler trigger alone - a session ends about once a minute, so
   "three or four bots on the square". The same linger is also set by every
   completed town visit in Joan, and those run twenty-five a minute: measured
   32-48 bots in `BOT_ACTION_TOWN_REST` at every moment and 74 different ones
@@ -2077,6 +2082,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   within `PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS` by pid. Any other decision the
   weights file steers and then leaves standing for minutes wants the same
   generation check.
+- **The four GM characters fill the admin account's free slots.**
+  `gm_characters.sql` used to run only for an account with no character at
+  all, so the operator who made his own character on `admin` before 2.0.4
+  never got them ("tylko moja Tieru"). It now builds a temporary list of the
+  classes the account lacks (class = `player.job % 4`), takes as many as the
+  four slots leave free, and rewrites `player_index` with the existing
+  characters first and the new ones after. Temporary tables are qualified
+  (`player.tmp_gm`): apply.sh runs the file with no default database, and
+  an unqualified `CREATE TEMPORARY TABLE` is "No database selected" at line
+  55 with nothing else in the log.
 - **A queue whose head is offline looks like a queue that stopped.** The
   grants worker hands `MAX_PENDING` (ten) rows to the game and the quest's
   player timer serves only a row that names an online character; an offline

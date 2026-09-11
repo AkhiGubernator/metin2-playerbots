@@ -408,7 +408,14 @@ namespace
 	// minutes and then rests for three quarters of an hour to two hours, so a
 	// session ends about once a minute across the whole angler cohort - at half
 	// that is three or four bots on the square at a time, which is not a market.
-	const int PLAYERBOT_TOWN_LINGER_PERCENT = 100;
+	// Since 2.0.9 the share is the REST key of the weights file
+	// (GetPlayerBotRestPercent, a hundred by default, zero for an operator who
+	// wants every bot hunting), and nobody under this level rests at all: a
+	// bot of twelve has levels to gain and nothing to browse for, and the
+	// operator who asked for the slider wants the young ones out whatever the
+	// square looks like. A rest also needs counters on the map -
+	// MayPlayerBotRestInTown in playerbot_config.h is the whole rule.
+	const BYTE PLAYERBOT_TOWN_REST_MIN_LEVEL = 18;
 	// Three minutes of walking the counters, not four to ten of standing.
 	//
 	// The first version parked a bot on one spot of the square and left it

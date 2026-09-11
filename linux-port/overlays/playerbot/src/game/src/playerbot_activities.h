@@ -676,8 +676,7 @@ namespace
 		// the market ring for a while instead of walking straight back out -
 		// which is the whole of what makes that square look inhabited, since the
 		// bank, the bait merchant and the stalls are all on this one map.
-		if (ch && IsPlayerBotM1Map(ch->GetMapIndex()) &&
-				number(1, 100) <= PLAYERBOT_TOWN_LINGER_PERCENT)
+		if (RollPlayerBotTownRest(ch))
 			state.dwTownLingerUntil = dwNow + number(
 					(int)PLAYERBOT_TOWN_LINGER_MIN, (int)PLAYERBOT_TOWN_LINGER_MAX);
 		if (ch)

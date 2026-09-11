@@ -17,7 +17,74 @@ every version here.
 
 ---
 
-## 2.0.8 — (w przygotowaniu)
+## 2.0.9 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Panel Sebana: zakładanie kont znów działa na 2.x
+
+„Nie utworzono konta: Unknown column 'empire' in 'INSERT INTO'” na każdym
+z trzech królestw (NieBijOddam). Tabela kont w plikach mt2009 nie ma kolumny
+`empire` (królestwo konta trzyma `player_index`, a pierwsza postać gracza
+dostaje je od gry), a formularz wstawiał ją zawsze. Na 2.x konto powstaje
+bez tej kolumny; postać GM zakładana z panelu dostaje królestwo w
+`player_index` jak dotąd. Do tego login ma na mt2009 najwyżej 16 znaków
+(tyle mieści kolumna) — formularz mówi to od razu zamiast błędu „Data too
+long” z bazy.
+
+### Suwak „Odpoczynek w mieście”, a poniżej 18 poziomu nikt nie odpoczywa
+
+W obu panelach (Zachowanie botów) jest nowy suwak `REST`, 0–100%, domyślnie
+100: udział botów, które po załatwieniu spraw w pierwszej wiosce zostają na
+rynku około trzech minut i spacerują między straganami. Kto ustawi 0, ma boty
+cały czas na expie — do miasta przychodzą tylko w sprawach (mikstury, kowal,
+handlarz, stragan) i od razu wracają. Suwak działa na żywo: bot, który już
+odpoczywa, kończy odpoczynek przy najbliższym ticku po zmianie na 0.
+Niezależnie od suwaka dwie nowe reguły: **bot poniżej 18 poziomu nie
+odpoczywa nigdy** (ma poziomy do zdobycia i nic do oglądania), a **bez
+wystawionego straganu na mapie nikt nie „ogląda straganów”** — do tej pory
+bot spacerował między pustymi stanowiskami pod napisem „Odpoczywam w
+mieście”, co na młodym świecie wyglądało jak bezczynność (`MayPlayerBotRestInTown`
+w `playerbot_config.h` jest całą regułą; licznik straganów pochodzi z księgi
+rynku, odświeżanej co minutę). Sprawdzone na stosie testowym po przebudowie:
+przy 353 botach poniżej 18 poziomu żaden nie odpoczywa, a rdzeń przy zmianie
+suwaka pisze `PLAYERBOT_CONFIG: town rest N%`.
+
+### Cztery postacie GM także na koncie, na którym już ktoś gra
+
+„Na moim koncie admin nie ma postaci GM, tylko moja Tieru” — skrypt z 2.0.4
+tworzył Admin, AdminNinja, AdminSura i AdminSzaman tylko wtedy, gdy konto
+`admin` nie miało **żadnej** postaci, więc kto założył sobie postać wcześniej,
+nie dostawał ich nigdy. Teraz skrypt dosiewa brakujące klasy do wolnych
+miejsc (konto ma cztery), pomija klasę, którą ktoś na koncie już gra, i nie
+rusza tego, co na koncie jest; ekran wyboru postaci pokazuje stare postacie
+na swoich miejscach, a nowe za nimi. Nowe postacie stoją w pierwszej wiosce
+swojego królestwa (Joan, Yongan albo Pyongmoo), bo konto ma jedno królestwo.
+Sprawdzone na świecie testowym z jedną szamanką na koncie: powstały Admin,
+AdminNinja i AdminSura, drugi start nic już nie zmienia. Dzieje się przy
+najbliższym starcie serwera po aktualizacji.
+
+### Launcher: trzy wiersze wersji na dole
+
+Stopka launchera pokazuje osobno serwer, launcher i klienta — zainstalowaną
+i najnowszą wersję każdego z nich (launcher jest częścią paczki serwera, więc
+jego „najnowsza” to wersja serwera; po aktualizacji w tej samej sesji stopka
+mówi, że na dysku jest nowsza i trzeba uruchomić launcher ponownie). Do tego
+zabezpieczenie: gdy launcher nie wystartuje albo któryś przycisk wyrzuci
+wyjątek, treść błędu trafia do `launcher-logs` i do okna z komunikatem — po
+restarcie z 2.0.8 jeden z graczy zobaczył okno błędu, którego log nie
+zawierał, bo urywał się na „Uruchamiam launcher ponownie”. Odtworzenie tej
+ścieżki (prawdziwa aktualizacja serwera → Tak → restart) przeszło bez błędu;
+następny raport będzie miał treść.
+
+### Sprawdzanie wersji bez pięciominutowego opóźnienia
+
+Launcher czyta manifest aktualizacji najpierw przez API GitHuba (świeże w
+minutę), a dopiero potem z raw.githubusercontent.com, którego CDN trzyma
+stary plik przez pięć minut — stąd „Masz już najnowszą wersję (2.0.7)” w
+pięć minut po wydaniu 2.0.8.
+
+## 2.0.8 — 2026-09-11
 
 ### Boty Shinsoo i Jinno wreszcie chodzą do kowala i handlarki różności
 

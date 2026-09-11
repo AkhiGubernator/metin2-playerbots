@@ -897,6 +897,9 @@ def read_ai_weights():
     vals["BOOKS"] = 1
     vals["NIGHT"] = 1
     vals["SCRAP"] = 0
+    # Percent of bots that rest on the market ring after a town errand; 100 is
+    # the author's town, 0 is "every bot hunting".
+    vals["REST"] = 100
     # The chest event's two figures. None until the file says: the panel does
     # not know what CONFIG holds, and must not write a guess over it.
     vals["CHEST"] = None
@@ -923,6 +926,12 @@ def read_ai_weights():
                 if name == "SCRAP":
                     try:
                         vals["SCRAP"] = max(0, min(100, int(parts[1])))
+                    except ValueError:
+                        pass
+                    continue
+                if name == "REST":
+                    try:
+                        vals["REST"] = max(0, min(100, int(parts[1])))
                     except ValueError:
                         pass
                     continue
@@ -966,6 +975,8 @@ def write_ai_weights(vals):
     body.append("NIGHT\t%d" % (1 if vals.get("NIGHT", 1) else 0))
     # Percent of stall keepers that sell scrap gear; 0 is off.
     body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
+    # Percent of bots that rest in town after an errand; 0 means nobody does.
+    body.append("REST\t%d" % max(0, min(100, int(vals.get("REST", 100)))))
     # The Moonlight chest: thousandths per kill and per Metin. Written only once
     # the operator has set them, so an untouched install keeps its CONFIG.
     for key in ("CHEST", "CHEST_STONE"):
@@ -2741,6 +2752,13 @@ T.update({
                   "tr":"Tezgâhçıların, düşük yükseltmelerini (+0 ile +3) NPC'ye satmak yerine ucuza tezgâha koyan payı - demircide yakmalık, hard sunuculardaki gibi. Varsayılan olarak kapalı."},
  "ai_scrap_off": {"en":"off","pl":"wyłączone","de":"aus","tr":"kapalı"},
  "ai_scrap_all": {"en":"every keeper","pl":"każdy straganiarz","de":"jeder Händler","tr":"her tezgâhçı"},
+ "ai_rest":      {"en":"Resting in town","pl":"Odpoczynek w mieście","de":"Ausruhen in der Stadt","tr":"Şehirde dinlenme"},
+ "ai_rest_help": {"en":"The share of bots that stay on the market ring for about three minutes after finishing their business in the first village, strolling between the stalls. 0 - nobody rests: the bots hunt all the time and only come to town on errands. Whatever the slider says, a bot under level 18 never rests, and with no stall open nobody browses stalls.",
+                  "pl":"Udział botów, które po załatwieniu spraw w pierwszej wiosce zostają na rynku około trzech minut i spacerują między straganami. 0 - nikt nie odpoczywa: boty cały czas expią, a do miasta przychodzą tylko w sprawach. Niezależnie od suwaka bot poniżej 18 poziomu nie odpoczywa nigdy, a bez wystawionego straganu nikt nie ogląda straganów.",
+                  "de":"Anteil der Bots, die nach erledigten Besorgungen im ersten Dorf rund drei Minuten auf dem Marktring bleiben und zwischen den Ständen bummeln. 0 - niemand ruht sich aus: die Bots jagen die ganze Zeit und kommen nur für Besorgungen in die Stadt. Unabhängig vom Regler ruht ein Bot unter Stufe 18 nie, und ohne offenen Stand schaut niemand Stände an.",
+                  "tr":"İlk köydeki işlerini bitirdikten sonra yaklaşık üç dakika pazar halkasında kalıp tezgâhlar arasında dolaşan botların payı. 0 - kimse dinlenmez: botlar sürekli avlanır, şehre yalnızca iş için gelir. Kaydırıcı ne derse desin 18. seviyenin altındaki bot asla dinlenmez, açık tezgâh yokken kimse tezgâhlara bakmaz."},
+ "ai_rest_off":  {"en":"nobody rests","pl":"nikt nie odpoczywa","de":"niemand ruht","tr":"kimse dinlenmez"},
+ "ai_rest_all":  {"en":"every bot","pl":"każdy bot","de":"jeder Bot","tr":"her bot"},
  "ai_chest":     {"en":"Moonlight Treasure Chests","pl":"Szkatułki Księżycowe","de":"Mondschein-Schatztruhen","tr":"Ay Işığı Sandıkları"},
  "ai_chest_help":{"en":"How often a chest drops, in thousandths: per monster kill, and per broken Metin stone. The game default is 10‰ (1%) and 300‰ (30%); more chests mean more bonus scrolls, speed potions and Blessing Scrolls for the bots. Applies within five seconds, to bots and players alike.",
                   "pl":"Jak często wypada szkatułka, w promilach: z zabitego potwora i z rozbitego Metina. Domyślnie w grze 10‰ (1%) i 300‰ (30%); więcej szkatułek to więcej zwojów bonusów, mikstur szybkości i Zwojów Błogosławieństwa u botów. Działa w pięć sekund, dla botów i graczy tak samo.",
@@ -4459,6 +4477,16 @@ TPL_AI = BASE.replace("__BODY__", """
          oninput="document.getElementById('v_SCRAP').textContent=this.value+'%'">
   <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
     <span>0 — {{t('ai_scrap_off')}}</span><span>100 — {{t('ai_scrap_all')}}</span>
+  </div>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">🛋️ {{t('ai_rest')}}
+      <span class="badge" id="v_REST">{{cur.get('REST', 100)}}%</span></h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_rest_help')}}</p>
+  <input type="range" name="REST" id="s_REST" min="0" max="100" step="5" value="{{cur.get('REST', 100)}}" style="width:100%"
+         oninput="document.getElementById('v_REST').textContent=this.value+'%'">
+  <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
+    <span>0 — {{t('ai_rest_off')}}</span><span>100 — {{t('ai_rest_all')}}</span>
   </div>
 </div>
 <div style="margin-bottom:18px">
@@ -10674,6 +10702,10 @@ def ai_weights():
             vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
         except (TypeError, ValueError):
             vals["SCRAP"] = 0
+        try:
+            vals["REST"] = max(0, min(100, int(request.form.get("REST", 100))))
+        except (TypeError, ValueError):
+            vals["REST"] = 100
         for key in ("CHEST", "CHEST_STONE"):
             try:
                 vals[key] = max(0, min(1000, int(request.form.get(key))))

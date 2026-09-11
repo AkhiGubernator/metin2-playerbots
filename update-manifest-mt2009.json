@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T14:50:45Z",
-  "statusMessage": "Wersja 2.0.3: każdy bot ma konto premium, GM widzi tooltipy przedmiotów. Kliknij ZAINSTALUJ AKTUALIZACJE, a potem AKTUALIZUJ KLIENTA.",
+  "publishedAt": "2026-09-11T15:20:01Z",
+  "statusMessage": "Wersja 2.0.4: cztery wyposażone postacie GM na koncie admin (koń 21 lvl, zestaw +9), nowa postać gracza dostaje Skrzynię Ucznia. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.3",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.3/metin2-server-update-2.0.3.zip",
-    "sha256": "335F6E970D9CA9C45BE4F36004BC12F6C95B57EDD3713ED26D231DB5D64E720C"
+    "version": "2.0.4",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.4/metin2-server-update-2.0.4.zip",
+    "sha256": "CDCAD1C85505CF728E33574AE5865CAD55E182B1A8DA831F1BE8C7B1A49CDD79"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

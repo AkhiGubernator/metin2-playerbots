@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T15:20:01Z",
-  "statusMessage": "Wersja 2.0.4: cztery wyposażone postacie GM na koncie admin (koń 21 lvl, zestaw +9), nowa postać gracza dostaje Skrzynię Ucznia. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-11T16:27:23Z",
+  "statusMessage": "Wersja 2.0.5: ikony przedmiotów w panelu, historia ekwipunku, pełny plecak botów (handlarz tylko do +4), postacie GM w zestawie widocznym w kliencie, Olejek Wygnania. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.4",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.4/metin2-server-update-2.0.4.zip",
-    "sha256": "CDCAD1C85505CF728E33574AE5865CAD55E182B1A8DA831F1BE8C7B1A49CDD79"
+    "version": "2.0.5",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.5/metin2-server-update-2.0.5.zip",
+    "sha256": "7673F4B5C665F340B11768F52D205FB5DC3165970DBC5DDF15E9C79A5A604842"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -40,7 +40,7 @@ will do.
 | `port/shareify.py` | `linux-port/docker/game/*.txt`, the world dump | the three share additions and the Dockerfile step; refuses an item the package does not have (one unknown vnum fails the whole `special_item_group.txt` at boot). |
 | `port/envify.py` | r40250's `.env.example` | this stack's. |
 | `port/rulesify.py` | `client-locale-src/rules.pl.txt` (UTF-8, editable) | `client-locale/locale/pl/rules.txt` — the client's terms-of-use window, CP1250/CRLF, pairs of lines with `[ENTER]` between points: ours (what the project is, buycoffee, Discord) instead of the public Mt2009 server's. Repacked into the `locale` pack. |
-| `port/clientrootify.py --root <extracted stock root>` | the stock root scripts | `client-root/gamerules.py` (`RULES_VERSION` bumped so the new terms show once) and `client-root/intrologin.py` (login-window buttons: GitHub, buycoffee, our Discord). |
+| `port/clientrootify.py --root <extracted stock root>` | the stock root scripts | `client-root/gamerules.py` (`RULES_VERSION` bumped so the new terms show once) and `client-root/intrologin.py` (login-window buttons: GitHub, buycoffee, our Discord), `uiitemshop.py` + `itemshop_subscriptionwindow.py` (the coin and subscription buttons open buycoffee), `uisystem.py` (support opens the Discord), `uitooltip.py` (the GM branch guarded - it killed every item tooltip for a GM). |
 
 `playerbotify.py` also flips the db core's `m_bMaintenance(TRUE)` to `FALSE`:
 the package boots every world closed until a GM types `/maintenance 0`, and an

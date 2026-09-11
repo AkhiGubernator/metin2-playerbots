@@ -17,6 +17,36 @@ every version here.
 
 ---
 
+## 2.0.3 — 2026-09-11
+
+Trzecia poprawka pierwszego dnia: konto premium dla botów i tooltipy dla
+GM-a. Serwer: ZAINSTALUJ AKTUALIZACJE; klient: AKTUALIZUJ KLIENTA (pakiet
+`root`).
+
+### Każdy bot ma konto premium
+
+Ten silnik ma abonament premium (50% więcej doświadczenia, podwójna szansa
+na drop przedmiotów i yang, automatyczne podnoszenie yang, dodatkowa strona
+magazynu, więcej miejsc w sklepie, lepsze wyławianie ryb). Bot nie loguje się
+przez serwer auth, więc nigdy go nie miał. Od tej wersji każdy bot — obecny
+i każdy nowy — dostaje abonament przy wejściu do gry, bez wpisów w bazie:
+premium siedzi w tabeli konta deskryptora, z której silnik czyta je przy
+ładowaniu postaci (`SetPlayerProto`), i stamtąd odpowiadają wszystkie
+sprawdzenia `GetPremiumRemainSeconds`. Ważne pięć lat od każdego startu.
+
+### GM widzi tooltipy przedmiotów
+
+Postać z uprawnieniami GM nie widziała nazwy ani statystyk żadnego
+przedmiotu po najechaniu („Nie widać nazw itemów” — davids998; „tylko gdy
+jesteś GM” — sizowski). Gałąź GM w tooltipie klienta iteruje po
+`auxiliaryDict.items()`, a `auxiliaryDict` jest w tym roocie pustym napisem
+(jego przypisanie jest wykomentowane), więc każdy tooltip umierał na
+`AttributeError`, zanim został pokazany. Gałąź jest teraz strzeżona; GM
+widzi zwykły tooltip plus linie VNUM/TYPE/SOCKET. Zmiana w kliencie:
+AKTUALIZUJ KLIENTA.
+
+---
+
 ## 2.0.2 — 2026-09-11
 
 Druga poprawka z pierwszego dnia: zgłoszenia z Discorda po południu, nowa

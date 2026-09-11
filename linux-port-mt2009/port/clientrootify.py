@@ -15,6 +15,7 @@ Writes into client-root/ (beside serverinfo.py, which is hand-written):
   * uiitemshop.py, itemshop_subscriptionwindow.py - "Doladuj SM!" and the
                     subscription button open the buycoffee page, not mt2009.pl;
   * uisystem.py   - the system menu's support button opens our Discord.
+  * uitooltip.py  - the GM branch no longer kills every item tooltip.
 
 Exact-string edits on the stock CP1250/CRLF files, byte for byte otherwise.
 Idempotent; re-run after a new client package.
@@ -42,6 +43,20 @@ EDITS = {
     'itemshop_subscriptionwindow.py': [
         (b'\t\tutils.open_url("https://mt2009.pl/")\r\n',
          b'\t\tutils.open_url("https://buycoffee.to/metin2-playerbots")\r\n'),
+    ],
+    # A game master saw no item tooltip at all: the GM branch of the item
+    # tooltip iterates self.auxiliaryDict.items(), and auxiliaryDict is the
+    # empty string (its assignment from player.GetAuxiliaryString is
+    # commented out), so every tooltip died in AttributeError before
+    # ShowToolTip ("Nie widac nazw itemow" - "tylko gdy jestes GM").
+    'uitooltip.py': [
+        (b'\t\t\tself.AppendTextLine("Auxs: ")\r\n'
+         b'\t\t\tfor _, val in self.auxiliaryDict.items():\r\n'
+         b'\t\t\t\tself.AppendTextLine("Key: [{}] Value: [{}]".format(_, val))\r\n',
+         b'\t\t\tif isinstance(self.auxiliaryDict, dict) and self.auxiliaryDict:\r\n'
+         b'\t\t\t\tself.AppendTextLine("Auxs: ")\r\n'
+         b'\t\t\t\tfor _, val in self.auxiliaryDict.items():\r\n'
+         b'\t\t\t\t\tself.AppendTextLine("Key: [{}] Value: [{}]".format(_, val))\r\n'),
     ],
     'uisystem.py': [
         (b'\t\tutils.open_url("https://mt2009.pl/Identity/Account/Manage/Support")\r\n',

@@ -971,6 +971,16 @@ bool CPlayerBotManager::Spawn(DWORD dwPlayerID, BYTE bEmpire)
 		TAccountTable& table = d->GetAccountTable();
 		table.id = account->second.dwID;
 		strlcpy(table.login, account->second.strLogin.c_str(), sizeof(table.login));
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// Every bot holds the premium subscription (the operator's rule for
+		// this world: "domyslnie wlacz kazdemu obecnemu i nowemu botowi").
+		// The engine reads it once, in SetPlayerProto, from the descriptor's
+		// account table - a human's comes from auth's premium_expire - and
+		// GetPremiumRemainSeconds answers every PREMIUM_* type from it: the
+		// experience and drop bonuses, the extra safebox page, the shop's
+		// premium slots, fishing. Five years, well inside a 32-bit time_t.
+		table.iPremium = get_global_time() + 5 * 365 * 24 * 3600;
+#endif
 	}
 
 	m_mapBots.insert(TPlayerBotMap::value_type(dwPlayerID, d));

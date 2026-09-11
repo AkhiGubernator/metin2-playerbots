@@ -1268,6 +1268,76 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   already overwrites read-only *and* hidden destinations, so neither is the
   cause of an access denial: what is left is an ACL, Controlled Folder Access,
   or a process holding the file. `New-M2AccessDeniedError` names which.
+- **A staged engine file must stay in the engine's own encoding.** The
+  engine sources are CP949 and `LC_TEXT("...")` compiles the bytes as written,
+  so a file saved as UTF-8 looks up keys that `locale_string.txt` (CP949) does
+  not contain. `char_battle.cpp` shipped that way from 1.31.6 to 1.33.2:
+  every one of its thirteen Korean messages missed, `locale_find` returned the
+  Korean itself, and the death-with-blessing message logged
+  `LOCALE_ERROR: "용신의 가호로 ..."` 276 times in one support bundle. Check
+  with `raw.decode('cp949')` before shipping a staged file; the patch itself
+  (0010) was fine - it carries CP949 context and applies to the CP949 pristine
+  on Linux, which is why only Windows installs, which get the staged file,
+  saw it.
+- **A count of "users" counts bot descriptors, and the client refuses a FULL
+  channel.** `DESC_MANAGER::FuncWho` counted every descriptor with a character
+  and `P2P_MANAGER` every remote login, so 2500 bots put the channel over
+  `g_iFullUserCount` (1200) and the channel list said FULL ("if u have 2500
+  bots channel is full", Dixdros). Patch 0014: the local count skips
+  `IsBot()`, the P2P count subtracts registered pids at read time
+  (`CountPlayerBots`, via `IsRegisteredBotPID` - which never loads the
+  registry, because `IsRegistered` does and a failed load from a P2P login
+  before `MapLocations` would fail the registry closed for the process), and
+  `UpdateChannelStatus` logs `CHANNEL_STATUS: players= local= status=` every
+  five minutes so the next screenshot has a number behind it. Verified: 969
+  bots live, `players=0 status=1`.
+- **A per-kingdom table can reintroduce a number a constant had already
+  corrected.** `GetTeleportArrival(TELEPORT_GUILD_MAP)` carried the Teleporter
+  quest's empire table, and for Chunjo that is (179500, 1000) - cell (3, 10)
+  of `metin2_map_guild_02`, the unwalkable corner that `PLAYERBOT_M3_ARRIVAL_X`
+  had replaced with Town.txt's (221900, 9200) long before; the three-kingdom
+  travel switched `level30_weapon_to_m3` to the table and every bot sent to
+  M3 stood at the corner with `nav_out=1` until the watchdog reset it, for
+  ever (greess, 11 September, confirmed twice). All three rows are their
+  map's own Town.txt now and the unit test pins them. When a table replaces a
+  constant, diff the two before trusting the table's provenance.
+- **A quest change is only live in the image, and the fast build never
+  rebuilds the image.** Written down once already under "A fast build that
+  ships only the core"; sprung again today: the test server's compiled
+  `web_admin.quest` had no `BULK_ITEM` at all, so the mass-grant reproduction
+  answered `unknown_cmd` for every online bot and `player_offline` for the
+  rest, and read like a stall in the panel. `docker compose build game`
+  before concluding anything about a quest - the second time this cost an
+  hour of measurement.
+- **The GM panel's window must not be able to stop the client loading.**
+  `GMPanelWindow()` was built unconditionally inside `MakeInterface`; any
+  exception in it - a widget a different client binary lacks, a locale key a
+  different locale pack lacks - aborted the whole interface and the loading
+  bar stopped at 100% with nothing on screen (five players on 10-11
+  September; the stock root loaded on the same machines, and what fixed each
+  of them was the stock root put back). The 1.33.3 root builds it in a
+  try/except, writes the reason to `syserr.txt` and loads without it; the
+  three entry points check `wndGMPanel` for None. The cause itself is still
+  unknown - nobody has sent a `syserr.txt` yet - and the fail-safe is what
+  turns the next report into one that carries it.
+- **Bots are named by what the name says.** The pool is two written lists
+  (jaksiezabic's, Iwakura's) plus names composed from *their* words in
+  *their* shapes (`tokens_of`, `vocabulary`, four shapes in measured
+  proportions), never from a hand-made word list - the first draft composed
+  2100 names in one grammar and Iwakura's note was "bardziej rozne". The
+  pairing SQL runs four passes: a name that names a class and a sex goes to
+  that class and sex (`player.job` is the race: `% 4` is the class, 1/3/4/6
+  are the female models), then class only, then sex only, then the rest to
+  anyone. "ninja szamanka ale to sura" was a real screenshot. Underscore is
+  refused because `check_name_alphabet` refuses it at the character screen.
+- **The unsold-stock rule sat below the rule that made it unreachable.**
+  `IsPlayerBotJunkItem` returned false for anything at
+  `PLAYERBOT_PRECIOUS_REFINE` (+4) before it reached "scrap after six unsold
+  stands", so the six-stand rule applied to nothing the counter keeps and a
+  bag of +5 nobody bought was a bag for life - which is the bot that "stands
+  in Joan browsing stalls and never levels" (gregoszky, davids998). The rule
+  runs first now, up to `PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE` (+6); +7 and
+  up is still never scrap.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

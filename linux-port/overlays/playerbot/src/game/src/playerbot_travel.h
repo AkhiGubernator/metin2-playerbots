@@ -772,6 +772,21 @@ namespace
 		state.dwRelocateSince = IsPlayerBotFrontierMap(targetMap) ? dwNow : 0;
 		if (IsPlayerBotM3Map(targetMap))
 			state.dwNextRemoteRefineReturnTime = 0;
+		// The departure intent is done when the bot lands where it meant to
+		// go - or on any frontier, if the level band moved the target while
+		// it waited. Nothing ever cleared it before: a bot held once in
+		// Bokjung carried lDepartureMap for the rest of its life, back in town
+		// for services it refused every material hunt and every trip to Joan
+		// ("Ide na pustynie" over a bot circling M1 - D12 of the audit).
+		if (state.lDepartureMap != 0 &&
+				(state.lDepartureMap == targetMap || IsPlayerBotFrontierMap(targetMap)))
+		{
+			sys_log(0, "PLAYERBOT_DEPARTURE: arrived pid=%u name=%s to=%ld wanted=%ld after_ms=%u",
+					ch->GetPlayerID(), ch->GetName(), targetMap, state.lDepartureMap,
+					state.dwDepartureSince != 0 ? dwNow - state.dwDepartureSince : 0);
+			state.lDepartureMap = 0;
+			state.dwDepartureSince = 0;
+		}
 		sys_log(0, "PLAYERBOT_WORLD: transitioned pid=%u name=%s from=%ld to=%ld pos=(%ld,%ld) reason=%s",
 				ch->GetPlayerID(), ch->GetName(), oldMap, targetMap, targetX, targetY,
 				reason ? reason : "?");
@@ -1407,9 +1422,27 @@ namespace
 				{
 					state.lDepartureMap = wantMap;
 					state.dwDepartureSince = dwNow;
+					state.dwNextDepartureLogTime = dwNow + PLAYERBOT_DEPARTURE_OVERDUE_MS;
 					sys_log(0, "PLAYERBOT_DEPARTURE: held pid=%u name=%s level=%u to=%ld reason=%s",
 							ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), wantMap,
 							BlocksPlayerBotTravel(ch) ? "gear_or_potions" : "town_visit");
+				}
+				// A departure held for longer than an errand takes is a bot the
+				// audit called "krazy po M1 mimo celu Pustynia". Every ten
+				// minutes it says what is still holding it, with the numbers the
+				// hold is made of, so the next report names a cause.
+				else if (state.lDepartureMap != 0 && state.dwDepartureSince != 0 &&
+						dwNow >= state.dwNextDepartureLogTime)
+				{
+					state.dwNextDepartureLogTime = dwNow + PLAYERBOT_DEPARTURE_OVERDUE_MS;
+					sys_log(0, "PLAYERBOT_DEPARTURE: overdue pid=%u name=%s level=%u to=%ld held_ms=%u map=%ld pos=(%ld,%ld) weapon=%d body=%d potions_short=%d arrows_short=%d bag_3cell=%d critical_services=%d shop_check_in_ms=%d service_pending=%d gold=%lld",
+							ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), state.lDepartureMap,
+							dwNow - state.dwDepartureSince, ch->GetMapIndex(), ch->GetX(), ch->GetY(),
+							ch->GetWear(WEAR_WEAPON) != NULL, ch->GetWear(WEAR_BODY) != NULL,
+							NeedsPlayerBotEmergencyPotions(ch) ? 1 : 0, NeedsPlayerBotArrows(ch) ? 1 : 0,
+							ch->GetEmptyInventory(3) >= 0, needsCriticalTownServices ? 1 : 0,
+							state.dwNextShopCheckTime > dwNow ? (int)(state.dwNextShopCheckTime - dwNow) : 0,
+							state.bServicePending ? 1 : 0, (long long)ch->GetGold());
 				}
 				return false;
 			}

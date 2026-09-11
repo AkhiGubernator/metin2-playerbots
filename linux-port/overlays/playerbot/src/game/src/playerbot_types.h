@@ -1826,6 +1826,9 @@ namespace
 	// and its status said "Ide na Gore Sohan" all the while. The wait is
 	// what lets the town visit and the stall run and earn the fee.
 	const DWORD PLAYERBOT_TELEPORTER_RETRY_MS = 300000;
+	// A departure held longer than this is reported with what holds it
+	// (PLAYERBOT_DEPARTURE: overdue), once per this interval per bot.
+	const DWORD PLAYERBOT_DEPARTURE_OVERDUE_MS = 600000;
 	// A bot whose next hunting ground lies behind the Teleporter keeps this
 	// many fares out of every discretionary purchase, and one that cannot pay
 	// the fare may hunt in Bokjung - past the cohort ceiling - until it holds
@@ -3207,6 +3210,7 @@ namespace
 			dwServiceSince(0),
 			dwDepartureSince(0),
 			lDepartureMap(0),
+			dwNextDepartureLogTime(0),
 			bServicePending(false),
 			bLastCombatReason(0),
 			dwLureSessionId(0),
@@ -3562,6 +3566,8 @@ namespace
 		// a reset may drop a stale route but not the intent behind it.
 		DWORD dwDepartureSince;
 		long lDepartureMap;
+		// When the next "departure overdue" line may be written for this bot.
+		DWORD dwNextDepartureLogTime;
 		bool bServicePending;
 		// Why the monster this bot is fighting was allowed - the combat policy's
 		// own Reason, kept so the line over the bot's head can say what it is

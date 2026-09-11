@@ -866,7 +866,39 @@ def restart_progress():
     return {"percent": 100 if auth and world else 40, "stage": "Serwer działa" if auth and world else "Oczekiwanie na usługi", "state": state}
 
 
+# On the mt2009 line a rate is not a rewritten table but six event flags the
+# engine multiplies by (mob_exp / mob_item / mob_gold and their "_buyer"
+# twins for premium accounts): rows of player.quest with dwPID = 0, read by the
+# db core at boot and pushed to every game core. The game container has no
+# database client, so the panel writes the rows and the restart it queues
+# below is what makes the cores read them. See files/admin_panel.py, which
+# also tries the in-game helper first; this console is a restart console.
+MT2009_RATE_FLAGS = {
+    "exp":  ("mob_exp",  "mob_exp_buyer"),
+    "drop": ("mob_item", "mob_item_buyer"),
+    "yang": ("mob_gold", "mob_gold_buyer"),
+}
+
+
+def persist_rates_mt2009(values):
+    with db() as connection, connection.cursor() as cursor:
+        for name, flags in MT2009_RATE_FLAGS.items():
+            for flag in flags:
+                cursor.execute("REPLACE INTO player.quest (dwPID, szName, szState, lValue) VALUES (0, %s, '', %s)",
+                               (flag, int(values[name])))
+        # The classic panel's table too, so both pages show the same numbers.
+        try:
+            for name in RATE_NAMES:
+                cursor.execute("INSERT INTO player.web_admin_rates (name, value) VALUES (%s, %s) "
+                               "ON DUPLICATE KEY UPDATE value=VALUES(value)", (name, int(values[name])))
+        except pymysql.MySQLError:
+            pass
+        connection.commit()
+
+
 def queue_rate_restart(values):
+    if ENGINE_MT2009:
+        persist_rates_mt2009(values)
     stamp = int(time.time() * 1000)
     request_data = "\n".join((
         f"id=seban-{stamp}",

@@ -2339,6 +2339,22 @@ T = {
  "rates_range":  {"pl":"Każda z trzech wartości musi być liczbą całkowitą od 1 do 10000. Nic nie zmieniono. 🙂","en":"Each of the three has to be a whole number between 1 and 10000. Nothing was changed. 🙂",
                   "de":"Alle drei müssen ganze Zahlen zwischen 1 und 10000 sein. Es wurde nichts geändert. 🙂",
                   "tr":"Üçü de 1 ile 10000 arasında tam sayı olmalı. Hiçbir şey değiştirilmedi. 🙂"},
+ "rates_saved_live":{"pl":"✅ Zapisano! Nowe mnożniki działają już w grze, bez restartu.",
+                  "en":"✅ Saved! The new rates are live in game, no restart needed.",
+                  "de":"✅ Gespeichert! Die neuen Raten gelten sofort im Spiel, ohne Neustart.",
+                  "tr":"✅ Kaydedildi! Yeni oranlar oyunda hemen geçerli, yeniden başlatma gerekmez."},
+ "rates_intro_mt2009":{"pl":"Te trzy liczby decydują, jak szybko toczy się cały serwer. 100% to dokładnie tak, jak gra została stworzona — wyżej znaczy szybciej. Gdy ktoś jest zalogowany w grze, zapis działa od razu; w przeciwnym razie serwer gry restartuje się sam i grający zostają na chwilę rozłączeni.",
+                  "en":"These three numbers decide how fast the whole server runs. 100% is exactly as the game was made — higher means faster. While somebody is logged in, saving applies at once; otherwise the game server restarts itself and players are briefly disconnected.",
+                  "de":"Diese drei Zahlen bestimmen, wie schnell der ganze Server läuft. 100% ist genau so, wie das Spiel gemacht wurde — höher heißt schneller. Ist jemand eingeloggt, gilt das Speichern sofort; sonst startet der Spielserver von selbst neu und die Spieler werden kurz getrennt.",
+                  "tr":"Bu üç sayı tüm sunucunun ne kadar hızlı ilerlediğini belirler. %100, oyunun yapıldığı haliyle aynıdır — daha yüksek, daha hızlı demektir. Biri oyundaysa kayıt hemen geçerli olur; aksi halde oyun sunucusu kendini yeniden başlatır ve oyuncular kısa süre bağlantıyı kaybeder."},
+ "gm_granted_restart":{"pl":"{name} ma teraz rangę {rank}. Serwer wczyta nowe uprawnienia przy najbliższym restarcie — albo od razu, gdy zalogowany GM wpisze w grze /reload a.",
+                  "en":"{name} is now {rank}. The server reads the new rights at its next restart — or right away when a logged-in GM types /reload a in game.",
+                  "de":"{name} ist jetzt {rank}. Der Server liest die neuen Rechte beim nächsten Neustart — oder sofort, wenn ein eingeloggter GM im Spiel /reload a eingibt.",
+                  "tr":"{name} artık {rank}. Sunucu yeni yetkileri bir sonraki yeniden başlatmada okur — ya da oyundaki bir GM /reload a yazdığında hemen."},
+ "gm_removed_restart":{"pl":"{name} jest znów zwykłym graczem. Komendy zachowuje do najbliższego restartu serwera (albo do /reload a wpisanego przez zalogowanego GM) i ponownego zalogowania.",
+                  "en":"{name} is a normal player again. The commands stay until the next server restart (or /reload a typed by a logged-in GM) and a relogin.",
+                  "de":"{name} ist wieder normaler Spieler. Die Befehle bleiben bis zum nächsten Server-Neustart (oder /reload a eines eingeloggten GM) und einem erneuten Einloggen.",
+                  "tr":"{name} yeniden normal oyuncu. Komutlar bir sonraki sunucu yeniden başlatmasına (ya da oyundaki bir GM /reload a yazana) ve tekrar girişe kadar kalır."},
  "rates_saved":  {"pl":"✅ Zapisano! Serwer gry właśnie się restartuje i powinien wrócić w niecałą minutę. Odśwież tę stronę za chwilę, aby zobaczyć wynik.","en":"✅ Saved! The game server is restarting now and should be back in under a minute. Give this page a reload in a moment to see how it went.",
                   "de":"✅ Gespeichert! Der Spielserver startet gerade neu und sollte in weniger als einer Minute wieder da sein. Lade diese Seite gleich neu, um das Ergebnis zu sehen.",
                   "tr":"✅ Kaydedildi! Oyun sunucusu şimdi yeniden başlıyor, bir dakikadan kısa sürede geri gelmeli. Sonucu görmek için birazdan bu sayfayı yenile."},
@@ -3158,14 +3174,87 @@ def rates_status():
         pass
     return out
 
-def write_rates_status(state):
-    """Say 'it is running' right away, so reloading straight after saving is honest."""
+def write_rates_status(state, vals=None, message=""):
+    """Say 'it is running' right away, so reloading straight after saving is honest.
+
+    With `vals` the three numbers go in too, in the shape m2-rates publishes
+    them -- the advanced panel reads its current rates from this file first."""
     try:
         with open(RATES_STATUS, "w", encoding="utf-8") as f:
             f.write("state=%s\ntime=%d\n" % (state, int(time.time())))
+            if vals:
+                f.write("exp=%s\ndrop=%s\nyang=%s\n" % (vals["exp"], vals["drop"], vals["yang"]))
+            if message:
+                f.write("message=%s\n" % message)
         os.chmod(RATES_STATUS, 0o600)
     except OSError:
         pass
+
+# ---- rates on the mt2009 line ------------------------------------------------
+# r40250 has no rate setting, so its m2-rates rewrites mob_proto.txt and the
+# drop tables and restarts the cores. The mt2009 engine keeps the protos in
+# the database and has server-wide multipliers of its own: CHARACTER_MANAGER
+# multiplies experience, drops and yang by m_iMobExpRate / m_iMobItemRate /
+# m_iMobGoldAmountRate, and CQuestManager::SetEventFlag() sets those from the
+# event flags below (the "_buyer" twin is what a premium account reads, so
+# both carry the same number). An event flag is a row of player.quest with
+# dwPID = 0: the db core loads them at boot and pushes them to every game
+# core (ClientManagerEventFlag.cpp), so writing the rows is what survives a
+# restart, and the in-game helper's RATES command (game.set_event_flag) is
+# what makes them live without one. 2.0.x shipped the r40250 page unchanged
+# on this line: it saved, said the server was restarting, and nothing read
+# the request -- "panel na zielono informuje o zmianie, a nic się nie zmienia".
+MT2009_RATE_FLAGS = {
+    "exp":  ("mob_exp",  "mob_exp_buyer"),
+    "drop": ("mob_item", "mob_item_buyer"),
+    "yang": ("mob_gold", "mob_gold_buyer"),
+}
+RATES_LIVE_WAIT = 12.0     # the helper's server timer ticks every 5 s
+GM_RELOAD_WAIT = 8.0       # a player timer ticks every 3 s
+
+def persist_rates_mt2009(cur, vals):
+    """The six event-flag rows the db core reads at its next start."""
+    for name, flags in MT2009_RATE_FLAGS.items():
+        for flag in flags:
+            cur.execute("REPLACE INTO player.quest (dwPID, szName, szState, lValue) "
+                        "VALUES (0, %s, '', %s)", (flag, int(vals[name])))
+
+def gm_reload_mt2009():
+    """Ask an online IMPLEMENTOR to run /reload a for us. True when one did.
+
+    This engine has no admin socket, so m2-gm cannot exist here; what re-reads
+    common.gmlist is the db core on HEADER_GD_RELOAD_ADMIN, which /reload a
+    sends -- and the helper runs a command as the player whose timer it is, so
+    only a character that already holds the rank can carry it. One row per
+    IMPLEMENTOR; the first 'done' is enough and the rest are withdrawn."""
+    try:
+        with db() as c, c.cursor() as cur:
+            cur.execute("SELECT mName FROM common.gmlist WHERE mAuthority='IMPLEMENTOR' LIMIT 8")
+            names = [r["mName"] for r in cur.fetchall() if r["mName"]]
+            qids = []
+            for n in names:
+                cur.execute("INSERT INTO player.web_admin_queue (player_name,cmd,arg1,arg2) "
+                            "VALUES (%s,'GM_RELOAD','','')", (n,))
+                qids.append(cur.lastrowid)
+    except Exception:
+        return False
+    if not qids:
+        return False
+    done = False
+    deadline = time.time() + GM_RELOAD_WAIT
+    try:
+        while time.time() < deadline and not done:
+            time.sleep(0.6)
+            with db() as c, c.cursor() as cur:
+                cur.execute("SELECT status FROM player.web_admin_queue WHERE id IN (%s)"
+                            % ",".join("%s" for _ in qids), qids)
+                done = any(r["status"] == "done" for r in cur.fetchall())
+        with db() as c, c.cursor() as cur:
+            cur.execute("UPDATE player.web_admin_queue SET status='cancelled' WHERE status='pending' AND id IN (%s)"
+                        % ",".join("%s" for _ in qids), qids)
+    except Exception:
+        pass
+    return done
 
 def gold_presets_i18n():
     return GOLD_PRESETS
@@ -4232,7 +4321,7 @@ TPL_RATES = BASE.replace("__BODY__", """
 <p><a href="{{url_for('dash')}}">{{t('back_players')}}</a></p>
 <div class="card">
 <h3>{{t('rates_nav')}}</h3>
-<p class="muted">{{t('rates_intro')}}</p>
+<p class="muted">{{t(intro_key)}}</p>
 <p><span class="badge">⭐ {{t('rates_exp')}} {{cur['exp']}}%</span>
    <span class="badge">🎁 {{t('rates_drop')}} {{cur['drop']}}%</span>
    <span class="badge">💰 {{t('rates_yang')}} {{cur['yang']}}%</span></p>
@@ -10498,6 +10587,36 @@ def rates():
             return redirect(url_for("rates"))     # "the table is missing" — said below
         except Exception:
             return redirect(url_for("rates"))     # "the database is down"  — said below
+        if ENGINE_MT2009:
+            # The flags first, whatever happens next: they are what a restart
+            # reads. Then the in-game helper, which needs somebody logged in
+            # (its server timer is armed at the first login); when nothing
+            # answers, the request below has the game container restart the
+            # cores, and this engine's m2-rates does nothing but that.
+            try:
+                with db() as c, c.cursor() as cur:
+                    persist_rates_mt2009(cur, vals)
+            except Exception:
+                flash(t("db_down"), "error")
+                return redirect(url_for("rates"))
+            try:
+                status, qid = queue_and_wait("", "RATES", "%d,%d,%d" % (vals["exp"], vals["drop"], vals["yang"]), "",
+                                             wait=RATES_LIVE_WAIT)
+            except Exception:
+                status, qid = "failed", 0
+            if status == "done":
+                write_rates_status("ok", vals, "set live through the in-game helper")
+                flash(t("rates_saved_live"))
+                return redirect(url_for("rates"))
+            if status == "timeout":
+                # Withdraw it: the restart carries the same numbers, and a
+                # row left pending would be swept as player_offline anyway.
+                try:
+                    with db() as c, c.cursor() as cur:
+                        cur.execute("UPDATE player.web_admin_queue SET status='cancelled' "
+                                    "WHERE id=%s AND status='pending'", (qid,))
+                except Exception:
+                    pass
         write_rates_status("running")
         try:
             # Never wait for this one: it stops and restarts the whole game server,
@@ -10523,6 +10642,7 @@ def rates():
         flash(t("rates_no_script"), "error")
     st = rates_status().get("state", "")
     return render_template_string(TPL_RATES, cur=cur_rates, presets=RATE_PRESETS,
+                                  intro_key="rates_intro_mt2009" if ENGINE_MT2009 else "rates_intro",
                                   state_msg=t("rates_st_" + st) if st in RATE_STATES else "")
 
 
@@ -11949,6 +12069,17 @@ def set_gm():
                     "VALUES (%s, %s, '', 'ALL', %s)", (login, name, rank))
     except Exception:
         flash(t("db_down"), "error")
+        return redirect(url_for("player", pid=pid))
+
+    if ENGINE_MT2009:
+        # No admin socket on this engine, so no m2-gm: the list is re-read by
+        # /reload a, which the helper can only run as an online IMPLEMENTOR.
+        # 2.0.x asked the spool anyway and said "dziala od razu" of a request
+        # nothing consumed.
+        if gm_reload_mt2009():
+            flash(t("gm_granted" if rank else "gm_removed").format(name=name, rank=gm_rank_label(rank) if rank else ""))
+        else:
+            flash(t("gm_granted_restart" if rank else "gm_removed_restart").format(name=name, rank=gm_rank_label(rank) if rank else ""))
         return redirect(url_for("player", pid=pid))
 
     told = gm_ask_for_reload()

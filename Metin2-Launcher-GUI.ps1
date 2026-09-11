@@ -420,6 +420,11 @@ function Update-ActionPhase {
         }
         return
     }
+    if ($Line -match '^\[faza\]\s*(.+?)\s*(\(|$)') {
+        $script:activePhase = $Matches[1]
+        $script:activePhaseStep = 0; $script:activePhaseTotal = 0
+        return
+    }
     if ($Line -match 'transferring context:\s*([\d.]+\s*[kKMG]?B)') {
         $script:activePhase = "przesyłanie plików do budowy ($($Matches[1]))"
         $script:activePhaseStep = 0; $script:activePhaseTotal = 0

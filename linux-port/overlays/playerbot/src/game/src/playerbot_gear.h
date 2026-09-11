@@ -2063,6 +2063,129 @@ namespace
 		return false;
 	}
 
+	// Whether the bag can take everything a chest may hand out, judged the way
+	// the engine places items: a piece needs its height in one column of one
+	// page, a stackable merges into a stack of the same vnum first, and every
+	// reward is placed on a copy of the grid before the next one is asked.
+	//
+	// The engine gives a chest's rewards one by one through AutoGiveItem, which
+	// puts what does not fit on the ground and still reports success - so
+	// "GetEmptyInventory(3) >= 0" before the chest let a full bag spill the
+	// rest of the set (D01 of the 10 September audit: "przedmioty ze skrzyn
+	// wypadaja na ziemie"). The set is the group's own list: for a PCT group
+	// every line may come at once (the starter chests are that), for the others
+	// exactly one line does, so the room asked for is the largest line. mt2009
+	// exposes the type (GetGroupType, added by playerbotify.py) and the lines;
+	// r40250 exposes neither, so that line keeps the old five-cell heuristic,
+	// as does a group the manager does not know.
+	bool PlayerBotBagTakesGroup(LPCHARACTER ch, DWORD dwGroupVnum, int& iCellsNeeded)
+	{
+		iCellsNeeded = 0;
+		if (!ch || !ch->IsItemLoaded())
+			return false;
+		const CSpecialItemGroup* pGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(dwGroupVnum);
+#if !defined(PLAYERBOT_ENGINE_MT2009)
+		// r40250's CSpecialItemGroup has neither GetItems() nor a size, so its
+		// lines cannot be walked from here; that line keeps the old heuristic.
+		pGroup = NULL;
+#endif
+		if (!pGroup)
+		{
+			int freeCells = 0;
+			for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+				if (!ch->GetInventoryItem(cell))
+					++freeCells;
+			return freeCells >= PLAYERBOT_CHEST_FREE_CELLS && ch->GetEmptyInventory(3) >= 0;
+		}
+#if defined(PLAYERBOT_ENGINE_MT2009)
+
+		bool occupied[INVENTORY_MAX_NUM];
+		std::map<DWORD, int> headroom; // vnum -> units a stack of it can still take
+		for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			occupied[cell] = false;
+		for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		{
+			LPITEM held = ch->GetInventoryItem(cell);
+			if (!held || held->GetCell() != cell)
+				continue;
+			const int size = std::max<int>(1, held->GetSize());
+			for (int k = 0; k < size; ++k)
+				if (cell + k * 5 < INVENTORY_MAX_NUM)
+					occupied[cell + k * 5] = true;
+			if (held->IsStackable() && held->GetCount() < ITEM_MAX_COUNT)
+				headroom[held->GetVnum()] += ITEM_MAX_COUNT - held->GetCount();
+		}
+
+		const std::vector<CSpecialItemGroup::CSpecialItemInfo> lines = pGroup->GetItems();
+		const bool everyLine = pGroup->GetGroupType() == CSpecialItemGroup::PCT;
+		// The rewards to place: (size, units) per line, or one line - the one
+		// that needs the most cells - when only one comes.
+		std::vector<std::pair<int, int> > rewards;
+		int biggestCells = -1;
+		std::pair<int, int> biggest(0, 0);
+		for (size_t i = 0; i < lines.size(); ++i)
+		{
+			const TItemTable* table = ITEM_MANAGER::instance().GetTable(lines[i].vnum);
+			if (!table)
+				continue;
+			int units = std::max(1, lines[i].count);
+			const bool stackable = IS_SET(table->dwFlags, ITEM_FLAG_STACKABLE);
+			if (stackable)
+			{
+				std::map<DWORD, int>::iterator room = headroom.find(lines[i].vnum);
+				if (room != headroom.end())
+				{
+					const int merged = std::min(room->second, units);
+					units -= merged;
+					if (everyLine)
+						room->second -= merged;
+				}
+				if (units <= 0)
+					continue;
+				units = (units + ITEM_MAX_COUNT - 1) / ITEM_MAX_COUNT; // stacks to place
+			}
+			const int size = std::max<int>(1, table->bSize);
+			if (everyLine)
+				rewards.push_back(std::make_pair(size, units));
+			else if (size * units > biggestCells)
+			{
+				biggestCells = size * units;
+				biggest = std::make_pair(size, units);
+			}
+		}
+		if (!everyLine && biggestCells > 0)
+			rewards.push_back(biggest);
+
+		const int rowsPerPage = PLAYERBOT_INVENTORY_PAGE_SIZE / 5;
+		for (size_t r = 0; r < rewards.size(); ++r)
+		{
+			const int size = rewards[r].first;
+			for (int n = 0; n < rewards[r].second; ++n)
+			{
+				int placed = -1;
+				for (int cell = 0; cell < INVENTORY_MAX_NUM && placed < 0; ++cell)
+				{
+					const int row = (cell % PLAYERBOT_INVENTORY_PAGE_SIZE) / 5;
+					if (row + size > rowsPerPage)
+						continue;
+					bool free = true;
+					for (int k = 0; k < size && free; ++k)
+						if (occupied[cell + k * 5])
+							free = false;
+					if (free)
+						placed = cell;
+				}
+				if (placed < 0)
+					return false;
+				for (int k = 0; k < size; ++k)
+					occupied[placed + k * 5] = true;
+				iCellsNeeded += size;
+			}
+		}
+		return true;
+#endif
+	}
+
 	bool ManagePlayerBotProgressionChests(LPCHARACTER ch,
 			TPlayerBotAIState& state, DWORD dwNow)
 	{
@@ -2129,6 +2252,20 @@ namespace
 					? 1 : (int)(chestVnum - 50187) * 10;
 			if (!classStarter && (!progression || ch->GetLevel() < requiredLevel))
 				continue;
+
+			// The whole set or nothing: a chest whose rewards would spill stays
+			// closed until the town errand for a full bag has made room.
+			int cellsNeeded = 0;
+			if (!PlayerBotBagTakesGroup(ch, chestVnum, cellsNeeded))
+			{
+				if (dwNow >= state.dwNextBagFullLogTime)
+				{
+					state.dwNextBagFullLogTime = dwNow + 60000;
+					sys_log(0, "PLAYERBOT_GEAR: chest waits for room pid=%u name=%s vnum=%u level=%u",
+							ch->GetPlayerID(), ch->GetName(), chestVnum, ch->GetLevel());
+				}
+				continue;
+			}
 
 			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
 				continue;

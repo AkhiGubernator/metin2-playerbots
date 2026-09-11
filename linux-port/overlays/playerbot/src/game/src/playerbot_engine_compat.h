@@ -135,6 +135,14 @@ inline void PlayerBotChangeGold(LPCHARACTER ch, long long delta)
 #endif
 }
 
+// One page of the bag: an item taller than one cell must stay on its page,
+// which is how GetEmptyInventory judges room. r40250 never named the number.
+#if defined(PLAYERBOT_ENGINE_MT2009)
+const int PLAYERBOT_INVENTORY_PAGE_SIZE = INVENTORY_PAGE_SIZE;
+#else
+const int PLAYERBOT_INVENTORY_PAGE_SIZE = 45;
+#endif
+
 // Whether this character may open a private shop at all. mt2009 grants the
 // counter at level 15 and 800 kills (CHARACTER::CanOpenShop); r40250 to
 // anybody. The junk rule asks, because a bag that cannot be sold from a

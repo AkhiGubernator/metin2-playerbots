@@ -1173,10 +1173,15 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `AutoGiveItem`, and that drops what does not fit. Count the free cells
   (`CountPlayerBotFreeInventoryCells`, defined in `playerbot_consumables.h`
   because that file is included before `playerbot_economy.h`) and require
-  `PLAYERBOT_CHEST_FREE_CELLS`. This is a mitigation: the real fix is to roll
-  the reward set once, check room for the whole set, and only then consume the
-  chest - an engine change that needs its own "into the bag or not at all"
-  mode, because it must not alter how rewards reach players.
+  `PLAYERBOT_CHEST_FREE_CELLS`. That was a mitigation; since 2.0.6
+  `PlayerBotBagTakesGroup` (`playerbot_gear.h`) lays the group's whole set out
+  on a copy of the grid the way the engine places items (height in one column
+  of one page, stackables merged into their stacks first) before any chest is
+  used - every line of a `Type Pct` group, the largest line of the others. It
+  needs the group's lines and type, which mt2009 exposes (`GetItems`, and a
+  `GetGroupType` getter playerbotify.py adds); r40250 exposes neither and
+  keeps the five-cell heuristic. The engine still gives one by one, so this is
+  the bot refusing to open, not the engine refusing to spill.
 - **The planner and the pass that acts must ask one function, not two lists.**
   `HasPlayerBotRefineOpportunity` accepted any bag piece the equipment selector
   liked; the refining pass then also rejected anything `IsPlayerBotJunkItem`
@@ -1990,6 +1995,22 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   on map 1 could not plan a single step. It asks
   `playerbot_empire_rules::IsKingdomMap` now; the shared maps stay named one
   by one, because only some of them are ours to walk.
+
+- **The mt2009 line has no `m2-rates`, `m2-gm` or `m2-lang` from r40250, and the
+  panels did not know.** The rates page wrote the spool request, said "the
+  server is restarting", and nothing in the mt2009 game image read it; the GM
+  page said "works right away" of a request with no consumer. On this engine a
+  rate is not a rewritten table: `CQuestManager::SetEventFlag` maps the event
+  flags `mob_exp`, `mob_item`, `mob_gold` (and `_buyer` twins for premium) onto
+  `CHARACTER_MANAGER`'s multipliers, and an event flag is a `player.quest` row
+  with `dwPID = 0` (loaded by the db core at boot, pushed to every game core).
+  So `persist_rates_mt2009` writes the six rows, the `web_admin` quest's `RATES`
+  command (server timer, `game.set_event_flag`) makes them live in 2-3 s, and
+  the mt2009 `m2-rates` only restarts the cores when nothing in game answered.
+  GM rights: the list is re-read by `/reload a`, which the quest can run only
+  as an online IMPLEMENTOR (`GM_RELOAD`); otherwise the panel says "after a
+  restart". Before adding a panel feature that talks to the game container,
+  check `linux-port-mt2009/docker/game/bin/` for the consumer.
 
 ## Engine facts worth not re-deriving
 

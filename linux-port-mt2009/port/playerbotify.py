@@ -72,6 +72,23 @@ def main(root):
 
     copy_overlay(game)
 
+    # The bots' chest pass asks a special item group whether every line comes
+    # at once (PCT) or one does, to reserve room for the whole set before the
+    # chest is used; the engine keeps m_bType private and has no getter.
+    edit(os.path.join(game, 'item_manager.h'),
+         '\t\tbool IsSpecial(int idx) const\n'
+         '\t\t{\n'
+         '\t\t\treturn m_vecItems[idx].isSpecial;\n'
+         '\t\t}\n',
+         '\t\tbool IsSpecial(int idx) const\n'
+         '\t\t{\n'
+         '\t\t\treturn m_vecItems[idx].isSpecial;\n'
+         '\t\t}\n'
+         '\n'
+         '\t\t// playerbot: the group type, for the chest pass (playerbotify.py).\n'
+         '\t\tBYTE GetGroupType() const { return m_bType; }\n',
+         marker='BYTE GetGroupType() const')
+
     # The overlay's engine switch: playerbot_engine_compat.h maps the r40250
     # names onto this engine's, and a few fragments carry an mt2009 branch.
     edit(os.path.join(game, 'Makefile'),

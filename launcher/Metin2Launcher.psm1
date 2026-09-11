@@ -459,11 +459,14 @@ function Invoke-M2PackageUpdate {
     New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 
     try {
+        $downloadWatch = [Diagnostics.Stopwatch]::StartNew()
         Get-M2Download -Source $url -Destination $download
         $actualHash = (Get-FileHash -LiteralPath $download -Algorithm SHA256).Hash.ToUpperInvariant()
         if ($actualHash -ne $expectedHash) {
             throw "Błędna suma SHA-256. Oczekiwano $expectedHash, otrzymano $actualHash."
         }
+        $downloadMb = [Math]::Round((Get-Item -LiteralPath $download).Length / 1MB, 1)
+        Write-Host ("[faza] pakiet pobrany i sprawdzony: {0} MB w {1} s" -f $downloadMb, [int]$downloadWatch.Elapsed.TotalSeconds) -ForegroundColor DarkCyan
 
         Expand-M2SafeZip -ArchivePath $download -Destination $expanded
         $files = @(Get-ChildItem -LiteralPath $expanded -Recurse -File -Force)

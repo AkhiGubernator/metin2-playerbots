@@ -38,6 +38,18 @@ foreach ($requiredModule in @($modulePath, $diagnosticsModulePath)) {
     }
 }
 Import-Module $modulePath -Force
+
+# Where the time goes. Every action prints a "[faza]" line with the seconds
+# since the action began at each point that can be slow - Docker checks, the
+# download, the file swap, the image build, compose up - so a launcher log
+# from a player says which of them took the ten minutes instead of "the
+# update is slow". The GUI stamps every line with the clock as well; this is
+# for the CLI, and for reading a log without doing the subtraction.
+$script:phaseWatch = [Diagnostics.Stopwatch]::StartNew()
+function Write-Phase {
+    param([Parameter(Mandatory = $true)][string]$Name)
+    Write-Host ("[faza] {0} (+{1} s od poczatku akcji)" -f $Name, [int]$script:phaseWatch.Elapsed.TotalSeconds) -ForegroundColor DarkCyan
+}
 Import-Module $diagnosticsModulePath -Force
 
 function Write-Header {
@@ -139,6 +151,7 @@ function Assert-DockerPrerequisites {
 
 function Start-Server {
     Assert-DockerPrerequisites -CheckPanelPort
+    Write-Phase 'Docker sprawdzony'
     # start-server.ps1 brings the stack up from the images that already exist.
     # After an interrupted update those are the old ones, so finish the build
     # first - otherwise the player keeps running the previous server and the
@@ -152,6 +165,7 @@ function Start-Server {
     if (-not (Test-Path -LiteralPath $script -PathType Leaf)) { throw 'Brakuje start-server.ps1.' }
     & $script
     if ($LASTEXITCODE -ne 0) { throw "Uruchamianie serwera zakończyło się kodem $LASTEXITCODE." }
+    Write-Phase 'Serwer uruchomiony'
 }
 
 function Stop-Server {
@@ -238,6 +252,7 @@ function Rebuild-Server {
     if ($synced -gt 0) {
         Write-Host "Zsynchronizowano $synced plik(ow) zrodlowych bota do kontekstu budowania." -ForegroundColor DarkGray
     }
+    Write-Phase 'Kontekst budowania przygotowany (.env, nakladka)'
     # The engine patches are part of the overlay too, and until now nothing on a
     # player's machine ever applied them.
     $patched = Invoke-M2EnginePatches -ServerRoot $serverRoot
@@ -312,9 +327,11 @@ function Rebuild-Server {
         # the second click succeeded. Pull what is not built first; a failure
         # here is not final, `up` tries again.
         docker compose --project-directory $composeDir -f $composeFile pull --ignore-buildable 2>&1 | Out-Null
+        Write-Phase 'Obrazy bazowe pobrane, zaczynam docker compose up --build'
         Set-M2PlayerbotsVersionEnvironment -ServerRoot $serverRoot
         docker compose --project-directory $composeDir -f $composeFile up -d --build
         $buildExit = $LASTEXITCODE
+        Write-Phase "docker compose up --build zakonczone (kod $buildExit)"
     }
     finally { $ErrorActionPreference = $previousPreference }
     if ($buildExit -ne 0) {
@@ -357,6 +374,7 @@ function Update-Server {
     }
     $result = Invoke-M2PackageUpdate -Component $component -TargetRoot $serverRoot -BackupRoot (Join-Path $serverRoot 'backups')
     Write-Host "Podmieniono $($result.Files) plików. Kopia: $($result.Backup)" -ForegroundColor Green
+    Write-Phase 'Pliki aktualizacji pobrane i podmienione'
     # From here the files on disk are the new version whatever happens to the
     # build, and VERSION on disk already says so. Recording it only after a
     # successful rebuild meant a deferred build left the launcher reporting the

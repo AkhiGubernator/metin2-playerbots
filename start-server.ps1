@@ -975,8 +975,13 @@ try {
         # Shown as it arrives and kept: the one line that says why a start
         # failed comes from compose itself, and the failure branch below wants
         # to read it after the fact.
+        $composeWatch = [Diagnostics.Stopwatch]::StartNew()
         $composeOutput = & docker @composeArguments 2>&1 | ForEach-Object { $line = "$_"; Write-Host $line; $line }
         $upExitCode = $LASTEXITCODE
+        # compose waits for the database to be healthy, the migrator to finish
+        # and the game to answer its healthcheck before it returns; this one
+        # number is "how long the server took to come up".
+        Write-Host ("[faza] docker compose up zakonczone po {0} s (kod {1})" -f [int]$composeWatch.Elapsed.TotalSeconds, $upExitCode) -ForegroundColor DarkCyan
         & docker compose ps
         $psExitCode = $LASTEXITCODE
     }

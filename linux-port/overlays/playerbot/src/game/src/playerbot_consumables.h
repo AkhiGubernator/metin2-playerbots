@@ -92,8 +92,10 @@ namespace
 				// PLAYERBOT_CHEST_FREE_CELLS. Wysokie przedmioty potrzebuja
 				// dodatkowo ciaglych trzech pol w jednej kolumnie, o co
 				// GetEmptyInventory(3) pyta wprost.
-				if (CountPlayerBotFreeInventoryCells(ch) < PLAYERBOT_CHEST_FREE_CELLS ||
-						ch->GetEmptyInventory(3) < 0)
+				// The whole set or nothing (PlayerBotBagTakesGroup, playerbot_gear.h):
+				// the key's use hands out the box's own group.
+				int cellsNeeded = 0;
+				if (!PlayerBotBagTakesGroup(ch, box->GetVnum(), cellsNeeded))
 					return false;
 				const DWORD boxVnum = box->GetVnum(), keyVnum = key->GetVnum();
 				const int before = ch->GetEmptyInventory(1);
@@ -124,9 +126,10 @@ namespace
 					s_mapPlayerBotChestRefused.find(item->GetVnum());
 			if (refused != s_mapPlayerBotChestRefused.end() && dwNow < refused->second)
 				continue;
-			// Ta sama rezerwacja, co przy skrzyni na klucz.
-			if (CountPlayerBotFreeInventoryCells(ch) < PLAYERBOT_CHEST_FREE_CELLS ||
-					ch->GetEmptyInventory(3) < 0)
+			// The same test as for the treasure box: room for the whole set the
+			// group can hand out, placed the way the engine places it.
+			int cellsNeeded = 0;
+			if (!PlayerBotBagTakesGroup(ch, item->GetVnum(), cellsNeeded))
 				return false;
 			const int before = ch->GetEmptyInventory(1);
 			const DWORD chestVnum = item->GetVnum();

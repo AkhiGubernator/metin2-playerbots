@@ -17,6 +17,106 @@ every version here.
 
 ---
 
+## 2.0.6 — 2026-09-11
+
+### Panel klasyczny: przedmioty, teleport, szybkość, poziom znów działają na 2.x
+
+Każde polecenie z panelu klasycznego (nadanie przedmiotu, yang, poziom,
+teleport, szybkość biegu) kończyło się na 2.0.x komunikatem „Nic w grze nie
+odpowiedziało” (czerwcuu, u4nt). Quest `web_admin` czyta kolejkę panelu przez
+`mysql_direct_query()`, a ta funkcja nie jest jedna na obu silnikach: na
+r40250 (nasza łatka) zwraca wiersze jako tabelę, na mt2009 zwraca NAJPIERW
+liczbę zmienionych wierszy, a wiersze jako drugą wartość. Quest brał pierwszą
+wartość za tabelę i nigdy nie widział polecenia. Wspólna owijka bierze tę z
+dwóch wartości, która jest tabelą. To samo naprawia masowe nadawanie z panelu
+zaawansowanego, bo idzie tą samą kolejką.
+
+### Mnożniki EXP, dropu i yang naprawdę działają na 2.x
+
+Strona mnożników obu paneli mówiła na zielono „Zapisano! Serwer właśnie się
+restartuje”, a na serwerze nic się nie zmieniało (wątek z 11 września: „panel
+www niby na zielono informuje o zmianie różnych parametrów, a one się nie
+zmieniają”). Na r40250 mnożnik to przepisanie `mob_proto.txt` i tabel dropu
+przez `m2-rates` w kontenerze gry — obraz mt2009 nie miał tego programu, więc
+zlecenie panelu leżało w kolejce i nikt go nie czytał. Silnik mt2009 ma
+mnożniki własne: flagi zdarzeń `mob_exp`, `mob_item`, `mob_gold` (i bliźniacze
+`_buyer` dla kont premium), przez które `CHARACTER_MANAGER` mnoży
+doświadczenie, szansę dropu i ilość yang. Flaga to wiersz `player.quest` z
+`dwPID = 0`, wczytywany przez rdzeń bazy przy starcie i rozsyłany do rdzeni
+gry. Panel klasyczny zapisuje sześć wierszy, a potem prosi pomocnika w grze
+(`web_admin`, polecenie `RATES` na timerze serwera, `game.set_event_flag`) o
+ustawienie ich na żywo — zmierzone 2–3 s, bez restartu, we wszystkich trzech
+rdzeniach naraz. Gdy nikt nie jest zalogowany i pomocnik nie odpowie, panel
+zleca restart jak dotąd, a obraz mt2009 dostał własny `m2-rates`, który nic
+nie przepisuje, tylko restartuje rdzenie i raportuje wynik (zmierzone 35 s od
+zlecenia do „wszystkie rdzenie działają”, flagi wczytane z bazy). Panel
+zaawansowany zapisuje te same wiersze i idzie ścieżką restartu; oba panele
+pokazują te same liczby. Wartości 100% oznaczają grę bez zmian.
+
+### Nadanie rangi GM na 2.x mówi prawdę
+
+Silnik mt2009 nie ma gniazda administracyjnego, więc `m2-gm` (przeładowanie
+listy GM na żywo) nie istnieje w tym obrazie, a panel i tak pisał „Działa od
+razu, w grze”. Listę odczytuje na nowo `/reload a` — polecenie, które pomocnik
+w grze może wykonać tylko jako zalogowany IMPLEMENTOR. Panel próbuje tego
+przez kolejkę (`GM_RELOAD`), a gdy żaden IMPLEMENTOR nie jest w grze, mówi:
+uprawnienia wczytają się przy najbliższym restarcie albo po `/reload a`
+wpisanym przez zalogowanego GM.
+
+### Tryb ryzyka (Risk mode) zdjęty z linii 2.x
+
+Quest `high_risk` z plików 1.33 (wybór „High Risk / No Risk” przy logowaniu)
+przyszedł do obrazu mt2009 razem z resztą i nie powinien tu być. Nie jest już
+kompilowany; kto wybrał tryb wcześniej, ma go zwyczajnie wyłączonego.
+
+### Zamiar wyjazdu gaśnie po dotarciu (audyt D12)
+
+`lDepartureMap` — „ten bot ma wyjechać na mapę X, gdy skończy sprawunki” —
+był ustawiany raz i nigdy zerowany. Bot raz wstrzymany w Bokjung nosił go do
+końca życia: po powrocie do miasta po zapasy odmawiał każdego polowania na
+materiał i każdej wyprawy do Joan, a nad głową miał cel wyjazdu, na który
+już dawno dotarł. Zamiar gaśnie po przejściu na docelową mapę (albo na
+dowolne pogranicze, gdy pasmo poziomu przesunęło cel w międzyczasie), a
+wstrzymany dłużej niż dziesięć minut jest raportowany raz na dziesięć minut
+(`PLAYERBOT_DEPARTURE: overdue`) z tym, co go trzyma: broń, zbroja,
+mikstury, strzały, miejsce w plecaku, wizyta w mieście, złoto.
+
+### Skrzynia otwiera się tylko wtedy, gdy zmieści się cała paczka (audyt D01)
+
+Silnik wydaje nagrody ze skrzyni po jednej przez `AutoGiveItem`, a to, co się
+nie mieści, kładzie na ziemi i zgłasza sukces. Bot pytał przed skrzynią o
+pięć wolnych kratek i jedno miejsce na trzy pola — dla paczki z sześciu
+przedmiotów to za mało („boty mając pełne EQ otwierają skrzynie ucznia i
+wszystko wylatuje na glebę”). Teraz przed każdą skrzynią — ucznia, Moonlight,
+skrzynką bossa i skrzynią na klucz — bot układa całą paczkę grupy na kopii
+swojej siatki tak, jak robi to silnik: przedmiot potrzebuje swojej wysokości
+w jednej kolumnie jednej strony, stos dokłada się do stosu tego samego vnumu,
+każda nagroda zajmuje miejsce przed sprawdzeniem następnej. Dla grupy typu
+Pct (skrzynie ucznia) liczą się wszystkie linie naraz, dla pozostałych jedna,
+największa. Gdy się nie mieści, skrzynia czeka (raz na minutę
+`PLAYERBOT_GEAR: chest waits for room`), a plecak opróżnia wizyta w mieście.
+Na mt2009 typ grupy odsłania jednolinijkowy getter dodawany przez
+`playerbotify.py`; na r40250 liczone są wszystkie linie.
+
+### Launcher mówi, ile trwała każda faza
+
+Skarga „aktualizacja i start trwają bardzo długo” nie miała do tej pory
+liczby, którą dałoby się sprawdzić: log launchera znał tylko początek i koniec
+akcji. Launcher pisze teraz linie `[faza] … (+N s od początku akcji)` po
+sprawdzeniu Dockera, po przygotowaniu kontekstu budowania, przy starcie i
+końcu `docker compose up --build`, po pobraniu pakietu (rozmiar i czas) i po
+podmianie plików; `start-server.ps1` podaje czas samego `docker compose up`,
+czyli od bazy przez migrator do zdrowej gry. Okno launchera pokazuje bieżącą
+fazę w pasku stanu. Zmierzone na maszynie deweloperskiej dla 2.0.5: start
+zatrzymanego serwera 52 s, aktualizacja z zbudowanymi obrazami około minuty,
+pełna budowa obrazu gry od zera (bez cache kompilatora) 5 min 9 s, z czego
+2 min to pakiety Ubuntu i biblioteki zewnętrzne, 94 s rdzeń gry, 31 s apt
+obrazu docelowego. Na czterordzeniowym laptopie należy się spodziewać trzech,
+czterech razy tyle; to czas pierwszego uruchomienia, aktualizacja kompiluje
+tylko zmienione pliki botów przez ccache.
+
+---
+
 ## 2.0.5 — 2026-09-11
 
 ### Postacie GM w zestawie, który klient umie pokazać

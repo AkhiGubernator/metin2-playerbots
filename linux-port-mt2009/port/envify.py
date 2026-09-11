@@ -25,12 +25,12 @@ EXTRA = """
 #  mt2009 build only (rendered by linux-port-mt2009/port/envify.py)
 # -----------------------------------------------------------------------------
 
-# The Ubuntu package mirror the image build installs from. Leave empty for
-# Ubuntu's own archive.ubuntu.com / security.ubuntu.com; set a mirror's base URL
-# (for example http://ubuntu.task.gda.pl/ubuntu/ or
-# http://mirrors.edge.kernel.org/ubuntu/) on a network where the official one
-# crawls or times out - a build that cannot install its compiler fails after
-# twenty minutes with nothing to show for it.
+# The Ubuntu package mirror the image build installs from. Empty means the
+# Gdansk mirror (http://ubuntu.task.gda.pl/ubuntu/), which is fast from Poland;
+# Ubuntu's own archive.ubuntu.com served a few kilobytes a second here on the
+# day 2.0 came out and every first build sat at deps 7/7 for twenty minutes.
+# Another country wants a closer mirror, e.g. http://mirrors.edge.kernel.org/ubuntu/
+# or http://archive.ubuntu.com/ubuntu/ for the official one.
 M2_APT_MIRROR=
 """
 

@@ -1658,6 +1658,17 @@ namespace
 
 		if (!ShouldPlayerBotKeepShop(ch, state))
 			return false;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// This engine grants the counter at level 15 and 800 kills (CanOpenShop);
+		// before that OpenMyShop refuses with a chat line nobody reads, and a
+		// young world logged thirty-nine refusals in a row for no reason a
+		// keeper could mend. Asked here, before the walk to the pitch.
+		if (!ch->CanOpenShop())
+		{
+			state.dwNextShopKeepTime = dwNow + PLAYERBOT_MT2009_SHOP_NOT_YET_RETRY;
+			return false;
+		}
+#endif
 		// No map test here. There used to be one pinning stalls to Bokjung, left
 		// over from when that was the only market, and it sat in front of the
 		// choice below - so a bot in Joan returned before it ever got to roll, and
@@ -1784,6 +1795,17 @@ namespace
 		const char* pszBook = NULL;
 		int iBooks = 0;
 		int iScrap = 0;
+		// The rest of what a sign can be about (playerbot_shop_signs.h): the
+		// fish line's unit price for the "Malze po %C" names, the best gear
+		// line's name for the "%I" ones.
+		int iFish = 0;
+		int iGear = 0;
+		int iMedals = 0;
+		int iScrolls = 0;
+		int iStones = 0;
+		DWORD dwFishUnitPrice = 0;
+		const char* pszGear = NULL;
+		BYTE bGearRefine = 0;
 		bool grid[PLAYERBOT_SHOP_GRID_CELLS];
 		memset(grid, 0, sizeof(grid));
 		for (size_t i = 0; i < scored.size() && tableCount < tableLimit; ++i)
@@ -1850,6 +1872,21 @@ namespace
 					bPreciousRefine = item->GetRefineLevel();
 				}
 			}
+			else if (item->GetType() == ITEM_FISH || item->GetVnum() == PLAYERBOT_SHELLFISH_VNUM ||
+					(item->GetVnum() >= 27992 && item->GetVnum() <= 27994)) // the three pearls
+			{
+				// Asked before the material test: a shellfish and the pearls are
+				// refine materials too, and a fish counter is not a smith's supplier.
+				if (item->GetVnum() == PLAYERBOT_SHELLFISH_VNUM && item->GetCount() > 0)
+					dwFishUnitPrice = price / item->GetCount();
+				++iFish;
+			}
+			else if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM)
+				++iMedals;
+			else if (item->GetVnum() == PLAYERBOT_BLESSING_SCROLL_VNUM)
+				++iScrolls;
+			else if (item->GetType() == ITEM_METIN)
+				++iStones;
 			else if (IsPlayerBotTradeableMaterial(item))
 			{
 				if (iMaterials < 2)
@@ -1864,6 +1901,15 @@ namespace
 			else if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
 					item->GetRefineLevel() < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
 				++iScrap;
+			else if (item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR)
+			{
+				if (!pszGear || item->GetRefineLevel() > bGearRefine)
+				{
+					pszGear = pszName;
+					bGearRefine = item->GetRefineLevel();
+				}
+				++iGear;
+			}
 		}
 		// Asked again here rather than trusting the scan above: the inventory
 		// moves between the two - a town errand happens in between - and a stall
@@ -1891,7 +1937,9 @@ namespace
 			// The item-name signs stay for the goods people cross a market for:
 			// a level-30 weapon, a big refine. A poor keeper's counter is a
 			// clearance sale and the sign says that first.
-			const DWORD draw = PlayerBotNavHash(ch->GetPlayerID() ^ 0x5349474eU);
+			// The draw moves with the stand, so a keeper reopening on the same
+			// pitch is not reading the same line for an hour.
+			const DWORD draw = PlayerBotNavHash(ch->GetPlayerID() ^ 0x5349474eU ^ ((DWORD)state.bShopStandsInRow * 0x9E3779B9U));
 			static const char* const s_apszPrefixes[] = { "", "Tanio: ", "Okazja: ", "Sprzedam " };
 			static const char* const s_apszBookShops[] = {
 				"Ksiegi umiejetnosci", "KU dla kazdej klasy", "Biblioteka - ksiegi", "Ksiegi: %s i inne" };
@@ -1906,7 +1954,27 @@ namespace
 			char body[SHOP_SIGN_MAX_LEN * 2 + 1];
 			const char* pszTemplate = NULL;
 			const char* pszArg = "";
-			if (pszWeapon30)
+			// What kind of counter this is, by the majority of its lines; the
+			// community's names for that kind come first (playerbot_shop_signs.h),
+			// the older wording only when none of them fits.
+			EPlayerBotSignKind signKind = SIGN_UNIVERSAL;
+			bool bSignByKind = tableCount > 0 && !pszWeapon30 && !pszPrecious;
+			if (bSignByKind)
+			{
+				if (iFish > 0 && iFish * 2 >= (int)tableCount) signKind = SIGN_FISH;
+				else if (iBooks > 0 && iBooks * 2 >= (int)tableCount) signKind = SIGN_BOOKS;
+				else if (iMaterials > 0 && iMaterials * 2 >= (int)tableCount) signKind = SIGN_MATERIALS;
+				else if (iGear > 0 && iGear * 2 >= (int)tableCount) signKind = SIGN_GEAR;
+				else if (iMedals > 0 && iMedals * 2 >= (int)tableCount) signKind = SIGN_MEDALS;
+				else if (iScrolls > 0 && iScrolls * 2 >= (int)tableCount) signKind = SIGN_SCROLLS;
+				else if (iStones > 0 && iStones * 2 >= (int)tableCount) signKind = SIGN_STONES;
+				else if (iScrap > 0 && iScrap >= (int)tableCount / 2) bSignByKind = false; // "Zlom do palenia" below
+				else if (tableCount == 1) bSignByKind = false; // one line: its own name
+			}
+			if (bSignByKind && PickPlayerBotShopSign(body, sizeof(body), signKind, draw,
+					ch->GetName(), dwFishUnitPrice, pszGear))
+				; // chosen
+			else if (pszWeapon30)
 				snprintf(body, sizeof(body), "Bron 30: %s", pszWeapon30);
 			else if (pszPrecious)
 				snprintf(body, sizeof(body), "%s", pszPrecious); // the name carries its +N
@@ -2008,13 +2076,13 @@ namespace
 			quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
 			LPITEM first = ch->GetItem(table[0].pos);
 			const TItemTable* rp = first ? first->GetProto() : NULL;
-			sys_log(0, "PLAYERBOT_SHOP: refused pid=%u items=%u poly=%d quest=%d vnum=%u anti=%u equipped=%d locked=%d viaPos=%d sign=%d gold=%d",
+			sys_log(0, "PLAYERBOT_SHOP: refused pid=%u items=%u poly=%d quest=%d vnum=%u anti=%u equipped=%d locked=%d viaPos=%d sign=%d gold=%d level=%d riding=%d",
 					ch->GetPlayerID(), (unsigned int)tableCount,
 					ch->IsPolymorphed() ? 1 : 0,
 					(pc && pc->IsRunning()) ? 1 : 0, table[0].vnum,
 					rp ? rp->dwAntiFlags : 0, first && first->IsEquipped() ? 1 : 0,
 					first && first->isLocked() ? 1 : 0, first ? 1 : 0,
-					(int)strlen(sign), (int)(ch->GetGold() / 1000));
+					(int)strlen(sign), (int)(ch->GetGold() / 1000), (int)ch->GetLevel(), ch->IsHorseRiding() ? 1 : 0);
 			// The sign is already on every client in view - OpenMyShop sends it
 			// before it creates the shop, and nothing takes it back when the
 			// creation fails. Left alone, this bot walks off wearing a stall

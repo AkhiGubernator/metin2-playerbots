@@ -126,6 +126,7 @@ linux-port-mt2009/docker/game/src/server/game/src/playerbot_missions.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_movement.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_navigation.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_planner.h
+linux-port-mt2009/docker/game/src/server/game/src/playerbot_shop_signs.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_skills.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_status.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_survival.h

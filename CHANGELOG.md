@@ -17,6 +17,42 @@ every version here.
 
 ---
 
+## 2.0.1 — 2026-09-11
+
+Pierwsza poprawka linii 2.x, z pierwszego dnia instalacji u graczy.
+
+### Budowa nie stoi już na `deps 7/7`
+
+Pierwsza budowa pobiera pakiety Ubuntu, a archive.ubuntu.com serwowało dziś z
+Polski kilka kilobajtów na sekundę: 10 MB szło kilkanaście minut, budowa
+„wisiała” na `deps 7/7` po 20–40 minut (jaksiezabic, drip9660, matthaeu,
+u4nt). Wpisanie w `.env` polskiego mirrora skracało to do dwóch minut
+(piotrekf3). Ten mirror (`http://ubuntu.task.gda.pl/ubuntu/`) jest teraz
+domyślny: pusty `M2_APT_MIRROR` w istniejącym `.env` też go dostaje, więc
+nikt nie musi niczego edytować. Inny kraj wpisuje bliższy mirror w
+`M2_APT_MIRROR`.
+
+### Nazwy straganów od społeczności
+
+Iwakura spisał nazwy sklepów z polskich serwerów z lat 2010–2012, z podziałem
+na kategorie. Stragan botów ma teraz szyld według tego, co przeważa na ladzie:
+ryby i małże („Sklep Rybny u Janusza ;]”, „Malze po 3000 sztuka!”), księgi
+umiejętności („Makulatura po dziadku”), ulepszacze („Zolc i skora
+niedzwiedzia”), ekwipunek („Zbroje na chude klaty”), medale konne, zwoje
+błogosławieństwa, kamienie duchów — a stragan mieszany bierze jedną z
+kilkudziesięciu uniwersalnych („TANIEJ NIZ OBOK >>>>>”, „ZBANUJCIE TE
+BOTY!!!”). Broń 30 poziomu i duży ulepszony przedmiot dalej idą na szyld pod
+własną nazwą. Szyld zmienia się z każdym kolejnym straganem tego samego bota.
+
+### Stragan dopiero od 15 poziomu i 800 zabitych potworów
+
+Ten silnik pozwala otworzyć sklep dopiero od 15 poziomu i 800 zabić
+(`CanOpenShop`); młodszy bot dostawał od silnika odmowę przy każdej próbie —
+39 z rzędu w młodym świecie. Bot pyta o to przed wyjściem na pitch i wraca po
+dziesięciu minutach.
+
+---
+
 ## 2.0.0 — 2026-09-11
 
 **Nowa linia serwera: pliki serwerowe mt2009 (Martysama r41023) zamiast r40250.**

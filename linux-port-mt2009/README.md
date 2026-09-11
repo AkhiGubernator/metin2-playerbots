@@ -139,6 +139,17 @@ before `playerbot_types.h`:
   fish here yet — a world decision, not a bug.
 - `OpenMyShop` takes a time index, `SetSkillNextReadTime` a success flag,
   there is no `HEADER_GD_FLUSH_CACHE`, `SAFEBOX_PAGE_SIZE` is derived.
+- A private shop is a right this engine grants at **level 15 and 800 kills**
+  (`CHARACTER::CanOpenShop` reads the `stat_monster` special flag); the stall
+  pass asks `CanOpenShop()` before the walk to the pitch and comes back after
+  `PLAYERBOT_MT2009_SHOP_NOT_YET_RETRY`. A young world logged 39 engine
+  refusals in a row before that gate existed. `OpenMyShop` also refuses a sign
+  outside printable ASCII + CP1250 Polish (`has_proper_characters`), a sign the
+  banword list catches, and a pitch within 60 units of another shop.
+- The stall signs are the community's own (`playerbot_shop_signs.h`, Iwakura's
+  list of 11 September 2026), chosen by what the counter mostly holds — fish,
+  books, materials, gear, medals, scrolls, spirit stones — with the two item
+  headlines (level-30 weapon, big refine) kept. Shared with r40250.
 
 Known, not yet done: the `levelup` quest the hunting missions drive does not
 exist in this package (its `hunting` quest is another shape), the desert boss

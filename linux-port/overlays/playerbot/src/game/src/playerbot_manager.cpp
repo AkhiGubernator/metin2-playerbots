@@ -76,6 +76,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_travel.h"
 #include "playerbot_planner.h"
 #include "playerbot_guild.h"
+#include "playerbot_shop_signs.h"
 #include "playerbot_town.h"
 #include "playerbot_market.h"
 #include "playerbot_chat_trade.h"

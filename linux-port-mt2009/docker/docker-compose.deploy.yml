@@ -99,9 +99,13 @@ services:
         BASE_IMAGE: "${M2_BASE_IMAGE:-ubuntu:24.04}"
         MAKE_JOBS: "${M2_MAKE_JOBS:-}"
         STRIP_BINARIES: "${M2_STRIP_BINARIES:-1}"
-        # An apt mirror for the image build, e.g. http://ubuntu.task.gda.pl/ubuntu/,
-        # for networks from which archive.ubuntu.com crawls or does not answer.
-        APT_MIRROR: "${M2_APT_MIRROR:-}"
+        # The apt mirror the image build installs from. Gdansk by default: on
+        # 11 September 2026 archive.ubuntu.com served Polish players at a few
+        # kilobytes a second and every first build "hung" at deps 7/7 for
+        # twenty minutes; the mirror cut it to two. An empty M2_APT_MIRROR in
+        # .env takes this default too, so an install made before it needs no
+        # edit. Set M2_APT_MIRROR to another mirror for another country.
+        APT_MIRROR: "${M2_APT_MIRROR:-http://ubuntu.task.gda.pl/ubuntu/}"
     image: metin2/game:mt2009
     container_name: "${M2_CONTAINER_PREFIX:-metin2}-game"
     restart: unless-stopped
@@ -374,7 +378,7 @@ services:
       # server it is actually looking at rather than "nieustawiona".
       # The default is bumped with every release, so a world nobody has
       # configured still reports the version it is actually running.
-      PLAYERBOTS_VERSION: "${M2_PLAYERBOTS_VERSION:-2.0.0}"
+      PLAYERBOTS_VERSION: "${M2_PLAYERBOTS_VERSION:-2.0.1}"
       TZ: "${M2_TZ:-UTC}"
     ports:
       # 7790 outside: 7789 is the browser bridge's port in this stack.

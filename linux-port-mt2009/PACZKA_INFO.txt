@@ -1,5 +1,5 @@
 Metin2 Singleplayer (pliki serwerowe mt2009) + Playerbots
-Wersja paczki: 2.0.0 (2026-09-11)
+Wersja paczki: 2.0.1 (2026-09-11)
 
 CO JEST W PACZCE
   Klient\   gotowy klient gry, wskazuje ten komputer (127.0.0.1)

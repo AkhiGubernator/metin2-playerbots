@@ -111,6 +111,11 @@ const DWORD PLAYERBOT_MT2009_FISHING_REACT_MAX = 3300;
 // IN_PROGRESS 2, PAST_EVENT 3.
 const int PLAYERBOT_MT2009_FISHING_GAME_IN_PROGRESS = 2;
 
+// A private shop is a right this engine grants at level 15 and 800 kills
+// (CHARACTER::CanOpenShop reads PLAYER_STATS_MONSTER_FLAG); a keeper asked
+// before that is refused with a chat line and comes back after this long.
+const DWORD PLAYERBOT_MT2009_SHOP_NOT_YET_RETRY = 600000;
+
 // One page of the storeroom, as r40250's length.h named it.
 #ifndef SAFEBOX_PAGE_SIZE
 #define SAFEBOX_PAGE_SIZE (SAFEBOX_PAGE_WIDTH * SAFEBOX_PAGE_HEIGHT)

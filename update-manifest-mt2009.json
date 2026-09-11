@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T11:16:34Z",
-  "statusMessage": "Wersja 2.0.0: nowe pliki serwerowe mt2009. Ta instalacja jest aktualna. Kto ma jeszcze linię 1.33, pobiera pełną paczkę (klient + serwer) z Discorda: https://discord.gg/pt5tvnrN6 - stary launcher i stary klient nie pasują do 2.0.",
+  "publishedAt": "2026-09-11T12:45:19Z",
+  "statusMessage": "Wersja 2.0.1: polski mirror pakietów Ubuntu domyślnie (budowa nie stoi już na deps 7/7), nazwy straganów od społeczności, stragan od 15 poziomu i 800 zabić. Klient bez zmian. Kliknij ZAINSTALUJ AKTUALIZACJE.",
   "server": {
-    "version": "2.0.0",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.0/metin2-server-update-2.0.0.zip",
-    "sha256": "99085DAC5E49F49432E14FEC2B99D0E84C66351AE78C49476C35734DBF000BB6"
+    "version": "2.0.1",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.1/metin2-server-update-2.0.1.zip",
+    "sha256": "C22C9E09726C2031142567CECA14C27EFF6B177B8993D34B34AE24FF45502743"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

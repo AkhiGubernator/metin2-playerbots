@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T10:51:17Z",
-  "statusMessage": "Wersja 2.0.12: logowanie nie wisi przy dużej liczbie botów, boty na mt2009 wystawiają stragany, księgi i medale bez czekania, KINGDOMS=0 wyłącza Shinsoo i Jinno, panel sprawdza wersję swojej linii, boty polują na potwory swojego poziomu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T13:19:34Z",
+  "statusMessage": "Wersja 2.0.13: aktualizacja z paczki na Linuksie, skrzynie nie wysypują się na ziemię, wyszukiwarka widzi stragany botów, panel z nazwami i rozmiarami przedmiotów tego świata i bez hasła lokalnie, teleport do bota, profil czterech GM konta admin, gildie botów z nazwami od Iwakury. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.12",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.12/metin2-server-update-2.0.12.zip",
-    "sha256": "E98C140C3F95462D43BCF758FDE5A44FD35569501D9CC2769FE8128225059311"
+    "version": "2.0.13",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.13/metin2-server-update-2.0.13.zip",
+    "sha256": "2168CD99758EB83A27924C7E35D1A144243556A1D155CB3A8A720DD9F53C9DC4"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

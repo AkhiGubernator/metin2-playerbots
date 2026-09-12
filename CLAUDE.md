@@ -2480,6 +2480,44 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   new event flag in the client's flag dict wired to `__SetNightMode` - a
   root repack and a client package - so `ManagePlayerBotNight` keeps
   raising `xmas_snow` until that ships.
+- **A free cell is what the item grid says, not a cell with no item
+  pointer.** `SetItem` puts `pItems[cell]` in the top cell only and marks
+  `bItemGrid` for every cell the piece covers, so counting
+  `!GetInventoryItem(cell)` called the bottoms of every weapon and armour
+  free. `CountPlayerBotFreeInventoryCells` asks `IsEmptyItemGrid(cell, 1)`
+  since 2.0.20; before that the stall pass looped on it - split "keeping
+  three free cells" that were sword bottoms, no cell for the bundle, merge,
+  split again, every three seconds (6066/4054 lines in fifteen minutes,
+  sizowski's "2 sklepy") - and bag-full, bag-pressure and the chest
+  reserve were off by the height of the gear. `PlayerBotBagTakesGroup`
+  already laid items out by size; its r40250 fallback repeats the grid loop
+  because consumables.h comes after gear.h in the include order.
+- **Prices are Iwakura's tables now, not taste.** `PLAYERBOT_BOOK_PRICES`
+  (44 skills, base at mob_gold 100, scaled by `GetMobGoldAmountRate(NULL)`,
+  jittered 80-125% per listing after the limiter, no wallet scaling) and
+  `PLAYERBOT_BONUS_PRICE_ROWS` in playerbot_bonus.h (per slot mask and
+  APPLY, a max-roll multiplier and an other-value multiplier, the three
+  animal/undead/orc races split at level 33, weapon damage lines by tiers).
+  "Max roll" is `g_map_itemAttr[apply].lValues[bMaxLevelBySet[set] - 1]`
+  (constants.h extern, both engines). The product is capped at x100. On
+  mt2009 APPLY_* are the POINT_* aliases in playerbot_engine_compat.h - add
+  one there before using a new apply (STEAL_SP and POISON_REDUCE were
+  missing). His CENY KU.txt / MNOZNIK BONUSOW.txt are the source.
+- **"±" for "ą" is the client, not the data.** Checked bytes in
+  `world.mob_proto`/`item_proto`: "Handlarz Bronią" ends B9, "Różności" is
+  F3 BF ... 9C - CP1250, correct - and there is no mob_names.txt on this
+  line to mirror it from (names come from world.sql). A client that shows
+  0xB9 as "±" is rendering with another code page (Windows locale for
+  non-Unicode programs, or a font/locale pack in its own packs); ask for
+  the Windows locale and a screenshot of the same NPC before touching the
+  server. NerrVoVy, 12 September.
+- **The 2.0.11/2.0.12 crash signature is one binary and one bug.**
+  Kiciamol's bundle (2.0.12, 1500 bots) has game1 dying every ~51 s with
+  frames byte-identical to sizowski's (+0x41c413 +0x41cc9a +0x436b17
+  +0x43844e under Update+0x51e2 into libc memmove) - the Docker build is
+  deterministic, so addr2line on a rebuilt 2.0.12 binary would name them.
+  That needs the staged engine tree of that version (gitignored), not a
+  worktree alone. Not done: nothing on 2.0.13+ has crashed in 5.5 h.
 
 ## Engine facts worth not re-deriving
 

@@ -17,6 +17,41 @@ every version here.
 
 ---
 
+## 2.0.20 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Stragany znikały: pętla dzielenia i scalania stosów przy pełnym plecaku
+
+„Stan Chunjo M1: 2 sklepy” (sizowski, z paczką: cenzus 50 → 15 → 2 stragany
+w dwadzieścia minut, 6 066 „split for the counter” i 4 054 „merged” w
+kwadrans na jednym rdzeniu). Licznik wolnych pól plecaka patrzył na
+wskaźniki przedmiotów, a silnik trzyma wskaźnik tylko w górnej komórce i
+znaczy resztę w siatce zajętości — broń o trzech polach wyglądała jak jedno
+zajęte i dwa wolne. Straganiarz dzielił stosy na sztuki „zostawiając trzy
+wolne pola”, które były dołami mieczy, pakiet sklepu nie miał pola,
+scalanie zwalniało jedno, dzielenie brało je z powrotem — co trzy sekundy,
+bez końca, i stragan nigdy nie stawał. Wolne pole to teraz to, co mówi
+siatka silnika (`IsEmptyItemGrid`); ta sama miara stoi pod progiem pełnego
+plecaka, ciśnieniem w plecaku i rezerwą na zestaw ze skrzyni, więc wszystkie
+trzy były dotąd zawyżone o wysokość sprzętu w torbie.
+
+### Ceny wg Iwakury: księgi umiejętności i mnożniki bonusów
+
+Księga Umiejętności ma cenę bazową na umiejętność (44 pozycje z jego listy,
+od Aury Miecza 75 000 do Bezszelestnego Chodu 5 000), skalowaną mnożnikiem
+yang serwera (`mob_gold`: przy 200% ceny podwajają się), z losowym
+rozrzutem 0,8–1,25 na każde wystawienie; pamięć sprzedaży działa jak dotąd.
+Portfele botów nie podbijają już cen ksiąg. Bonusy na sprzęcie mnożą cenę
+wg jego tabeli: dla każdego slotu i bonusu jeden mnożnik za wartość
+maksymalną (odczytaną z własnej tabeli silnika `item_attr`) i jeden za każdą
+inną, rasy z podziałem na poziom 33; średnie obrażenia i obrażenia
+umiejętności na broni progami (średnie 40–45 to ×6, 60 to ×70; umiejętności
+25–29 to ×14, 30 to ×40). Mnożniki się składają, z sufitem stukrotności.
+Bonusy spoza tabeli (regeneracja staminy, czas trwania umiejętności, odbicie
+pocisku) nie zmieniają ceny. „Mnożnik bywa agresywny” — do delikatnej
+korekty, gdy ceny w praniu wyjdą nieodpowiednie.
+
 ## 2.0.19 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

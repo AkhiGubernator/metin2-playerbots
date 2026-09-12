@@ -2112,9 +2112,11 @@ namespace
 #endif
 		if (!pGroup)
 		{
+			// The grid, not the pointers: see CountPlayerBotFreeInventoryCells
+			// (defined later in the include order, hence the loop repeated).
 			int freeCells = 0;
 			for (int cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
-				if (!ch->GetInventoryItem(cell))
+				if (ch->IsEmptyItemGrid(TItemPos(INVENTORY, (WORD)cell), 1))
 					++freeCells;
 			return freeCells >= PLAYERBOT_CHEST_FREE_CELLS && ch->GetEmptyInventory(3) >= 0;
 		}

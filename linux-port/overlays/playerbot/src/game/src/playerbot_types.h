@@ -1015,6 +1015,25 @@ namespace
 	const DWORD PLAYERBOT_PRIOR_BOOK_STRONG_BODY = 180000; // Silne Cialo (19)
 	const DWORD PLAYERBOT_PRIOR_BOOK_KEY = 140000;         // inne kluczowe dla buildu
 	const DWORD PLAYERBOT_PRIOR_BOOK_ORDINARY = 45000;
+	// Iwakura's book prices (12 September, "CENY KU"): a base per skill at the
+	// server's default yang rate, scaled by the mob_gold rate the operator
+	// set (200% doubles them), then a draw of PLAYERBOT_BOOK_PRICE_JITTER_MIN
+	// to _MAX percent per listing so two counters never ask the same number;
+	// the sale memory does the rest. A skill not in the table keeps
+	// PLAYERBOT_PRIOR_BOOK_ORDINARY. Vnums as skill_proto has them.
+	struct TPlayerBotBookPrice { DWORD dwSkill; DWORD dwPrice; };
+	const TPlayerBotBookPrice PLAYERBOT_BOOK_PRICES[] = {
+		{ 4, 75000 }, { 3, 45000 }, { 2, 32500 }, { 5, 13500 }, { 1, 10500 },      // wojownik cialo
+		{ 19, 35000 }, { 16, 32500 }, { 17, 14000 }, { 18, 7500 }, { 20, 7500 },   // wojownik umysl
+		{ 31, 22500 }, { 33, 22500 }, { 34, 12500 }, { 32, 8000 }, { 35, 8000 },   // ninja sztylet
+		{ 48, 27500 }, { 50, 22500 }, { 46, 8000 }, { 47, 6500 }, { 49, 5000 },    // ninja luk
+		{ 63, 50000 }, { 64, 40000 }, { 65, 22500 }, { 66, 12500 }, { 62, 8000 }, { 61, 4500 }, // sura bron
+		{ 78, 22500 }, { 79, 20000 }, { 77, 13000 }, { 76, 11000 }, { 80, 6000 }, { 81, 5000 }, // sura magia
+		{ 96, 37500 }, { 94, 35000 }, { 93, 15500 }, { 95, 10000 }, { 92, 6000 }, { 91, 4500 }, // szaman smok
+		{ 109, 22500 }, { 107, 12500 }, { 106, 7500 }, { 111, 5500 }, { 110, 9000 }, { 108, 9000 }, // szaman uzdr.
+	};
+	const int PLAYERBOT_BOOK_PRICE_JITTER_MIN = 80;
+	const int PLAYERBOT_BOOK_PRICE_JITTER_MAX = 125;
 	const DWORD PLAYERBOT_PRIOR_PEARL_WHITE = 2000000;
 	const DWORD PLAYERBOT_PRIOR_PEARL_BLUE = 3000000;
 	const DWORD PLAYERBOT_PRIOR_PEARL_RED = 6000000;

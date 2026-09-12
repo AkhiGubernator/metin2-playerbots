@@ -776,6 +776,22 @@ namespace
 				(unsigned long long)(100 + bonusPercent) / 100ULL));
 	}
 
+	// Iwakura's base for a book, at this world's yang rate. The rate is the
+	// mob_gold multiplier in percent (100 when nothing set it), the same
+	// number the panel's rates page writes.
+	DWORD GetPlayerBotBookAskingBase(DWORD dwSkill)
+	{
+		DWORD base = PLAYERBOT_PRIOR_BOOK_ORDINARY;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_BOOK_PRICES) / sizeof(PLAYERBOT_BOOK_PRICES[0]); ++i)
+			if (PLAYERBOT_BOOK_PRICES[i].dwSkill == dwSkill)
+			{
+				base = PLAYERBOT_BOOK_PRICES[i].dwPrice;
+				break;
+			}
+		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
+		return (DWORD)((unsigned long long)base * (unsigned long long)std::max(1, rate) / 100ULL);
+	}
+
 	DWORD GetPlayerBotShopAskingPrice(LPITEM item)
 	{
 		if (!item)
@@ -821,17 +837,10 @@ namespace
 		// The opening prices. Blended away by the sale memory below as real
 		// transactions accumulate - a prior is where a price starts, not where
 		// it stays.
+		// A book asks Iwakura's price for its skill (PLAYERBOT_BOOK_PRICES),
+		// at the world's yang rate; the wallet block below is not for it.
 		if (bookSkill != 0)
-		{
-			if (bookSkill == 4)
-				unit = PLAYERBOT_PRIOR_BOOK_AURA;
-			else if (bookSkill == 63)
-				unit = PLAYERBOT_PRIOR_BOOK_ENCHANTED_BLADE;
-			else if (bookSkill == 19)
-				unit = PLAYERBOT_PRIOR_BOOK_STRONG_BODY;
-			else
-				unit = std::max(unit, PLAYERBOT_PRIOR_BOOK_ORDINARY);
-		}
+			unit = GetPlayerBotBookAskingBase(bookSkill);
 		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM)
 			unit = PLAYERBOT_PRIOR_PEARL_WHITE;
 		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM + 1)
@@ -857,7 +866,7 @@ namespace
 		// PLAYERBOT_MARKET_*_WALLET_* constants for why the merchant's markup
 		// alone was a giveaway. A soul stone keeps its grade table.
 		const DWORD wallet = GetPlayerBotMarketMedianWallet();
-		if (wallet > 0 && item->GetType() != ITEM_METIN)
+		if (wallet > 0 && item->GetType() != ITEM_METIN && bookSkill == 0)
 		{
 			DWORD permille = PLAYERBOT_MARKET_OTHER_WALLET_PERMILLE;
 			if (IsPlayerBotTradeableMaterial(item))
@@ -959,6 +968,12 @@ namespace
 		// limiter drifts from wherever the last counter had it; neither goes
 		// under the fees.
 		unit = std::max(unit, investment);
+		// A book's market has some noise in it: a fifth under to a quarter
+		// over, drawn per listing. After the limiter and the memory, so the
+		// anchor they keep is the table's number and not one draw of it.
+		if (bookSkill != 0)
+			unit = std::max<DWORD>(1, (DWORD)((unsigned long long)unit *
+					(unsigned long long)number(PLAYERBOT_BOOK_PRICE_JITTER_MIN, PLAYERBOT_BOOK_PRICE_JITTER_MAX) / 100ULL));
 		unit = ApplyPlayerBotBonusPremium(unit, bonusPercent);
 		const DWORD price = unit * (DWORD)item->GetCount();
 		return price == 0 ? 1U : price;

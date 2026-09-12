@@ -143,8 +143,26 @@ const int PLAYERBOT_INVENTORY_PAGE_SIZE = INVENTORY_PAGE_SIZE;
 const int PLAYERBOT_INVENTORY_PAGE_SIZE = 45;
 #endif
 
+// The private shop's grid as the engine indexes it. r40250 lays a counter
+// out five cells wide (SHOP_HOST_ITEM_MAX_NUM, forty); mt2009 doubles the
+// width to SHOP_PLAYER_WIDTH (ten) and keeps the right half for slots a
+// player unlocks or pays premium for (SHOP_PLAYER_LOCKED_*,
+// SHOP_PLAYER_PREMIUM_*). The bots place their lines on the free left page,
+// five wide, and hand the engine display_pos = row * this + column - with
+// the r40250 width every line past the fifth landed in the locked half,
+// CanPlaceOnShopSlot said SHOP_LOCKED_SLOTS to nobody, and OpenMyShop
+// refused the whole counter: "2500 botow, 0 sklepow".
+#if defined(PLAYERBOT_ENGINE_MT2009)
+const int PLAYERBOT_SHOP_ENGINE_COLUMNS = SHOP_PLAYER_WIDTH;
+#else
+const int PLAYERBOT_SHOP_ENGINE_COLUMNS = 5;
+#endif
+
 // Whether this character may open a private shop at all. mt2009 grants the
-// counter at level 15 and 800 kills (CHARACTER::CanOpenShop); r40250 to
+// counter at level 15 and 800 kills (CHARACTER::CanOpenShop) - to a player;
+// since 2.0.12 CanOpenShop answers yes to a bot's descriptor, because a
+// world of two thousand bots opened no counter for hours after every
+// restart while each one killed its eight hundred. r40250 grants it to
 // anybody. The junk rule asks, because a bag that cannot be sold from a
 // counter has only the merchant left.
 inline bool PlayerBotCanOpenShop(LPCHARACTER ch)

@@ -72,6 +72,7 @@ docs/LAUNCHER.md
 tools/New-M2UpdatePackage.ps1
 
 # ---- engine files the port changed or added (measured against the package) --
+linux-port-mt2009/docker/game/src/server/common/length.h
 linux-port-mt2009/docker/game/src/server/common/tables.h
 linux-port-mt2009/docker/game/src/server/db/src/ClientManager.cpp
 linux-port-mt2009/docker/game/src/server/db/src/ClientManager.h
@@ -84,6 +85,7 @@ linux-port-mt2009/docker/game/src/server/game/src/FileMonitor_FreeBSD.h
 linux-port-mt2009/docker/game/src/server/game/src/Makefile
 linux-port-mt2009/docker/game/src/server/game/src/char.cpp
 linux-port-mt2009/docker/game/src/server/game/src/char_battle.cpp
+linux-port-mt2009/docker/game/src/server/game/src/char_shop.cpp
 linux-port-mt2009/docker/game/src/server/game/src/char_skill.cpp
 linux-port-mt2009/docker/game/src/server/game/src/char_state.cpp
 linux-port-mt2009/docker/game/src/server/game/src/cmd.cpp

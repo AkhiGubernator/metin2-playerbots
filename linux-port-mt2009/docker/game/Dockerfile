@@ -195,7 +195,10 @@ RUN set -eux; \
     for fn in mysql_direct_query; do \
       grep -qx "$fn" /tmp/qc-work/quest_functions || echo "$fn" >> /tmp/qc-work/quest_functions; \
     done; \
-    for q in web_admin speed_boost starter_chest; do \
+    # pony_levelup is the package's own stable-keeper quest with the 18-hour
+    # wait between two medals taken out (2.0.12); compiled here under its own
+    # name, its object files land over the stock ones in the runtime copy.
+    for q in web_admin speed_boost starter_chest pony_levelup; do \
       [ -f "/quest-add/$q.quest" ] || continue; \
       sed 's/\r$//' "/quest-add/$q.quest" > "/tmp/qc-work/$q.quest"; \
       ( cd /tmp/qc-work && /src/Server/game/src/quest/qc "$q.quest" ); \

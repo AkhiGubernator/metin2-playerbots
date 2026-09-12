@@ -1587,10 +1587,22 @@ def local_changelog():
 # executed, unpacked or written to disk as code. Two files are read and only
 # two: VERSION (64 bytes, and only three numbers of it are believed) and
 # CHANGELOG.md (text, escaped before it is ever shown).
+# The two engine lines publish two VERSION files in one repository: the root
+# one is the r40250 line's, linux-port-mt2009/VERSION the mt2009 line's. The
+# check used to read the root one whatever the engine, so a 2.0.5 panel
+# compared itself with 1.33.3 and said "you have the newest" for ever
+# (archded, l0st3k, 12 September). The engine flag is read here, ahead of
+# the rest of the engine-specific setup below, because this URL needs it.
+UPDATE_ENGINE = os.environ.get("M2PANEL_ENGINE", "r40250").strip().lower()
 UPDATE_BASE_URL = _env_path(
     "M2PANEL_UPDATE_URL",
     "https://raw.githubusercontent.com/TieruYT/"
     "metin2-playerbots/main")
+# Where this engine's VERSION lives under that base; the changelog is shared.
+UPDATE_VERSION_PATH = "/linux-port-mt2009/VERSION" if UPDATE_ENGINE == "mt2009" else "/VERSION"
+# The other line's VERSION, so a 1.x panel can say that 2.x exists. Only the
+# r40250 line looks across: a 2.x install has nothing to move to.
+UPDATE_NEXT_LINE_PATH = "/linux-port-mt2009/VERSION" if UPDATE_ENGINE != "mt2009" else ""
 
 UPDATE_TIMEOUT  = 8             # seconds, hard, on every network operation
 UPDATE_EVERY    = 24 * 3600     # after a successful check
@@ -1609,7 +1621,8 @@ _UPD = {"checked": 0.0,   # last SUCCESSFUL check
         "tried":   0.0,   # last attempt, successful or not
         "latest":  "",    # last version seen published
         "notes":   "",    # its changelog, fetched only when it is newer
-        "error":   ""}    # short, non-technical reason the last attempt failed
+        "error":   "",    # short, non-technical reason the last attempt failed
+        "next_line": ""}  # the 2.x line's version, seen from a 1.x panel
 
 _UPD_LOCK = threading.Lock()
 
@@ -1629,6 +1642,8 @@ def _upd_load():
                 pass
         latest = str(saved.get("latest") or "")
         _UPD["latest"] = latest if semver(latest) else ""
+        next_line = str(saved.get("next_line") or "")
+        _UPD["next_line"] = next_line if semver(next_line) else ""
         _UPD["notes"]  = str(saved.get("notes") or "")[:CHANGELOG_MAX]
         _UPD["error"]  = str(saved.get("error") or "")[:200]
 
@@ -1676,10 +1691,18 @@ def _update_check_now():
     """One attempt. Never raises: a failure is a recorded fact, not an event."""
     now = time.time()
     try:
-        raw = _update_fetch(UPDATE_BASE_URL + "/VERSION", 64)
+        raw = _update_fetch(UPDATE_BASE_URL + UPDATE_VERSION_PATH, 64)
         first = (raw.strip().splitlines() or [""])[0].strip()
         if not semver(first):
             raise ValueError("the published VERSION is not a version")
+        next_line = ""
+        if UPDATE_NEXT_LINE_PATH:
+            try:
+                raw2 = _update_fetch(UPDATE_BASE_URL + UPDATE_NEXT_LINE_PATH, 64)
+                cand = (raw2.strip().splitlines() or [""])[0].strip()
+                next_line = cand if semver(cand) else ""
+            except Exception:
+                next_line = ""      # the other line is a courtesy, never an error
         notes = ""
         if semver_newer(first, PANEL_VERSION):
             # Only now is the changelog worth the bytes -- and only then does
@@ -1689,7 +1712,8 @@ def _update_check_now():
             except Exception:
                 notes = ""      # the version alone is still worth having
         with _UPD_LOCK:
-            _UPD.update(checked=now, tried=now, latest=first, notes=notes, error="")
+            _UPD.update(checked=now, tried=now, latest=first, notes=notes, error="",
+                        next_line=next_line)
     except Exception as exc:
         with _UPD_LOCK:
             # Keep whatever was known before; only the attempt failed.
@@ -1722,12 +1746,16 @@ def update_state():
     """What the templates ask. Reads memory only -- never the network."""
     with _UPD_LOCK:
         latest, checked, error = _UPD["latest"], _UPD["checked"], _UPD["error"]
+        next_line = _UPD["next_line"]
     return {"enabled":   UPDATE_CHECK,
             "current":   PANEL_VERSION,
             "latest":    latest,
             "available": semver_newer(latest, PANEL_VERSION),
             "checked":   checked,
-            "error":     error}
+            "error":     error,
+            # A 1.x panel with a 2.x line published: not an update it can
+            # install, so never "available" - said beside the version instead.
+            "next_line": next_line if (next_line and semver_newer(next_line, PANEL_VERSION)) else ""}
 
 def update_notes():
     """The published changelog, when there is a newer version. Text, not HTML."""
@@ -2639,6 +2667,7 @@ T = {
  "pl_check_wait":{"pl":"Sprawdzono przed chwilą — daj temu minutę.","en":"Just checked a moment ago — give it a minute.","de":"Gerade eben schon geprüft — gib ihm eine Minute.","tr":"Az önce kontrol edildi — bir dakika bekle."},
  "pl_open":      {"pl":"📜 Otwórz listę zmian","en":"📜 Open the patch log","de":"📜 Patchlog öffnen","tr":"📜 Sürüm notlarını aç"},
  "upd_none":     {"pl":"To najnowsza opublikowana wersja.","en":"This is the newest published version.","de":"Das ist die neueste veröffentlichte Version.","tr":"Bu, yayımlanan en yeni sürüm."},
+ "upd_next_line": {"pl":"Istnieje też linia 2.x (silnik mt2009, wersja {new}). To osobna paczka z Discorda, nie aktualizacja tej instalacji — ten launcher i klient 1.x z nią nie działają.","en":"There is also the 2.x line (mt2009 engine, version {new}). It is a separate package from the Discord, not an update of this install — this launcher and the 1.x client do not work with it.","de":"Es gibt auch die 2.x-Linie (mt2009-Engine, Version {new}). Das ist ein eigenes Paket vom Discord, kein Update dieser Installation — dieser Launcher und der 1.x-Client funktionieren damit nicht.","tr":"Ayrıca 2.x hattı var (mt2009 motoru, sürüm {new}). Bu, Discord'dan ayrı bir pakettir, bu kurulumun güncellemesi değil — bu başlatıcı ve 1.x istemcisi onunla çalışmaz."},
  "upd_never":    {"pl":"Jeszcze nie sprawdzono — pierwsze sprawdzenie następuje kilka minut po starcie panelu.","en":"Not checked yet — the first check happens a couple of minutes after the panel starts.",
                   "de":"Noch nicht geprüft — die erste Prüfung läuft ein paar Minuten nach dem Start des Panels.",
                   "tr":"Henüz kontrol edilmedi — ilk kontrol panel başladıktan birkaç dakika sonra yapılır."},
@@ -4101,6 +4130,7 @@ TPL_DASH = BASE.replace("__BODY__", """
 {% else %}
 <p class="muted">{{t('ver_label')}} <b>{{ panel_version if panel_version else t('ver_unknown') }}</b>.
 {% if not upd.enabled %}{{t('upd_off_t')}}.{% elif upd.error %}{{t('upd_failed')}}{% elif not upd.checked %}{{t('upd_never')}}{% else %}{{t('upd_none')}}{% endif %}</p>
+{% if upd.next_line %}<p class="muted">{{ t('upd_next_line').replace('{new}', upd.next_line) }}</p>{% endif %}
 <a class="btn" href="{{url_for('patchlog')}}" title="{{t('tip_patchlog')}}">{{t('pl_open')}}</a>
 {% endif %}
 </div>
@@ -10933,6 +10963,7 @@ TPL_PATCHLOG = BASE.replace("__BODY__", """
 {% else %}
 <p class="muted">{{t('upd_none')}}{% if upd.error %} — {{t('upd_failed')}}{% endif %}</p>
 {% endif %}
+{% if upd.next_line %}<p class="muted">{{ t('upd_next_line').replace('{new}', upd.next_line) }}</p>{% endif %}
 {# Asks straight away instead of waiting for the daily check -- the one place
    in the panel where a page deliberately waits for the network, because
    somebody pressed a button and is owed an answer. #}

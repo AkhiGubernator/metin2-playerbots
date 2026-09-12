@@ -1056,8 +1056,13 @@ function New-M2SupportBundle {
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'game-container-logs.txt') -Command {
                 docker compose --project-directory $composeDir -f $composeFile logs --no-color --tail 6000 game
             }
+            # Filtered on the PowerShell side: 2.0.11 piped this through grep,
+            # which Windows PowerShell does not have, and every bundle carried
+            # a CommandNotFoundException where the supervisor's lines belonged.
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'game-supervise.txt') -Command {
-                docker compose --project-directory $composeDir -f $composeFile logs --no-color --tail 200000 game 2>&1 | grep -a -e supervise -e 'CORE DIED' -e 'fatal signal' -e 'crash' | tail -n 400
+                docker compose --project-directory $composeDir -f $composeFile logs --no-color --tail 200000 game 2>&1 |
+                    Select-String -Pattern 'supervise', 'CORE DIED', 'fatal signal', 'crash' -SimpleMatch |
+                    Select-Object -Last 400 | ForEach-Object { $_.Line }
             }
             # The core's syslog never reaches the container log - only syserr
             # does - so a bundle sent about "the bots walk to the wrong portal"
@@ -1096,6 +1101,30 @@ function New-M2SupportBundle {
                     docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
                         ('ls -la ' + $coreDir + '/crash*.txt 2>/dev/null; for f in $(ls -t ' + $coreDir + '/crash*.txt 2>/dev/null | head -n 5); do echo; echo === $f; cat $f; done')
                 }
+                # A player's login lands on a channel core: the key it brought,
+                # what the db core answered, and a FULL or ALREADY refusal are
+                # all syslog lines, and none of the patterns above matched them.
+                # "Wisi na ekranie logowania" (sizowski, 2.0.11) could not be read
+                # from a bundle without these.
+                Invoke-M2CapturedCommand -OutputPath (Join-Path $work ('login-' + $core + '.txt')) -Command {
+                    docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                        ('for f in ' + $coreDir + '/log/*/syslog.* ' + $coreDir + '/syslog; do [ -f $f ] && tail -n 400000 $f; done 2>/dev/null | grep -a -e LOGIN -e Login -e login -e AUTH -e CHANNEL_STATUS -e P2P -e ALREADY -e FULL | grep -a -v -e PLAYERBOT_AUTH -e playerbot_ | tail -n 2000')
+                }
+            }
+            # The auth core answers the client's first screen. Its syserr and
+            # every login it handled, because "Logowanie..." that never ends
+            # is decided here or in the db core, and 2.0.11 collected neither.
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'syserr-auth.txt') -Command {
+                docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                    'tail -n 2000 /opt/metin2/var/auth/syserr 2>/dev/null'
+            }
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'login-auth.txt') -Command {
+                docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                    'for f in /opt/metin2/var/auth/log/*/syslog.* /opt/metin2/var/auth/syslog; do [ -f $f ] && tail -n 200000 $f; done 2>/dev/null | grep -a -v -e playerbot_ -e PLAYERBOT_ | tail -n 2000'
+            }
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'login-db.txt') -Command {
+                docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                    'for f in /opt/metin2/var/db/log/*/syslog.* /opt/metin2/var/db/syslog; do [ -f $f ] && tail -n 400000 $f; done 2>/dev/null | grep -a -e LOGIN -e Login -e login -e AUTH -e ALREADY -e KEY -e PLAYER_LOAD | grep -a -v -e playerbot_ | tail -n 2000'
             }
             # The db core writes its own syserr (a failed query, a table the
             # game asked for and the schema lacks).

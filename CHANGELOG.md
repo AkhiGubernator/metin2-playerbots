@@ -17,6 +17,119 @@ every version here.
 
 ---
 
+## 2.0.12 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Logowanie nie wisi przy dużej liczbie botów
+
+„Po aktualizacji 2.0.11 ciągle wisi na ekranie logowania”, „po zmniejszeniu
+botów do 1500 działa” (sizowski). Odtworzone na stosie testowym z 2482
+botami: rdzeń db odpowiadał na logowanie po 14–28 sekundach, klient dawał
+sobie spokój wcześniej, a w logu rdzenia kanału zostawało
+`LoginSuccess - cannot find handle [admin]`. Powód: tabele gry są na tej
+linii InnoDB, a MariaDB domyślnie czeka na fsync przy każdym zapisie — na
+dysku Docker Desktop to około 70 zapisów na sekundę, a 2482 boty zapisują
+około stu (flagi statystyk, flagi questów, przedmioty). Kolejka zapytań
+rdzenia db rosła do ~1900, a SELECT logowania stał na jej końcu.
+`innodb_flush_log_at_trx_commit = 2` w `99-metin2.cnf`: log InnoDB jest
+zrzucany co sekundę zamiast przy każdym zapisie. Przy awarii zasilania
+przepada najwyżej sekunda zapisów; dla świata jednego gracza to właściwa
+proporcja. Ustawienie wchodzi przy restarcie kontenera bazy (launcher robi
+to przy aktualizacji). Zmierzone po zmianie, ten sam świat i 2482 boty:
+kolejka rdzenia db 0, odpowiedź na logowanie po sekundzie, logowanie z
+klienta przechodzi do wyboru postaci. To samo stało za „teleport na GM-ie
+wywala mnie i nie mogę się zalogować ponownie” (marcol_): teleport między
+rdzeniami to ponowne logowanie kluczem, które czekało w tej samej kolejce.
+
+### Boty na mt2009 wystawiają stragany
+
+„2500 botów — 0 sklepów” (sizowski), „u mnie nie ma sklepów” (namiot_,
+pasywnezarabianie, mlodszygie). Dwie przyczyny, obie po stronie tego silnika:
+
+- Siatka prywatnego sklepu ma tu dziesięć kolumn (`SHOP_PLAYER_WIDTH`), a
+  prawa połowa to sloty zablokowane albo premium. Boty układały linie na
+  pięciu kolumnach jak na r40250 i każdą linię powyżej piątej wysyłały w
+  zablokowaną połowę — silnik odrzucał cały stragan (w logu
+  `PLAYERBOT_SHOP: refused`). Linia trafia teraz w ten sam wiersz i kolumnę
+  siatki silnika.
+- Ten silnik daje prawo do sklepu od 15 poziomu i 800 zabitych potworów
+  (`CanOpenShop`). Reguła dla ludzi; bot po każdym restarcie świata zaczynał
+  liczyć od nowa, więc przez wiele godzin żaden nie handlował. Bot jest z niej
+  zwolniony (zmiana w `char_shop.cpp`, plik w paczce).
+
+Zmierzone na stosie testowym z 2482 botami: przed zmianą 0 straganów w
+godzinę, po zmianie 113 otwartych w pięć minut od startu (13 Yongan, 66
+Joan, 34 Pyongmoo), dwie odmowy silnika na 116 prób.
+
+### Księgi i medale bez czekania
+
+„Księgi co 24 h” (namiot_), prośba operatora: bez limitu czasu na kolejną
+Księgę Umiejętności i na kolejny medal konia. `SKILLBOOK_LEARN_DELAY` (21 h
+w paczce mt2009) jest zerem — dla gracza i dla bota. Stajenny nie każe już
+czekać 18 godzin na kolejny medal: `pony_levelup.quest` z paczki jedzie w
+naszym katalogu questów z wyłączoną bramką `next_time` i jest kompilowany
+przy budowie obrazu na miejsce oryginału.
+
+### M2_PLAYERBOT_KINGDOMS=0 wyłącza Shinsoo i Jinno także po zasiewie
+
+„Ustawiłem KINGDOMS=0, a boty i tak pojawiają się w Jinno i Shinsoo”
+(adijhos). Przełącznik działał tylko na zasiew: świat, który raz ruszył z 1,
+miał tożsamości obu królestw w bazie i każdy rdzeń je startował. Rdzeń czyta
+teraz ten sam przełącznik ze środowiska usługi `game` (linia w logu
+`PLAYERBOT: M2_PLAYERBOT_KINGDOMS=0 …`) i przy 0 nie daje Shinsoo ani Jinno
+żadnego przydziału. Boty zostają w bazie; 1 uruchamia je z powrotem.
+
+### Panel klasyczny sprawdza wersję swojej linii
+
+„Sprawdź najnowszą wersję” mówiło 2.0.5, że jest najnowsza (archded,
+l0st3k). Panel czytał `VERSION` z korzenia repozytorium, czyli wersję linii
+1.x (1.33.3), i porównywał ją ze swoją 2.x. Panel mt2009 czyta
+`linux-port-mt2009/VERSION`; panel 1.x dostaje dodatkowo zdanie, że istnieje
+linia 2.x i że to osobna paczka z Discorda, nie aktualizacja.
+
+### Paczka logów: naprawiony grep, logowanie i rdzeń auth
+
+`game-supervise.txt` w 2.0.11 zawierał tylko błąd PowerShella (brak `grep`
+w Windows). Filtr robi teraz PowerShell. Do paczki wchodzą też linie
+logowania z każdego rdzenia kanału (`login-<rdzeń>.txt`), rdzenia auth
+(`login-auth.txt`, `syserr-auth.txt`) i rdzenia db (`login-db.txt`) — bez
+nich zgłoszenie „wisi na logowaniu” nie miało w paczce ani jednego wiersza.
+
+### Bot w wiosce poluje na potwory swojego poziomu
+
+„Biegają z 16 levelami po 11 h” (l0st3k), „boty biją na 9/10 lvlach nadal
+psy”. Zmierzone na stosie testowym (350 botów, mnożnik expa 100%): jedna
+trzecia walk w pierwszych wioskach toczyła się z potworem o sześć i więcej
+poziomów niższym od bota, poziom w okolicach 8–9 zajmował 40 minut, a 13–15
+około dwóch godzin. Winne było pasmo hubu: bot brał każdy hub, którego
+potwory są do siedmiu poziomów niżej od niego, więc bot na 9 poziomie szedł
+według pid równie chętnie do psów (Dziki Pies, 15 expa) co do wilków swojego
+poziomu (Nieb. Alfa Wilk, 111 expa). Tabela kar za różnicę poziomów w tym
+silniku tego nie ogranicza — sześć poziomów niżej to wciąż 90% — niska jest
+sama baza. Hub jest teraz brany od dwóch poziomów nad botem do trzech pod
+nim, a gdy w wiosce nie ma hubu w tym paśmie, bot bierze huby najbliższego
+pasma zamiast dowolnego (bot na 16 poziomie w Yongan szedł dotąd gdziekolwiek,
+także do tygrysów na 25, których nie pokona, i do psów). Obozy grup wybierane
+są tą samą regułą.
+
+Samo pasmo podwoiło awanse i nie ruszyło nikogo z miejsca: zasięg szukania celu
+to 6000 jednostek, tyle co komórka hubu, więc bot stojący przy wilkach swojego
+poziomu dalej widział psy sześć kilometrów dalej, a wędrówka do hubu — która
+dostaje tick tylko wtedy, gdy nie ma czego bić — nigdy go nie dostawała: 96 ze
+115 botów w Joan stało dalej niż 2500 jednostek od jakiegokolwiek hubu. Druga
+połowa zmiany: w pierwszej wiosce potwór o sześć i więcej poziomów niższy od
+bota i dalej niż 800 jednostek nie jest celem („outgrown_prey” w logu), więc
+bot idzie do swojego hubu, a po drodze bije to, co ma pod nogami. Obrona,
+zadanie, materiał i polowanie na broń mają pierwszeństwo, jak dotąd.
+
+Zmierzone na tym samym świecie w oknach po 10 minut, awanse na królestwo
+(117 botów): Shinsoo 30 → 47, Chunjo 5 → 38, Jinno 37 → 57 — przy rosnących
+poziomach, więc każdy kolejny awans kosztuje więcej expa. Walki z potworem
+o sześć i więcej poziomów niżej: z 36–40% do 9–18% (reszta to obrona i to,
+co stało w zasięgu 800). Tick, liczba szukań celu i resety watchdoga bez
+zmian; odmów „outgrown_prey” 5–40 na minutę na rdzeń.
+
 ## 2.0.11 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

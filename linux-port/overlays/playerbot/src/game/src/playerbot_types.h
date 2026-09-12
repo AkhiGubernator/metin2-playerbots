@@ -1378,6 +1378,20 @@ namespace
 	// not a rule of the game: quest, material and equipment errands are allowed
 	// through it, and self-defence comes before it.
 	const int PLAYERBOT_COMBAT_MIN_EXP_PERCENT = 20;
+	// A village monster this many levels under the bot is outgrown prey, and
+	// the bot does not cross the field for it. The exp table above cannot say
+	// this: on the mt2009 line it still pays 90% at six under, and the base a
+	// Wild Dog carries is 15 against a Blue Alpha Wolf's 111. With the search
+	// range at PLAYERBOT_SEARCH_RANGE a bot at its own band's hub still saw
+	// the dogs six kilometres off, and 96 of 115 bots on Joan stood nowhere
+	// near any hub, chain-killing whatever was next - a third of every fight
+	// six or more levels under the bot, a level in the teens every two hours.
+	// What is within PLAYERBOT_OUTGROWN_CHAIN_RANGE is killed on the way, as
+	// a player would; beyond it the wander pass gets the tick and walks the
+	// bot to its band's hub. First villages only, where the 1-31 spread is;
+	// defence, quest, material and equipment errands come before it.
+	const int PLAYERBOT_VILLAGE_OUTGROWN_LEVELS = 6;
+	const int PLAYERBOT_OUTGROWN_CHAIN_RANGE = 800;
 	// How often the monster a bot is already fighting is asked again whether
 	// it is still worth fighting. Not every tick: the answer needs the bot's
 	// material shortages, which cost a walk of the bag.

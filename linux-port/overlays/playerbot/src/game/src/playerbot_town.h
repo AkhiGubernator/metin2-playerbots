@@ -1624,6 +1624,15 @@ namespace
 			grid[slot + h * PLAYERBOT_SHOP_GRID_COLUMNS] = true;
 	}
 
+	// The bots' own grid is five wide; what the engine indexes by is
+	// PLAYERBOT_SHOP_ENGINE_COLUMNS wide (ten on mt2009, whose right half is
+	// locked or premium). Same row, same column, the engine's stride.
+	int PlayerBotShopSlotToEngine(int slot)
+	{
+		return (slot / PLAYERBOT_SHOP_GRID_COLUMNS) * PLAYERBOT_SHOP_ENGINE_COLUMNS +
+				slot % PLAYERBOT_SHOP_GRID_COLUMNS;
+	}
+
 	// The item behind a counter line, while it is still the keeper's to sell.
 	// The engine's own test, made before the walk instead of after it: the item
 	// by id, and its owner the keeper. Sold, and the id belongs to the buyer;
@@ -1998,7 +2007,7 @@ namespace
 			table[tableCount].count = item->GetCount();
 			table[tableCount].pos = TItemPos(INVENTORY, cell);
 			table[tableCount].price = price;
-			table[tableCount].display_pos = (BYTE)slot;
+			table[tableCount].display_pos = (BYTE)PlayerBotShopSlotToEngine(slot);
 
 			TPlayerBotShopOffer offer;
 			offer.dwVnum = item->GetVnum();
@@ -2007,7 +2016,7 @@ namespace
 			offer.wCount = item->GetCount();
 			offer.dwItemID = item->GetID();
 			offer.bSoldLogged = false;
-			offer.bSlot = (BYTE)slot;
+			offer.bSlot = (BYTE)PlayerBotShopSlotToEngine(slot);
 			offers.push_back(offer);
 			if (scored[i].first > bestScore)
 				bestScore = scored[i].first;

@@ -646,6 +646,16 @@ namespace
 			context.levelExpPercent =
 					PERCENT_LVDELTA(ch->GetLevel(), candidate->GetLevel());
 			context.canReceiveExp = candidate->GetMobTable().dwExp > 0;
+			// Outgrown prey across the field. The level table is too kind to
+			// catch it (see PLAYERBOT_VILLAGE_OUTGROWN_LEVELS), so the rule is
+			// the level difference itself, and it only applies where the walk
+			// would take the bot away from its own band's ground.
+			if (IsPlayerBotM1Map(ch->GetMapIndex()) &&
+					(int)ch->GetLevel() - (int)candidate->GetLevel() >=
+						PLAYERBOT_VILLAGE_OUTGROWN_LEVELS &&
+					DISTANCE_APPROX(ch->GetX() - candidate->GetX(),
+							ch->GetY() - candidate->GetY()) > PLAYERBOT_OUTGROWN_CHAIN_RANGE)
+				context.outgrownPrey = true;
 		}
 		return context;
 	}

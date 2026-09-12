@@ -495,6 +495,22 @@ def main(root):
          '\t\tint want[playerbot_empire_rules::EMPIRE_COUNT];\n'
          '\t\tCPlayerBotManager::instance().CountRegisteredPerEmpire(\n'
          '\t\t\t\tregistered, playerbot_empire_rules::EMPIRE_COUNT);\n'
+         '\t\t// M2_PLAYERBOT_KINGDOMS=0 used to reach only the seed: a world that had\n'
+         '\t\t// once run with 1 kept its Shinsoo and Jinno identities registered, and\n'
+         '\t\t// every core went on starting them ("ustawilem KINGDOMS=0, a boty i tak\n'
+         '\t\t// pojawiaja sie w Jinno i Shinsoo"). The switch comes to the core\n'
+         '\t\t// through the game service\'s environment now, and a 0 leaves the two\n'
+         '\t\t// new kingdoms with no budget. Their bots stay in the database as they\n'
+         '\t\t// are; a 1 later starts them again.\n'
+         '\t\tconst char* kingdomsSwitch = std::getenv("M2_PLAYERBOT_KINGDOMS");\n'
+         '\t\tif (kingdomsSwitch && *kingdomsSwitch && std::atoi(kingdomsSwitch) == 0)\n'
+         '\t\t{\n'
+         '\t\t\tsys_log(0, "PLAYERBOT: M2_PLAYERBOT_KINGDOMS=0, Shinsoo (%d) and Jinno (%d) are not started",\n'
+         '\t\t\t\t\tregistered[playerbot_empire_rules::EMPIRE_SHINSOO],\n'
+         '\t\t\t\t\tregistered[playerbot_empire_rules::EMPIRE_JINNO]);\n'
+         '\t\t\tregistered[playerbot_empire_rules::EMPIRE_SHINSOO] = 0;\n'
+         '\t\t\tregistered[playerbot_empire_rules::EMPIRE_JINNO] = 0;\n'
+         '\t\t}\n'
          '\t\tplayerbot_empire_rules::SplitPopulation(autoSpawnCount, registered, want);\n'
          '\n'
          '\t\tfor (int empire = playerbot_empire_rules::EMPIRE_SHINSOO;\n'
@@ -619,6 +635,37 @@ def main(root):
     # and tests the polymorph state there already, so there is nothing to do;
     # the anchor below only proves that.
     # ======================================================================
+
+    # ======================================================================
+    # 2.0.12 a bot's counter opens from the start. This engine grants a private
+    # shop at level 15 and 800 kills (PLAYER_STATS_MONSTER_FLAG), a rule for
+    # people: a world of two thousand bots opened no counter for hours after
+    # every restart while each one earned them again ("2500 botow, 0 sklepow").
+    # ======================================================================
+    edit(os.path.join(game, 'char_shop.cpp'),
+         'bool CHARACTER::CanOpenShop()\n'
+         '{\n'
+         '\treturn GetLevel() >= 15 && GetSpecialFlag(PLAYER_STATS_MONSTER_FLAG) >= 800;\n'
+         '}\n',
+         'bool CHARACTER::CanOpenShop()\n'
+         '{\n'
+         '\t// A playerbot trades from the start: the level and the eight hundred kills\n'
+         '\t// are a rule for people, and a world of two thousand bots opened no\n'
+         '\t// counter for hours after every restart while each one earned them again.\n'
+         '\tif (GetDesc() && GetDesc()->IsBot())\n'
+         '\t\treturn true;\n'
+         '\treturn GetLevel() >= 15 && GetSpecialFlag(PLAYER_STATS_MONSTER_FLAG) >= 800;\n'
+         '}\n')
+
+    # ======================================================================
+    # 2.0.12 no wait between two books of one skill. The package puts 21 hours
+    # between reads (SKILLBOOK_LEARN_DELAY); this world reads the next book at
+    # once, for a player as for a bot - the operator's rule, asked for on the
+    # Discord ("ksiegi co 24h").
+    # ======================================================================
+    edit(os.path.join(root, 'common', 'length.h'),
+         '\tSKILLBOOK_LEARN_DELAY = 21 * 3600,\n',
+         '\tSKILLBOOK_LEARN_DELAY = 0, // 21 hours in the package; this world reads the next book at once (2.0.12)\n')
 
     # ======================================================================
     # 0006 the Moonlight chest and three books from every stone.

@@ -1477,9 +1477,58 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   9/10 lvlach nadal psy"). Each carries the median monster level within
   2500 units, measured from `regen.txt` through `group.txt` and
   `group_group.txt` with `mob_proto` levels (the parser shapes in "Engine
-  facts" apply); `IsPlayerBotM1HubForLevel` admits a hub from two under its
-  median to seven over, and the pid spreads the bot over the admitted ones.
-  Re-measure before moving a hub; do not guess a band.
+  facts" apply); `IsPlayerBotM1HubForLevel` admits a hub from two over its
+  median to three under, and the pid spreads the bot over the admitted ones.
+  It admitted seven under until 2.0.12, and the seven were dogs: a bot of
+  nine took the band-three hubs beside the band-nine ones, a third of every
+  fight measured on the test world was six or more levels under the bot,
+  and a level in the teens took two hours. `PERCENT_LVDELTA` is not what
+  limits that - this engine's table still pays 90% at six under - the base
+  experience is (Wild Dog 15, Blue Alpha Wolf 111). When no band holds the
+  level, `CollectPlayerBotM1HubsForLevel` takes the nearest band, never the
+  whole table. Re-measure before moving a hub; do not guess a band.
+- **The mt2009 counter is ten columns wide, and the bots laid it out five
+  wide.** `SHOP_PLAYER_WIDTH` doubles r40250's `SHOP_DEFAULT_WIDTH`; the
+  right half (x 5-9) is locked rows 0-3 (`SHOP_SLOT_UNLOCK_PROGRESS_FLAG`)
+  and premium rows 4-7, and `CanPlaceOnShopSlot` refuses either with a chat
+  line a bot never reads - so every counter with a sixth line was refused
+  whole, and "2500 botow, 0 sklepow" was true on every mt2009 world.
+  `PLAYERBOT_SHOP_ENGINE_COLUMNS` (compat) is the engine's stride and
+  `PlayerBotShopSlotToEngine` converts the bots' five-wide slot; the buyer
+  side already indexed by the engine's position. The other half was
+  `CanOpenShop()` - level 15 and `PLAYER_STATS_MONSTER_FLAG` >= 800, a rule
+  for people that a bot re-earned after every world reset - which
+  playerbotify.py now exempts a bot descriptor from. The kill flags do
+  persist (`player_special_flag`, loaded on the bot path), so a settled bot
+  passes anyway; a fresh world does not for hours.
+- **InnoDB fsync per commit is the login hang.** The mt2009 line's player
+  tables are InnoDB and the db core queues every save on one SQL_PLAYER
+  connection, the same one a login's `player_index` SELECT goes through.
+  With `innodb_flush_log_at_trx_commit = 1` a Docker Desktop disk managed
+  ~70 fsyncs a second against ~100 writes a second from 2482 bots (special
+  flags, quest flags, items): `return 1890/26/229` in the db syslog is that
+  queue, and the login was answered 14-28 s later, to a client that had
+  gone (`LoginSuccess - cannot find handle`). `99-metin2.cnf` sets 2. Read
+  the db core's `[pulse] return q/r/f async q/r/f` line before blaming
+  MyISAM locks; the db process itself sat at 0% CPU throughout.
+- **A village hub is where a bot is sent, not where it stands.** The
+  search range is `PLAYERBOT_SEARCH_RANGE` (6000) and a hub cell is 6400, so
+  a bot at its own band's hub saw the dogs six kilometres off and the wander
+  pass - which only runs on a tick nothing was worth attacking - never got
+  the tick: 96 of 115 bots on Joan stood more than 2500 units from any hub,
+  chain-killing whatever was next. Tightening the band alone
+  (`IsPlayerBotM1HubForLevel`) doubled the level-ups and moved nobody.
+  `REJECT_OUTGROWN_PREY` in the combat value policy is the other half: on a
+  first village a monster `PLAYERBOT_VILLAGE_OUTGROWN_LEVELS` under the bot
+  and further than `PLAYERBOT_OUTGROWN_CHAIN_RANGE` is refused, so the walk
+  to the hub happens; what is under the bot's feet is still killed on the
+  way, and defence, quest, material and equipment errands come before it.
+  `PERCENT_LVDELTA` could not express this on the mt2009 line - its table
+  still pays 90% at six under - the base experience is what falls (Wild Dog
+  15, Blue Alpha Wolf 111). Measure it as the share of "Walcze z" lines six
+  or more levels under the bot, and as level-ups per ten minutes, never as
+  the exp column over a short window: the db core flushes the player cache
+  minutes apart, so a 2.5-minute window of 350 bots read as +0.
 - **A keeper's status is "Prowadze stragan", never "Planuje: poziom".** The
   overhead sign is what the world sees, but `playerbot_status.tsv` is what
   the panel and an operator see, and thirty-nine keepers at the Joan ring

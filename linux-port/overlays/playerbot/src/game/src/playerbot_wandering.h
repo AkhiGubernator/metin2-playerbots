@@ -305,14 +305,42 @@ namespace
 		return bFound;
 	}
 
-	// Whether a Joan hub whose monsters sit at mobLevel is ground for a bot of
-	// this level: the target scorer's sweet spot is a monster within -2..+5
-	// of the bot, so a hub is taken from two levels under its median up to
-	// seven over it. Above the map's top band every hub of the top band is
-	// open, and the frontier gates take the bot off the map soon anyway.
+	// Whether a village hub whose monsters sit at mobLevel is ground for a
+	// bot of this level: the target scorer's sweet spot is a monster within
+	// -2..+5 of the bot, so a hub is taken from two levels under its median
+	// to three over it. It used to be seven over, and what the seven bought
+	// was dogs: a bot of nine qualified for the band-three hubs beside the
+	// band-nine ones and was sent to them by pid, where a Wild Dog pays 15
+	// experience against a Blue Alpha Wolf's 111 - a third of every fight
+	// measured on the test world was six or more levels under the bot, and a
+	// level in the teens took two hours. (PERCENT_LVDELTA is not what limits
+	// it: this engine's table still pays 90% at six under. The base is.)
 	bool IsPlayerBotM1HubForLevel(int botLevel, int mobLevel)
 	{
-		return botLevel >= mobLevel - 2 && botLevel <= mobLevel + 7;
+		return botLevel >= mobLevel - 2 && botLevel <= mobLevel + 3;
+	}
+
+	// The hubs of a table whose band holds the bot's level, or - when none
+	// does - the hubs of the band nearest to it. Falling back on the whole
+	// table put a bot of sixteen on Yongan, between the thirteens and the
+	// eighteens, anywhere at all, including the twenty-fives it cannot fight
+	// and the threes not worth fighting. Returns how many were written.
+	int CollectPlayerBotM1HubsForLevel(int botLevel, const TPlayerBotVillageHub* hubs,
+			int hubTotal, int* out, int cap)
+	{
+		int count = 0;
+		for (int h = 0; h < hubTotal && count < cap; ++h)
+			if (IsPlayerBotM1HubForLevel(botLevel, hubs[h].mobLevel))
+				out[count++] = h;
+		if (count > 0)
+			return count;
+		int best = 1000;
+		for (int h = 0; h < hubTotal; ++h)
+			best = std::min(best, abs(hubs[h].mobLevel - botLevel));
+		for (int h = 0; h < hubTotal && count < cap; ++h)
+			if (abs(hubs[h].mobLevel - botLevel) == best)
+				out[count++] = h;
+		return count;
 	}
 
 	void ManagePlayerBotWandering(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow);
@@ -540,13 +568,10 @@ namespace
 				if (partyCamps == NULL || campTotal <= 0)
 					return;
 				int campChoices[16];
-				int campCount = 0;
-				for (int c = 0; c < campTotal && c < 16; ++c)
-					if (IsPlayerBotM1HubForLevel(ch->GetLevel(), partyCamps[c].mobLevel))
-						campChoices[campCount++] = c;
-				if (campCount == 0)
-					for (int c = 0; c < campTotal && c < 16; ++c)
-						campChoices[campCount++] = c;
+				const int campCount = CollectPlayerBotM1HubsForLevel(ch->GetLevel(),
+						partyCamps, campTotal, campChoices, 16);
+				if (campCount <= 0)
+					return;
 
 				int campIdx = campChoices[((pid / 4) + state.uMetinHotspotIndex) % campCount];
 				long cx = partyCamps[campIdx].x;
@@ -593,13 +618,10 @@ namespace
 				if (hubs == NULL || hubTotal <= 0)
 					return;
 				int hubChoices[64];
-				int hubCount = 0;
-				for (int h = 0; h < hubTotal && h < 64; ++h)
-					if (IsPlayerBotM1HubForLevel(ch->GetLevel(), hubs[h].mobLevel))
-						hubChoices[hubCount++] = h;
-				if (hubCount == 0)
-					for (int h = 0; h < hubTotal && h < 64; ++h)
-						hubChoices[hubCount++] = h;
+				const int hubCount = CollectPlayerBotM1HubsForLevel(ch->GetLevel(),
+						hubs, hubTotal, hubChoices, 64);
+				if (hubCount <= 0)
+					return;
 				int hubIdx = hubChoices[((pid / 2) + state.uMetinHotspotIndex) % hubCount];
 				long hubX = hubs[hubIdx].x;
 				long hubY = hubs[hubIdx].y;

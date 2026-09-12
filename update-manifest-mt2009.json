@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T08:16:15Z",
-  "statusMessage": "Wersja 2.0.11: boty Shinsoo i Jinno nie stoją już na 5 poziomie (trener w Yongan i Pyongmoo), jedna Księga Umiejętności z Metina zamiast trzech, ręcznie nazwany bot zachowuje nick, paczka logów ze wszystkich trzech rdzeni. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T10:51:17Z",
+  "statusMessage": "Wersja 2.0.12: logowanie nie wisi przy dużej liczbie botów, boty na mt2009 wystawiają stragany, księgi i medale bez czekania, KINGDOMS=0 wyłącza Shinsoo i Jinno, panel sprawdza wersję swojej linii, boty polują na potwory swojego poziomu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.11",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.11/metin2-server-update-2.0.11.zip",
-    "sha256": "EF47C8FF24904C62DA190C3F77C001A50E39B6D42B4D62961E5029E1922A5954"
+    "version": "2.0.12",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.12/metin2-server-update-2.0.12.zip",
+    "sha256": "E98C140C3F95462D43BCF758FDE5A44FD35569501D9CC2769FE8128225059311"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

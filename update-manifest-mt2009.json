@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T17:14:40Z",
-  "statusMessage": "Wersja 2.0.16: boty od 50 poziomu łowią ryby na mt2009 (kupują kartę wędkarską), księga z metina tylko do piętnastu poziomów nad kamieniem. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T18:17:34Z",
+  "statusMessage": "Wersja 2.0.17: boty znów otwierają Skrzynie Blasku Księżyca (a na mt2009 skrzynie w ogóle zaczynają wypadać), wyszukiwarka oznacza stragany fajerwerkiem zamiast niemieckiej reklamy. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.16",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.16/metin2-server-update-2.0.16.zip",
-    "sha256": "A1D3D4CFC7458E4C3B07850BE44938BE0EEF89991E2C629B3AAA9FE008D13055"
+    "version": "2.0.17",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.17/metin2-server-update-2.0.17.zip",
+    "sha256": "EBA23573447A1FB368B6363AA6CC19E5602F498EA705F9D884E5704B3D2A9822"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

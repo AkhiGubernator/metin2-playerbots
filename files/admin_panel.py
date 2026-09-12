@@ -2085,6 +2085,12 @@ def translate_item_name_pl(name):
 # this world. Read once the database answers, and again every hour.
 ITEM_SIZES = {}
 ITEM_TYPES = {}
+# What the tooltip's base lines are computed from, per vnum: the proto's
+# type/subtype, value0..5, the fixed applies and the level limit - the same
+# fields the static item_defs.json carries for r40250, so the tooltip code
+# needs no second path. Without this an mt2009 world showed the other
+# engine's attack values on a vnum both have, and nothing on the rest.
+ITEM_BASE = {}
 _PROTO = {"loaded": 0.0, "tried": 0.0}
 _PROTO_LOCK = threading.Lock()
 
@@ -2098,7 +2104,20 @@ def _load_item_proto():
         _PROTO["tried"] = now
         try:
             with db() as c, c.cursor() as cur:
-                cur.execute("SELECT vnum, name, locale_name, type, subtype, size FROM player.item_proto")
+                # Both name columns are cp1250_polish_ci on this package and
+                # the panel's connection is latin1, so the server converts on
+                # the way out and every letter latin1 lacks - l with a stroke,
+                # s/z/n with an acute, e with an ogonek - arrives as "?"
+                # ("Skrzyd?a Demona", "Zw?j B?ogos?awie?stwa" in 2.0.13). The
+                # bytes are asked for as they are and decoded here.
+                cur.execute("SELECT vnum, CAST(name AS BINARY) AS name, "
+                            "CAST(locale_name AS BINARY) AS locale_name, "
+                            "type, subtype, size, "
+                            "value0, value1, value2, value3, value4, value5, "
+                            "applytype0, applyvalue0, applytype1, applyvalue1, "
+                            "applytype2, applyvalue2, "
+                            "limittype0, limitvalue0, limittype1, limitvalue1 "
+                            "FROM player.item_proto")
                 rows = cur.fetchall()
         except Exception:
             return
@@ -2107,14 +2126,29 @@ def _load_item_proto():
         items = []
         for r in rows:
             vnum = int(r["vnum"] or 0)
-            pl = str(r.get("locale_name") or "").strip()
-            en = str(r.get("name") or "").strip() or pl
+            pl = log_text(r.get("locale_name")).strip()
+            en = log_text(r.get("name")).strip() or pl
             if not pl:
                 continue
             ITEM_NAMES_PL[vnum] = pl
             ITEM_NAMES[vnum] = pl
             ITEM_SIZES[vnum] = max(1, min(3, int(r.get("size") or 1)))
             ITEM_TYPES[vnum] = (int(r.get("type") or 0), int(r.get("subtype") or 0))
+            base = {"type": ITEM_TYPES[vnum][0], "subtype": ITEM_TYPES[vnum][1]}
+            for k in range(6):
+                base["value%d" % k] = int(r.get("value%d" % k) or 0)
+            # The proto's applies are POINT numbers here like the bonus
+            # lines, and the tooltip puts them through the same table.
+            base["apply"] = [{"type": int(r.get("applytype%d" % k) or 0),
+                              "val": int(r.get("applyvalue%d" % k) or 0)}
+                             for k in range(3) if int(r.get("applytype%d" % k) or 0)]
+            # LIMIT_LEVEL is 1 on both engines (item_length.h).
+            level = 0
+            for k in range(2):
+                if int(r.get("limittype%d" % k) or 0) == 1:
+                    level = int(r.get("limitvalue%d" % k) or 0)
+            base["level"] = level
+            ITEM_BASE[vnum] = base
             items.append({"v": vnum, "n": pl, "k": (pl + " " + en).lower(),
                           "c": ITEM_CATEGORY_BY_TYPE.get(int(r.get("type") or 0), "other")})
         ITEMS = items
@@ -3171,6 +3205,11 @@ def inject_i18n():
             # Empty on r40250; on mt2009 the POINT->APPLY table the JS
             # side puts every attrtype through before APPLY_META.
             "point_to_apply": POINT_TO_APPLY if ENGINE_MT2009 else {},
+            # For cache-busting the item table: /static/item_defs.json is
+            # served with a ten-minute max-age, so a panel update that
+            # changed what it carries (2.0.14: the base stats) was invisible
+            # to a browser that had the old answer until the cache ran out.
+            "panel_version": PANEL_VERSION,
             # The language the GAME is in -- see the note above GAME_LANGS. The
             # front page uses it too, next to the download button, so it goes in
             # the shared context rather than into one route.
@@ -3609,11 +3648,14 @@ def item_defs_json():
     if ENGINE_MT2009 and ITEM_SIZES:
         for vnum, size in ITEM_SIZES.items():
             entry = defs.get(str(vnum))
-            if isinstance(entry, dict):
-                entry["size"] = size
-                entry["name"] = ITEM_NAMES_PL.get(vnum, entry.get("name", ""))
-            else:
-                defs[str(vnum)] = {"size": size, "name": ITEM_NAMES_PL.get(vnum, "")}
+            if not isinstance(entry, dict):
+                entry = defs[str(vnum)] = {}
+            entry["size"] = size
+            entry["name"] = ITEM_NAMES_PL.get(vnum, entry.get("name", ""))
+            # The tooltip's base lines (attack, defence, the fixed applies,
+            # the level) come from this world's proto too - the static
+            # file's are the other engine's numbers for the same vnum.
+            entry.update(ITEM_BASE.get(vnum, {}))
     resp = jsonify(defs)
     resp.headers["Cache-Control"] = "public, max-age=600"
     return resp
@@ -5710,7 +5752,7 @@ var g_currentInvData = null;
 var g_currentInvTab = 0;
 
 // Preload item definitions and icons lookup table
-fetch('/static/item_defs.json')
+fetch('/static/item_defs.json?v={{ panel_version|urlencode }}')
   .then(function(res) { return res.json(); })
   .then(function(data) { g_itemDefs = data; })
   .catch(function(err) { console.warn('Could not load item_defs.json:', err); });

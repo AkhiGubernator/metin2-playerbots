@@ -17,6 +17,29 @@ every version here.
 
 ---
 
+## 2.0.14 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Panel klasyczny: polskie znaki w nazwach przedmiotów
+
+W 2.0.13 panel czyta nazwy z `item_proto` tego świata, ale kolumna jest w
+CP1250, a połączenie panelu z bazą w latin1 — serwer bazy konwertował
+nazwy po drodze i każda litera, której latin1 nie ma („ł, ś, ż, ę, ń”),
+przychodziła jako „?”: „Skrzyd?a Demona Chakr.”, „Zw?j B?ogos?awie?stwa”.
+Panel prosi teraz o surowe bajty i dekoduje je sam. Sprawdzone na 6001
+nazwach: ani jednego znaku zapytania.
+
+### Panel klasyczny: bazowe statystyki przedmiotu w dymku
+
+Dymek przedmiotu pokazywał linie bonusów i sloty, a wartość ataku, obronę,
+stałe bonusy przedmiotu i wymagany poziom brał ze statycznej tabeli linii
+1.x — dla przedmiotu, który ma tam ten sam numer, były to liczby drugiego
+silnika, dla reszty nic. Na mt2009 te pola też idą z `item_proto` tego
+świata i dymek liczy je jak klient: Lwi Miecz +9 to „Wartość Ataku 226–251”,
+„Wartość Magicznego Ataku 163–209”, „Szybkość Ataku +26%” i „Wymagany
+Poziom 75”, dokładnie jak w grze.
+
 ## 2.0.13 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

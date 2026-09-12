@@ -1513,7 +1513,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   Polish name on this package, `size` the cells) - lazily, because the panel
   starts before MariaDB answers. `ENGINE_MT2009` is read near the top of the
   module for that reason; anything engine-specific above the old definition
-  point used to be impossible.
+  point used to be impossible. And the two name columns are
+  `cp1250_polish_ci` while the panel's connection is latin1, so a plain
+  SELECT lets the server convert and every letter latin1 lacks arrives as
+  "?" - 2.0.13 shipped "Skrzyd?a Demona" after a check on a name without
+  diacritics. Ask for `CAST(... AS BINARY)` and decode with `log_text`;
+  verify a fix on a name with an l-stroke, never on "Gourou". The tooltip's
+  base lines (attack, defence, fixed applies, level) read the same table
+  through `ITEM_BASE`, and the JS fetches `/static/item_defs.json?v=<panel
+  version>` because the answer is served with a ten-minute max-age - the
+  first check of 2.0.14 showed the old table for exactly that reason.
 - **"Teleport me to this bot" must find the character that is online, and
   the database cannot say who that is.** `last_play` is written on save,
   minutes after a login, so "newest last_play" was the previous character;

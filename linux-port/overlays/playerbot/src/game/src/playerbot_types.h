@@ -2005,6 +2005,11 @@ namespace
 	// WEAR_WEAPON, the bait lives in the rod's socket 2 rather than in the pouch,
 	// a cast bites after 10-40 s and then leaves a 6 s window to pull.
 	const DWORD PLAYERBOT_FISHING_ROD_VNUM = 27400;   // Wedka+1
+	// What a bot pays for the mt2009 fishing pass (unique item 27620, a day
+	// of real time) - nothing sells one, it comes out of a quest a bot cannot
+	// talk through, so it is created for the price of a rod and a bundle of
+	// wood together. Unused on r40250, which has no pass.
+	const DWORD PLAYERBOT_FISHING_PASS_PRICE = 50000;
 	const DWORD PLAYERBOT_FISHING_BAIT_VNUM = 27801;  // Robak
 	const DWORD PLAYERBOT_SHELLFISH_VNUM = 27987;     // Malz
 	// What a shell can hold: Biala / Niebieska / Krwawa Perla.

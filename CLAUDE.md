@@ -2315,6 +2315,30 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   thrashed at "game builder 2/3 67%" and read as a hang. Both game
   Dockerfiles take the smaller of `nproc` and MemTotal/1400 MB unless
   `MAKE_JOBS` (`M2_MAKE_JOBS`) is set, and print the choice.
+- **mt2009 fishing is four gates and a minigame, and the pass was the one
+  nobody could pass.** `CHARACTER::fishing()` there wants level 50, maps
+  1/21/41, `fishing_onboarding.completed`, bait in the rod's socket 2 and
+  `UNIQUE_ITEM_FISHING_PASS` (27620, a day of real time) worn; the catch is
+  a client minigame (`FishingGameStart`, a bar the client's position must
+  stay under), which `ManagePlayerBotFishing` already plays server-side by
+  moving `m_iFish_position`. The session set the flag; nothing sold the
+  pass; `WantsPlayerBotFishingTrip` refused without it - so no bot on an
+  mt2009 world fished until 2.0.16. `EnsurePlayerBotFishingPass` creates
+  one for `PLAYERBOT_FISHING_PASS_PRICE` and wears it, the way the
+  Forgetting Scroll is bought. Under 50 the trip is never planned. And the
+  bank tables were measured on r40250's server_attr: Joan's stand
+  (67175,158125) has no water beside it on mt2009's map, and the bot that
+  drew it stood there to "never_cast" every session while its neighbour
+  caught fish - fishing() explains its refusals to the client only, so the
+  session logs every gate itself (`fishing() refused ... water=0`), and a
+  stand with no water is marked dry (`s_setPlayerBotDryFishingStands`) and
+  never drawn again on that core.
+- **The Metin book top-up ignored the level curve.** The engine's tables
+  fade every drop by `aiPercentByDeltaLev`; the guaranteed book from a stone
+  (playerbotify's CreateDropItem edit, patch 0006 on r40250) did not, so a
+  player of forty-six farmed level-five stones for a book each.
+  `PLAYERBOT_METIN_BOOK_LEVEL_DELTA` (15) ends the top-up; the stone's own
+  roll still applies. The r40250 patch still has no such cap.
 - **A queue whose head is offline looks like a queue that stopped.** The
   grants worker hands `MAX_PENDING` (ten) rows to the game and the quest's
   player timer serves only a row that names an online character; an offline

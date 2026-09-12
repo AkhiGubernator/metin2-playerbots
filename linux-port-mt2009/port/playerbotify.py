@@ -658,6 +658,16 @@ def main(root):
          '}\n')
 
     # ======================================================================
+    # 2.0.16 the Metin stone's skill book stops fifteen levels above it.
+    # ======================================================================
+    edit(os.path.join(game, 'item_manager.cpp'),
+         'bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM> & vec_item)\n',
+         '// How far above a Metin stone a killer may be and still get the stone\'s\n'
+         '// guaranteed skill book (the top-up in CreateDropItem below).\n'
+         'static const int PLAYERBOT_METIN_BOOK_LEVEL_DELTA = 15;\n'
+         '\n'
+         'bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM> & vec_item)\n')
+    # ======================================================================
     # 2.0.13 item.use for quests (gm_profile.quest switches an elixir on by
     # the engine's own use path) and a full elixir at creation.
     # ======================================================================
@@ -940,8 +950,14 @@ def main(root):
          '\t// One skill book from every Metin stone, whatever its table rolled - the\n'
          '\t// table gives one at a quarter to a full chance, and a stone is where a\n'
          '\t// character learns from, so the count is topped up to one rather than\n'
-         '\t// added to. Each book takes its skill the way the table\'s own does.\n'
-         '\tif (pkChr->IsStone())\n'
+         '\t// added to. Each book takes its skill the way the table\'s own does. And\n'
+         '\t// not from a stone the killer has outgrown: the engine\'s own tables\n'
+         '\t// fade a drop out by level difference (aiPercentByDeltaLev), this\n'
+         '\t// top-up ignored it, and a player of forty-six farmed level-five stones\n'
+         '\t// for a guaranteed book each ("Drop z metinow", 12 September). Fifteen\n'
+         '\t// levels over the stone is where the top-up ends.\n'
+         '\tif (pkChr->IsStone() && pkKiller &&\n'
+         '\t\t\tpkKiller->GetLevel() <= pkChr->GetLevel() + PLAYERBOT_METIN_BOOK_LEVEL_DELTA)\n'
          '\t{\n'
          '\t\tint books = 0;\n'
          '\t\tfor (size_t i = 0; i < vec_item.size(); ++i)\n'

@@ -17,6 +17,35 @@ every version here.
 
 ---
 
+## 2.0.16 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Boty łowią ryby na mt2009
+
+„Boty nie łowią ryb, brakuje ulepszaczy” (sizowski). Na tych plikach
+łowienie wymaga poziomu 50, flagi ukończonego wprowadzenia u Rybaka,
+przynęty na wędce i **karty wędkarskiej** — przedmiotu unikalnego na dobę,
+którego nikt nie sprzedaje, bo pochodzi z questa. Bot flagę ustawiał sobie
+sam i minigrę rozgrywał po stronie serwera, ale reguła wyprawy odmawiała
+mu wędkowania bez karty, a karty nie miał skąd wziąć — więc na żadnym
+świecie mt2009 żaden bot nigdy nie łowił. Bot od 50 poziomu kupuje kartę
+tak, jak kupuje Zwój Zapomnienia: za 50 tys. yang tworzoną na miejscu i od
+razu zakładaną, a kolejną, gdy ta wygaśnie. Poniżej 50 poziomu bot nad wodę
+nie idzie, bo silnik i tak odmówi. Do tego stanowisko, przy którym silnik
+nie widzi wody (tabele brzegu mierzone są na mapie drugiego silnika, a
+mapa mt2009 różni się o komórkę tu i tam — stanowisko Joan (67175,158125)
+jest na mt2009 suche), jest porzucane na stałe i bot idzie na następne;
+dotąd stał przy nim do końca sesji jako „never_cast”.
+
+### Księga z metina tylko do piętnastu poziomów nad kamieniem
+
+„Na 46 poziomie leci drop KU z metinów 5, 10, 15” (cyfrowy_mat,
+uxietoszef). Dopisywanie jednej księgi do każdego metina (od 1.29) nie
+patrzyło na różnicę poziomów, choć własne tabele silnika wygaszają drop z
+różnicą poziomów. Księga jest dopisywana tylko, gdy zabójca ma najwyżej
+piętnaście poziomów więcej niż kamień; własny los tabeli metina zostaje.
+
 ## 2.0.15 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

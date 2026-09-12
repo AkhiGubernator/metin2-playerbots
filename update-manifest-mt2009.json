@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T20:27:16Z",
-  "statusMessage": "Wersja 2.0.19: koniec lagów z pięciosekundowych planowań tras, zwój w plecaku prowadzi bota do +9, ulepszony przedmiot nie schodzi na straganie poniżej opłat kowala, cisza w syserr, brakująca tabela logu sklepu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T21:14:31Z",
+  "statusMessage": "Wersja 2.0.20: stragany nie znikają (pętla dzielenia stosów przy pełnym plecaku), ceny ksiąg i mnożniki bonusów wg tabel Iwakury. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.19",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.19/metin2-server-update-2.0.19.zip",
-    "sha256": "6567733EB90D7900CD8001CBEBD006D0F9C68D8A115D151EF5D1C1C3425A2798"
+    "version": "2.0.20",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.20/metin2-server-update-2.0.20.zip",
+    "sha256": "8980FB134C58BD0F4071FBFE5073EF155E4CFFE475B2B6B615FC5FF871090A26"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

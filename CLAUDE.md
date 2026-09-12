@@ -296,7 +296,7 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `m2src-cache/tree/port40250/server` with `--fuzz=0` before shipping it. 0006 adds two
   CONFIG tokens (`MOONLIGHT_CHEST_PERMILLE`, `..._STONE_PERMILLE`, rendered by
   `m2-render-config` from `M2_MOONLIGHT_CHEST_*`) and, in `CreateDropItem`,
-  tops a Metin stone up to three skill books and rolls the chest. The chest's
+  tops a Metin stone up to one skill book (three until 2.0.11 - "3 KU z metina na piatym poziomie" from a player of forty-six) and rolls the chest. The chest's
   contents come from `serverfiles/special_item_group.moonlight.txt`; the
   engine keeps the *first* group it reads for a vnum, so the Dockerfile cuts
   the stock 50011 block out before appending ours. `playerbot_consumables.h`
@@ -2029,6 +2029,27 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   alone and every other village takes the direct phases (`bDirect` in
   `playerbot_town.h`). When a per-map table replaces a constant, the walk
   legs *between* the table's points have to be checked too.
+- **A direct village visits its trainer, or a level-five bot never leaves the
+  pitch.** `GetPlayerBotFirstDirectTownPhase` was Bokjung's list - no trainer,
+  no old woman - and 2.0.8 handed it to Yongan and Pyongmoo (`bDirect`). A
+  Shinsoo or Jinno bot at level five, whose only need was the trainer, began
+  a visit with phase NONE, finished it on the same tick, and the manager
+  began it again on the next (`bNeedsProfession` bypasses the shop timer):
+  five hundred bots a core standing at the pitch with `action=TRAVEL
+  goal=CHOOSE_PROFESSION route=0/0`, reset by the watchdog every ninety
+  seconds, never past level five (four Discord threads in one night). The
+  direct list has the trainer and the skill reset first now, the trainer
+  need is only set where `HasSkillTrainers`, and a direct visit with nothing
+  on its list backs off instead of starting. When a phase list is reused for
+  another map, walk every need the manager can set through it.
+- **The support bundle is three cores, not one.** It shipped `game1`'s
+  syslog and status alone, and 800 shared compose lines - fifty seconds on a
+  world whose cores were resetting five hundred bots a minute and whose
+  MariaDB logged an aborted connection every ninety seconds. The one line a
+  crash report needs (`CORE DIED` and the backtrace under it) had scrolled
+  out before the bundle was made. Since 2.0.11: syslog, syserr, status and
+  `crash-*.txt` per core, the db core's syserr, a 6000-line game-only log and
+  a supervisor grep over 200 000 lines.
 - **A function that returns an array of one returns an object, and under
   StrictMode `.Count` on it throws.** `Get-M2DockerPreflight` took
   `Get-M2ExcludedPortRanges` bare: a Windows with exactly one reserved port

@@ -17,6 +17,53 @@ every version here.
 
 ---
 
+## 2.0.11 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Boty Shinsoo i Jinno nie stoją już na 5 poziomie
+
+„W królestwie czerwonym i niebieskim boty na 5 lv się bugują”, „stoją przy
+kowalu i handlarzach”, „2500 botów — 0 sklepów” (greess, martynka19cm,
+mrgixon, sizowski). Od 2.0.8 Yongan i Pyongmoo idą do NPC „wprost”, jak
+Bokjung — ale lista faz „wprost” była listą Bokjung, gdzie nie ma trenera ani
+Starszej Pani. Bot na 5 poziomie potrzebuje trenera (wybór grupy
+umiejętności), zaczynał więc wizytę z pustą listą, kończył ją w tym samym
+ticku i zaczynał od nowa w następnym: stał na placu z celem „wybór profesji”,
+resetowany przez watchdoga co 90 sekund, i nigdy nie wyszedł poza 5 poziom.
+W paczce logów sizowskiego: 500 takich botów na rdzeń. Lista „wprost” ma
+teraz trenera i Starszą Panią na początku, jak lista Joan, a wizyta, której
+lista nie ma czym obsłużyć, w ogóle się nie zaczyna (z linią w logu). Bokjung
+tego nie dotyczy — w drugiej wiosce potrzeba trenera nigdy nie jest ustawiana.
+
+### Jedna Księga Umiejętności z kamienia Metin, nie trzy
+
+„Graczowi lvl 46 lecą 3 KU ze wszystkich metinów w M1” (cyfrowy_mat). Od
+1.29 każdy kamień dawał trzy księgi, obojętnie od poziomu kamienia. Teraz
+kamień dopełnia do jednej: jeśli tabela dropu nic nie wylosowała, jedna
+księga i tak wypada, jeśli wylosowała, zostaje to, co wylosowała. Dotyczy obu
+silników (łatka 0006 i port mt2009).
+
+### Bot przemianowany ręcznie zachowuje nazwę
+
+„Dałem botowi ADAM miecz +9, rano nie było już bota o tym nicku” (gregoszky):
+2.0.10 przemianowało wszystkie boty na nową listę, także te, którym operator
+sam zmienił nazwę w bazie. Nazwa, która nie jest ani z puli, ani z zasiewu,
+jest czyimś wyborem: taki bot nie jest już przemianowywany (przez żadną
+kolejną wersję listy), a jego nazwa nie trafia do nikogo innego. Migrator
+liczy je osobno („N bot(s) renamed by hand keep their names”).
+
+### Paczka logów zbiera wszystkie trzy rdzenie i ślady padów
+
+ZBIERZ / WYŚLIJ LOGI zbierało syslog i status tylko z rdzenia Chunjo
+(`game1`); zgłoszenie o botach Shinsoo i Jinno nie miało ani jednej linii z
+rdzeni, na których stały. Teraz paczka ma osobno syslog, syserr, status i
+pliki `crash-*.txt` (ślad stosu po padzie, od 2.0.8) dla `first`, `game1` i
+`game2`, syserr rdzenia bazy oraz osobny, dłuższy log kontenera gry — wspólne
+800 linii logów compose mieściło 50 sekund, bo zalewały je resety watchdoga i
+komunikaty MariaDB o zerwanych połączeniach, a linia „CORE DIED” ze śladem
+stosu wypadała z okna, zanim paczka powstała.
+
 ## 2.0.10 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

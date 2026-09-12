@@ -657,9 +657,9 @@ def main(root):
     edit(p,
          '\tif (pkKiller->IsHorseRiding() &&\n'
          '\t\t\tGetDropPerKillPct(1000, 1000000, iDeltaPercent, "horse_skill_book_drop") >= number(1, iRandRange))\n',
-         '\t// Three skill books from every Metin stone, whatever its table rolled - the\n'
+         '\t// One skill book from every Metin stone, whatever its table rolled - the\n'
          '\t// table gives one at a quarter to a full chance, and a stone is where a\n'
-         '\t// character learns from, so the count is topped up to three rather than\n'
+         '\t// character learns from, so the count is topped up to one rather than\n'
          '\t// added to. Each book takes its skill the way the table\'s own does.\n'
          '\tif (pkChr->IsStone())\n'
          '\t{\n'
@@ -667,7 +667,7 @@ def main(root):
          '\t\tfor (size_t i = 0; i < vec_item.size(); ++i)\n'
          '\t\t\tif (vec_item[i] && vec_item[i]->GetVnum() == 50300)\n'
          '\t\t\t\t++books;\n'
-         '\t\tfor (; books < 3; ++books)\n'
+         '\t\tfor (; books < 1; ++books)\n'
          '\t\t{\n'
          '\t\t\titem = CreateItem(50300, 1, 0, true);\n'
          '\t\t\tif (item) vec_item.emplace_back(item);\n'

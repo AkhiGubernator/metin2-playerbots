@@ -167,7 +167,10 @@ TEMPLATE = u"""-- Nicknames for the playerbots. GENERATED - edit
 --   restore  put the seed names back and forget the renames
 --
 -- Only a character whose account login is playerbot_NNN is ever touched: no
--- character of a person is reachable from here. Names go out in list order by
+-- character of a person is reachable from here. A bot the operator renamed
+-- by hand - its name is neither the one this table gave it nor its seed name
+-- - is somebody's deliberate choice and keeps it, through every pool version;
+-- its name is never dealt to another bot either. Names go out in list order by
 -- PID, so a bot keeps its name for as long as the list in front of it does not
 -- change; a bot whose name came from an older version of the pool is renamed
 -- on the next start (common.playerbot_name_history.pool_version says which).
@@ -274,8 +277,14 @@ SELECT waiting.pid, waiting.seed_name, free.name
           LEFT JOIN common.playerbot_name_history AS h ON h.pid = p.id
          WHERE LEFT(a.login, 10) = 'playerbot_'
            AND (h.pid IS NULL
-                OR h.pool_version <> @playerbot_pool_version
-                OR BINARY p.name <> BINARY h.human_name)
+                OR (h.pool_version <> @playerbot_pool_version
+                    AND BINARY p.name = BINARY h.human_name))
+           -- A hand-made rename is kept: a name that is neither the pool's
+           -- nor the seed's was chosen by a person ("bot ADAM dostal ode mnie
+           -- miecz +9, rano juz nie bylo bota o tym nicku" - the first
+           -- version renamed it with the rest).
+           AND (h.pid IS NULL OR BINARY p.name = BINARY h.human_name
+                OR BINARY p.name = BINARY h.seed_name)
        ) AS waiting
   JOIN (
         SELECT np.name, np.empire,
@@ -288,7 +297,10 @@ SELECT waiting.pid, waiting.seed_name, free.name
                             WHERE px.name = np.name
                               AND (LEFT(ax.login, 10) <> 'playerbot_'
                                    OR (hx.pool_version = @playerbot_pool_version
-                                       AND BINARY px.name = BINARY hx.human_name)))
+                                       AND BINARY px.name = BINARY hx.human_name)
+                                   OR (hx.pid IS NOT NULL
+                                       AND BINARY px.name <> BINARY hx.human_name
+                                       AND BINARY px.name <> BINARY hx.seed_name)))
        ) AS free
     ON free.empire = waiting.empire AND free.rn = waiting.rn
  WHERE @playerbot_human_names = '1';
@@ -312,7 +324,7 @@ HAVING @playerbot_human_names = '1';
 
 -- A cohort larger than its kingdom's share is the one way this runs out; say
 -- so rather than leaving an operator to wonder why some bots kept their old
--- names.
+-- names. A hand-renamed bot is not counted: it was left alone on purpose.
 SELECT CONCAT('playerbot names: WARNING ', COUNT(*),
               ' bot(s) got no name - a kingdom used up its @@PER_KINGDOM@@ names')
        AS playerbot_names_note
@@ -321,7 +333,23 @@ SELECT CONCAT('playerbot names: WARNING ', COUNT(*),
   LEFT JOIN common.playerbot_name_history AS h ON h.pid = p.id
  WHERE @playerbot_human_names = '1'
    AND LEFT(a.login, 10) = 'playerbot_'
-   AND (h.pid IS NULL OR h.pool_version <> @playerbot_pool_version)
+   AND (h.pid IS NULL
+        OR (h.pool_version <> @playerbot_pool_version
+            AND BINARY p.name = BINARY h.human_name))
+HAVING COUNT(*) > 0;
+
+-- The hand-renamed, so the operator sees them counted rather than wondering
+-- why a bot kept a name that is on no list.
+SELECT CONCAT('playerbot names: ', COUNT(*),
+              ' bot(s) renamed by hand keep their names')
+       AS playerbot_names_note
+  FROM player.player AS p
+  JOIN account.account AS a ON a.id = p.account_id
+  JOIN common.playerbot_name_history AS h ON h.pid = p.id
+ WHERE @playerbot_human_names = '1'
+   AND LEFT(a.login, 10) = 'playerbot_'
+   AND BINARY p.name <> BINARY h.human_name
+   AND BINARY p.name <> BINARY h.seed_name
 HAVING COUNT(*) > 0;
 
 DROP TEMPORARY TABLE IF EXISTS playerbot_name_plan;

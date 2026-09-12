@@ -191,6 +191,20 @@ namespace
 
 	BYTE GetPlayerBotFirstDirectTownPhase(const TPlayerBotAIState& state)
 	{
+		// The trainer and the old woman first, exactly as on the exterior list.
+		// This list was Bokjung's, where neither stands, and 2.0.8 handed it to
+		// Yongan and Pyongmoo as well - so a Shinsoo or Jinno bot at level
+		// five, whose only errand was the trainer, began a visit with nothing
+		// on the list, finished it on the same tick, and began it again on the
+		// next: five hundred bots a core standing on the market pitch with
+		// goal=CHOOSE_PROFESSION, reset by the watchdog every ninety seconds,
+		// never past level five ("boty na 5 lv sie buguja", four reports in a
+		// night). In a second village the trainer flag is never set, so this
+		// costs Bokjung nothing.
+		if (state.bTownNeedSkillReset)
+			return BOT_TOWN_PHASE_SKILL_RESET;
+		if (state.bTownNeedTrainer)
+			return BOT_TOWN_PHASE_TRAINER;
 		if (state.bTownNeedWeaponMerchant)
 			return BOT_TOWN_PHASE_WEAPON_MERCHANT;
 		if (state.bTownNeedArmorMerchant)
@@ -215,8 +229,11 @@ namespace
 		// Which phase list: every village but Joan walks straight to each NPC.
 		const bool bDirect = inM2 || !IsPlayerBotGatedVillage(ch->GetMapIndex());
 
+		// Only where a trainer stands: a need no phase can serve would start a
+		// visit that ends on the tick it began, for ever (see below).
 		state.bTownNeedTrainer = !inM2 && ch->GetLevel() >= 5 && ch->GetSkillGroup() == 0 &&
-				ch->GetJob() <= JOB_SHAMAN;
+				ch->GetJob() <= JOB_SHAMAN &&
+				playerbot_empire_rules::HasSkillTrainers(ch->GetMapIndex());
 		state.bTownNeedSkillReset = !inM2 && ShouldPlayerBotResetSkills(ch, state, dwNow);
 		state.bTownNeedMisc = HasPlayerBotJunkForMerchant(ch, BOT_MERCHANT_MISC) ||
 				NeedsPlayerBotPotions(ch) || HasPlayerBotExcessPotions(ch) ||
@@ -244,6 +261,22 @@ namespace
 			// Pyongmoo: visit only the specialists which are needed and then walk
 			// straight back to the local hunting fields.
 			state.bTownVisitPhase = GetPlayerBotFirstDirectTownPhase(state);
+			// A need the list cannot serve is not a visit. Without this a visit
+			// began and finished on the same tick, and the manager began it
+			// again on the next - the bot stood on the spot for good, claiming
+			// every tick. Back off the way "nothing needed" does, and say so.
+			if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
+			{
+				PlayerBotLogThrottled("town_direct_empty", dwNow,
+						"PLAYERBOT_TOWN: nothing on the direct list pid=%u name=%s map=%ld trainer=%d misc=%d weapon=%d armor=%d smith=%d safebox=%d",
+						ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(),
+						state.bTownNeedTrainer ? 1 : 0, state.bTownNeedMisc ? 1 : 0,
+						state.bTownNeedWeaponMerchant ? 1 : 0, state.bTownNeedArmorMerchant ? 1 : 0,
+						state.bTownNeedBlacksmith ? 1 : 0, state.bTownNeedSafebox ? 1 : 0);
+				state.bVisitingShop = false;
+				state.dwNextShopCheckTime = dwNow + number(60000, 120000);
+				return;
+			}
 		}
 		else
 		{

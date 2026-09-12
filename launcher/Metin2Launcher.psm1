@@ -1047,6 +1047,18 @@ function New-M2SupportBundle {
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'compose-logs.txt') -Command {
                 docker compose --project-directory $composeDir -f $composeFile logs --no-color --tail 800
             }
+            # The game container on its own, with a window of its own: the
+            # shared 800 lines were fifty seconds of watchdog and MariaDB
+            # "Aborted connection" chatter on a world whose core was dying
+            # every ninety seconds, and the one line that mattered - the
+            # supervisor's CORE DIED with the backtrace under it - had
+            # scrolled out before the bundle was made.
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'game-container-logs.txt') -Command {
+                docker compose --project-directory $composeDir -f $composeFile logs --no-color --tail 6000 game
+            }
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'game-supervise.txt') -Command {
+                docker compose --project-directory $composeDir -f $composeFile logs --no-color --tail 200000 game 2>&1 | grep -a -e supervise -e 'CORE DIED' -e 'fatal signal' -e 'crash' | tail -n 400
+            }
             # The core's syslog never reaches the container log - only syserr
             # does - so a bundle sent about "the bots walk to the wrong portal"
             # carried nothing about where any bot was going. The travel,
@@ -1060,13 +1072,36 @@ function New-M2SupportBundle {
             # holds, so the first embedded quote ended the argument and the
             # file came back empty on the machine it was made for (1.30.40).
             # Hence -e per pattern instead of one quoted alternation.
-            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'playerbot-syslog.txt') -Command {
-                docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
-                    'for f in /opt/metin2/var/channel1/game1/log/*/syslog.* /opt/metin2/var/channel1/game1/syslog; do [ -f $f ] && tail -n 400000 $f; done 2>/dev/null | grep -a -e PLAYERBOT_WORLD -e PLAYERBOT_PORTAL -e PLAYERBOT_NAV -e PLAYERBOT_WATCHDOG -e PLAYERBOT_GOAL -e PLAYERBOT_LOAD -e PLAYERBOT_SHOP -e PLAYERBOT_TOWN -e PLAYERBOT_DEPARTURE -e PLAYERBOT_HORSE -e PLAYERBOT_MONKEY -e PLAYERBOT_AUTH -e autospawn | tail -n 60000'
+            # Every core, not game1 alone. Since 2.0.8 Shinsoo lives on `first'
+            # and Jinno on `game2', and a bundle about "the bots stand at level
+            # five" carried nothing about the two cores they stood on. One file
+            # per core, and the crash traces m2-supervise keeps beside the
+            # syserr (crash-<stamp>.txt, 2.0.8) - the only way to see where a
+            # player's core died.
+            foreach ($core in @('first', 'game1', 'game2')) {
+                $coreDir = '/opt/metin2/var/channel1/' + $core
+                Invoke-M2CapturedCommand -OutputPath (Join-Path $work ('playerbot-syslog-' + $core + '.txt')) -Command {
+                    docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                        ('for f in ' + $coreDir + '/log/*/syslog.* ' + $coreDir + '/syslog; do [ -f $f ] && tail -n 400000 $f; done 2>/dev/null | grep -a -e PLAYERBOT_WORLD -e PLAYERBOT_PORTAL -e PLAYERBOT_NAV -e PLAYERBOT_WATCHDOG -e PLAYERBOT_GOAL -e PLAYERBOT_LOAD -e PLAYERBOT_SHOP -e PLAYERBOT_TOWN -e PLAYERBOT_DEPARTURE -e PLAYERBOT_HORSE -e PLAYERBOT_MONKEY -e PLAYERBOT_AUTH -e PLAYERBOT_SERVICE -e PLAYERBOT_CONFIG -e autospawn | tail -n 40000')
+                }
+                Invoke-M2CapturedCommand -OutputPath (Join-Path $work ('syserr-' + $core + '.txt')) -Command {
+                    docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                        ('tail -n 3000 ' + $coreDir + '/syserr 2>/dev/null')
+                }
+                Invoke-M2CapturedCommand -OutputPath (Join-Path $work ('playerbot-status-' + $core + '.tsv')) -Command {
+                    docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                        ('cat ' + $coreDir + '/playerbot_status.tsv 2>/dev/null')
+                }
+                Invoke-M2CapturedCommand -OutputPath (Join-Path $work ('crash-' + $core + '.txt')) -Command {
+                    docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
+                        ('ls -la ' + $coreDir + '/crash*.txt 2>/dev/null; for f in $(ls -t ' + $coreDir + '/crash*.txt 2>/dev/null | head -n 5); do echo; echo === $f; cat $f; done')
+                }
             }
-            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'playerbot-status.tsv') -Command {
+            # The db core writes its own syserr (a failed query, a table the
+            # game asked for and the schema lacks).
+            Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'syserr-db.txt') -Command {
                 docker compose --project-directory $composeDir -f $composeFile exec -T game sh -c `
-                    'cat /opt/metin2/var/channel1/game1/playerbot_status.tsv 2>/dev/null'
+                    'tail -n 1000 /opt/metin2/var/db/syserr 2>/dev/null'
             }
             Invoke-M2CapturedCommand -OutputPath (Join-Path $work 'compose-services.txt') -Command {
                 docker compose --project-directory $composeDir -f $composeFile config --services

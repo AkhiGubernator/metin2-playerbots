@@ -17,6 +17,96 @@ every version here.
 
 ---
 
+## 2.0.19 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Ulepszony przedmiot nie schodzi na straganie poniżej tego, co kosztował u kowala
+
+„Miecz+4 za 90 yang, Sejmitar+4 za 582, sztylet +5 za 117 — niech cena
+minimalna będzie tym, co poszło na ulepszenie” (djariczek). Cena wywoławcza
+skalowała cenę handlarza za przedmiot bazowy medianą portfeli, a na świeżym
+świecie jedno i drugie to grosze. Teraz podłogą jest suma opłat kowala za
+każdy krok od przedmiotu bazowego do tego plusa, odczytana z własnych tabel
+silnika (`refine_proto`), każdy krok liczony po tym, ile średnio kosztuje
+jego przejście: koszt razy 100 przez szansę — bo krok, który przy +7 nie
+wychodzi sześć razy na dziesięć, płaci się więcej niż raz, a ostatnia
+porażka zabiera przedmiot. To jest ten procent za ryzyko: 11% przy +1, 100%
+przy +6, ponad 200% przy +9. Miecz+4 nie schodzi poniżej 6 778 yang (opłaty
+400 + 800 + 1 600 + 3 300), Mnisia Zbroja Płytowa+4 poniżej 8 400. Podłoga
+trzyma pod każdym wyjściem wyceny — pod cenami stałymi +7/+8/+9, pod ceną
+złomu, pod pamięcią sprzedaży i limiterem kroku — oraz pod rabatami za
+niesprzedane stoiska i „Wyprzedaż” biednego straganiarza: rabat schodzi z
+marży, nie z opłat. Materiały do ulepszeń nie są wliczane; mają własny
+rynek. Przedmiot, który nie stoi na zwykłej drabinie plusów (wędrówka po
+`refined_vnum` nie wraca do jego numeru), podłogi nie dostaje.
+
+### Zwój w plecaku to drabina do +9
+
+„Mnóstwo zwojów na serwerze, a boty chyba ich nie używają”. Używały, ale
+rzadko: cel ulepszeń bota wyznaczała jego osobowość — sześć botów na
+dziesięć kończyło na +6 i tam stawało, choćby miało w plecaku Zwój
+Błogosławieństwa, a zwoje szły na stragan. Na stosie testowym leżało 660
+zwojów u 482 botów, a na 45 ulepszeń do +7 tylko 9 poszło pod zwojem.
+Tymczasem pod Zwojem Błogosławieństwa albo Boga Smoków silnik nigdy nie
+niszczy przedmiotu (porażka to poziom w dół albo nic), więc powód, dla
+którego bot bał się +7, znika. Teraz zwój w plecaku podnosi cel do +9 —
+u kowala i w polu, bo zwój nie potrzebuje kowala — dla noszonych
+przedmiotów i broni z 30 poziomu, od +6 w górę, Boga Smoków od +7, gdy
+bot go ma; bez zwoju wraca dawna ambicja. Stragan zostawia botowi trzy
+pierwsze zwoje, dopóki jakiś noszony przedmiot ma je do czego użyć;
+reszta jest towarem, bo inne boty też ich potrzebują. Opłata i materiały
+z tabeli obowiązują jak dotąd.
+
+### Lagi klienta co kilkanaście sekund: jedno planowanie trasy trwało pięć sekund
+
+„Klient laguje, stałe lagi co około 10–20 s” (sizowski, z paczką wsparcia).
+W paczce: rdzeń `game1` (1127 botów, mapy wspólne) spędzał w ticku botów
+20–32 s z każdych 60, a pojedynczy tick sięgał 5,1 s — na ten czas rdzeń
+nie obsługuje nikogo, więc każdy gracz na jego mapach zamiera. W środku
+siedziały pojedyncze dalekie planowania trasy w Dolinie Orków po 1–5 s
+(`PLAYERBOT_NAV: far plan map=64 … cost_ms=5066`), a nawet średnie plany
+były 16–90 razy droższe niż na naszym stosie testowym przy tej samej
+liczbie botów. Przyczyna: wyszukiwanie korytarzowe (A* z ważoną
+heurystyką) nigdy nie zamykało komórki — komórka osiągnięta później
+taniej wracała na stertę i była rozwijana ponownie, a przy karach za wodę
+w dolinie dróg prawie równych jest bez liku, więc te same komórki
+rozwijały się w kółko. Komórka zdjęta ze sterty jest teraz zamknięta na
+stałe (trasa najwyżej odrobinę dłuższa), a za tym stoi twardy limit
+60 000 rozwinięć: po nim wyszukiwanie oddaje najlepszą trasę częściową —
+do komórki najbliższej celu — a bot planuje resztę stamtąd, zamiast
+zgłaszać dotarcie. Każdy plan ponad 250 ms (i każdy daleki) zapisuje w
+logu, co kosztował: `abstract_ms`, `regions`, `fine_ms`, `expanded`,
+`partial` — następna wolna maszyna będzie do odczytania, nie do
+zgadywania.
+
+### syserr: 2 773 linii o „Miksturze Ataku +15” w dwanaście minut
+
+Z tej samej paczki: `GetRefineLevel` silnika porównuje plus z nazwy
+bazowej z plusem z nazwy polskiej i przy różnicy pisze do syserr — a
+„Mikstura Ataku +15” (71034/76018) to mikstura, której koreańska nazwa
+kończy się gołym „+”. Każde spojrzenie bota do plecaka z taką miksturą to
+była linia na dysku. Sprawdzenie dotyczy teraz tylko broni i zbroi.
+
+### Rdzeń db: brakująca tabela `log.ikarusshop_log`
+
+Każde otwarcie sklepu offline i każda sprzedaż w nim kończyły się w syserr
+rdzenia db linią „Table 'log.ikarusshop_log' doesn't exist” — żaden zrzut
+w pakiecie nie definiuje tabeli, do której rdzeń pisze. Jest w schemacie
+logów (`logschemify.py`), dokładany przy każdym starcie.
+
+### Crashe rdzeni z 2.0.11 i 2.0.12 — ślady zebrane
+
+Ta sama paczka przyniosła pierwsze pliki `crash-*.txt`: sześć segfaultów
+między 11:08 a 13:30, wszystkie na 2.0.11/2.0.12, żadnego od 2.0.13 przez
+pięć i pół godziny. Trzy ślady kończą się w
+`CHARACTER::GetMoveMotionSpeed` wołanym z `Goto` w ticku botów — to
+wygląda na wiszący wskaźnik założonej broni, co pasuje do poprawki liczby
+komórek plecaka z 2.0.13 (do 2.0.12 boty iterowały po 135 komórkach
+zamiast 90). Dwa pozostałe ślady (libc z ticku) czekają na zbudowanie
+binarki 2.0.11 do symbolizacji; jeśli plik `crash-*.txt` pojawi się na
+2.0.17 lub nowszej, proszę o paczkę wsparcia.
+
 ## 2.0.18 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

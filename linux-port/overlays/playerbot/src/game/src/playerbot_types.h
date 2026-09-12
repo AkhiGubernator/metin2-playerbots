@@ -1846,6 +1846,28 @@ namespace
 	}
 	const BYTE PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS = 7;
 	const BYTE PLAYERBOT_SCROLL_REFINE_MIN_PLUS = 6;
+	// A Blessing or Dragon God scroll in the bag is the whole reason to go
+	// on: under either the engine never burns the piece (DoRefineWithScroll
+	// hands it back a level down, or unchanged), so the personality's fear
+	// of +7 no longer applies. Six bots in ten aimed at +6 and stopped there
+	// with scrolls in the bag, and the scrolls went up on the counters
+	// instead - "mnostwo zwojow na serwerze, a boty ich nie uzywaja". With a
+	// scroll GetPlayerBotRefineTarget says this; without one, the old
+	// ambition. The first PLAYERBOT_REFINE_SCROLL_KEEP scrolls stay off
+	// the counter while a worn piece can still use one.
+	const BYTE PLAYERBOT_SCROLL_REFINE_MAX_PLUS = 9;
+	const int PLAYERBOT_REFINE_SCROLL_KEEP = 3;
+
+	// The two scrolls the bots refine under: neither burns the piece.
+	bool IsPlayerBotSafeRefineScroll(DWORD vnum)
+	{
+		if (vnum == PLAYERBOT_BLESSING_SCROLL_VNUM)
+			return true;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS) / sizeof(PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[0]); ++i)
+			if (vnum == PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[i])
+				return true;
+		return false;
+	}
 	const DWORD PLAYERBOT_SCROLL_REFINE_INTERVAL = 45000;
 	// Neither map sells anything, so a visit is bounded and ends in Bokjung.
 	const DWORD PLAYERBOT_FRONTIER_MAX_VISIT_TIME = 2400000;
@@ -3292,6 +3314,7 @@ namespace
 			wPortalWalkTicks(0),
 			wPortalWalkRouteIndex(0),
 			bLastNavOutcome(0),
+			bRoutePartial(false),
 			dwFightProgressVID(0),
 			dwDefenceTargetVID(0),
 			dwDefenceEpisodeStart(0),
@@ -3634,6 +3657,11 @@ namespace
 		// one it was costs a byte and is the difference between a diagnosis and
 		// a guess.
 		BYTE bLastNavOutcome;
+		// The route in hand ends short of its destination on purpose: the
+		// corridor search hit its cap and handed back the nearest cell it
+		// reached (PLAYERBOT_NAV_MAX_CORRIDOR_EXPANSIONS). Running out of
+		// such a route is a replan from there, never an arrival.
+		bool bRoutePartial;
 		DWORD dwFightProgressVID;
 		// The attacker this bot is currently defending itself against, since when,
 		// and from where. See PLAYERBOT_DEFENCE_EPISODE_TIME.

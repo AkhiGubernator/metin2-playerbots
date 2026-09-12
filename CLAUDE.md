@@ -2391,6 +2391,95 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   wait. `PLAYERBOT_PARTY: census` every ten minutes is the measurement.
   Before wiring a weight, grep for every reader of it - one reader in a
   ranking is not a feature.
+- **A refined piece never sells for less than the blacksmith was paid.**
+  `GetPlayerBotShopAskingPrice` scaled the merchant's price of the *base*
+  item by the median wallet, and on a fresh world both are pennies: Miecz+4
+  at 90 yang, Sejmitar+4 at 582 (djariczek, 12 September), where the four
+  fees alone are 6100. `GetPlayerBotRefineInvestment` (playerbot_town.h)
+  walks the ladder from `vnum - refine` through `dwRefinedVnum` and
+  `wRefineSet` into `CRefineManager::GetRefineRecipe`, summing `cost * 100
+  / prob` - the expected spend per step, which is the risk premium - and
+  refuses a piece whose walk does not land back on its own vnum. It floors
+  every exit of the asking price and the two markdowns at the counter. The
+  mt2009 table lives in `world.refine_proto` (not `player`), Miecz +1..+9:
+  400/800/1600/3300/6600/13300/20000/30000/50000 at 90/90/90/90/80/60/50/40/30;
+  Boski Luk Moreli +9 comes to 1.9M this way against the flat 900k, which
+  is the floor doing its job. Materials are not counted.
+- **A weighted search that reopens closed cells is unbounded, and the tick
+  pays.** `FindFinePathInRegionCorridor` runs weighted A* (2-3x) inside
+  the abstract corridor and reopened any cell reached cheaper after it
+  was expanded; with water penalties making many routes nearly equal on
+  Orc Valley the same cells were expanded again and again - single plans
+  of 4-5 s (`far plan map=64 cost_ms=5066`), a game1 tick of 20-32 s per
+  60 and a client lagging every 10-20 s (sizowski, 12 September), while
+  the same map on our stack planned in under 404 ms. A popped cell is
+  closed by storing `-g - 1` in `m_nodeCost` (the neighbour test never
+  reopens a negative cost, the stale test drops its heap entries), the
+  search is capped at `PLAYERBOT_NAV_MAX_CORRIDOR_EXPANSIONS`, and past
+  the cap it returns the partial route to the cell nearest the goal:
+  `TPlayerBotAIState::bRoutePartial` makes `MovePlayerBot` replan from its
+  end instead of reporting an arrival, and a partial route is never
+  cached. Every far plan and every plan over `PLAYERBOT_NAV_SLOW_PLAN_MS`
+  logs `abstract_ms regions fine_ms expanded partial` - read those before
+  blaming the machine: target searches cost the same 42 us per search on
+  both worlds, so a per-plan gap of 16-90x is the search, not the CPU.
+- **`CItem::GetRefineLevel` on mt2009 is a syserr line per call for one
+  potion.** It parses the plus out of the base name and the locale name
+  and logs a mismatch; "Mikstura Ataku +15" (71034/76018, ITEM_USE) has a
+  bare "+" in the Korean name and "+15" in the Polish one, and every bag
+  scan that asked a potion for its refine wrote to disk - 2773 lines in
+  twelve minutes on one core. playerbotify.py returns before the locale
+  check unless the item is a weapon or armour; item.cpp ships staged
+  (mixed line endings - anchor without a newline).
+- **The db core writes `log.ikarusshop_log` and no dump defines it.**
+  `CClientManager::IkarusShopLog` (ClientManagerIkarusShop.cpp) inserts
+  who/itemid/what/shop_owner/extra/vnum/count/yang (+cheque under
+  ENABLE_CHEQUE_SYSTEM) for every offline-shop action; `logschemify.py`
+  carries the table now. The db syserr is where such holes show -
+  `Table 'log.X' doesn't exist` - and the bundle ships it as syserr-db.txt.
+- **The first crash files, read.** sizowski's 12 September bundle: six
+  SIGSEGV between 09:08 and 11:30 UTC, all on 2.0.11/2.0.12 (the launcher
+  log says which version ran when - map crash stamps, which are UTC, onto
+  it), none in 5.5 h since 2.0.13. Three end in
+  `CHARACTER::GetMoveMotionSpeed+0x181` under `Goto` from the bot tick -
+  the inlined `GetWear(WEAR_WEAPON)->GetProto()` on a dangling item, which
+  fits the 135-cell bag scan 2.0.13 removed. Two are libc memmove under
+  four anonymous frames from `Update+0x51e2`: symbolising those needs the
+  2.0.11 binary (a worktree build), not this one. The named frames come
+  from `-rdynamic`; the anonymous ones are our namespace.
+- **A scroll in the bag is the reason to go on, and the personality's
+  ambition is not.** `GetPlayerBotRefineTarget` drew +6/+7/+8/+9 by
+  personality (six in ten stop at +6) and every pass asked it - so a bot
+  with Blessing Scrolls in the bag stopped at +6 and put the scrolls on its
+  counter: 660 scrolls in 482 bags on the test world, 9 of 45 refines to
+  +7 under one ("mnostwo zwojow, boty ich nie uzywaja"). Under a Blessing
+  or Dragon God scroll `DoRefineWithScroll` on mt2009 never burns the piece
+  (value0 NO_REDUCTION_WHEN_FAIL keeps it, the default hands it back a
+  level down; only REFINE_BONUS_SCROLL destroys), so the target is
+  `PLAYERBOT_SCROLL_REFINE_MAX_PLUS` while `CountPlayerBotSafeRefineScrolls`
+  says one is there - one function, all six callers follow - and the
+  stall keeps the first `PLAYERBOT_REFINE_SCROLL_KEEP` back while
+  `PlayerBotWearsScrollWork`. Measure it as `PLAYERBOT_AI: refine ...
+  scroll=1` by plus.
+- **Starter and level chests are opened at the level they unlock, and the
+  database says so.** "Bots at 30 still carry the level-1 chest" (Latino)
+  was the pre-2.0.17 world - the vnum-keyed refusal map. On the test
+  world after 2.0.17 every giftbox held by a bot at or above its
+  LIMIT_LEVEL is gone (2319 level-20 chests, all in bags under 20; the
+  only level-1 chests in level-1 bags); the two gates that can still keep
+  one are room for the whole set (`PlayerBotBagTakesGroup`, silent, waits
+  for a town visit) and the engine's own "You have not received anything"
+  (a refusal, and then goods). Query `player.item` joined to `player` by
+  `limitvalue0` before believing either side of such a report.
+- **The client's night is a client option; the server's "night" is the
+  Christmas flag.** This root's `game.py` has `__SetNightMode` behind
+  `systemSetting.GetNightMode()` (0 off, 1 always, 2 auto 22:00-06:00 by
+  the PC clock, set in uigameoption) and nothing in the packet stream
+  reaches it; `xmas_snow` goes to `__XMasSnow_Enable` = the song plus
+  `background.EnableSnow(1)`. Night without snow from the server needs a
+  new event flag in the client's flag dict wired to `__SetNightMode` - a
+  root repack and a client package - so `ManagePlayerBotNight` keeps
+  raising `xmas_snow` until that ships.
 
 ## Engine facts worth not re-deriving
 

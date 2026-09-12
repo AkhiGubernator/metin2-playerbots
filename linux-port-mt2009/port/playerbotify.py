@@ -626,6 +626,21 @@ def main(root):
     edit(os.path.join(game, 'char_skill.cpp'),
          '\tsys_log(0, "%s: USE_SKILL: %d pkVictim %p", GetName(), dwVnum, get_pointer(pkVictim));\n',
          '\tsys_log(1, "%s: USE_SKILL: %d pkVictim %p", GetName(), dwVnum, get_pointer(pkVictim));\n')
+
+    # GetRefineLevel compares the plus in the base name with the plus in the
+    # locale name and writes a syserr line when they differ - and "Mikstura
+    # Ataku +15" (71034/76018) is a potion whose Korean name ends in a bare
+    # "+": 2773 lines in twelve minutes on one core, one per look at a bag
+    # holding it (sizowski, 12 September). Only equipment is refined. The
+    # anchor carries no newline: item.cpp has mixed line endings.
+    edit(os.path.join(game, 'item.cpp'),
+         '\tconst char* locale_name = GetName();',
+         '\t// A potion is not refined: "Mikstura Ataku +15" carries a plus in\n'
+         '\t// its Polish name and a bare "+" in the Korean one, and the check\n'
+         '\t// below wrote a syserr line for every look at a bag holding it.\n'
+         '\tif (GetType() != ITEM_WEAPON && GetType() != ITEM_ARMOR)\n'
+         '\t\treturn rtn;\n'
+         '\tconst char* locale_name = GetName();')
     edit(os.path.join(game, 'questmanager.cpp'),
          '\t\tsys_log(0, "CQuestManager::Kill QUEST_KILL_EVENT (pc=%d, npc=%d)", pc, npc);\n',
          '\t\tsys_log(1, "CQuestManager::Kill QUEST_KILL_EVENT (pc=%d, npc=%d)", pc, npc);\n')

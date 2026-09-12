@@ -1180,6 +1180,8 @@ namespace
 			if (!item || item->GetRefinedVnum() == 0 || item->isLocked() || item->IsExchanging())
 				continue;
 			const BYTE plus = item->GetRefineLevel();
+			// The target is PLAYERBOT_SCROLL_REFINE_MAX_PLUS here by construction:
+			// this pass only runs with a scroll in the bag.
 			if (plus < PLAYERBOT_SCROLL_REFINE_MIN_PLUS || plus >= GetPlayerBotRefineTarget(ch, item))
 				continue;
 			if (!IsPlayerBotWearableAtLevel(ch, item->GetRefinedVnum()))

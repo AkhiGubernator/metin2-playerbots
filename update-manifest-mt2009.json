@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T18:17:34Z",
-  "statusMessage": "Wersja 2.0.17: boty znów otwierają Skrzynie Blasku Księżyca (a na mt2009 skrzynie w ogóle zaczynają wypadać), wyszukiwarka oznacza stragany fajerwerkiem zamiast niemieckiej reklamy. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T19:02:44Z",
+  "statusMessage": "Wersja 2.0.18: suwak „Grupy (PT)” naprawdę steruje liczbą grup botów (5% populacji przy 25, 20% przy 100, 50% przy 250). Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.17",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.17/metin2-server-update-2.0.17.zip",
-    "sha256": "EBA23573447A1FB368B6363AA6CC19E5602F498EA705F9D884E5704B3D2A9822"
+    "version": "2.0.18",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.18/metin2-server-update-2.0.18.zip",
+    "sha256": "6381A2F29CADC4A2F530443C01B8B3D549BF993214209A0C73E9E5B29A132D97"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

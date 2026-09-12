@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T21:14:31Z",
-  "statusMessage": "Wersja 2.0.20: stragany nie znikają (pętla dzielenia stosów przy pełnym plecaku), ceny ksiąg i mnożniki bonusów wg tabel Iwakury. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T22:26:09Z",
+  "statusMessage": "Wersja 2.0.21: jedna wędka wystarczy, cztery bonusy przez Wzmocnienie a piąty tylko Marmurem, biolog po dziesięciu zębach wysyła po Kamień Duszy. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.20",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.20/metin2-server-update-2.0.20.zip",
-    "sha256": "8980FB134C58BD0F4071FBFE5073EF155E4CFFE475B2B6B615FC5FF871090A26"
+    "version": "2.0.21",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.21/metin2-server-update-2.0.21.zip",
+    "sha256": "9E72A70833446D0BB72D97CF809BEF960A298219942CBF8D248BF7CD844B9666"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

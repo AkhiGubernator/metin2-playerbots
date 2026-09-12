@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-11T22:32:15Z",
-  "statusMessage": "Wersja 2.0.10: nazwy bonusów zamiast numerów w panelach, nowa lista nicków Iwakury rozdawana po królestwach, naprawione zdublowane nicki po 2.0.8 (boty zostaną przemianowane przy starcie). Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T08:16:15Z",
+  "statusMessage": "Wersja 2.0.11: boty Shinsoo i Jinno nie stoją już na 5 poziomie (trener w Yongan i Pyongmoo), jedna Księga Umiejętności z Metina zamiast trzech, ręcznie nazwany bot zachowuje nick, paczka logów ze wszystkich trzech rdzeni. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.10",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.10/metin2-server-update-2.0.10.zip",
-    "sha256": "DAA7A383E4EB20F4F13529EF5A000E0BBD70C5EC411D862DA9A68CE899696759"
+    "version": "2.0.11",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.11/metin2-server-update-2.0.11.zip",
+    "sha256": "EF47C8FF24904C62DA190C3F77C001A50E39B6D42B4D62961E5029E1922A5954"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

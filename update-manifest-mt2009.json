@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T13:19:34Z",
-  "statusMessage": "Wersja 2.0.13: aktualizacja z paczki na Linuksie, skrzynie nie wysypują się na ziemię, wyszukiwarka widzi stragany botów, panel z nazwami i rozmiarami przedmiotów tego świata i bez hasła lokalnie, teleport do bota, profil czterech GM konta admin, gildie botów z nazwami od Iwakury. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T13:50:25Z",
+  "statusMessage": "Wersja 2.0.14: panel klasyczny z polskimi znakami w nazwach przedmiotów i bazowymi statystykami w dymku (wartość ataku, obrona, wymagany poziom). Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.13",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.13/metin2-server-update-2.0.13.zip",
-    "sha256": "2168CD99758EB83A27924C7E35D1A144243556A1D155CB3A8A720DD9F53C9DC4"
+    "version": "2.0.14",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.14/metin2-server-update-2.0.14.zip",
+    "sha256": "AEA9344C8E9A66F0B3FDA41F829AD60C5C0E2AC5FA17B363C661FA2892F810BE"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -17,6 +17,133 @@ every version here.
 
 ---
 
+## 2.0.21 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Bot kupował wędkę za wędką
+
+„Bot nie ogarnął, że jedna wędka wystarczy” (sizowski: osiem Wędek+0 w
+osiem sekund, potem plecak z piętnastoma). Wędka zajmuje trzy pola, a
+kontrola miejsca przed zakupem pytała o jedno: plecak z pojedynczymi
+dziurami i bez wolnej kolumny przechodził test, bot płacił, silnik kładł
+wędkę na ziemi (`AutoGiveItem` nie odmawia — zrzuca), licznik wędek dalej
+mówił zero i w następnym ticku bot kupował znowu; potem zbierał je z
+ziemi. Zakup pyta o miejsce wielkości przedmiotu i sprawdza, że kupiona
+rzecz trafiła do plecaka, a nie na trawę.
+
+### Cztery bonusy przez Wzmocnienie, piąty tylko Marmurem
+
+„Boty dodają sobie do przedmiotów 5 bonusów, gdzie wzmocnienie dodaje
+maksymalnie 4”. Bot wołał `AddAttribute()` wprost, bez szansy i do pięciu
+linii. Teraz jak gracz: Wzmocnienie Przedmiotu dodaje linię tylko poniżej
+czterech, z szansą silnika (100/80/60/50%), a piątą dodaje wyłącznie Marmur
+Błogosławieństwa z plecaka, na przedmiocie z dokładnie czterema, z szansą
+30%; kamień i marmur schodzą przy każdej próbie, także nieudanej. Marmuru
+nikt nie sprzedaje, więc bot bez niego kończy na czterech.
+
+### Biolog: po dziesięciu zębach bot oddawał kolejne
+
+„Bot skończył misję, a mimo to dalej chodzi i oddaje zęby orka” (martynka19cm:
+22 zęby). Indeks stanu skompilowanego questu to hash nazwy i bywa ujemny —
+`key_item` questu Zęba Orka to −1726153001 — a kod traktował ujemny indeks
+jako „nieznany”. Po dziesiątym zaakceptowanym zębie stan nigdy nie
+przechodził do `key_item`, licznik zostawał na dziesięciu i każda wizyta z
+zębem w plecaku była kolejnym oddaniem. „Nieznany” ma teraz własną wartość,
+więc po dziesięciu zębach bot idzie po Kamień Duszy z Elitarnych Orków, a z
+nim po nagrodę. Bot, który utknął z dziesięcioma zaliczonymi, przejdzie
+dalej przy najbliższym zaakceptowanym zębie.
+
+### Boty sprzedawały handlarzowi ulepszacze, marmury i materiały
+
+„Boty sprzedają ulepszacze oraz marmury polimorfii handlarzowi” (sizowski:
+Kawałek Lodu, Stalowy Grot, Futro Yeti, Zwój Kamienia Duszy, Marmur —
+wszystko za grosze u handlarza). Trzy reguły naraz:
+
+- **Marmur Polimorfii** (typ 19) był złomem — nic go nie wyłączało z domyślnej
+  odpowiedzi „sprzedaj”. Teraz to towar na stragan; handlarz bierze go tylko
+  pod presją plecaka, gdy bot nie ma gdzie otworzyć lady.
+- **Materiał, którego nikt nie potrzebował** (ledger: popyt 0), szedł do
+  handlarza z plecaka z zapasem miejsca. Teraz każdy materiał trafia do
+  handlarza wyłącznie pod presją plecaka, a przy popycie tylko wtedy, gdy bot
+  nie może prowadzić straganu.
+- **Kup, a potem sprzedaj po tej samej cenie** (Żółć Niedźwiedzia x2 za
+  47 006): bot brakujący jednej sztuki kupował paczkę dwóch, przestawał
+  „brakować” i wystawiał obie na własnej ladzie. Lada wystawia tylko nadwyżkę
+  ponad **rezerwę** — dwukrotność największej liczby z przepisu, tę samą miarą,
+  którą liczy „brak” — a podział na paczki zostawia rezerwę w stosie bazowym.
+
+### Plik polityki przedmiotów: `playerbot_item_policy.tsv`
+
+Na prośbę „stwórz mi jakiś prosty plik, gdzie oznaczę wartość przedmiotów”.
+W spoolu (`/opt/m2spool/playerbot_item_policy.tsv`, obok wag) jedna linia na
+przedmiot: numer (vnum) albo cały typ (`type:19`), tabulator lub spacja i
+słowo: `keep`/`zostaw` (nigdy nie opuszcza plecaka), `stall`/`stragan` (towar
+na ladę, przed wszystkim innym), `merchant`/`handlarz` (do handlarza NPC przy
+najbliższej wizycie), `drop`/`wyrzuc` (wyrzucony przy wizycie u handlarza, bez
+sprzedaży). `#` zaczyna komentarz. Rdzeń czyta plik jak wagi — co pięć sekund
+sprawdza, czy się zmienił — i loguje `PLAYERBOT_CONFIG: item policy read`.
+Czego w pliku nie ma, podlega regułom botów. Panel klasyczny ma stronę
+**Zachowanie botów → Co boty mogą sprzedawać** (`/ai/items`): pole tekstowe,
+kontrola każdej linii, zapis. Przykład:
+
+```
+30048	stall	# Kawalek Lodu
+type:19	stall	# marmury polimorfii
+50703	drop	# Kwiat Kaki po zaliczonym biologu
+```
+
+### Okazy biologa nie idą na stragan
+
+„Boty wystawiają przedmioty do badań — niech ich nie wystawiają, jak mają
+quest zrobiony, to niech sprzedają u handlarza albo wyrzucają”. Kwiat
+Brzoskwini, Pokrzywa, Kwiat Kaki, Korzeń Gango, Bez i Grzyb Tue z zaliczonego
+etapu były towarem na ladę (350 punktów). Teraz to złom dla handlarza —
+sprzedawany przy najbliższej wizycie w mieście, a `drop` w pliku polityki
+każe je wyrzucić. Ząb Orka zostaje materiałem (ledger), Kamień Duszy nigdy nie
+jest nadwyżką.
+
+### Straganiarz krążący do niedostępnego stanowiska
+
+Z badania AkhiGubernatora: bot `PoMieLoNy` (map 3) przez noc powtarzał marsz na
+własne stanowisko. Losowe przesunięcie w pierścieniu targu trafiło na ziemię,
+której teren bota nie łączy; marsz do miasta przenosił cel na własny grunt,
+bot dochodził, test dojścia (liczony do stanowiska) nie przechodził i ten sam
+odcinek planował się od nowa (`goal moved onto reachable ground` 3691/min na
+mapie 41). Przed marszem stanowisko jest sprawdzane (`CanReach`), próbowane są
+cztery alternatywne przesunięcia (`PLAYERBOT_SHOP_PITCH_TRIES`), a gdy żadne
+nie łączy, stragan odkłada się na 5–10 minut z linią `PLAYERBOT_SHOP: pitch
+unreachable`. Pierścień, w którym rescue szuka własnego gruntu, mieści się
+teraz w promieniu dojścia łącznie z narożnikami (`arrivalDistance / 71`
+komórek) — wcześniej narożnik za promieniem był celem, do którego bot
+dochodził i „nie dochodził”.
+
+### Panel seban: „Możliwie zawieszony” dla każdego straganiarza
+
+Flaga liczyła się z tekstu statusu (tylko „łowi”/„ryb”), a lista akcji kończyła
+się na 12 — stragan (13), wędka (14), przegląd straganów (15), wabienie (16) i
+odpoczynek (17) wyświetlały się jako `#13`…`#17` i każdy bot za ladą był
+„zawieszony”. Flaga pyta akcji rdzenia (trener, handlarz, kowal, stragan,
+wędka, targ, odpoczynek stoją w miejscu z własnej woli), a nazwy akcji sięgają
+do 17.
+
+### Polskie znaki w nazwach NPC i na czacie: rdzeń db łączy się w cp1250
+
+Baza jest w CP1250 (2.0.20), ale rdzeń db (`Main.cpp`) domyślnie ustawia
+`LOCALE = latin2` i tak nazywa swoje połączenia SQL — nazwy NPC i przedmiotów
+przechodziły przez latin2 i traciły ł/ś/ź. `m2-render-config` wpisuje
+`LOCALE = "cp1250"` do `db/conf.txt`; w logu rdzenia db pojawia się
+`mysql_set_character_set(cp1250)`. Diagnoza: audyt Codex
+`polskie-znaki-mt2009-20260912`.
+
+### „250 niewidzialnych botów na 1 lvl z 2500 yang” (Matthaeus)
+
+To nie boty, tylko tożsamości z seedu, których rdzeń nie wystartował: paczka
+wsparcia jest z 2.0.8 (log z 11 września), `autospawn requested=117
+started=117`, rejestr 2499 użytecznych. Reszta to postacie w bazie, widoczne w
+rankingach panelu, nieobecne w świecie. Po aktualizacji i podniesieniu suwaka
+liczby botów wstają — nie ma czego naprawiać w rdzeniu.
+
 ## 2.0.20 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

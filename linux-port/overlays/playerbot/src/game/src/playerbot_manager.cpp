@@ -1568,6 +1568,7 @@ void CPlayerBotManager::Update()
 	// Once for the whole population: the panel may have moved a weight since
 	// the last tick, and every bot planned below must see the same numbers.
 	RefreshPlayerBotWeights(dwNow);
+	RefreshPlayerBotItemPolicy(dwNow);
 	ManagePlayerBotNight(dwNow);
 
 	static DWORD s_dwTick = 0;

@@ -877,6 +877,42 @@ GM_REQUEST = os.path.join(GM_SPOOL, "gm.request")
 # build shipped it.
 AI_SPOOL     = _env_path("M2PANEL_AI_SPOOL", "/opt/m2spool")
 AI_WEIGHTS   = os.path.join(AI_SPOOL, "playerbot_weights.tsv")
+# The operator's word on single items: keep / stall / merchant / drop per
+# vnum or per item type, read by the core the way the weights are.
+AI_ITEM_POLICY = os.path.join(AI_SPOOL, "playerbot_item_policy.tsv")
+AI_ITEM_POLICY_WORDS = ("keep", "stall", "merchant", "drop", "zostaw", "stragan", "handlarz", "wyrzuc")
+
+
+def read_ai_item_policy():
+    try:
+        with open(AI_ITEM_POLICY, encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    except OSError:
+        return ""
+
+
+def check_ai_item_policy(text):
+    """The line numbers the core would skip, so the operator hears about a
+    typo now rather than watching a bot ignore the rule."""
+    bad = []
+    for no, raw in enumerate(text.splitlines(), 1):
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        key = parts[0].lower()
+        ok_key = key.isdigit() or (key.startswith("type:") and key[5:].isdigit())
+        if len(parts) != 2 or not ok_key or parts[1].lower() not in AI_ITEM_POLICY_WORDS:
+            bad.append(no)
+    return bad
+
+
+def write_ai_item_policy(text):
+    os.makedirs(AI_SPOOL, exist_ok=True)
+    tmp = AI_ITEM_POLICY + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text.replace("\r\n", "\n").rstrip("\n") + "\n")
+    os.replace(tmp, AI_ITEM_POLICY)
 AI_W_MIN, AI_W_MAX, AI_W_NEUTRAL = 25, 250, 100
 
 # Name, emoji, and the order they are shown in -- which is the order the core
@@ -2915,6 +2951,15 @@ T.update({
                   "de":"Datei konnte nicht geschrieben werden \u2014 das gemeinsame Spool-Verzeichnis ist in diesem Container nicht eingebunden.",
                   "tr":"Dosya yazılamadı \u2014 paylaşılan spool dizini bu kapsayıcıda bağlı değil."},
  "ai_save":      {"en":"Save","pl":"Zapisz","de":"Speichern","tr":"Kaydet"},
+ "ai_items_open": {"en":"📦 What the bots may sell","pl":"📦 Co boty mogą sprzedawać"},
+ "ai_items_nav":  {"en":"📦 Item policy: merchant or stall","pl":"📦 Polityka przedmiotów: handlarz czy stragan"},
+ "ai_items_intro":{"en":"One line per item: the item number (vnum) or a whole type (type:19), a space or tab, and one word. keep - never leaves the bag; stall - counter goods, ahead of everything else; merchant - sold to the NPC merchant on the next town visit; drop - thrown away at the merchant visit without a sale. Anything not listed here follows the bots' own rules. Saved, it reaches every bot within five seconds.",
+                  "pl":"Jedna linia na przedmiot: numer przedmiotu (vnum) albo cały typ (type:19), spacja lub tabulator i jedno słowo. keep (zostaw) - nigdy nie opuszcza plecaka; stall (stragan) - towar na ladę, przed wszystkim innym; merchant (handlarz) - sprzedany handlarzowi NPC przy najbliższej wizycie w mieście; drop (wyrzuc) - wyrzucony przy wizycie u handlarza, bez sprzedaży. Czego tu nie ma, podlega własnym regułom botów. Po zapisie dociera do każdego bota w ciągu pięciu sekund."},
+ "ai_items_format":{"en":"Item numbers: the item search on the give-item page shows them; item types: 5 materials, 18 quest items, 19 polymorph marbles, 17 skill books, 3 usable items (scrolls, stones). A # starts a comment.",
+                  "pl":"Numery przedmiotów pokazuje wyszukiwarka na stronie nadawania przedmiotów; typy: 5 materiały, 18 przedmioty questowe, 19 marmury polimorfii, 17 księgi, 3 przedmioty użytkowe (zwoje, kamienie). Znak # zaczyna komentarz."},
+ "ai_items_bad":  {"en":"Not saved: line(s) {n} are not '<vnum or type:N> <keep|stall|merchant|drop>'.",
+                  "pl":"Nie zapisano: linie {n} nie mają postaci '<vnum albo type:N> <keep|stall|merchant|drop>'."},
+ "ai_items_live": {"en":"Saved. The bots read the file within five seconds.","pl":"Zapisano. Boty czytają plik w ciągu pięciu sekund."},
  "ai_reset":     {"en":"Everything back to 100","pl":"Wszystko z powrotem na 100","de":"Alles zurück auf 100","tr":"Hepsini 100'e döndür"},
  "ai_rare":      {"en":"rarely","pl":"rzadko","de":"selten","tr":"nadiren"},
  "ai_often":     {"en":"often","pl":"często","de":"oft","tr":"sık"},
@@ -4642,6 +4687,7 @@ TPL_AI = BASE.replace("__BODY__", """
 <div class="card">
 <h3>{{t('ai_nav')}}</h3>
 <p class="muted">{{t('ai_intro')}}</p>
+<p><a class="btn" href="{{url_for('ai_item_policy')}}">{{t('ai_items_open')}}</a></p>
 </div>
 
 <div class="card">
@@ -4721,6 +4767,23 @@ function m2aiReset(){
   });
 }
 </script>""")
+
+
+
+TPL_AI_ITEMS = BASE.replace("__BODY__", """
+<p><a href="{{url_for('ai_weights')}}">{{t('ai_nav')}}</a></p>
+<div class="card">
+<h3>{{t('ai_items_nav')}}</h3>
+<p class="muted">{{t('ai_items_intro')}}</p>
+<p class="muted">{{t('ai_items_format')}}</p>
+</div>
+<div class="card">
+<form method="post">
+<input type="hidden" name="_csrf" value="{{csrf_token}}">
+<textarea name="policy" rows="18" spellcheck="false" style="width:100%;font-family:monospace;font-size:13px"
+          placeholder="30048	stall	# Kawalek Lodu&#10;type:19	stall	# marmury polimorfii&#10;50703	drop	# Kwiat Kaki">{{policy}}</textarea>
+<button class="big" style="margin-top:10px">{{t('ai_save')}}</button>
+</form></div>""")
 
 
 
@@ -10986,6 +11049,28 @@ def ai_weights():
     return render_template_string(TPL_AI, cur=read_ai_weights(),
                                   keys=AI_WEIGHT_KEYS, wmin=AI_W_MIN,
                                   wmax=AI_W_MAX, wneutral=AI_W_NEUTRAL)
+
+
+@app.route("/ai/items", methods=["GET", "POST"])
+@login_required
+def ai_item_policy():
+    """The item policy file, edited as text: the core reads it like the
+    weights, so saving is the whole operation. A malformed line is refused
+    with its number rather than written and silently skipped by the core."""
+    if request.method == "POST":
+        text = request.form.get("policy", "")
+        bad = check_ai_item_policy(text)
+        if bad:
+            flash(t("ai_items_bad").replace("{n}", ", ".join(str(n) for n in bad)), "error")
+            return render_template_string(TPL_AI_ITEMS, policy=text)
+        try:
+            write_ai_item_policy(text)
+        except OSError:
+            flash(t("ai_failed"), "error")
+            return redirect(url_for("ai_item_policy"))
+        flash(t("ai_items_live"))
+        return redirect(url_for("ai_item_policy"))
+    return render_template_string(TPL_AI_ITEMS, policy=read_ai_item_policy())
 
 
 

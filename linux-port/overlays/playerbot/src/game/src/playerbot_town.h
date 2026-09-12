@@ -360,7 +360,7 @@ namespace
 		const TPlayerBotBiologistMission& mission = PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex];
 		const int completeState = GetPlayerBotBiologistStateIndex(missionIndex, "__complete");
 		quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
-		if (!pc || completeState < 0)
+		if (!pc || completeState == PLAYERBOT_QUEST_STATE_UNKNOWN)
 			return false;
 
 		GivePlayerBotBiologistReward(ch, mission);
@@ -523,7 +523,7 @@ namespace
 		{
 			const int keyState = GetPlayerBotBiologistStateIndex(missionIndex, "key_item");
 			quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
-			if (pc && keyState >= 0)
+			if (pc && keyState != PLAYERBOT_QUEST_STATE_UNKNOWN)
 			{
 				pc->SetQuestState(mission->questName, keyState);
 				sys_log(0, "PLAYERBOT_BIOLOGIST: teeth accepted, waiting for the soul stone pid=%u name=%s",
@@ -1112,6 +1112,17 @@ namespace
 	{
 		if (!item)
 			return -1;
+		// The operator's word first: stall goes up ahead of everything, the
+		// other three never do.
+		{
+			const BYTE policy = GetPlayerBotItemPolicy(item);
+			if (policy == PLAYERBOT_ITEM_POLICY_STALL)
+				return PLAYERBOT_SHOP_POLICY_STALL_SCORE;
+			if (policy != PLAYERBOT_ITEM_POLICY_NONE)
+				return -1;
+		}
+		if (item->GetType() == ITEM_POLYMORPH)
+			return PLAYERBOT_SHOP_POLYMORPH_SCORE;
 		// A weapon from the level-30 set is the prize of this whole market. It is
 		// worth a counter slot at any refine at all, unrefined included.
 		if (IsPlayerBotSpecialLevel30Weapon(item))
@@ -1124,6 +1135,12 @@ namespace
 		if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
 			return 1000 + item->GetRefineLevel();
 		// A material this bot is short of stays in its own bag.
+		// And nothing out of the reserve its own anvil wants: only what is
+		// over it, by at least one pack, is goods.
+		if (IsPlayerBotTradeableMaterial(item) &&
+				(int)ch->CountSpecifyItem(item->GetVnum()) -
+					GetPlayerBotRefineMaterialReserve(ch, item->GetVnum()) < PLAYERBOT_SHOP_PACK_UNITS)
+			return -1;
 		if (PlayerBotNeedsRefineMaterial(ch, item->GetVnum()))
 			return -1;
 		if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM)
@@ -1222,8 +1239,8 @@ namespace
 		// A specimen of a mission already handed in. The Orc Tooth never gets
 		// here: it is a refine material and the material branch above priced
 		// it, ledger and all.
-		if (IsPlayerBotBiologistSpecimenSurplus(ch, item->GetVnum()))
-			return PLAYERBOT_SHOP_SPECIMEN_SCORE;
+		// (a specimen of a handed-in row is the merchant's now - see the junk
+		// rule - never the counter's: "boty wystawiaja przedmioty do badan".)
 
 		// Whatever is left is the bot's own business, not goods. A stall with two
 		// things worth buying beats one padded out to eight.
@@ -1697,8 +1714,13 @@ namespace
 						PlayerBotStacksTogether(item, other))
 					++lines;
 			}
+			// The base stack keeps the anvil's reserve (one unit for anything
+			// that is not a material), so a line is never cut out of what the
+			// bot came to the counter to buy.
+			const int keep = std::max(1, IsPlayerBotTradeableMaterial(item)
+					? GetPlayerBotRefineMaterialReserve(ch, item->GetVnum()) : 1);
 			int split = 0;
-			while (lines < wantLines && (int)item->GetCount() > units &&
+			while (lines < wantLines && (int)item->GetCount() - units >= keep &&
 					CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS)
 			{
 				const int to = ch->GetEmptyInventory(item->GetSize());
@@ -2011,8 +2033,46 @@ namespace
 		GetPlayerBotStableOffset(ch->GetPlayerID(), 0x4d4b5450U,
 				PLAYERBOT_SHOP_RING_MIN, PLAYERBOT_SHOP_RING_RADIUS,
 				offsetX, offsetY);
-		const long stallX = pitchX + offsetX;
-		const long stallY = pitchY + offsetY;
+		long stallX = pitchX + offsetX;
+		long stallY = pitchY + offsetY;
+		// A pitch the bot's ground does not join is not walked to. The town
+		// leg moved such a goal onto the bot's own component, the walk ended
+		// there, the arrival test - against the pitch - failed, and the same
+		// leg was planned again for as long as the visit lasted: one keeper on
+		// map 3 spent a night at it (AkhiGubernator, 12 September). Salted
+		// offsets are tried first; when none joins, the stand is put off and
+		// the bot goes about its business.
+		{
+			CPlayerBotNavigation& navigation = CPlayerBotNavigation::instance(ch->GetMapIndex());
+			if (navigation.Init(ch->GetMapIndex()))
+			{
+				int tries = 0;
+				while (tries < PLAYERBOT_SHOP_PITCH_TRIES &&
+						!navigation.CanReach(ch->GetX(), ch->GetY(), stallX, stallY))
+				{
+					++tries;
+					GetPlayerBotStableOffset(ch->GetPlayerID() + (DWORD)tries * 7919U,
+							0x4d4b5450U ^ (DWORD)tries,
+							PLAYERBOT_SHOP_RING_MIN, PLAYERBOT_SHOP_RING_RADIUS,
+							offsetX, offsetY);
+					stallX = pitchX + offsetX;
+					stallY = pitchY + offsetY;
+				}
+				if (!navigation.CanReach(ch->GetX(), ch->GetY(), stallX, stallY))
+				{
+					state.dwNextShopKeepTime = dwNow + number(300000, 600000);
+					ClearPlayerBotRoute(state, true);
+					sys_log(0, "PLAYERBOT_SHOP: pitch unreachable pid=%u name=%s map=%ld from=(%ld,%ld) pitch=(%ld,%ld) tries=%d",
+							ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(),
+							ch->GetX(), ch->GetY(), pitchX, pitchY, tries);
+					return false;
+				}
+				if (tries > 0)
+					PlayerBotLogThrottled("shop_pitch_moved", dwNow,
+							"PLAYERBOT_SHOP: pitch moved pid=%u name=%s map=%ld tries=%d to=(%ld,%ld)",
+							ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(), tries, stallX, stallY);
+			}
+		}
 
 		SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
 		if (!MovePlayerBotTownLeg(ch, state, dwNow, stallX, stallY,
@@ -2456,7 +2516,10 @@ namespace
 					!navigation.CanReach(ch->GetX(), ch->GetY(), goalX, goalY))
 			{
 				const DWORD own = navigation.GetComponentAtWorld(ch->GetX(), ch->GetY());
-				const int radius = std::max(2, arrivalDistance / 50 - 2);
+				// The ring's corners reach radius * 50 * sqrt(2), and the arrival
+				// test at the top is against the goal, not the moved one: a
+				// corner cell past the radius was walked to and never "arrived".
+				const int radius = std::max(2, arrivalDistance / 71);
 				long bestDistance = -1;
 				for (int dy = -radius; dy <= radius && own != 0; ++dy)
 					for (int dx = -radius; dx <= radius; ++dx)

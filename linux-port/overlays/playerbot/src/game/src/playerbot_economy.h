@@ -273,6 +273,47 @@ namespace
 				PlayerBotIsShortOfRefineMaterial(ch, materialVnum);
 	}
 
+	// How many units of a material this bot keeps back for its own anvil:
+	// twice the largest recipe count among the pieces it would raise - the
+	// same measure "short" uses above. The counter lists only what is over
+	// it. Without it a bot short by one bought a pack of two, was no longer
+	// short, and put both on its own counter at the price it had just paid
+	// (Zolc Niedzwiedzia x2, sizowski) - then was short again.
+	int GetPlayerBotRefineMaterialReserve(LPCHARACTER ch, DWORD materialVnum)
+	{
+		if (!ch || materialVnum == 0)
+			return 0;
+		const BYTE wearSlots[] = {
+			WEAR_WEAPON, WEAR_BODY, WEAR_SHIELD, WEAR_HEAD,
+			WEAR_FOOTS, WEAR_WRIST, WEAR_NECK, WEAR_EAR
+		};
+		std::vector<LPITEM> gear;
+		for (size_t i = 0; i < sizeof(wearSlots) / sizeof(wearSlots[0]); ++i)
+			if (ch->GetWear(wearSlots[i]))
+				gear.push_back(ch->GetWear(wearSlots[i]));
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM candidate = ch->GetInventoryItem(cell);
+			if (IsPlayerBotEquipmentCandidate(ch, candidate))
+				gear.push_back(candidate);
+		}
+		int reserve = 0;
+		for (size_t i = 0; i < gear.size(); ++i)
+		{
+			LPITEM item = gear[i];
+			if (!item || item->GetRefinedVnum() == 0 ||
+					item->GetRefineLevel() >= GetPlayerBotRefineTarget(ch, item))
+				continue;
+			const TRefineTable* recipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+			if (!recipe)
+				continue;
+			for (int m = 0; m < recipe->material_count; ++m)
+				if (recipe->materials[m].vnum == materialVnum)
+					reserve = std::max(reserve, (int)recipe->materials[m].count * 2);
+		}
+		return reserve;
+	}
+
 	bool PlayerBotNeedsAnyRefineMaterial(LPCHARACTER ch)
 	{
 		return PlayerBotIsShortOfRefineMaterial(ch, 0);
@@ -521,10 +562,30 @@ namespace
 		if (!ch || !item || item->IsEquipped() || item->isLocked())
 			return false;
 
-		if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_SELL))
-			return false;
+		// The operator's word first: merchant is scrap whatever the rules
+		// below would keep it for; keep, stall and drop are never scrap (drop
+		// is thrown away by the merchant leg, not sold).
+		{
+			const BYTE policy = GetPlayerBotItemPolicy(item);
+			if (policy == PLAYERBOT_ITEM_POLICY_MERCHANT)
+				return true;
+			if (policy != PLAYERBOT_ITEM_POLICY_NONE)
+				return false;
+		}
 
 		const DWORD vnum = item->GetVnum();
+
+		// A specimen of a Biologist row already handed in is scrap, not goods:
+		// "niech ich nie wystawiaja, sprzedaja u handlarza albo wyrzucaja".
+		// Before the anti-sell test on purpose - the quest items carry it, and
+		// the merchant leg pays the merchant's pennies for them anyway. The Orc
+		// Tooth is a refine material and takes the material branch below.
+		if (vnum >= 50701 && vnum <= 50706 && !IsPlayerBotTradeableMaterial(item) &&
+				IsPlayerBotBiologistSpecimenSurplus(ch, vnum))
+			return true;
+
+		if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_SELL))
+			return false;
 
 		// Level-30 weapons with average/skill damage are strategic market assets.
 		// Never vendor them: this also applies when the current owner is below level
@@ -615,6 +676,10 @@ namespace
 		// rare and chests are not: a bag under pressure lets the merchant have
 		// the chests, so the loot and the Moonlight chests that open by
 		// themselves still have somewhere to land.
+		// A polymorph marble is counter goods; the merchant takes it only
+		// under bag pressure with no counter to sell from, like a material.
+		if (item->GetType() == ITEM_POLYMORPH)
+			return IsPlayerBotBagUnderPressure(ch) && !PlayerBotCanOpenShop(ch);
 		if (item->GetType() == ITEM_TREASURE_BOX)
 			return CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_BAG_PRESSURE_FREE_CELLS &&
 					!PlayerBotHasTreasureKeyFor(ch, item);
@@ -714,11 +779,13 @@ namespace
 		// few hundred yang while the next stall along sold one for 58 894.
 		// Only a material nobody wants, and only under bag pressure - or a
 		// material this bot has no counter to sell from, whoever wants it.
+		// And only under bag pressure at all: "Stalowy Grot, Futro Yeti, Kawalek
+		// Lodu ... sprzedane handlarzowi" non stop from bags with room to spare.
 		if (IsPlayerBotTradeableMaterial(item))
 			return !PlayerBotNeedsRefineMaterial(ch, vnum) &&
 					IsPlayerBotSurplusMaterial(ch, item) &&
-					(GetPlayerBotLedgerDemand(vnum) == 0 ||
-					 (IsPlayerBotBagUnderPressure(ch) && !PlayerBotCanOpenShop(ch)));
+					IsPlayerBotBagUnderPressure(ch) &&
+					(GetPlayerBotLedgerDemand(vnum) == 0 || !PlayerBotCanOpenShop(ch));
 		// The rest of the 30000 block is eight gift boxes and two quest items.
 		// No counter would carry those, so there junk still means junk.
 		if (vnum >= 30000 && vnum <= 30200)
@@ -843,6 +910,16 @@ namespace
 		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
+			// The operator said "drop": thrown away here, at the merchant,
+			// without a sale - the one place a bag is emptied on purpose.
+			if (item && !item->IsEquipped() && !item->isLocked() &&
+					GetPlayerBotItemPolicy(item) == PLAYERBOT_ITEM_POLICY_DROP)
+			{
+				sys_log(0, "PLAYERBOT_AI: discarded by policy pid=%u name=%s vnum=%u count=%u",
+						ch->GetPlayerID(), ch->GetName(), item->GetVnum(), (unsigned int)item->GetCount());
+				ITEM_MANAGER::instance().RemoveItem(item, "PLAYERBOT_DISCARD");
+				continue;
+			}
 			if (!item || !IsPlayerBotJunkItem(ch, item) ||
 					GetPlayerBotJunkMerchant(item) != category)
 				continue;

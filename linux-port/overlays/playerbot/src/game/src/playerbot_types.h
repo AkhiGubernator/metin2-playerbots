@@ -632,7 +632,13 @@ namespace
 	// MAX_NORM_ATTR_NUM in item_manager.h. Named here because the loop that fills
 	// an item has to know it, and reading it from the engine header would tie a
 	// tuning constant to a build detail.
-	const int PLAYERBOT_BONUS_MAX_LINES = 5;
+	// Four by the stone - the engine's USE_ADD_ATTRIBUTE refuses a fifth - and
+	// the fifth only the way a player gets it: a Marmur Blogoslawienstwa
+	// (USE_ADD_ATTRIBUTE2) on a piece of exactly four, at its own odds. The
+	// bots used to call AddAttribute() straight, no odds and up to five
+	// ("boty dodaja sobie 5 bonusow", 12 September).
+	const int PLAYERBOT_BONUS_MAX_LINES = 4;
+	const int PLAYERBOT_BONUS_MARBLE_LINES = 5;
 	// What the lines rolled on a piece add to what a stall asks for it.
 	//
 	// A counter wanted the same 150 000 for boots +7 carrying five bonus lines
@@ -1864,6 +1870,29 @@ namespace
 		}
 	}
 	const BYTE PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS = 7;
+	// The operator's word on an item, from playerbot_item_policy.tsv in the
+	// spool (playerbot_config.h reads it like the weights): keep - never
+	// leaves the bag; stall - counter goods, ahead of everything the scorer
+	// would rank it; merchant - scrap for the general merchant; drop - thrown
+	// away at the merchant visit without a sale. A line names a vnum or a
+	// whole type (type:19). "Boty sprzedaja ulepszacze i marmury handlarzowi"
+	// (sizowski, 12 September) is what the file is for: the rules below are
+	// the defaults, the file is the operator's override.
+	enum EPlayerBotItemPolicy
+	{
+		PLAYERBOT_ITEM_POLICY_NONE = 0,
+		PLAYERBOT_ITEM_POLICY_KEEP = 1,
+		PLAYERBOT_ITEM_POLICY_STALL = 2,
+		PLAYERBOT_ITEM_POLICY_MERCHANT = 3,
+		PLAYERBOT_ITEM_POLICY_DROP = 4
+	};
+	const int PLAYERBOT_SHOP_POLICY_STALL_SCORE = 900;
+	// A polymorph marble is goods, not scrap: it went to the merchant for
+	// three hundred yang while the counters sold none.
+	const int PLAYERBOT_SHOP_POLYMORPH_SCORE = 600;
+	// Offsets tried for a pitch the bot cannot walk to before the stand is
+	// put off for a while (the open pass in playerbot_town.h).
+	const int PLAYERBOT_SHOP_PITCH_TRIES = 4;
 	const BYTE PLAYERBOT_SCROLL_REFINE_MIN_PLUS = 6;
 	// A Blessing or Dragon God scroll in the bag is the whole reason to go
 	// on: under either the engine never burns the piece (DoRefineWithScroll

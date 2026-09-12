@@ -633,6 +633,25 @@ namespace
 	// equipped item outright ("if (item2->IsEquipped()) return false"), costumes,
 	// and anything without an attribute set, so a bot has to take the piece off
 	// first - exactly as a player does.
+	// A Marmur Blogoslawienstwa in the bag: the one item that adds a fifth
+	// line (USE_ADD_ATTRIBUTE2, vnums 39004/70024/70124/76015 on these files;
+	// asked by subtype so a renamed one still counts). Nothing sells it, so
+	// it comes from drops and chests, and a bot without one stops at four
+	// like a player without one.
+	int FindPlayerBotBlessingMarbleCell(LPCHARACTER ch)
+	{
+		if (!ch)
+			return -1;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item && item->GetType() == ITEM_USE && item->GetSubType() == USE_ADD_ATTRIBUTE2 &&
+					item->GetCount() > 0 && !item->isLocked())
+				return (int)cell;
+		}
+		return -1;
+	}
+
 	bool CanPlayerBotRerollItem(LPITEM item)
 	{
 		return item && item->GetType() != ITEM_COSTUME && !item->isLocked() &&
@@ -711,9 +730,12 @@ namespace
 			// An empty line is free power: add before rerolling, always. Only once
 			// the item is full does the quality of what it rolled start to matter,
 			// and USE_CHANGE_ATTRIBUTE needs at least one line to work on anyway.
-			// Five, not four: MAX_NORM_ATTR_NUM is 5 and AddAttribute happily
-			// fills the fifth, so stopping at four left a line on the table.
+			// Four by the stone; the fifth is the marble's, below, and only when
+			// the bag holds one.
 			const bool bWantAdd = count < PLAYERBOT_BONUS_MAX_LINES;
+			const int marbleCell = (count == PLAYERBOT_BONUS_MAX_LINES)
+					? FindPlayerBotBlessingMarbleCell(ch) : -1;
+			const bool bWantMarble = marbleCell >= 0;
 			// An item that has landed the roll its slot is bought for is finished.
 			// It can still gain a line - that cannot lose what is already there -
 			// but it is never rerolled, whatever the score says.
@@ -721,15 +743,16 @@ namespace
 			// whatever the score says: the score is a sum of good lines and a
 			// weapon full of them at twelve percent average was "good enough"
 			// to the score and not to anybody who looked at it.
-			const bool bWantChange = !bWantAdd && !HasPlayerBotFinishedBonus(ch, item, wearCell) &&
+			const bool bWantChange = !bWantAdd && !bWantMarble &&
+					!HasPlayerBotFinishedBonus(ch, item, wearCell) &&
 					(score < PLAYERBOT_BONUS_KEEP_SCORE ||
 					 IsPlayerBotSpecialLevel30WeaponVnum(item->GetVnum()));
-			if (!bWantAdd && !bWantChange)
+			if (!bWantAdd && !bWantMarble && !bWantChange)
 				continue;
 
 			const DWORD stoneVnum = bWantAdd ? PLAYERBOT_BONUS_ADD_VNUM
 					: PLAYERBOT_BONUS_CHANGE_VNUM;
-			if (!BuyPlayerBotBonusStone(ch, stoneVnum))
+			if (!bWantMarble && !BuyPlayerBotBonusStone(ch, stoneVnum))
 				continue;
 
 			// The piece has to come off for the engine to touch it, and it has to go
@@ -738,12 +761,31 @@ namespace
 			if (!ch->UnequipItem(item))
 				continue;
 
-			if (bWantAdd)
-				item->AddAttribute();
+			// The engine's own odds for a line, aiItemAttributeAddPercent by the
+			// count already there (100/80/60/50, and 30 for the marble's fifth);
+			// the stone or the marble is spent whether the roll lands or not,
+			// as at the counter.
+			bool landed = true;
+			if (bWantMarble)
+			{
+				landed = number(1, 100) <= aiItemAttributeAddPercent[count];
+				if (landed)
+					item->AddAttribute();
+				LPITEM marble = ch->GetInventoryItem((WORD)marbleCell);
+				if (marble)
+					marble->SetCount(marble->GetCount() - 1);
+			}
+			else if (bWantAdd)
+			{
+				landed = number(1, 100) <= aiItemAttributeAddPercent[count];
+				if (landed)
+					item->AddAttribute();
+			}
 			else
 				item->ChangeAttribute();
 
-			ConsumePlayerBotBonusStone(ch, stoneVnum);
+			if (!bWantMarble)
+				ConsumePlayerBotBonusStone(ch, stoneVnum);
 			++stonesUsed;
 
 			const int newScore = ScorePlayerBotItemBonuses(ch, item, wearCell);
@@ -783,8 +825,12 @@ namespace
 			if (!BuyPlayerBotBonusStone(ch, stoneVnum))
 				break;
 			const int score = ScorePlayerBotItemBonuses(ch, item, WEAR_WEAPON);
+			// The engine's odds, as for the worn pieces above.
 			if (bWantAdd)
-				item->AddAttribute();
+			{
+				if (number(1, 100) <= aiItemAttributeAddPercent[count])
+					item->AddAttribute();
+			}
 			else
 				item->ChangeAttribute();
 			ConsumePlayerBotBonusStone(ch, stoneVnum);

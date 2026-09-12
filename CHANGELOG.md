@@ -17,6 +17,48 @@ every version here.
 
 ---
 
+## 2.0.15 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Kowal tylko dla tego, co bot założy
+
+„Pomimo że nosi lepszą broń, uparcie przepala yang u kowala na ulepszanie
+broni na 1 poziom, które są nikomu niepotrzebne, i to jednocześnie
+różnych” (elgrandebgc, z historią ekwipunku: Miecz +1 → +2 → +3, Glaive,
+Drewniane Kolczyki, Miedziany Naszyjnik, jeden spalony, pod Gilotynowym
+Ostrzem +4 i z 14 tys. yang w sakwie). Reguła złomu zostawia w plecaku
+sporo rzeczy celowo — towar zbieracza, wszystko od +4 na ladę, przedmiot z
+dobrymi liniami — a przejście kowala brało do ulepszania wszystko, czego
+reguła złomu nie oddała handlarzowi. Ulepszany z plecaka jest teraz tylko
+przedmiot, który bot założy: ulepszenie czekające na przejście ekwipunku
+albo jedyna na slot część wyższej rangi, z której kowal może zrobić
+ulepszenie. Towar idzie na ladę taki, jaki jest. Pomiar na stosie
+testowym (2482 boty, świat młody, 11–16 lvl): ulepszeń przedmiotu słabszej
+rangi niż noszony w tym slocie było 175 na pół godziny przed zmianą i 70
+po niej; ulepszeń noszonych części tyle samo co wcześniej.
+
+### Wyszukiwarka oznacza stragany botów kolumną światła
+
+„Znaleziono sklepy, ale nie są ani podświetlane, ani zaznaczone na mapie”
+(sizowski, po 2.0.13). Klient tych plików podświetla i rysuje na mapie
+tylko byty sklepów offline — trzyma ich listę z własnego pakietu systemu
+ikarus — a stragan bota to zwykły sklep prywatny na postaci, więc numer z
+listy wyników niczego mu nie wskazywał. Nad każdym znalezionym straganem
+bota pojawia się teraz kolumna światła (efekt awansu, widoczny tylko dla
+szukającego), a czat mówi, ile straganów botów znaleziono. Na mapie
+klient nadal zaznacza tylko sklepy offline — to jest po jego stronie.
+
+### Kompilacja dopasowana do pamięci, nie do rdzeni
+
+„Aktualizator zatrzymuje się na build game 2/3 67%” (.unright, laptop
+8 GB): Docker Desktop daje maszynie budującej połowę pamięci komputera,
+a `cmd_general.cpp` czy `char.cpp` z `-O2 -g` biorą ponad gigabajt na
+kompilator — cztery naraz na czterech gigabajtach mieliły dyskiem, aż
+budowa wyglądała na zawieszoną. `make -j` bierze teraz mniejszą z liczby
+rdzeni i pamięci podzielonej przez 1400 MB (na 8 GB: 2 wątki, wolniej, ale
+do końca); `M2_MAKE_JOBS` w `.env` nadal ma pierwszeństwo. Obie linie.
+
 ## 2.0.14 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

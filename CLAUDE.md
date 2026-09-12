@@ -2289,6 +2289,32 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `PLAYERBOT_GUILD_FOUNDER_SHARE`), 24 members three minutes later through
   `RequestAddMember`, `player.guild` and `guild_member` filled. `gold=` in
   the founding line is in thousands.
+- **"Not scrap" is not "worth a refine".** The junk rule keeps a great deal
+  on purpose - a collector's stock, +4 counter goods, prize lines - and
+  `IsPlayerBotRefineBagCandidate` was "equipment and not junk", so the
+  blacksmith pass raised all of it with the bot's own yang: 12 945 refines
+  an hour on the test world, 4 227 of them on pieces ten or more levels
+  under the bot, and a player's bot under a Guillotine Blade +4 raising
+  level-one swords and wooden earrings +1 by +1 with its last 14 000 yang.
+  A bag piece is refined only when the bot will wear it:
+  `IsPlayerBotHigherTierSpare` or `IsPlayerBotWearableUpgrade`. Worn
+  pieces are unchanged. A rule that decides what to *keep* must not be
+  reused to decide what to *spend on*.
+- **The ikashop client marks only its own shop entities.** Its search
+  result carries VIDs, and the client resolves them against the list it
+  built from `EncodeInsertShopEntity` - a playerbot keeper's VID lists the
+  stall and highlights nothing, marks nothing on the map. What a keeper
+  can get is a `HEADER_GC_SEPCIAL_EFFECT` (the header is misspelled in the
+  engine) sent to the searcher's descriptor alone: `PlayerBotSearchStalls`
+  puts `SE_LEVELUP_ON_14_FOR_GERMANY` on every keeper found and a chat
+  line says how many. Anything better needs the stall to be an ikashop
+  entity, which is the other shop system.
+- **A build job per core is a build that dies on a laptop.** Docker Desktop
+  gives the build VM half the host's memory; the big translation units take
+  over a gigabyte each at -O2 -g; `make -j$(nproc)` on an 8 GB machine
+  thrashed at "game builder 2/3 67%" and read as a hang. Both game
+  Dockerfiles take the smaller of `nproc` and MemTotal/1400 MB unless
+  `MAKE_JOBS` (`M2_MAKE_JOBS`) is set, and print the choice.
 - **A queue whose head is offline looks like a queue that stopped.** The
   grants worker hands `MAX_PENDING` (ten) rows to the game and the quest's
   player timer serves only a row that names an online character; an offline

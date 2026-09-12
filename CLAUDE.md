@@ -2374,6 +2374,23 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   heartbeat and the age of the oldest row in each state, so the next report
   can say which of "worker dead", "nobody in game reads the queue" and "the
   rest are offline" it is.
+- **A slider that reaches only a ranking is a slider that does nothing.**
+  `PLAYERBOT_WEIGHT_PARTY` had one reader - the planner's rank of
+  `BOT_GOAL_PARTY_CHALLENGE` for a bot already in a party - while who may
+  be in a party was `IsPlayerBotPartyEligible`: the party-fighter role (a
+  tenth of the population, drawn at login) anywhere, and camp level on the
+  frontier. "Grupy (PT)" at 25 and at 250 gave the same thirty-seven bots
+  in groups out of a thousand (jaksiezabic, 12 September). The slider now
+  sets the share admitted: `PLAYERBOT_PARTY_COHORT_PER_MILLE` (200) scaled
+  by the weight off the frontier, the whole map as the base on it, and
+  `GetPlayerBotPartyDraw` puts the role in the first hundred places of a
+  pid-stable draw so it is the last share the slider takes away. A bot
+  outside the cohort leaves its party on its next party check ("left
+  party outside party cohort"), which is what makes a lower setting
+  visible within a minute; a higher one fills in over the 1-3 minute solo
+  wait. `PLAYERBOT_PARTY: census` every ten minutes is the measurement.
+  Before wiring a weight, grep for every reader of it - one reader in a
+  ranking is not a feature.
 
 ## Engine facts worth not re-deriving
 

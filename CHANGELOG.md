@@ -17,6 +17,33 @@ every version here.
 
 ---
 
+## 2.0.18 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Suwak „Grupy (PT)” naprawdę steruje liczbą grup
+
+„Czy ustawiony na minimum, czy maksimum, grup na serwerze jest zawsze tyle
+samo” (jaksiezabic, z tabelą: 1000 botów, 37 w grupach przy 25 i przy 250).
+Waga PARTY docierała tylko do plannera — do rangi celu „wyzwanie grupowe”
+bota, który już jest w grupie — a o tym, kto w ogóle może być w grupie,
+decydowała rola „wojownik grupowy” losowana raz przy logowaniu (7% botów,
+30% łuczników) i, na mapach frontowych, poziom obozu. Suwak nie miał więc
+czego zmienić. Teraz waga wyznacza udział populacji dopuszczony do grup:
+20% przy 100 („jak w grze”), 5% przy 25, 50% przy 250; wojownicy grupowi
+zajmują pierwsze miejsca losowania, więc są ostatnimi, których suwak
+zabiera, i pierwszymi, których oddaje. Na froncie podstawą jest cała mapa,
+jak dotąd — obozy Czarnych Orków i bossowie to praca grupy — więc przy
+wadze 100 nic się tam nie zmienia. Losowanie jest stałe po pid: ten sam
+suwak jutro daje te same grupy. Bot poza kohortą opuszcza grupę przy
+najbliższym sprawdzeniu (kilkanaście sekund od przesunięcia suwaka), nowi
+dołączają w ciągu paru minut. Do logu trafia co dziesięć minut
+`PLAYERBOT_PARTY: census` (ilu dopuszczonych, ilu w grupie, ile grup, waga).
+Zmierzone na stosie testowym (2478 botów): przed poprawką 7% botów w
+grupach; przy 250 — 30% (755 botów, 247 grup) po trzynastu minutach; po
+przestawieniu na 25 — 3% (78 botów) po pięciu minutach. Tick rdzenia z
+największą mapą: 9,6 s na 60 przed, 10,2 s przy 250, 8,4 s przy 25.
+
 ## 2.0.17 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

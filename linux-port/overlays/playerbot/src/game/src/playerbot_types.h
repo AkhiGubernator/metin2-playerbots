@@ -1597,6 +1597,19 @@ namespace
 	// ten, so pairs actually form on the maps where they matter.
 	const int PLAYERBOT_PARTY_SOLO_PERCENT = 25;
 	const int PLAYERBOT_PARTY_SOLO_PERCENT_FRONTIER = 10;
+	// What share of the population may be in a party at all, in thousandths,
+	// at the neutral PARTY weight; the slider scales it - a twentieth at 25,
+	// a half at 250. Until 2.0.18 the weight reached nothing but the planner's
+	// ranking of the party challenge, and the cohort off the frontier was the
+	// party-fighter role alone - a tenth of the population, drawn at login -
+	// so "Grupy (PT)" at 25 and at 250 gave the same thirty-seven bots in
+	// groups out of a thousand (jaksiezabic, 12 September). The role takes the
+	// first hundred places of the draw (GetPlayerBotPartyDraw): the last share
+	// the slider takes away and the first it gives back. On the frontier the
+	// base is the whole map, as it always was - the camps and bosses there
+	// are a party's work - so the neutral weight changes nothing there.
+	const int PLAYERBOT_PARTY_COHORT_PER_MILLE = 200;
+	const int PLAYERBOT_PARTY_FRONTIER_COHORT_PER_MILLE = 1000;
 	// How far a follower may fall behind a leader who is walking to a new camp
 	// before it gives the party up. The cohesion radius is for fighting as one
 	// formation; a thirty-kilometre relocation with a deferred route in the

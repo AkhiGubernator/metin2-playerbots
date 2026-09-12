@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T13:50:25Z",
-  "statusMessage": "Wersja 2.0.14: panel klasyczny z polskimi znakami w nazwach przedmiotów i bazowymi statystykami w dymku (wartość ataku, obrona, wymagany poziom). Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-12T16:02:05Z",
+  "statusMessage": "Wersja 2.0.15: kowal tylko dla tego, co bot założy (koniec ulepszania śmieci z plecaka), wyszukiwarka oznacza stragany botów kolumną światła, kompilacja dopasowana do pamięci komputera. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.14",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.14/metin2-server-update-2.0.14.zip",
-    "sha256": "AEA9344C8E9A66F0B3FDA41F829AD60C5C0E2AC5FA17B363C661FA2892F810BE"
+    "version": "2.0.15",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.15/metin2-server-update-2.0.15.zip",
+    "sha256": "FAA1B758C65334F5FB3C48A11AB26ED12950BEB55F9F8AD645C318D10D234C54"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

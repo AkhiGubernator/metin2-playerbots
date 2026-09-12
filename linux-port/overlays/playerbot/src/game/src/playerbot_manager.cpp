@@ -443,7 +443,7 @@ namespace
 		LPITEM bestGear = NULL;
 		int bestSocket = -1;
 		int bestScore = INT_MIN;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetType() != ITEM_METIN)
@@ -511,7 +511,7 @@ namespace
 		// Reserve equipment sharing is deliberately not restricted to a party.
 		// Solo bots that meet in the field may help a lower-level bot of the same
 		// class/build, while all other useful-item sharing remains party-only.
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetRefineLevel() < PLAYERBOT_RESERVE_GEAR_MIN_REFINE ||
@@ -530,7 +530,7 @@ namespace
 		if (!ch->GetParty())
 			return false;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->IsEquipped() || item->isLocked())
@@ -610,7 +610,7 @@ namespace
 		DWORD bestSkillVnum = 0;
 		int bestPriority = INT_MIN;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetType() != ITEM_SKILLBOOK)
@@ -639,7 +639,7 @@ namespace
 
 		if (get_global_time() < ch->GetSkillNextReadTime(bestSkillVnum))
 		{
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM scroll = ch->GetInventoryItem(cell);
 				if (scroll && (scroll->GetVnum() == 71001 || scroll->GetVnum() == 71094))
@@ -1900,7 +1900,7 @@ void CPlayerBotManager::Update()
 		{
 			size_t occupiedItems = 0;
 			size_t occupiedGridCells = 0;
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM it = ch->GetInventoryItem(cell);
 				if (it)
@@ -1915,7 +1915,7 @@ void CPlayerBotManager::Update()
 			// vertical cells.  Keep a generous reserve for a high-rate Metin drop and
 			// visit town before no contiguous 3-cell slot remains.
 			const bool bInventoryFull =
-					occupiedGridCells * 100 >= INVENTORY_MAX_NUM * 45 ||
+					occupiedGridCells * 100 >= PLAYERBOT_BAG_CELLS * 45 ||
 					ch->GetEmptyInventory(3) < 0;
 			// The same question the planner asked. It used to be a different one:
 			// this counted stacks rather than potions, looked at four red vnums

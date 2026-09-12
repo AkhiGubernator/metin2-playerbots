@@ -52,6 +52,36 @@ def main():
     # This line has its own version (linux-port-mt2009/VERSION, 2.x).
     shared = re.sub(r'PLAYERBOTS_VERSION: "\$\{M2_PLAYERBOTS_VERSION:-[0-9.]+\}"',
                     'PLAYERBOTS_VERSION: "${M2_PLAYERBOTS_VERSION:-' + version() + '}"', shared)
+    # The updater: on this line an update is the package zip the manifest
+    # names, unpacked over the server folder by linux-port/tools/update.sh -
+    # never the 1.x git checkout, whose root VERSION is the 1.x line's and
+    # whose installer staged that line over a 2.x server (l0st3k, 12 September).
+    # The container is the 1.x image (sh, python3, docker compose) running our
+    # script in watch mode; the "stack dir" is the server folder itself.
+    updater_head = ('    profiles: ["update"]\n'
+                    '    restart: unless-stopped\n'
+                    '    init: true\n')
+    assert shared.count(updater_head) == 1, shared.count(updater_head)
+    shared = shared.replace(updater_head, updater_head +
+        '    # The 2.x line updates from the package zip the manifest names - the same\n'
+        '    # zip the Windows launcher installs - and not from a git checkout of the\n'
+        '    # repository: the repository\'s root VERSION is the 1.x line\'s, and the 1.x\n'
+        '    # updater staged that line over a 2.x server ("checkout z main melduje\n'
+        '    # 1.33.3", rates stuck, no stalls - l0st3k, 12 September).\n'
+        '    # linux-port/tools/update.sh in watch mode reads the request the panel\n'
+        '    # writes and answers in the same update.status the panel reads.\n'
+        '    entrypoint: ["/bin/sh", "${M2_UPDATE_STACK_DIR:-/opt/metin2}/linux-port/tools/update.sh"]\n'
+        '    command: ["watch"]\n')
+    old_env = '      M2_UPDATE_STACK_DIR: "${M2_UPDATE_STACK_DIR:-/opt/metin2/stack}"\n'
+    assert shared.count(old_env) == 1
+    shared = shared.replace(old_env,
+        '      # On this line the "stack dir" is the server folder itself: the one\n'
+        '      # with VERSION, CHANGELOG.md and linux-port/ in it.\n'
+        '      M2_UPDATE_STACK_DIR: "${M2_UPDATE_STACK_DIR:-/opt/metin2}"\n')
+    old_vol = '      - "${M2_UPDATE_STACK_DIR:-/opt/metin2/stack}:${M2_UPDATE_STACK_DIR:-/opt/metin2/stack}"\n'
+    assert shared.count(old_vol) == 1
+    shared = shared.replace(old_vol,
+        '      - "${M2_UPDATE_STACK_DIR:-/opt/metin2}:${M2_UPDATE_STACK_DIR:-/opt/metin2}"\n')
     # The panel wants the migrator done, like the game.
     rendered = BEGIN + shared.rstrip('\n') + '\n\n' + END
 

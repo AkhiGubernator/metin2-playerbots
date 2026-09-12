@@ -143,6 +143,20 @@ const int PLAYERBOT_INVENTORY_PAGE_SIZE = INVENTORY_PAGE_SIZE;
 const int PLAYERBOT_INVENTORY_PAGE_SIZE = 45;
 #endif
 
+// The cells a bot's bag actually has. mt2009's INVENTORY_MAX_NUM is 135:
+// the two pages plus the horse inventory page (ENABLE_EXTEND_INVEN_SYSTEM),
+// which GetEmptyInventory places into only for a character who unlocked it
+// (GetInventoryMaxCount) - a bot never does. Every count the bots made over
+// INVENTORY_MAX_NUM saw forty-five phantom free cells, so a chest judged to
+// fit spilled on the ground and every bag-pressure rule was off by half a
+// bag. The fragments count over this instead; the engine's arrays stay the
+// engine's size.
+#if defined(PLAYERBOT_ENGINE_MT2009)
+const int PLAYERBOT_BAG_CELLS = INVENTORY_DEFAULT_MAX_NUM;
+#else
+const int PLAYERBOT_BAG_CELLS = INVENTORY_MAX_NUM;
+#endif
+
 // The private shop's grid as the engine indexes it. r40250 lays a counter
 // out five cells wide (SHOP_HOST_ITEM_MAX_NUM, forty); mt2009 doubles the
 // width to SHOP_PLAYER_WIDTH (ten) and keeps the right half for slots a

@@ -352,7 +352,7 @@ namespace
 	int CountPlayerBotRods(LPCHARACTER ch)
 	{
 		int rods = 0;
-		for (WORD cell = 0; ch && cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; ch && cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (item && item->GetType() == ITEM_ROD)
@@ -371,7 +371,7 @@ namespace
 		// The best rod in the bag: the grades are consecutive vnums, so the
 		// highest vnum is the most refined one.
 		LPITEM best = NULL;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (item && item->GetType() == ITEM_ROD && (!best || item->GetVnum() > best->GetVnum()))
@@ -415,7 +415,7 @@ namespace
 		if (rod->GetSocket(2) != 0)
 			return true;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetVnum() != PLAYERBOT_FISHING_BAIT_VNUM)
@@ -496,7 +496,7 @@ namespace
 	int CountPlayerBotDeadFish(LPCHARACTER ch)
 	{
 		int count = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (item && item->GetType() == ITEM_FISH && item->GetSubType() == FISH_DEAD)
@@ -512,7 +512,7 @@ namespace
 	{
 		if (!ch || CountPlayerBotDeadFish(ch) == 0)
 			return false;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetVnum() != PLAYERBOT_CAMPFIRE_VNUM)
@@ -543,7 +543,7 @@ namespace
 		if (!finder.m_found)
 			return true; // lit a moment ago, not in the sectree yet
 		int baked = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetType() != ITEM_FISH || item->GetSubType() != FISH_DEAD)
@@ -566,7 +566,7 @@ namespace
 		if (!ch)
 			return false;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)
@@ -632,7 +632,7 @@ namespace
 	{
 		if (!ch || ch->GetPart(PART_HAIR) != 0)
 			return false;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)

@@ -492,6 +492,12 @@ def _env_path(name, default):
     return os.environ.get(name, "").strip() or default
 
 PANEL_DIR  = _env_path("M2PANEL_DIR", "/usr/local/m2panel")
+
+# Which engine this panel is looking at (M2PANEL_ENGINE from compose). Read
+# here, ahead of everything that differs by engine: the item tables, the
+# update check, the attribute numbering further down.
+PANEL_ENGINE = os.environ.get("M2PANEL_ENGINE", "r40250").strip().lower()
+ENGINE_MT2009 = PANEL_ENGINE == "mt2009"
 # Files shipped next to admin_panel.py itself; that is where install.sh puts
 # them and where they sit in the source tree, so this needs no variable to
 # work — but a read-only image may want them elsewhere.
@@ -1111,7 +1117,7 @@ def _conf_from_env():
     for key in ENV_CONF:
         raw = os.environ.get("M2PANEL_" + key.upper(), "").strip()
         if not raw:
-            continue
+            continue              # not said; local_only then follows the bind address
         if key in ("port", "inventory_slots", "max_item_count", "max_level", "bridge_port",
                    "browser_cache_mb"):
             try:
@@ -2068,13 +2074,80 @@ def translate_item_name_pl(name):
                       flags=re.IGNORECASE)
     return name
 
+# On mt2009 the files above are r40250's: items.json carries that engine's
+# English names and cell sizes, item_names_pl.txt its Polish table, and the
+# panel fell back on word-by-word translation for the rest - "Leather Buty",
+# "Wooden Kolczyki", "Azure Suit" beside "Sztylet", "Przedmiot #30347" for
+# an item the other engine never had, and a two-cell dagger drawn in one
+# cell. The db core mirrors the package's item_proto.txt and item_names.txt
+# into player.item_proto at every boot (locale_name is the Polish name on
+# this package), so that table is the one source that is always right for
+# this world. Read once the database answers, and again every hour.
+ITEM_SIZES = {}
+ITEM_TYPES = {}
+_PROTO = {"loaded": 0.0, "tried": 0.0}
+_PROTO_LOCK = threading.Lock()
+
+def _load_item_proto():
+    """The world's items into ITEMS / ITEM_NAMES / ITEM_NAMES_PL / ITEM_SIZES."""
+    global ITEMS
+    with _PROTO_LOCK:
+        now = time.time()
+        if now - _PROTO["tried"] < 60:
+            return
+        _PROTO["tried"] = now
+        try:
+            with db() as c, c.cursor() as cur:
+                cur.execute("SELECT vnum, name, locale_name, type, subtype, size FROM player.item_proto")
+                rows = cur.fetchall()
+        except Exception:
+            return
+        if not rows:
+            return
+        items = []
+        for r in rows:
+            vnum = int(r["vnum"] or 0)
+            pl = str(r.get("locale_name") or "").strip()
+            en = str(r.get("name") or "").strip() or pl
+            if not pl:
+                continue
+            ITEM_NAMES_PL[vnum] = pl
+            ITEM_NAMES[vnum] = pl
+            ITEM_SIZES[vnum] = max(1, min(3, int(r.get("size") or 1)))
+            ITEM_TYPES[vnum] = (int(r.get("type") or 0), int(r.get("subtype") or 0))
+            items.append({"v": vnum, "n": pl, "k": (pl + " " + en).lower(),
+                          "c": ITEM_CATEGORY_BY_TYPE.get(int(r.get("type") or 0), "other")})
+        ITEMS = items
+        _PROTO["loaded"] = now
+
+# items.json sorts by a category word; the proto only has the type number.
+ITEM_CATEGORY_BY_TYPE = {1: "weapon", 2: "armor", 3: "use", 4: "autouse", 5: "material",
+                         6: "special", 7: "tool", 8: "lottery", 9: "elk", 10: "metin",
+                         11: "container", 12: "fish", 13: "rod", 14: "resource", 15: "campfire",
+                         16: "unique", 17: "skillbook", 18: "quest", 19: "polymorph",
+                         20: "treasure_box", 21: "treasure_key", 22: "skillforget",
+                         23: "giftbox", 24: "pick", 26: "hair", 27: "totem", 28: "blend",
+                         29: "costume", 30: "des", 31: "ring", 32: "belt"}
+
+def item_proto_ready():
+    """On mt2009: the world's tables, loaded on first use and refreshed hourly.
+    Called on the request path; a database that is still starting costs one
+    failed query a minute and the r40250 files stand in until it answers."""
+    if not ENGINE_MT2009:
+        return
+    if time.time() - _PROTO["loaded"] > 3600:
+        _load_item_proto()
+
 def localized_item_name(vnum, language=None):
+    item_proto_ready()
     language = language or (lang() if has_request_context() else "en")
     if language == "pl" and int(vnum or 0) in ITEM_NAMES_PL:
         return ITEM_NAMES_PL[int(vnum or 0)]
     name = ITEM_NAMES.get(vnum, "")
     if not name:
         return ("Przedmiot #%d" if language == "pl" else "Item #%d") % int(vnum or 0)
+    if ENGINE_MT2009:
+        return name          # the package's own name, in the package's language
     return translate_item_name_pl(name) if language == "pl" else name
 
 # ---- UI translations -------------------------------------------------------
@@ -2925,8 +2998,7 @@ APPLY_NORMAL_HIT_DAMAGE_BONUS = 72
 # damage lines are 121 and 122 there, and every attrtype has to go through
 # POINT_TO_APPLY before APPLY_META can name it. account.account carries no
 # empire column on that schema either; player_index.empire is the only one.
-PANEL_ENGINE = os.environ.get("M2PANEL_ENGINE", "r40250").strip().lower()
-ENGINE_MT2009 = PANEL_ENGINE == "mt2009"
+# PANEL_ENGINE / ENGINE_MT2009 are read near the top of the file now.
 if ENGINE_MT2009:
     APPLY_SKILL_DAMAGE_BONUS = 121
     APPLY_NORMAL_HIT_DAMAGE_BONUS = 122
@@ -3520,6 +3592,32 @@ def api_checkname():
 
 FAVICON = _env_path("M2PANEL_FAVICON", os.path.join(_HERE, "favicon.png"))
 
+@app.route("/static/item_defs.json")
+def item_defs_json():
+    """What the inventory grid draws with: a cell size per vnum, and the icon
+    name the static table carries. On mt2009 the sizes come from the world's
+    item_proto, so a two-cell dagger is two cells; the static file stays the
+    source of icons, and the whole answer for r40250."""
+    static_path = os.path.join(_HERE, "static", "item_defs.json")
+    defs = {}
+    try:
+        with open(static_path, encoding="utf-8") as f:
+            defs = json.load(f) or {}
+    except Exception:
+        defs = {}
+    item_proto_ready()
+    if ENGINE_MT2009 and ITEM_SIZES:
+        for vnum, size in ITEM_SIZES.items():
+            entry = defs.get(str(vnum))
+            if isinstance(entry, dict):
+                entry["size"] = size
+                entry["name"] = ITEM_NAMES_PL.get(vnum, entry.get("name", ""))
+            else:
+                defs[str(vnum)] = {"size": size, "name": ITEM_NAMES_PL.get(vnum, "")}
+    resp = jsonify(defs)
+    resp.headers["Cache-Control"] = "public, max-age=600"
+    return resp
+
 @app.route("/favicon.ico")
 def favicon():
     """The icon out of Metin2Release.exe, extracted once at packaging time."""
@@ -3544,7 +3642,26 @@ def local_open():
     local_only flag rather than guessing from the bind address, where a public
     server behind nginx also looks like 127.0.0.1.
     """
-    return bool(CONF.get("local_only", False))
+    explicit = os.environ.get("M2PANEL_LOCAL_ONLY", "").strip().lower()
+    if explicit:
+        return explicit in ("1", "true", "yes", "on")
+    if bool(CONF.get("local_only", False)):
+        return True
+    # The installer's nginx mode binds the panel to loopback and puts the
+    # proxy in front: public, whatever the address says.
+    if bool(CONF.get("trust_proxy", False)):
+        return False
+    return _LOCAL_BY_BIND
+
+# Said only where the installer said nothing: the 2.x package has no
+# installer, its launcher writes M2_HOST_BIND_ADDRESS=127.0.0.1 into .env
+# for a single-player world, and the panel then asked that player for a
+# passphrase they had never set ("nie wiem gdzie mam haslo admin"). The
+# bind address the panel was published on comes in as M2PANEL_BIND_ADDRESS;
+# loopback means nobody but this machine can reach it. A server behind a
+# proxy also binds to loopback and IS public - that operator sets
+# M2_PANEL_LOCAL_ONLY=0 in .env, which is the explicit answer above.
+_LOCAL_BY_BIND = os.environ.get("M2PANEL_BIND_ADDRESS", "").strip() in ("127.0.0.1", "localhost", "::1")
 
 def login_required(fn):
     @wraps(fn)
@@ -6643,20 +6760,60 @@ def api_admin_warp_me():
         target_y = int(data.get("y", 0))
         gm_name = data.get("player_name") or "auto"
 
-        # Fallback to the latest active human player
+        # "auto": whoever is in the game right now. The panel cannot ask the
+        # database that - last_play is written when the character is saved,
+        # minutes after a login - so picking the newest last_play chose the
+        # character who played BEFORE the one sitting in the game, queued the
+        # WARP for somebody offline, answered "timeout", and left the row
+        # pending to teleport that other character on their next login
+        # (reproduced: Tieru in the game, the queue row for AdminSura). The
+        # quest serves a row only to the character it names while that
+        # character is online, so the honest way to find the online one is to
+        # ask every recent human character at once, take the first answer,
+        # and withdraw the rest.
         if gm_name == "auto":
             with db() as c, c.cursor() as cur:
-                cur.execute(bot_sql("SELECT name FROM player.player WHERE <<BOT_NOT_1>> ORDER BY last_play DESC LIMIT 1"))
-                r = cur.fetchone()
-                if not r:
+                cur.execute(bot_sql("SELECT name FROM player.player WHERE <<BOT_NOT_1>>"
+                                    " AND last_play >= NOW() - INTERVAL 7 DAY"
+                                    " ORDER BY last_play DESC LIMIT 8"))
+                names = [r["name"] for r in cur.fetchall()]
+                if not names:
                     # Naming a character that may not exist would queue a command
                     # nothing ever answers, and the caller would be told the
                     # teleport succeeded. Say what is actually wrong instead.
                     return jsonify({"ok": False, "error": "no_human_player"}), 404
-                gm_name = r["name"]
+                cur.executemany("INSERT INTO player.web_admin_queue (player_name,cmd,arg1,arg2) VALUES (%s,%s,%s,%s)",
+                                [(n, "WARP", str(target_x), str(target_y)) for n in names])
+                cur.execute("SELECT id, player_name FROM player.web_admin_queue WHERE cmd='WARP' AND status='pending'"
+                            " AND arg1=%s AND arg2=%s AND player_name IN ({})".format(",".join(["%s"] * len(names))),
+                            (str(target_x), str(target_y)) + tuple(names))
+                rows = {r["id"]: r["player_name"] for r in cur.fetchall()}
+            moved, st = None, "timeout"
+            deadline = time.time() + 6.0
+            while time.time() < deadline and moved is None:
+                time.sleep(0.6)
+                with db() as c, c.cursor() as cur:
+                    cur.execute("SELECT id, player_name, status FROM player.web_admin_queue WHERE id IN ({})".format(
+                        ",".join(["%s"] * len(rows))), tuple(rows.keys()))
+                    for r in cur.fetchall():
+                        if r["status"] not in ("pending", None):
+                            moved, st = r["player_name"], r["status"]
+                            break
+            # Nobody else gets teleported later for a click made now.
+            with db() as c, c.cursor() as cur:
+                cur.execute("DELETE FROM player.web_admin_queue WHERE status='pending' AND id IN ({})".format(
+                    ",".join(["%s"] * len(rows))), tuple(rows.keys()))
+            if moved is None:
+                return jsonify({"ok": False, "status": "player_offline", "error": "player_offline",
+                                "tried": names, "x": target_x, "y": target_y})
+            return jsonify({"ok": st == "done", "status": st, "name": moved, "x": target_x, "y": target_y})
 
         st, qid = queue_and_wait(gm_name, "WARP", target_x, target_y, wait=5.0)
-        return jsonify({"ok": True, "status": st, "name": gm_name, "x": target_x, "y": target_y})
+        if st == "timeout":
+            # A WARP nobody answered must not wait for the next login.
+            with db() as c, c.cursor() as cur:
+                cur.execute("DELETE FROM player.web_admin_queue WHERE id=%s AND status='pending'", (qid,))
+        return jsonify({"ok": st == "done", "status": st, "name": gm_name, "x": target_x, "y": target_y})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -10943,8 +11100,15 @@ sh "$REPO/linux-port/fetch-sources.sh" fetch
 (cd "$REPO/linux-port/docker" && tar cf - .) | (cd "$STACK" && tar xf -)
 cd "$STACK" && docker compose up -d --build"""
 
+# The 2.x line is a package, not a checkout: the update is the zip the
+# manifest names, unpacked over the server folder by its own script. The 1.x
+# sequence above would stage the 1.x tree over it (l0st3k, 12 September).
+MANUAL_UPDATE_MT2009 = """cd /opt/metin2          # the server folder: VERSION, CHANGELOG.md, linux-port/
+sh linux-port/tools/update.sh"""
+
 def manual_update():
-    return str(CONF.get("update_command", "") or "").strip() or MANUAL_UPDATE
+    return str(CONF.get("update_command", "") or "").strip() or \
+        (MANUAL_UPDATE_MT2009 if ENGINE_MT2009 else MANUAL_UPDATE)
 
 TPL_PATCHLOG = BASE.replace("__BODY__", """
 <p><a href="{{url_for('dash')}}">{{t('back_players')}}</a></p>

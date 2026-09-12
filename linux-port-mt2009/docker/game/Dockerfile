@@ -192,13 +192,18 @@ RUN set -eux; \
     out=/out-quest/poland/quest; \
     rm -rf /tmp/qc-work; mkdir -p /tmp/qc-work/object; \
     sed 's/\r$//' /quest-src/quest_functions > /tmp/qc-work/quest_functions; \
-    for fn in mysql_direct_query; do \
+    # Functions the engine has and the package's list forgot, which qc would
+    # otherwise refuse (gm_profile.quest: equipping, bonus lines, stack size,
+    # the item's use path).
+    for fn in mysql_direct_query pc.equip_slot pc.unequip_slot item.set_attr item.get_max_stack item.use; do \
       grep -qx "$fn" /tmp/qc-work/quest_functions || echo "$fn" >> /tmp/qc-work/quest_functions; \
     done; \
     # pony_levelup is the package's own stable-keeper quest with the 18-hour
     # wait between two medals taken out (2.0.12); compiled here under its own
     # name, its object files land over the stock ones in the runtime copy.
-    for q in web_admin speed_boost starter_chest pony_levelup; do \
+    # gm_profile brings the admin account's game masters to one profile
+    # through the engine (2.0.13).
+    for q in web_admin speed_boost starter_chest pony_levelup gm_profile; do \
       [ -f "/quest-add/$q.quest" ] || continue; \
       sed 's/\r$//' "/quest-add/$q.quest" > "/tmp/qc-work/$q.quest"; \
       ( cd /tmp/qc-work && /src/Server/game/src/quest/qc "$q.quest" ); \

@@ -27,7 +27,7 @@ namespace
 		if (!ch || !ch->IsItemLoaded())
 			return;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)
@@ -91,13 +91,13 @@ namespace
 			return true;
 
 		size_t occupiedGridCells = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (item)
 				occupiedGridCells += std::max(1, (int)item->GetSize());
 		}
-		return occupiedGridCells * 100 >= INVENTORY_MAX_NUM * 45;
+		return occupiedGridCells * 100 >= PLAYERBOT_BAG_CELLS * 45;
 	}
 
 	// A missing weapon or body armour, an empty potion belt, no arrows or a full

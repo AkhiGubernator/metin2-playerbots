@@ -128,6 +128,17 @@ OWN = {
   `item_abs_chance` int(11) NOT NULL DEFAULT 0,
   `success` tinyint(4) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;""",
+    # Written by the package's own itemshop_manage quest (object/8001[4-6]/use):
+    # INSERT INTO itemshop_dragon_scroll VALUES (pid, aid, NOW(), id, value).
+    # No dump in the package defines it, so every purchase logged
+    # "Table 'log.itemshop_dragon_scroll' doesn't exist" (l0st3k, sizowski).
+    'itemshop_dragon_scroll': """CREATE TABLE IF NOT EXISTS `itemshop_dragon_scroll` (
+  `pid` int(10) unsigned NOT NULL DEFAULT 0,
+  `aid` int(10) unsigned NOT NULL DEFAULT 0,
+  `time` datetime NOT NULL DEFAULT current_timestamp(),
+  `id` int(11) NOT NULL DEFAULT 0,
+  `value` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB;""",
 }
 
 
@@ -158,6 +169,11 @@ def main():
     for t in FROM_R40250:
         parts.append(r40250_create(sql, t))
         parts.append('')
+    # loginlog2 gained its hwid column after the first worlds were made, and
+    # CREATE TABLE IF NOT EXISTS never adds a column to a table that exists:
+    # "Unknown column 'hwid' in 'INSERT INTO'" on every login of such a world.
+    parts.append("ALTER TABLE `loginlog2` ADD COLUMN IF NOT EXISTS `hwid` varchar(255) DEFAULT NULL;")
+    parts.append('')
     for t, ddl in OWN.items():
         parts.append(ddl)
         parts.append('')

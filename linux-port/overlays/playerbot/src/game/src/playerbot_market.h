@@ -143,7 +143,7 @@ namespace
 		// the ring bought the same +6 armour three times over, two seconds
 		// apart, each one better than what it had on and none of them on yet.
 		const long long offerScore = GetPlayerBotEquipmentScore(offer, ch);
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM spare = ch->GetInventoryItem(cell);
 			if (!spare || spare->IsEquipped() || !IsPlayerBotEquipmentCandidate(ch, spare) ||

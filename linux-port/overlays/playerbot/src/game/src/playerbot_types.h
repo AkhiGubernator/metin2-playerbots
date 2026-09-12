@@ -612,7 +612,6 @@ namespace
 	// One eligible bot in twelve founds one. Any more and the world fills with
 	// guilds of one member, which is the opposite of the point.
 	const DWORD PLAYERBOT_GUILD_FOUNDER_SHARE = 12;
-	const size_t PLAYERBOT_GUILD_NAMES_PER_EMPIRE = 2;
 	// The lowest grade, which is what an ordinary member joins at.
 	const int PLAYERBOT_GUILD_MEMBER_GRADE = 15;
 	const int PLAYERBOT_GUILD_INVITE_RANGE = 3000;

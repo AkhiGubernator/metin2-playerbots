@@ -19,6 +19,20 @@ NAJPROSTSZE URUCHOMIENIE NA WINDOWS
 Możesz również użyć start.bat do samego uruchomienia oraz stop.bat do
 zatrzymania serwera.
 
+LINUX / VPS (bez launchera)
+1. Rozpakuj folder Serwer\ np. do /opt/metin2 (w środku ma być VERSION,
+   CHANGELOG.md i linux-port/). Zainstaluj Docker z Compose.
+2. Skopiuj linux-port/docker/.env.example do linux-port/docker/.env i ustaw
+   w nim hasła (M2_DB_ROOT_PASSWORD, M2_DB_PASSWORD, M2_PANEL_PASSWORD)
+   oraz M2_PUBLIC_ADDRESS na adres, pod którym klient ma łączyć się z serwerem.
+3. Uruchom:  cd linux-port/docker && docker compose up -d --build
+4. Aktualizacja: z folderu serwera  sh linux-port/tools/update.sh
+   Skrypt czyta manifest z GitHuba, pobiera paczkę tej linii, sprawdza sumę
+   SHA-256, rozpakowuje ją na miejsce (.env zostaje) i przebudowuje kontenery.
+   NIE uruchamiaj installer/install.sh ani aktualizatora linii 1.x (git,
+   /opt/metin2/stack): nakładają pliki linii 1.x (VERSION 1.33.x) na ten
+   serwer i psują stawki, panele oraz stragany.
+
 DOMYŚLNE KONTO TESTOWE GRY
   login: admin
   hasło: admin

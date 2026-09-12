@@ -480,7 +480,7 @@ namespace
 	{
 		if (!ch)
 			return false;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM stone = ch->GetInventoryItem(cell);
 			if (!stone || stone->GetVnum() != vnum)
@@ -584,7 +584,7 @@ namespace
 		// costs a fortieth of what the finished piece asks, so the ones that
 		// have not rolled it yet are worked on here too - no unequipping, the
 		// engine only refuses a worn item.
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM &&
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS &&
 				stonesUsed < PLAYERBOT_BONUS_STONES_PER_VISIT; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);

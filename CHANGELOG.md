@@ -17,6 +17,158 @@ every version here.
 
 ---
 
+## 2.0.13 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Profil wyposażenia czterech GM na koncie admin
+
+Konto `admin` ma cztery postacie GM — Admin (wojownik), AdminNinja,
+AdminSura i postać operatora — i dotąd tylko generator `gm_characters.sql`
+je wyposażał: raz, przy tworzeniu, bez umiejętności, bez konia w siodle i
+bez eliksirów; postać założoną ręcznie przed dodaniem generatora (Tieru,
+szamanka na poziomie 1 z wachlarzem +0) omijał w całości, a stosy 50 zwojów
+i 50 medali w jednym rekordzie były stosami, których silnik nie utrzymuje
+(proto: 20). Nowy quest `gm_profile` uruchamia się przy każdym logowaniu
+postaci GM z konta `admin` i, gdy wersja profilu postaci jest starsza,
+doprowadza ją do profilu przez własne ścieżki silnika: poziom 90, 500 mln
+yang, grupa umiejętności 1 i umiejętności profesji na P (40), wspólne na
+własnych sufitach (jazda 21, przywołanie konia 10, języki i konne 20),
+koń 21, komplet +9 klasy z bonusami z audytu (`docs/codex-audits/admin-gm-
+mt2009-20260912`) założony na postać, druga broń, 1000 strzał dla ninja,
+plecak (księga wojskowego konia 50053, po 200 dużych eliksirów, zwoje po 20,
+pierścień teleportacji, pełne automatyczne eliksiry 72726/72730 po dwie
+sztuki), a kilka sekund po zalogowaniu włącza po jednym eliksirze każdego
+rodzaju — przez tę samą ścieżkę użycia, którą idzie kliknięcie w kliencie,
+bo tylko ona zakłada efekt regeneracji. Każdy krok pyta najpierw, co postać
+już ma: przedmiot noszony lub leżący w plecaku nie jest dawany drugi raz,
+stosy są dopełniane do minimum, a przy ponownym logowaniu i po restarcie
+nic się nie dubluje (flaga wersji zapisywana na końcu). Starterowy złom —
+broń +0 klasy i małe mikstury — schodzi dopiero, gdy broń profilu jest
+założona; questy startowe dostają znacznik „wydano”, żeby nie nadały go
+ponownie. Dobre przedmioty zostają. Do tego dwie poprawki silnika:
+fabryka przedmiotów tworzyła każdy automatyczny eliksir jako zużyty (gniazdo
+„zużyte” równe pojemności — świeży eliksir z NPC lub z panelu mówił
+„pusty”), a questy dostały `item.use()` (przez `UseItemEx`, bo `UseItem`
+odmawia wszystkiego, gdy działa skrypt questa). Silnik dopuszcza pięć
+założeń na pół sekundy, a logowanie potrafi je zużyć, więc to, czego
+logowanie nie założyło, ubiera timer kilka sekund później.
+`gm_characters.sql` wpisuje stosy zgodne z proto i nie daje medali konnych.
+Sprawdzone na stosie testowym na wszystkich czterech postaciach (w tym
+Tieru z poziomu 1 i ninja z łukiem w ręku): komplet założony, eliksiry
+włączone przez quest, po dwa–trzy logowania i restart rdzenia z tą samą
+liczbą przedmiotów.
+
+### Gildie botów z nazwami od Iwakury
+
+Boty zakładały gildie pod dwiema nazwami na królestwo — sześć gildii na
+świat, a każdy kolejny założyciel zastawał obie nazwy zajęte. Pula to teraz
+sto nazw z listy Iwakury (`data/guild_names_iwakura.txt`, „Shire”,
+„UrzadPracy”, „TotalneBoty”…): założyciel zaczyna od miejsca wyliczonego z
+własnego pid, bierze pierwszą nazwę, której żadna gildia na świecie nie
+nosi, i pomija te dłuższe niż limit silnika (14 znaków na mt2009). Sam
+system — założenie przez bota od 40 poziomu z 200 tys. yang, zaproszenia
+dla botów tego samego królestwa w pobliżu, wspólne polowania na bossa przez
+czat gildii — bez zmian; w tej wersji sprawdzony na żywo na stosie
+testowym: stu botom Chunjo podniesiono poziom do 41, siedem gildii
+powstało w trzy sekundy od startu (Biedronka, TotalneBoty, Vitality,
+BlackWolfs, Zawodowcy, ZakonBigosu, Anarchia), 24 członków po trzech
+minutach, tabele `guild` i `guild_member` wypełnione.
+
+### Linux: aktualizacja z paczki, nie z gita
+
+Na serwerze bez launchera (Debian/VPS) jedyną drogą aktualizacji był
+aktualizator linii 1.x: `installer/install.sh` i kontener `updater`, które
+odświeżają checkout repozytorium i nakładają drzewo `linux-port/` — linii 1.x.
+Na serwerze 2.x kończyło się to wersją 1.33.3 w `VERSION`, stawkami
+zawieszonymi w `state=running` (skrypt stawek 1.x nie zna flag zdarzeń
+mt2009), panelem, który nie rozmawia z grą, i aktualizacją z panelu stojącą
+na 40% (l0st3k, 12 września: „checkout z main melduje 1.33.3”). Nowy
+`linux-port/tools/update.sh` robi na Linuksie to, co launcher na Windows:
+czyta `update-manifest-mt2009.json`, pobiera paczkę tej linii, sprawdza sumę
+SHA-256, rozpakowuje ją na folder serwera (`.env` zostaje) i uruchamia
+`docker compose up -d --build`. Kontener `updater` z profilu `update`
+uruchamia ten skrypt w trybie `watch` (te same pliki `request` i
+`update.status`, które pisze i czyta panel), a przycisk w panelu klasycznym
+pokazuje polecenie dla tej linii. `PACZKA_INFO.txt` ma sekcję dla Linuksa.
+Sprawdzone w kontenerze `python:3-alpine`: pobranie, suma, 6454 plików
+rozpakowanych na miejsce, `.env` nietknięty, tryb `watch` odpowiada na
+żądanie panelu.
+
+### Skrzynie nie wysypują się na ziemię
+
+„Postać nadal źle sprawdza zajętość ekwipunku: otwierając skrzynię, wypada
+to na ziemię” (sizowski, zrzut z Zieloną Siłą i Skrzynią Eksperta I na
+trawie). Na mt2009 stała `INVENTORY_MAX_NUM` to 135 komórek: dwie strony
+plecaka plus strona ekwipunku konia, do której silnik nie wkłada niczego,
+dopóki postać jej nie odblokuje — bot nigdy tego nie robi. Każde liczenie
+wolnych komórek w botach szło po 135, widziało 45 komórek‑duchów i skrzynia
+„mieściła się” w plecaku, którego nie było; to samo przekłamanie siedziało
+w regułach pełnego plecaka, nacisku na plecak i straganu. Boty liczą teraz
+po `INVENTORY_DEFAULT_MAX_NUM` (90) — 84 miejsca w kodzie, jedna stała
+`PLAYERBOT_BAG_CELLS`.
+
+### Wyszukiwarka przedmiotów widzi stragany botów
+
+„Wyszukiwarka pokazuje 0 sklepów, mimo że przedmioty na pewno są na
+straganach” (sizowski). Wyszukiwarka z tych plików przeszukiwała tylko
+sklepy offline (system ikarus); stragan bota to zwykły sklep prywatny, więc
+plac z trzystoma straganami odpowiadał „Znaleziono 0 sklepów”. Ten sam
+przełącznik kategorii pyta teraz także lady każdego bota z otwartym
+straganem na tej mapie w zasięgu wyszukiwarki i oznacza je na mapie jak
+sklepy offline (`ikarus_shop_manager.cpp`, plik w paczce).
+
+### Panel klasyczny: nazwy, dane i rozmiary przedmiotów z tego świata
+
+„Pomieszane nazwy angielskie/polskie, brak danych przedmiotu, miecz na dwa
+sloty widoczny w jednym” (Tieru). Panel czytał nazwy i rozmiary z plików
+linii 1.x (`items.json`, `item_names_pl.txt`) i tłumaczył resztę słowo po
+słowie — stąd „Leather Buty”, „Azure Suit”, „Przedmiot #30347”. Na mt2009
+panel czyta teraz `player.item_proto` tego świata (rdzeń db odświeża ją z
+`item_names.txt` paczki przy każdym starcie): polskie nazwy, typ i rozmiar
+w komórkach; siatka ekwipunku rysuje przedmiot na tyle komórek, ile ma.
+Tabela ładuje się przy pierwszym użyciu i odświeża co godzinę.
+
+### Panel klasyczny bez hasła na serwerze tylko lokalnym
+
+„Nie wiem, gdzie mam hasło admina — może niech każdy będzie automatycznie
+zalogowany, skoro to singleplayer” (Tieru). Panel ma od dawna tryb bez
+hasła, ale włączał go tylko instalator linii 1.x; paczka 2.x nie ma
+instalatora. Panel dostaje teraz adres, na którym go opublikowano
+(`M2_HOST_BIND_ADDRESS`, w paczce 127.0.0.1): na adresie lokalnym nikt poza
+tym komputerem go nie otworzy, więc nie pyta o hasło. Serwer za proxy
+(nginx) też wiąże panel na 127.0.0.1 i jest publiczny — tam operator
+ustawia `M2_PANEL_LOCAL_ONLY=0` w `.env` (nowy klucz, opisany w
+`.env.example`); instalator 1.x z nginx nadal wymusza hasło sam.
+
+### Teleport do bota z panelu klasycznego
+
+„Nie działa teleportowanie do bota” (Tieru). Przycisk wybierał postać
+gracza po najnowszym `last_play`, a ten zapis powstaje przy zapisie
+postaci, minuty po zalogowaniu — wybierał więc postać, która grała
+poprzednio, kolejkował teleport dla kogoś, kto nie jest w grze, odpowiadał
+„timeout” i zostawiał wiersz w kolejce, żeby teleportować tamtą postać przy
+jej następnym logowaniu. Odtworzone na stosie testowym: w grze Tieru, panel
+kolejkował dla AdminSura. Panel pyta teraz wszystkie postacie graczy z
+ostatniego tygodnia naraz, bierze pierwszą odpowiedź (tylko postać online
+ją da) i wycofuje resztę. Sprawdzone: `WarpSet Tieru … target map 1`,
+ponowne logowanie na rdzeniu docelowym w 3 sekundy, kolejka pusta.
+
+### Paczka logów zbiera też linie skrzyń i walk
+
+`PLAYERBOT_CHEST`, `PLAYERBOT_COMBAT` i `PLAYERBOT_STOCK` w filtrze
+sysloga — zgłoszenie o skrzyni na ziemi nie miało w paczce ani jednej
+linii o skrzyniach.
+
+### Dwie tabele logów, których brakowało
+
+„Unknown column 'hwid' in loginlog2” przy każdym logowaniu na świecie
+założonym przed dodaniem tej kolumny (`CREATE TABLE IF NOT EXISTS` nigdy nie
+dokłada kolumny) i „Table 'log.itemshop_dragon_scroll' doesn't exist” przy
+zakupie w ItemShopie (quest paczki pisze do tabeli, której żaden zrzut nie
+definiuje). Migrator dokłada kolumnę i tabelę przy każdym starcie;
+sprawdzone dwukrotnym uruchomieniem na bazie testowej.
+
 ## 2.0.12 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

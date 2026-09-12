@@ -497,7 +497,7 @@ namespace
 				LPITEM memberOldItem = member->GetWear(m_wearCell);
 				const long long newItemScore = GetPlayerBotEquipmentScore(m_item, member);
 				long long memberScore = memberOldItem ? GetPlayerBotEquipmentScore(memberOldItem, member) : 0;
-				for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+				for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 				{
 					LPITEM candidate = member->GetInventoryItem(cell);
 					if (!candidate || !IsPlayerBotEquipmentCandidate(member, candidate) ||
@@ -585,7 +585,7 @@ namespace
 			return NULL;
 		LPITEM best = NULL;
 		long long bestScore = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || !IsPlayerBotStoneMeleeWeapon(ch, item))
@@ -657,7 +657,7 @@ namespace
 		// The one stone weapon the bot has chosen (dagger first), not any
 		// blade in the bag: the score alone would put a heavier sword ahead.
 		LPITEM chosenStoneWeapon = stoneMode ? FindPlayerBotStoneWeapon(ch, false) : NULL;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)
@@ -1044,7 +1044,7 @@ namespace
 		const int desiredLevel = GetPlayerBotProtoLevelLimit(desiredProto);
 		for (int pass = 0; pass < 2; ++pass)
 		{
-			const int count = pass == 0 ? 1 : INVENTORY_MAX_NUM;
+			const int count = pass == 0 ? 1 : PLAYERBOT_BAG_CELLS;
 			for (int index = 0; index < count; ++index)
 			{
 				LPITEM item = pass == 0 ? ch->GetWear(wearCell) : ch->GetInventoryItem(index);
@@ -1139,7 +1139,7 @@ namespace
 		const long long wanted = ScorePlayerBotProtoApplies(desired, ch);
 		for (int pass = 0; pass < 2; ++pass)
 		{
-			const int count = pass == 0 ? 1 : INVENTORY_MAX_NUM;
+			const int count = pass == 0 ? 1 : PLAYERBOT_BAG_CELLS;
 			for (int index = 0; index < count; ++index)
 			{
 				LPITEM item = pass == 0 ? ch->GetWear(wearCell)
@@ -1240,7 +1240,7 @@ namespace
 			return false;
 		for (int pass = 0; pass < 2; ++pass)
 		{
-			const int count = pass == 0 ? 1 : INVENTORY_MAX_NUM;
+			const int count = pass == 0 ? 1 : PLAYERBOT_BAG_CELLS;
 			for (int index = 0; index < count; ++index)
 			{
 				LPITEM item = pass == 0 ? ch->GetWear(WEAR_WEAPON) : ch->GetInventoryItem(index);
@@ -1454,7 +1454,7 @@ namespace
 		LPITEM worn = ch->GetWear(WEAR_ARROW);
 		if (IsPlayerBotUsableArrow(ch, worn))
 			count += worn->GetCount();
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (IsPlayerBotUsableArrow(ch, item))
@@ -1471,7 +1471,7 @@ namespace
 		if (worn && worn->GetType() == ITEM_WEAPON && worn->GetSubType() == WEAPON_ARROW &&
 				worn->GetCount() > 0)
 			return true;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (IsPlayerBotUsableArrow(ch, item) && PlayerBotEquipItem(ch, item, WEAR_ARROW))
@@ -1713,7 +1713,7 @@ namespace
 		if (!ch || supply == PLAYERBOT_POTION_SUPPLY_NONE)
 			return 0;
 		DWORD count = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (item && GetPlayerBotPotionSupply(item->GetVnum()) == supply)
@@ -1762,14 +1762,14 @@ namespace
 			return false;
 		DWORD movedUnits = 0;
 		DWORD removedStacks = 0;
-		for (WORD destinationCell = 0; destinationCell < INVENTORY_MAX_NUM; ++destinationCell)
+		for (WORD destinationCell = 0; destinationCell < PLAYERBOT_BAG_CELLS; ++destinationCell)
 		{
 			LPITEM destination = ch->GetInventoryItem(destinationCell);
 			if (!destination || destination->GetCount() >= 200 ||
 					GetPlayerBotPotionSupply(destination->GetVnum()) == PLAYERBOT_POTION_SUPPLY_NONE)
 				continue;
 			for (WORD sourceCell = destinationCell + 1;
-					sourceCell < INVENTORY_MAX_NUM && destination->GetCount() < 200;
+					sourceCell < PLAYERBOT_BAG_CELLS && destination->GetCount() < 200;
 					++sourceCell)
 			{
 				LPITEM source = ch->GetInventoryItem(sourceCell);
@@ -1819,7 +1819,7 @@ namespace
 			{
 				if (GetPlayerBotPotionSupply(saleOrder[order]) != kind)
 					continue;
-				for (WORD cell = 0; cell < INVENTORY_MAX_NUM && excess > 0; ++cell)
+				for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS && excess > 0; ++cell)
 				{
 					LPITEM item = ch->GetInventoryItem(cell);
 					if (!item || item->GetVnum() != saleOrder[order])
@@ -1860,7 +1860,7 @@ namespace
 		{
 			const bool bluePotion = v < 4;
 			const DWORD reserve = bluePotion ? 10 : 30;
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM item = ch->GetInventoryItem(cell);
 				if (!item || item->GetVnum() != potionVnums[v] || item->GetCount() <= reserve)
@@ -1943,7 +1943,7 @@ namespace
 		if (!ch)
 			return false;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!IsPlayerBotWeapon(ch, item))
@@ -2027,7 +2027,7 @@ namespace
 		}
 
 		const DWORD dwStarterChestVnum = GetStarterChestVnum(ch->GetJob());
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)
@@ -2092,25 +2092,25 @@ namespace
 		if (!pGroup)
 		{
 			int freeCells = 0;
-			for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (int cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 				if (!ch->GetInventoryItem(cell))
 					++freeCells;
 			return freeCells >= PLAYERBOT_CHEST_FREE_CELLS && ch->GetEmptyInventory(3) >= 0;
 		}
 #if defined(PLAYERBOT_ENGINE_MT2009)
 
-		bool occupied[INVENTORY_MAX_NUM];
+		bool occupied[PLAYERBOT_BAG_CELLS];
 		std::map<DWORD, int> headroom; // vnum -> units a stack of it can still take
-		for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (int cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			occupied[cell] = false;
-		for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (int cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM held = ch->GetInventoryItem(cell);
 			if (!held || held->GetCell() != cell)
 				continue;
 			const int size = std::max<int>(1, held->GetSize());
 			for (int k = 0; k < size; ++k)
-				if (cell + k * 5 < INVENTORY_MAX_NUM)
+				if (cell + k * 5 < PLAYERBOT_BAG_CELLS)
 					occupied[cell + k * 5] = true;
 			if (held->IsStackable() && held->GetCount() < ITEM_MAX_COUNT)
 				headroom[held->GetVnum()] += ITEM_MAX_COUNT - held->GetCount();
@@ -2163,7 +2163,7 @@ namespace
 			for (int n = 0; n < rewards[r].second; ++n)
 			{
 				int placed = -1;
-				for (int cell = 0; cell < INVENTORY_MAX_NUM && placed < 0; ++cell)
+				for (int cell = 0; cell < PLAYERBOT_BAG_CELLS && placed < 0; ++cell)
 				{
 					const int row = (cell % PLAYERBOT_INVENTORY_PAGE_SIZE) / 5;
 					if (row + size > rowsPerPage)
@@ -2202,7 +2202,7 @@ namespace
 		// copy of each tier and remove only the artificial duplicates.
 		std::map<DWORD, bool> seenProgressionChests;
 		DWORD removedChestUnits = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)
@@ -2240,7 +2240,7 @@ namespace
 			return false;
 
 		const DWORD starterVnum = GetStarterChestVnum(ch->GetJob());
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)
@@ -2296,7 +2296,7 @@ namespace
 		const DWORD redPotionVnums[] = { 27051, 27001, 27002, 27003, 71018, 71020, 27863, 27865, 27875 };
 		for (size_t potionIndex = 0; potionIndex < sizeof(redPotionVnums) / sizeof(redPotionVnums[0]); ++potionIndex)
 		{
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM item = ch->GetInventoryItem(cell);
 				if (!item || item->GetVnum() != redPotionVnums[potionIndex])
@@ -2336,7 +2336,7 @@ namespace
 		const DWORD bluePotionVnums[] = { 27052, 27004, 27005, 27006, 71020, 27864, 27876 };
 		for (size_t potionIndex = 0; potionIndex < sizeof(bluePotionVnums) / sizeof(bluePotionVnums[0]); ++potionIndex)
 		{
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM item = ch->GetInventoryItem(cell);
 				if (!item || item->GetVnum() != bluePotionVnums[potionIndex])
@@ -2382,7 +2382,7 @@ namespace
 			const DWORD greenPotionVnums[] = { 27102, 27101, 27100, 27053 };
 			for (size_t i = 0; i < sizeof(greenPotionVnums) / sizeof(greenPotionVnums[0]); ++i)
 			{
-				for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+				for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 				{
 					LPITEM item = ch->GetInventoryItem(cell);
 					if (!item || item->GetVnum() != greenPotionVnums[i])
@@ -2414,7 +2414,7 @@ namespace
 			const DWORD purplePotionVnums[] = { 27105, 27104, 27103, 27054 };
 			for (size_t i = 0; i < sizeof(purplePotionVnums) / sizeof(purplePotionVnums[0]); ++i)
 			{
-				for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+				for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 				{
 					LPITEM item = ch->GetInventoryItem(cell);
 					if (!item || item->GetVnum() != purplePotionVnums[i])
@@ -2469,7 +2469,7 @@ namespace
 						worn->GetVnum() <= PLAYERBOT_THIRD_HAND_VNUM)
 					hand = worn;
 			}
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM && !hand; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS && !hand; ++cell)
 			{
 				LPITEM item = ch->GetInventoryItem(cell);
 				if (item && item->GetVnum() >= PLAYERBOT_THIRD_HAND_VNUM_FIRST &&

@@ -56,7 +56,7 @@ namespace
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_METIN_DROPPER)
 			keep = PLAYERBOT_DROPPER_BOOK_KEEP;
 		int surplus = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!IsPlayerBotSurplusSkillBook(ch, item))
@@ -70,7 +70,7 @@ namespace
 	int CountPlayerBotSurplusSkillBooks(LPCHARACTER ch)
 	{
 		int surplus = 0;
-		for (WORD cell = 0; ch && cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; ch && cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (IsPlayerBotSurplusSkillBook(ch, item))
@@ -90,7 +90,7 @@ namespace
 		if (!ch || state.mapStallUnsold.empty() || (!IsPlayerBotBagFull(ch) &&
 				CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_BAG_PRESSURE_FREE_CELLS))
 			return;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->IsEquipped() || item->isLocked())
@@ -1220,7 +1220,7 @@ namespace
 		// refusals logged; the other scans of the same bag say nothing.
 		const bool report = ShouldReportPlayerBotMarketDecisions(
 				ch->GetPlayerID(), get_dword_time());
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->IsEquipped() || item->isLocked())
@@ -1575,7 +1575,7 @@ namespace
 				continue;
 			const int wantLines = units == 1 ? PLAYERBOT_SHOP_SINGLE_UNITS : PLAYERBOT_SHOP_PACK_LINES;
 			int lines = 0;
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM other = ch->GetInventoryItem(cell);
 				if (other && other != item && (int)other->GetCount() == units &&

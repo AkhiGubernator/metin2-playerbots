@@ -70,6 +70,7 @@ launcher/server-update-files.mt2009.txt
 launcher/client-update-files.example.txt
 docs/LAUNCHER.md
 tools/New-M2UpdatePackage.ps1
+linux-port-mt2009/tools/update.sh
 
 # ---- engine files the port changed or added (measured against the package) --
 linux-port-mt2009/docker/game/src/server/common/length.h
@@ -98,6 +99,7 @@ linux-port-mt2009/docker/game/src/server/game/src/desc.h
 linux-port-mt2009/docker/game/src/server/game/src/desc_client.cpp
 linux-port-mt2009/docker/game/src/server/game/src/desc_manager.cpp
 linux-port-mt2009/docker/game/src/server/game/src/desc_manager.h
+linux-port-mt2009/docker/game/src/server/game/src/ikarus_shop_manager.cpp
 linux-port-mt2009/docker/game/src/server/game/src/input.h
 linux-port-mt2009/docker/game/src/server/game/src/input_db.cpp
 linux-port-mt2009/docker/game/src/server/game/src/input_login.cpp
@@ -120,6 +122,7 @@ linux-port-mt2009/docker/game/src/server/game/src/playerbot_empire_rules.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_engine_compat.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_gear.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_guild.h
+linux-port-mt2009/docker/game/src/server/game/src/playerbot_guild_names.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_log.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_loot.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_lure.h
@@ -142,6 +145,7 @@ linux-port-mt2009/docker/game/src/server/game/src/playerbot_types.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_wandering.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_world_memory.h
 linux-port-mt2009/docker/game/src/server/game/src/playerbot_world_rules.h
+linux-port-mt2009/docker/game/src/server/game/src/questlua_item.cpp
 linux-port-mt2009/docker/game/src/server/game/src/questmanager.cpp
 linux-port-mt2009/docker/game/src/server/game/src/refine.cpp
 linux-port-mt2009/docker/game/src/server/game/src/shop.h

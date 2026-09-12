@@ -112,6 +112,7 @@ launcher/server-update-files.mt2009.txt
 launcher/client-update-files.example.txt
 docs/LAUNCHER.md
 tools/New-M2UpdatePackage.ps1
+linux-port-mt2009/tools/update.sh
 
 # ---- engine files the port changed or added (measured against the package) --
 """

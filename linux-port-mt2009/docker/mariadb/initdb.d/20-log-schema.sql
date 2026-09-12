@@ -135,6 +135,8 @@ CREATE TABLE IF NOT EXISTS `speed_hack` (
   `hack_count` varchar(20) CHARACTER SET big5 COLLATE big5_bin DEFAULT NULL
 ) ENGINE=InnoDB;
 
+ALTER TABLE `loginlog2` ADD COLUMN IF NOT EXISTS `hwid` varchar(255) DEFAULT NULL;
+
 CREATE TABLE IF NOT EXISTS `loginlog` (
   `type` varchar(10) NOT NULL DEFAULT 'LOGIN',
   `time` datetime NOT NULL DEFAULT current_timestamp(),
@@ -242,4 +244,12 @@ CREATE TABLE IF NOT EXISTS `acce` (
   `item_count` int(11) NOT NULL DEFAULT 0,
   `item_abs_chance` int(11) NOT NULL DEFAULT 0,
   `success` tinyint(4) NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS `itemshop_dragon_scroll` (
+  `pid` int(10) unsigned NOT NULL DEFAULT 0,
+  `aid` int(10) unsigned NOT NULL DEFAULT 0,
+  `time` datetime NOT NULL DEFAULT current_timestamp(),
+  `id` int(11) NOT NULL DEFAULT 0,
+  `value` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;

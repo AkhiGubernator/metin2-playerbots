@@ -64,7 +64,7 @@ namespace
 		if (!ch)
 			return 0;
 		int free = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			if (!ch->GetInventoryItem(cell))
 				++free;
 		return free;
@@ -78,12 +78,12 @@ namespace
 		// A treasure chest (the silver and gold ones) opens with a key, not by
 		// itself: the engine's path is "use the key on the chest", which removes
 		// both and hands out the chest's group. Any key whose lock value matches.
-		for (WORD boxCell = 0; boxCell < INVENTORY_MAX_NUM; ++boxCell)
+		for (WORD boxCell = 0; boxCell < PLAYERBOT_BAG_CELLS; ++boxCell)
 		{
 			LPITEM box = ch->GetInventoryItem(boxCell);
 			if (!box || box->GetType() != ITEM_TREASURE_BOX)
 				continue;
-			for (WORD keyCell = 0; keyCell < INVENTORY_MAX_NUM; ++keyCell)
+			for (WORD keyCell = 0; keyCell < PLAYERBOT_BAG_CELLS; ++keyCell)
 			{
 				LPITEM key = ch->GetInventoryItem(keyCell);
 				if (!key || key->GetType() != ITEM_TREASURE_KEY || key->GetValue(0) != box->GetValue(0))
@@ -108,7 +108,7 @@ namespace
 				break;
 			}
 		}
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			// The Moonlight chest, and every boss casket (ITEM_GIFTBOX: the Orc
@@ -169,7 +169,7 @@ namespace
 		bool used = false;
 		for (size_t b = 0; b < sizeof(PLAYERBOT_BOOSTER_VNUMS) / sizeof(PLAYERBOT_BOOSTER_VNUMS[0]); ++b)
 		{
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM item = ch->GetInventoryItem(cell);
 				if (!item || item->GetVnum() != PLAYERBOT_BOOSTER_VNUMS[b])

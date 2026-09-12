@@ -105,7 +105,7 @@ namespace
 	int CountPlayerBotSkillBooks(LPCHARACTER ch)
 	{
 		int books = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (item && item->GetType() == ITEM_SKILLBOOK)
@@ -156,13 +156,13 @@ namespace
 	int MergePlayerBotStacks(LPCHARACTER ch, int maxMerges)
 	{
 		int merged = 0;
-		for (WORD i = 0; i < INVENTORY_MAX_NUM && merged < maxMerges; ++i)
+		for (WORD i = 0; i < PLAYERBOT_BAG_CELLS && merged < maxMerges; ++i)
 		{
 			LPITEM item = ch->GetInventoryItem(i);
 			if (!item || item->IsEquipped() || item->isLocked() ||
 					item->GetCount() >= PLAYERBOT_STACK_MAX)
 				continue;
-			for (WORD j = i + 1; j < INVENTORY_MAX_NUM && merged < maxMerges; ++j)
+			for (WORD j = i + 1; j < PLAYERBOT_BAG_CELLS && merged < maxMerges; ++j)
 			{
 				LPITEM other = ch->GetInventoryItem(j);
 				if (!other || other->IsEquipped() || other->isLocked() ||
@@ -237,7 +237,7 @@ namespace
 		for (size_t i = 0; i < sizeof(wearSlots) / sizeof(wearSlots[0]); ++i)
 			if (ch->GetWear(wearSlots[i]))
 				gear.push_back(ch->GetWear(wearSlots[i]));
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM candidate = ch->GetInventoryItem(cell);
 			if (IsPlayerBotEquipmentCandidate(ch, candidate))
@@ -295,7 +295,7 @@ namespace
 		for (size_t i = 0; i < sizeof(wearSlots) / sizeof(wearSlots[0]); ++i)
 			if (ch->GetWear(wearSlots[i]))
 				gear.push_back(ch->GetWear(wearSlots[i]));
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM candidate = ch->GetInventoryItem(cell);
 			if (IsPlayerBotEquipmentCandidate(ch, candidate))
@@ -399,7 +399,7 @@ namespace
 		// to the next rather than the bag reshuffling itself every trip.
 		size_t ahead = 0;
 		const WORD ownCell = item->GetCell();
-		for (WORD cell = 0; cell < ownCell && cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < ownCell && cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM other = ch->GetInventoryItem(cell);
 			if (other && other != item && IsPlayerBotTradeableMaterial(other) &&
@@ -420,8 +420,8 @@ namespace
 	{
 		if (!ch || !ch->IsItemLoaded())
 			return false;
-		const int occupied = INVENTORY_MAX_NUM - CountPlayerBotFreeInventoryCells(ch);
-		return occupied * 100 >= INVENTORY_MAX_NUM * PLAYERBOT_BAG_FULL_PERCENT;
+		const int occupied = PLAYERBOT_BAG_CELLS - CountPlayerBotFreeInventoryCells(ch);
+		return occupied * 100 >= PLAYERBOT_BAG_CELLS * PLAYERBOT_BAG_FULL_PERCENT;
 	}
 
 	// Fewer free cells than the loot and the chests need to land in. The
@@ -457,7 +457,7 @@ namespace
 	{
 		int ahead = 0;
 		const WORD ownCell = item->GetCell();
-		for (WORD cell = 0; cell < ownCell && cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < ownCell && cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM other = ch->GetInventoryItem(cell);
 			if (other && other != item && other->GetType() == ITEM_SKILLBOOK &&
@@ -470,7 +470,7 @@ namespace
 	// A key whose lock matches this chest, anywhere in the bag.
 	bool PlayerBotHasTreasureKeyFor(LPCHARACTER ch, LPITEM box)
 	{
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM key = ch->GetInventoryItem(cell);
 			if (key && key->GetType() == ITEM_TREASURE_KEY && key->GetValue(0) == box->GetValue(0))
@@ -500,7 +500,7 @@ namespace
 		if (!worn || item->GetLevelLimit() <= worn->GetLevelLimit())
 			return false;
 		const long long itemScore = GetPlayerBotEquipmentScore(item, ch);
-		for (WORD otherCell = 0; otherCell < INVENTORY_MAX_NUM; ++otherCell)
+		for (WORD otherCell = 0; otherCell < PLAYERBOT_BAG_CELLS; ++otherCell)
 		{
 			LPITEM other = ch->GetInventoryItem(otherCell);
 			if (!other || other == item || !IsPlayerBotEquipmentCandidate(ch, other) ||
@@ -643,7 +643,7 @@ namespace
 			LPITEM worn = ch->GetWear(WEAR_WEAPON);
 			if (worn && worn != item && worn->GetType() == ITEM_ROD && worn->GetVnum() >= vnum)
 				return true;
-			for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			{
 				LPITEM other = ch->GetInventoryItem(cell);
 				if (other && other != item && other->GetType() == ITEM_ROD &&
@@ -745,7 +745,7 @@ namespace
 				const long long oldScore = oldItem ? GetPlayerBotEquipmentScore(oldItem, ch) : 0;
 				if (!oldItem || itemScore > oldScore)
 				{
-					for (WORD otherCell = 0; otherCell < INVENTORY_MAX_NUM; ++otherCell)
+					for (WORD otherCell = 0; otherCell < PLAYERBOT_BAG_CELLS; ++otherCell)
 					{
 						LPITEM other = ch->GetInventoryItem(otherCell);
 						if (!other || other == item || !IsPlayerBotEquipmentCandidate(ch, other) ||
@@ -770,7 +770,7 @@ namespace
 
 				if (item->GetRefineLevel() >= PLAYERBOT_RESERVE_GEAR_MIN_REFINE)
 				{
-					for (WORD otherCell = 0; otherCell < INVENTORY_MAX_NUM; ++otherCell)
+					for (WORD otherCell = 0; otherCell < PLAYERBOT_BAG_CELLS; ++otherCell)
 					{
 						LPITEM other = ch->GetInventoryItem(otherCell);
 						if (!other || other == item ||
@@ -811,7 +811,7 @@ namespace
 		if (!ch || !ch->IsItemLoaded())
 			return false;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (item && IsPlayerBotJunkItem(ch, item) &&
@@ -826,7 +826,7 @@ namespace
 		if (!ch || !ch->IsItemLoaded())
 			return 0;
 		size_t count = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 			if (IsPlayerBotJunkItem(ch, ch->GetInventoryItem(cell)))
 				++count;
 		return count;
@@ -840,7 +840,7 @@ namespace
 
 		size_t soldCount = 0;
 		long long totalSoldGold = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || !IsPlayerBotJunkItem(ch, item) ||
@@ -871,7 +871,7 @@ namespace
 		if (!ch)
 			return false;
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!IsPlayerBotEquipmentCandidate(ch, item))
@@ -893,7 +893,7 @@ namespace
 		if (!ch)
 			return -1;
 		int blessing = -1, dragonGod = -1;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM scroll = ch->GetInventoryItem(cell);
 			if (!scroll)
@@ -973,7 +973,7 @@ namespace
 		}
 
 		// Also collect candidate gear in inventory
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			// What the merchant would take on the next town visit is not
 			// worth a refine now: Ametystowy Naszyjnik+0 was raised to +1 at
@@ -1231,7 +1231,7 @@ namespace
 		// Count red and blue potions
 		size_t redCount = 0;
 		size_t blueCount = 0;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item)
@@ -1447,7 +1447,7 @@ namespace
 				return true;
 		}
 
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			// The same test the refining pass applies, not a looser one: a
 			// promise the executor will refuse is a walk to town for nothing.

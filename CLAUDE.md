@@ -1487,6 +1487,65 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   experience is (Wild Dog 15, Blue Alpha Wolf 111). When no band holds the
   level, `CollectPlayerBotM1HubsForLevel` takes the nearest band, never the
   whole table. Re-measure before moving a hub; do not guess a band.
+- **mt2009's INVENTORY_MAX_NUM is not the bag.** With
+  `ENABLE_EXTEND_INVEN_SYSTEM` it is 135: two pages plus the horse inventory
+  page, which `GetEmptyInventory` places into only for a character whose
+  `GetInventoryMaxCount()` says so - a bot's never does. Every count the
+  fragments made over `INVENTORY_MAX_NUM` saw 45 phantom free cells, so a
+  chest judged to fit (`PlayerBotBagTakesGroup`) spilled on the ground, and
+  bag-full, bag-pressure and stall rules were off by half a bag.
+  `PLAYERBOT_BAG_CELLS` (compat: `INVENTORY_DEFAULT_MAX_NUM` there,
+  `INVENTORY_MAX_NUM` on r40250) is the only bound the fragments use now;
+  an engine array may still be sized by the engine's constant.
+- **The mt2009 item finder searches offline shops; a stall is not one.**
+  `ikashop::CShopManager::RecvShopSearchItemClientPacket` walked `m_mapShops`
+  (ikarus offline shops) and a playerbot's counter is a classic `CShop`
+  (`OpenMyShop`, no duration). The category switch is a template now
+  (`PlayerBotMatchShopCategory`) asked of an offline shop and of
+  `CPlayerBotStallView` - a keeper's `GetItemVector()` seen through the three
+  predicates the switch uses - and `PlayerBotSearchStalls` walks the PC map
+  for keepers with a shop on the map within 7500 units. Inside `namespace
+  ikashop`, `CShop` is the ikarus one: the classic class is `::CShop`.
+- **The classic panel's item tables are r40250's unless the engine says
+  otherwise.** `items.json` and `item_names_pl.txt` are the other engine's
+  names and sizes; on mt2009 `localized_item_name`, the give-item search and
+  `/static/item_defs.json` read `player.item_proto` (`locale_name` is the
+  Polish name on this package, `size` the cells) - lazily, because the panel
+  starts before MariaDB answers. `ENGINE_MT2009` is read near the top of the
+  module for that reason; anything engine-specific above the old definition
+  point used to be impossible.
+- **"Teleport me to this bot" must find the character that is online, and
+  the database cannot say who that is.** `last_play` is written on save,
+  minutes after a login, so "newest last_play" was the previous character;
+  the WARP row waited for somebody offline and stayed pending to fire on
+  their next login. `api_admin_warp_me` queues for every recent human
+  character, takes the first row the quest answers (it answers only for the
+  online one) and deletes the rest. A WARP that times out is deleted too.
+- **The panel's no-passphrase mode is decided by the bind address on the 2.x
+  line.** `local_open()`: `M2PANEL_LOCAL_ONLY` (from `M2_PANEL_LOCAL_ONLY`)
+  when set, else the installer's `local_only` in m2panel.conf, else never
+  when `trust_proxy` (installer's nginx mode), else `M2PANEL_BIND_ADDRESS`
+  is loopback. The launcher writes `M2_HOST_BIND_ADDRESS=127.0.0.1` for a
+  single-player world and that is what opens the panel there.
+- **A per-engine difference in a shared compose service lives in
+  composify.py, not in the compose file.** `port/composify.py` renders the
+  panel, seban, itemshop and updater services from `linux-port/docker/
+  docker-compose.yml` into both mt2009 compose files between its BEGIN/END
+  markers; an edit made to the rendered block is undone by the next render,
+  which is how the updater override was lost once before it was found.
+  `M2PANEL_ENGINE`, `PLAYERBOTS_ENGINE`, the version default and now the
+  updater's entrypoint are all replacements in that script.
+- **The 2.x line on Linux updates from the package zip, never from git.**
+  The repository's root VERSION is the 1.x line's, `installer/install.sh`
+  and the 1.x `m2-updater` stage `linux-port/` over whatever they find, and a
+  2.x server that ran either ended with VERSION 1.33.3, the 1.x `m2-rates`
+  ("the rates are being applied" for ever - the mt2009 game watches event
+  flags instead), and a panel that could not update (l0st3k, 12 September).
+  `linux-port-mt2009/tools/update.sh` is the launcher's package update in
+  POSIX sh (manifest via the contents API, sha256, unpack over the server
+  folder, `compose up -d --build`); the mt2009 updater container runs it in
+  watch mode through composify's override. Test it in `python:3-alpine`
+  with the folder bind-mounted - the Windows `python3` is the Store stub.
 - **The mt2009 counter is ten columns wide, and the bots laid it out five
   wide.** `SHOP_PLAYER_WIDTH` doubles r40250's `SHOP_DEFAULT_WIDTH`; the
   right half (x 5-9) is locked rows 0-3 (`SHOP_SLOT_UNLOCK_PROGRESS_FLAG`)
@@ -2162,6 +2221,65 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   (`player.tmp_gm`): apply.sh runs the file with no default database, and
   an unqualified `CREATE TEMPORARY TABLE` is "No database selected" at line
   55 with nothing else in the log.
+- **The four GM characters are brought to a profile by a quest, not by the
+  seed.** `gm_characters.sql` only creates what the admin account lacks; it
+  cannot set a skill, wear a piece or fill an elixir, and it never touched a
+  character that already existed - so the operator's own Tieru stayed a
+  level-1 shaman with a fan while the three seeded ones lost pieces nothing
+  put back. `linux-port-mt2009/docker/game/quest/gm_profile.quest` runs on
+  every login of a GM on the `admin` account and, when the character's
+  `gm_profile.version` flag is behind, brings it to the profile through the
+  engine's own paths (`pc.set_level`, `pc.set_skill_level`,
+  `horse.set_level`, `pc.give_item2_select` + `item.set_attr` +
+  `pc.equip_slot`, `item.use`), asking first what is already there, so a
+  second login and a restart change nothing (measured: ITEM_LOAD 21 on
+  three consecutive logins). Bump the version when the profile changes;
+  the seed's rows only make a fresh character complete on the character
+  screen. Five things that cost the first test:
+  `CanEquipNow` admits five equips a half second per player (the
+  `ItemEquip` pulse), and a login can spend them before the login quest
+  runs, so the ninja's five pieces were all refused in one tick with no
+  reason anywhere but a chat line the tester never saw - the worn set is
+  checked piece by piece (`pc.get_wear`, never the return value alone) and
+  what a login refused is worn again from a timer a few seconds later;
+  `sys_log` in a quest is `sys_log(level, text)` and a call with one
+  argument is silently dropped (`_syslog` in questlua_global.cpp), so a
+  quest that seems to run and log nothing usually did run; `qc` refuses any
+  function not in `quest_functions`, which the package left without
+  `pc.equip_slot`, `pc.unequip_slot`, `item.set_attr`, `item.get_max_stack`
+  and `item.use` - the game Dockerfile appends them for the compile; the
+  engine admits one elixir use a second per player (`AutoPotionUse`), so
+  the two are switched on from a timer, one per tick; and
+  `CHARACTER::UseItem` refuses every use while a quest script is running
+  ("You cannot use this item if you're using quests"), which is exactly
+  when a quest asks - `item.use` (`item_use0`, added by playerbotify.py)
+  goes to `UseItemEx` after `CanUsedBy`, not to `UseItem`. Six refused
+  uses in the log, and the elixirs the tester saw switched on were the
+  tester's own clicks.
+- **An auto elixir was born empty on this engine.** `ITEM_MANAGER::CreateItem`
+  set socket 1 (the capacity used) and socket 2 (the capacity) both to
+  `value0`, and the use path calls an elixir whose two are equal empty
+  (`AUTOPOTION_IS_EMPTY`) - a loaded one gets its saved sockets back a
+  moment later and never noticed, so only a fresh one from a quest, the
+  panel or a shop failed. playerbotify.py makes a new one start with nothing
+  used; `gm_profile.quest` sets socket 1 to 0 as well, as the belt to the
+  braces. Socket 0 is the on/off flag; the affect (`AFFECT_AUTO_*_RECOVERY`,
+  `dwFlag` = item id) is what actually heals, and only the use path makes
+  it - writing socket 0 by hand gives an elixir that says "on" and does
+  nothing.
+- **A bot guild's name comes from Iwakura's list.** `data/guild_names_iwakura.txt`
+  is rendered by `tools/generate_guild_names.py` into
+  `playerbot_guild_names.h` (a `playerbot_*` file, so every stage ships
+  it); `GetPlayerBotGuildName(pid, step)` walks the pool from a pid-based
+  offset and `FoundPlayerBotGuild` takes the first name `FindGuildByName`
+  does not know, skipping what `GUILD_NAME_MAX_LEN` refuses (fourteen on
+  mt2009, twelve on r40250). Until 2.0.13 it was two names per kingdom,
+  so six guilds filled the world. The whole system was measured live for
+  the first time then: 100 Chunjo bots raised to level 41 with the fee,
+  seven guilds founded within three seconds of spawn (one in twelve by
+  `PLAYERBOT_GUILD_FOUNDER_SHARE`), 24 members three minutes later through
+  `RequestAddMember`, `player.guild` and `guild_member` filled. `gold=` in
+  the founding line is in thousands.
 - **A queue whose head is offline looks like a queue that stopped.** The
   grants worker hands `MAX_PENDING` (ten) rows to the game and the quest's
   player timer serves only a row that names an online character; an offline

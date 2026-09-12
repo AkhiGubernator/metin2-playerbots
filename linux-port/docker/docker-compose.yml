@@ -279,6 +279,11 @@ services:
       # Blank on first run means "generate one and print it once".
       M2_PANEL_PASSWORD: "${M2_PANEL_PASSWORD:-}"
       M2_PANEL_PORT: "7788"
+      # The address the panel is published on, and the explicit answer to
+      # "may anybody else reach it": empty lets the panel decide from the
+      # address (loopback = local, no passphrase), 0 or 1 overrides that.
+      M2PANEL_BIND_ADDRESS: "${M2_PANEL_BIND_ADDRESS:-${M2_HOST_BIND_ADDRESS:-0.0.0.0}}"
+      M2PANEL_LOCAL_ONLY: "${M2_PANEL_LOCAL_ONLY:-}"
       M2_PANEL_BIND: "0.0.0.0"
 
       # So the panel can answer "is the game up" by probing the game container

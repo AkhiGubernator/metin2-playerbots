@@ -111,7 +111,7 @@ namespace
 	{
 		if (!ch || !item || !item->IsStackable())
 			return false;
-		for (WORD cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM held = ch->GetInventoryItem(cell);
 			if (!held || held->GetVnum() != item->GetVnum() ||

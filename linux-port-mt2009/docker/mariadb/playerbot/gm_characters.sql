@@ -172,7 +172,13 @@ SELECT g.owner_id, 'EQUIPMENT', g.pos, 1, g.vnum,
    AND NOT EXISTS (SELECT 1 FROM player.item AS i WHERE i.owner_id = g.owner_id);
 
 -- The bag (5 columns; a weapon is three cells tall, so the second weapon sits
--- at 10 and covers 10, 15, 20). Stacks of two hundred where the item stacks.
+-- at 10 and covers 10, 15, 20). Every stack at what item_proto allows: the
+-- potions two hundred, the scrolls twenty (a row of fifty was a stack the
+-- engine cannot hold), the teleport ring ten. No horse medals: a level-21
+-- horse has nothing to do with them, and fifty of them in a bag was noise.
+-- What a character still lacks at login, gm_profile.quest gives through the
+-- engine - this block only makes a fresh character complete on the
+-- character screen.
 INSERT INTO player.item
     (owner_id, window, pos, count, vnum,
      attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2,
@@ -183,10 +189,9 @@ SELECT c.id, 'INVENTORY', b.pos, b.cnt, b.vnum,
   JOIN (
     SELECT 0 AS pos, 200 AS cnt, 27007 AS vnum, 0 AS a0, 0 AS v0, 0 AS a1, 0 AS v1, 0 AS a2, 0 AS v2, 0 AS a3, 0 AS v3, 0 AS a4, 0 AS v4, 0 AS a5, 0 AS v5, 0 AS a6, 0 AS v6 UNION ALL
     SELECT 1, 200, 27008, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
-    SELECT 2,  50, 25040, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
-    SELECT 3,  50, 25045, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
-    SELECT 4,  50, 22030, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
-    SELECT 5,  50, 50050, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
+    SELECT 2,  20, 25040, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
+    SELECT 3,  20, 25045, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
+    SELECT 4,  10, 22030, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
     SELECT 6,   1, 50053, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 UNION ALL
     SELECT 8,   1, 71054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   ) AS b
@@ -202,7 +207,7 @@ SELECT w.owner_id, 'INVENTORY', w.pos, w.cnt, w.vnum,
   FROM (
     SELECT 9001 AS owner_id, 10 AS pos, 1 AS cnt, 3169 AS vnum, 40 AS a0, 10 AS v0, 41 AS a1, 10 AS v1, 53 AS a2, 20 AS v2, 43 AS a3, 10 AS v3, 21 AS a4, 20 AS v4, 122 AS a5, 45 AS v5, 121 AS a6, 20 AS v6 UNION ALL
     SELECT 9002, 10,   1, 2179, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20 UNION ALL
-    SELECT 9002,  7, 200, 8009,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,   0,  0 UNION ALL
+    SELECT 9002,  7, 1000, 8009,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,   0,  0 UNION ALL
     SELECT 9004, 10,   1, 7189, 40, 10, 41, 10, 53, 20, 43, 10, 21, 20, 122, 45, 121, 20
   ) AS w
  WHERE w.owner_id IN (SELECT id FROM player.tmp_gm)

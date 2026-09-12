@@ -220,6 +220,16 @@ namespace
 			LPCHARACTER ch, int* outLevel = NULL, int* outSelection = NULL,
 			int* outRemaining = NULL)
 	{
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// The player level-up hunt (levelup.quest) ships in quest/_unused on
+		// this line: no kill hook fires, so levelup.remain never decrements
+		// and every bot reads "0/40" for good, while the mission steered
+		// under-geared bots at its target mob. Disabled here; bots hunt by
+		// the frontier draw and the level-banded hubs instead (Tieru, 13
+		// September).
+		(void)outLevel; (void)outSelection; (void)outRemaining;
+		return NULL;
+#endif
 		if (!ch)
 			return NULL;
 		const int level = ch->GetQuestFlag("levelup.current");
@@ -364,6 +374,10 @@ namespace
 
 	void ManagePlayerBotHuntingProgress(LPCHARACTER ch)
 	{
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		(void)ch;   // the level-up hunt is disabled on this line, see above.
+		return;
+#endif
 		if (!ch || ch->GetLevel() < PLAYERBOT_HUNTING_FIRST_LEVEL)
 			return;
 

@@ -659,6 +659,36 @@ namespace
 	// when it would not. The four exceptions come first and ignore the TRADE
 	// weight on purpose (see EPlayerBotShopReason); the three rolls after them
 	// are what the slider moves.
+	// A weapon or armour the bot holds a worse duplicate of: the slot is
+	// filled by an equal-or-better worn piece, the spare is refined enough
+	// to be worth a counter, and it is not itself an upgrade waiting to be
+	// worn. The collector already lists such a spare; nothing opened a stall
+	// for it, so a bot on two FMS +9 sat on the second for good (Ciapek,
+	// 13 September).
+	bool HasPlayerBotSellableSpare(LPCHARACTER ch)
+	{
+		if (!ch || !ch->IsItemLoaded())
+			return false;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->IsEquipped() || item->isLocked())
+				continue;
+			const BYTE type = item->GetType();
+			if (type != ITEM_WEAPON && type != ITEM_ARMOR)
+				continue;
+			if (item->GetRefineLevel() < PLAYERBOT_PRECIOUS_REFINE)
+				continue;
+			if (IsPlayerBotWearableUpgrade(ch, item, cell))
+				continue;
+			const int wearCell = item->FindEquipCell(ch);
+			if (wearCell < 0 || ch->GetWear((BYTE)wearCell) == NULL)
+				continue;
+			return true;
+		}
+		return false;
+	}
+
 	BYTE GetPlayerBotShopReason(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
 		if (!ch || ch->GetLevel() < PLAYERBOT_SHOP_MIN_LEVEL)
@@ -670,6 +700,10 @@ namespace
 			return PLAYERBOT_SHOP_REASON_POOR;
 		if (IsPlayerBotBagFull(ch))
 			return PLAYERBOT_SHOP_REASON_BAG_FULL;
+		// A valuable spare of a slot the bot already has filled is goods it
+		// should put up, whatever the trade roll or bag pressure said.
+		if (HasPlayerBotSellableSpare(ch))
+			return PLAYERBOT_SHOP_REASON_SPARE;
 		// A trader always has the stall open when it can. For everyone else it
 		// stays what it was: an occasional thing one bot in ten does with a spare.
 		if (IsPlayerBotMerchant(state))
@@ -2937,6 +2971,29 @@ namespace
 			ch->SetPosition(POS_STANDING);
 			bool done = false;
 			CSafebox* box = ch->GetSafebox();
+			// The page the fee just bought is created by the DB core one round
+			// trip late, so the box that loads on the first paid visit can have
+			// no valid slot at all: IsValidPosition(0) is false and every
+			// deposit lands nowhere (deposited=0, books_left unchanged - what
+			// uxietoszef's bots showed, 74 books for good). Treat that as "not
+			// ready" and keep the errand rather than reporting a phantom
+			// deposit; the next visit finds the page and fills it, no fee again.
+			if (box && !box->IsValidPosition(0))
+			{
+				ch->CloseSafebox();
+				PlayerBotLogThrottled("safebox_not_ready", dwNow,
+						"PLAYERBOT_TOWN: safebox page not ready pid=%u name=%s books=%d",
+						ch->GetPlayerID(), ch->GetName(), CountPlayerBotSkillBooks(ch));
+				// leave bTownNeedSafebox set; back off a little and try next visit.
+				state.bTownVisitPhase = bDirect
+						? GetPlayerBotFirstDirectTownPhase(state)
+						: ((state.bTownNeedMisc || state.bTownNeedBlacksmith)
+							? BOT_TOWN_PHASE_GATE_IN : BOT_TOWN_PHASE_NONE);
+				ClearPlayerBotRoute(state, true);
+				if (state.bTownVisitPhase == BOT_TOWN_PHASE_NONE)
+					FinishPlayerBotTownVisit(ch, state, dwNow, true);
+				return true;
+			}
 			if (box)
 			{
 				const int deposited = DepositPlayerBotSafeboxBooks(ch, state, box);

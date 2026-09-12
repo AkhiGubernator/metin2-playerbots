@@ -160,8 +160,39 @@ HUNTING_MOB_NAMES_PL = {
     5126: "Silna Złota Małpa",
 }
 
+# A skill book is vnum 50300 (or a named book) with the skill id in socket0;
+# the bag showed only "Ksiega Umiejetnosci" and nobody could tell which
+# skill it was (Tieru, 13 September). Flatten the per-class skill tables
+# into one id -> name map so a book can spell its skill out.
+SKILL_ID_NAMES = {}
+SKILL_ID_NAMES_PL = {}
+
+
+def item_full_name(vnum, socket0, language=None):
+    """Localized name, with the skill spelled out for a skill book."""
+    language = language or (lang() if has_request_context() else "en")
+    name = localized_item_name(vnum, language)
+    try:
+        item_proto_ready()
+        vt = ITEM_TYPES.get(int(vnum or 0), (0, 0))[0]
+    except Exception:
+        vt = 0
+    # 17 = ITEM_SKILLBOOK. The skill id lives in socket0.
+    if vt == 17 and int(socket0 or 0) > 0:
+        table = SKILL_ID_NAMES_PL if language == "pl" else SKILL_ID_NAMES
+        sk = table.get(int(socket0)) or SKILL_ID_NAMES.get(int(socket0))
+        if sk:
+            name = "%s: %s" % (name, sk)
+    return name
+
+
 def hunting_progress_label(current, selection, remain, complete, language=None):
     language = language or (lang() if has_request_context() else "en")
+    # The level-up hunt (levelup.quest) ships in quest/_unused on the
+    # mt2009 line: no kill hook fires, so the counter reads "0/N" for good.
+    # The core ignores it (see playerbot_missions.h); the panel says nothing.
+    if ENGINE_MT2009:
+        return ""
     current, selection = int(current or 0), 2 if int(selection or 1) == 2 else 1
     remain, complete = max(0, int(remain or 0)), max(0, int(complete or 0))
     mission = HUNTING_MISSIONS.get(current)
@@ -428,6 +459,15 @@ PLAYER_SKILLS_EN = {
              (108, "Lightning Claw"), (109, "Cure"),
              (110, "Swiftness"), (111, "Attack Up")),
 }
+
+# Flatten the per-class skill tables into one id -> name map, so a skill book
+# (skill id in socket0) can spell its skill out in the inventory (item_full_name).
+for _grp in PLAYER_SKILLS.values():
+    for _sid, _nm in _grp:
+        SKILL_ID_NAMES_PL[_sid] = _nm
+for _grp in PLAYER_SKILLS_EN.values():
+    for _sid, _nm in _grp:
+        SKILL_ID_NAMES[_sid] = _nm
 
 
 def skill_rank_label(master_type, level):
@@ -3738,6 +3778,13 @@ def local_open():
     # proxy in front: public, whatever the address says.
     if bool(CONF.get("trust_proxy", False)):
         return False
+    # The mt2009 line is the single-player suite: one player at their own
+    # machine, no passphrase to invent or lose ("wylacz wymog wpisywania
+    # hasla, to projekt singleplayer" - Tieru, 13 September). An operator who
+    # exposes it sets M2_PANEL_LOCAL_ONLY=0 or runs it behind the proxy,
+    # both handled above.
+    if ENGINE_MT2009:
+        return True
     return _LOCAL_BY_BIND
 
 # Said only where the installer said nothing: the 2.x package has no
@@ -6957,6 +7004,9 @@ GEAR_HISTORY_HOWS = {
     "SHOP_BUY":              ("bought",      {"pl": "Kupione na straganie", "en": "Bought at a stall"}),
     "PLAYERBOT_SHOP_SELL":   ("vendor",      {"pl": "Sprzedane handlarzowi", "en": "Sold to merchant"}),
     "PLAYERBOT_BONUS":       ("bonus",       {"pl": "Zużyte na przemianę bonusów", "en": "Used for a bonus reroll"}),
+    "PLAYERBOT_BONUS_ADD":   ("bonus",       {"pl": "Dodano bonus (Wzmocnienie)", "en": "Bonus line added"}),
+    "PLAYERBOT_BONUS_CHANGE":("bonus",       {"pl": "Zmieniono bonusy (Zmiana)",  "en": "Bonus lines rerolled"}),
+    "PLAYERBOT_BONUS_MARBLE":("bonus",       {"pl": "Dodano 5. bonus (Marmur)",   "en": "Fifth line added (marble)"}),
     "SAFEBOX PUT":           ("safebox",     {"pl": "Do magazynu",        "en": "Into the safebox"}),
     "SAFEBOX GET":           ("safebox",     {"pl": "Z magazynu",         "en": "Out of the safebox"}),
     "MOONLIGHT_GET":         ("get",         {"pl": "Ze Szkatułki Blasku", "en": "From a Moonlight chest"}),
@@ -10531,7 +10581,7 @@ def api_bot_inventory(pid):
 
             for it in items:
                 vnum = it.get("vnum") or 0
-                name = localized_item_name(vnum, language)
+                name = item_full_name(vnum, it.get("socket0"), language)
                 count = it.get("count") or 1
                 pos = it.get("pos") or 0
                 win = it.get("window") or ""
@@ -10607,7 +10657,7 @@ def api_bot_safebox(pid):
                 items.append({
                     "id": it.get("id"),
                     "vnum": vnum,
-                    "name": localized_item_name(vnum, language),
+                    "name": item_full_name(vnum, it.get("socket0"), language),
                     "count": it.get("count") or 1,
                     "pos": it.get("pos") or 0,
                     "sockets": [it.get("socket0") or 0, it.get("socket1") or 0,

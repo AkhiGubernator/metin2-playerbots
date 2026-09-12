@@ -1859,6 +1859,65 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `m2-render-config` writes `LOCALE = "cp1250"` into `db/conf.txt`; verify
   with `mysql_set_character_set(cp1250)` in the db core's syslog, never with
   a name that has no diacritics.
+- **The armour merchant stocks three tiers, and the ladder wants ten.** NPC
+  9002 sells body armour at levels 0/18/26 per class (11200/11220/11230 for a
+  warrior), but `GetPlayerBotProgressionArmorVnum` walks the family by stride
+  and names tiers at level 9, 34, 42 and up that no shop carries - so a bot
+  between two stocked tiers, or above the top one, could never buy and a quarter
+  of the cohort walked with an empty body slot (Tieru, 13 September).
+  `FindPlayerBotBestMerchantSlotVnum` / `BuyPlayerBotBestMerchantSlotGear` buy
+  the best piece the merchant actually stocks for the slot and class the bot
+  qualifies for; the armour-merchant pass calls it when the exact tier is not
+  sold. Guarded by `HasPlayerBotProgressionGear` so it never buys a second copy
+  of a piece the merchant cannot better, nor a downgrade. Shields/helmets are
+  shared (13xxx/12xxx), body is class-based (base+199 isolates the class).
+- **A bot must be moved to open a stall for a spare it will not scrap.** The
+  stall collector lists a worse duplicate of a filled slot, but only
+  `GetPlayerBotShopReason` decides whether to *open* a counter, and a bot on two
+  FMS +9 with an otherwise empty bag had no reason (Ciapek). `HasPlayerBotSellableSpare`
+  (a weapon/armour at `PLAYERBOT_PRECIOUS_REFINE`+, slot filled by an
+  equal-or-better worn piece, not itself an upgrade) is `PLAYERBOT_SHOP_REASON_SPARE`
+  now, ahead of the trade roll and bag pressure.
+- **A hand-tuned weapon is finished, and a change stone is not for +0..+4.**
+  `PLAYERBOT_BONUS_WEAPON_LOCK_PCT` (25): a level-30 or level-75 weapon carrying
+  an average-damage or average-skill line at or above it is finished for the
+  reroll pass - `HasPlayerBotFinishedBonus` returns true - so USE_CHANGE_ATTRIBUTE
+  never mixes it away ("dalem botowi fms z navi po 1000, debil zmienil bonusy",
+  Ciapek). And `PLAYERBOT_BONUS_CHANGE_MIN_REFINE` (5) keeps the change stone off
+  +0..+4 in both the worn and the bag-goods pass; the add stone is unrestricted.
+- **The safebox page is a round trip behind the fee.** The first paid safebox
+  visit sends HEADER_GD_SAFEBOX_CHANGE_SIZE and requests the load on the same
+  tick, so the box that comes back has no valid position yet (`IsValidPosition(0)`
+  false) and every deposit lands nowhere: `deposited=0`, 74 books in the bag for
+  good (uxietoszef, on 2.0.17). The WAIT phase treats a not-ready box as "come
+  back", keeps `bTownNeedSafebox` and reports nothing, rather than a phantom
+  deposit; the next visit finds the page and fills it, no fee again.
+- **The player level-up hunt is in quest/_unused on mt2009.** `levelup.quest`
+  ships there and the infected mobs (901-906, 931-936) carry no kill hook, so
+  `levelup.remain` never decrements and every bot reads "Polowanie: Lv X •
+  Potwor: 0/40" for good, while the mission steered under-geared bots at its
+  target on Mount Sohan (Tieru, 13 September). `GetActivePlayerBotHuntingMission`
+  and `ManagePlayerBotHuntingProgress` return early under
+  `PLAYERBOT_ENGINE_MT2009`; the classic panel's `hunting_progress_label` returns
+  "" there. Bots hunt by the frontier draw and the level-banded hubs, which work.
+  The seeded high-level bots (a level-50 cohort seeded, not levelled from 1) with
+  starter gear that "cannot have reached that level in M1/M2" are those
+  identities - not a bug; the armour buy above is what re-gears them.
+- **A skill book is vnum 50300 with the skill in socket0.** The classic panel's
+  `item_full_name` spells it out ("Ksiega Umiejetnosci: Aura Miecza") from
+  `SKILL_ID_NAMES` (the per-class skill tables flattened) when `ITEM_TYPES` says
+  the item is ITEM_SKILLBOOK (17); the bag used to show only the bare book name.
+- **The bonus history names the piece, not only the stone.** `ManagePlayerBotBonusReroll`
+  writes `PLAYERBOT_BONUS_ADD` / `_CHANGE` / `_MARBLE` ItemLog rows on the target
+  item beside the stone's own `PLAYERBOT_BONUS` removal, so the gear history says
+  which weapon or armour a reroll was spent on (Tieru). The panel's
+  `GEAR_HISTORY_HOWS` carries the three.
+- **The single-player line has no panel passphrase.** `local_open()` returns
+  true under `ENGINE_MT2009` (unless `M2_PANEL_LOCAL_ONLY=0` or the nginx proxy
+  mode), and the seban collector seeds `setup_complete=1 auth_enabled=0` and
+  migrates old installs off the wizard: one player at their own loopback-bound
+  machine, no passphrase to invent (Tieru). An operator who exposes it turns
+  auth back on.
 - **A rod is not one vnum.** `fishing.cpp` rolls on every catch and turns
   the rod into its `GetRefinedVnum` - a new item - so `CountSpecifyItem(27400)`
   said "no rod" to a bot whose Wedka+2 lay in the bag, and it bought one per

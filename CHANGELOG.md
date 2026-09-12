@@ -17,6 +17,68 @@ every version here.
 
 ---
 
+## 2.0.22 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Boty noszą zbroję — kupują u handlarza, gdy nie ma dokładnego poziomu
+
+„Czemu większość botów nie nosi zbroi?” Handlarz zbroi (9002) sprzedaje pancerz
+tylko na poziomy 0/18/26 danej klasy, a drabinka progresji celuje w poziomy 9,
+34, 42 i wyżej — więc bot między dwoma sprzedawanymi poziomami albo powyżej
+najwyższego nigdy nie mógł kupić i chodził z pustym slotem (ćwierć populacji nie
+miała zbroi na tułowiu). Teraz, gdy handlarz nie ma dokładnego poziomu, bot
+kupuje najlepszy pancerz/tarczę/hełm, jaki handlarz ma i na jaki pozwala jego
+poziom, zakłada go i ulepsza u kowala (co najmniej +6). Nie kupuje drugiej kopii
+tego, czego handlarz nie przebije, ani gorszego.
+
+### Boty sprzedają zbędny duplikat (np. drugi FMS +9)
+
+„Boty nie sprzedają FMS +9, gdy mają dwa w ekwipunku” (Ciapek). Straganiarz już
+wystawiał taki zapas, ale nic nie otwierało straganu, gdy plecak był poza tym
+pusty. Teraz zbędny duplikat broni lub zbroi (slot już zajęty lepszym lub równym,
+a duplikat jest od +4) jest powodem, by otworzyć stragan — niezależnie od losu i
+zapełnienia plecaka.
+
+### Bonusy: broń 30/75 z wysoką średnią nie jest mieszana, zmiana tylko od +5
+
+„Dałem botowi FMS z bonusami po 1000, a on zmienił bonusy” (Ciapek). Broń na
+poziom 30 lub 75, która ma linię średnich obrażeń lub średnich obrażeń
+umiejętności ≥ 25%, jest teraz „skończona” — Zmiana Bonusów jej nie rusza. Kamień
+Zmiany nie jest już używany na przedmiotach od +0 do +4; dopiero od +5.
+
+### Magazyn na księgi: pierwsza wizyta nie gubiła depozytu
+
+Strona magazynu, którą opłata dopiero co utworzyła, powstaje w rdzeniu db o jedno
+odbicie później, więc przy pierwszej płatnej wizycie skrytka ładowała się bez
+ważnego miejsca i depozyt lądował donikąd (deposited=0, 74 księgi w plecaku na
+stałe — u uxietoszefa). Teraz bot rozpoznaje „strona jeszcze niegotowa”, nie
+zgłasza fikcyjnego depozytu i wraca przy następnej wizycie (bez ponownej opłaty).
+
+### Misje polowania wyłączone na tych plikach
+
+Quest `levelup.quest` (misje „Polowanie: Lv X • Potwór: 0/N”) leży w
+`quest/_unused` — żaden hook zabójstwa nie działa, więc licznik nigdy nie schodził
+z „0/40”, a misja wysyłała niedozbrojone boty pod swojego potwora (np. na Górę
+Sohan). Wyłączona w kodzie i ukryta w panelu; boty polują teraz według doboru map
+frontu i pasm poziomów w hubach.
+
+### Nazwy ksiąg umiejętności w ekwipunku na www
+
+„W ekwipunku księgi umiejętności — nie wiadomo jakie”. Klasyczny panel pokazuje
+teraz nazwę umiejętności z gniazda księgi, np. „Księga Umiejętności: Aura Miecza”.
+
+### Historia ekwipunku: na jaki przedmiot nałożono bonus
+
+Obok zużytego kamienia historia zapisuje teraz przedmiot, na którym użyto
+Wzmocnienia, Zmiany lub Marmuru — „Zmieniono bonusy” przy danej broni czy zbroi.
+
+### Panel bez hasła administratora
+
+Projekt jest singleplayer, więc panele (klasyczny i zaawansowany) dają od razu
+pełny dostęp bez pytania o hasło. Serwer nasłuchuje tylko lokalnie; operator, który
+wystawi panel publicznie, włącza hasło (M2_PANEL_LOCAL_ONLY=0 albo tryb za nginx).
+
 ## 2.0.21 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

@@ -672,6 +672,14 @@ namespace
 	// az im sie uda" - and thirty is a roll most weapons never see, so the
 	// rerolling never stopped where a player would have stopped it.
 	const long PLAYERBOT_BONUS_KEEP_AVERAGE = 20;
+	// A hand-tuned weapon at the two tiers players care about (level 30 and
+	// 75) is finished the moment it carries an average-damage or average-
+	// skill line at or above this - USE_CHANGE_ATTRIBUTE never touches it
+	// again. "dalem botowi fms z navi wartosci po 1000, debil zmienil bonusy"
+	// (Ciapek, 13 September). And a change stone is never spent on a +0..+4
+	// piece: raise it first, mix later.
+	const long PLAYERBOT_BONUS_WEAPON_LOCK_PCT = 25;
+	const BYTE PLAYERBOT_BONUS_CHANGE_MIN_REFINE = 5;
 	const long PLAYERBOT_BONUS_KEEP_HP = 1500;
 	const long PLAYERBOT_BONUS_KEEP_CRIT = 5;
 	// The caster's half of the same rule, and it exists because the two damage
@@ -2038,6 +2046,7 @@ namespace
 		PLAYERBOT_SHOP_REASON_BOOKS,
 		PLAYERBOT_SHOP_REASON_DROPPER_ROLL,
 		PLAYERBOT_SHOP_REASON_ROLL,
+		PLAYERBOT_SHOP_REASON_SPARE,
 		PLAYERBOT_SHOP_REASON_MAX
 	};
 	const DWORD PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS = 300000;   // 5 min
@@ -2060,6 +2069,7 @@ namespace
 			case PLAYERBOT_SHOP_REASON_BOOKS:            return "nadmiar ksiag";
 			case PLAYERBOT_SHOP_REASON_DROPPER_ROLL:     return "dropper";
 			case PLAYERBOT_SHOP_REASON_ROLL:             return "los";
+			case PLAYERBOT_SHOP_REASON_SPARE:            return "zbedny duplikat";
 			default:                                     return "?";
 		}
 	}

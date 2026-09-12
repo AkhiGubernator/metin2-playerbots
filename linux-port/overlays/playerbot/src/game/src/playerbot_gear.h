@@ -1033,6 +1033,7 @@ namespace
 		return bestVnum;
 	}
 
+	bool BuyPlayerBotProgressionGear(LPCHARACTER ch, DWORD vnum, const char* category);
 	bool HasPlayerBotProgressionGear(LPCHARACTER ch, DWORD desiredVnum, int wearCell)
 	{
 		if (!ch || desiredVnum == 0)
@@ -1426,6 +1427,87 @@ namespace
 			}
 		}
 		return false;
+	}
+
+	// The class's body-armour family base (11200/11400/11600/11800), so a
+	// warrior never buys a shaman's robe. Shields and helmets are shared.
+	DWORD GetPlayerBotArmorClassBase(LPCHARACTER ch)
+	{
+		if (!ch)
+			return 11200;
+		switch (ch->GetJob())
+		{
+			case JOB_ASSASSIN: return 11400;
+			case JOB_SURA:     return 11600;
+			case JOB_SHAMAN:   return 11800;
+			default:           return 11200;
+		}
+	}
+
+	// The best piece an NPC merchant actually stocks for a wear slot that
+	// this bot's level and class can use. The progression ladder walks
+	// item_proto by stride and names tiers no shop sells - body armour at
+	// level 9, and everything from level 34 up - so a bot between two
+	// stocked tiers, or above the top one, could never buy and walked the
+	// world in an empty slot: a quarter of the cohort had no body armour
+	// (Tieru, 13 September). This finds the highest stocked piece the bot
+	// qualifies for, so the slot is filled and the blacksmith can raise it.
+	DWORD FindPlayerBotBestMerchantSlotVnum(LPCHARACTER ch, int wearCell)
+	{
+		if (!ch)
+			return 0;
+		DWORD lo = 0, hi = 0;
+		BYTE subtype = 0;
+		switch (wearCell)
+		{
+			case WEAR_BODY:   lo = GetPlayerBotArmorClassBase(ch); hi = lo + 199; subtype = ARMOR_BODY; break;
+			case WEAR_HEAD:   lo = 12000; hi = 12999; subtype = ARMOR_HEAD; break;
+			case WEAR_SHIELD: lo = 13000; hi = 13999; subtype = ARMOR_SHIELD; break;
+			case WEAR_FOOTS:  lo = 15000; hi = 15999; subtype = ARMOR_FOOTS; break;
+			default: return 0;
+		}
+		static const DWORD merchants[] = { 9001, 9002, 9003 };
+		DWORD bestVnum = 0;
+		int bestLevel = -1;
+		for (size_t i = 0; i < sizeof(merchants) / sizeof(merchants[0]); ++i)
+		{
+			LPSHOP shop = CShopManager::instance().GetByNPCVnum(merchants[i]);
+			if (!shop)
+				continue;
+			const std::vector<CShop::SHOP_ITEM>& offers = shop->GetItemVector();
+			for (size_t k = 0; k < offers.size(); ++k)
+			{
+				const DWORD vnum = offers[k].vnum;
+				if (vnum < lo || vnum > hi)
+					continue;
+				TItemTable* proto = ITEM_MANAGER::instance().GetTable(vnum);
+				if (!proto || proto->bType != ITEM_ARMOR || proto->bSubType != subtype)
+					continue;
+				const int reqLevel = GetPlayerBotProtoLevelLimit(proto);
+				if (reqLevel > (int)ch->GetLevel())
+					continue;
+				if (reqLevel > bestLevel)
+				{
+					bestVnum = vnum;
+					bestLevel = reqLevel;
+				}
+			}
+		}
+		return bestVnum;
+	}
+
+	// Fill an armour slot from the merchant with the best it stocks, unless
+	// the bot already holds (worn or in the bag) a piece of at least that
+	// level for the slot - so it never buys a second copy of a piece the
+	// merchant cannot better, and never a downgrade.
+	bool BuyPlayerBotBestMerchantSlotGear(LPCHARACTER ch, int wearCell, const char* category)
+	{
+		if (!ch)
+			return false;
+		const DWORD vnum = FindPlayerBotBestMerchantSlotVnum(ch, wearCell);
+		if (vnum == 0 || HasPlayerBotProgressionGear(ch, vnum, wearCell))
+			return false;
+		return BuyPlayerBotProgressionGear(ch, vnum, category);
 	}
 
 	bool BuyPlayerBotProgressionGear(LPCHARACTER ch, DWORD vnum, const char* category)

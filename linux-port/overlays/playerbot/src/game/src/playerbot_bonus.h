@@ -297,6 +297,15 @@ namespace
 				return immuneStun || block >= PLAYERBOT_BONUS_KEEP_BLOCK ||
 						race >= PLAYERBOT_BONUS_KEEP_RACE;
 			case WEAR_WEAPON:
+			{
+				// A level-30 or level-75 weapon a player hand-tuned is finished
+				// the moment it lands an average-damage or average-skill line
+				// over the lock, so the mixer leaves it alone (Ciapek).
+				const int lvl = item->GetLevelLimit();
+				if ((lvl == 30 || lvl == 75) &&
+						(average >= PLAYERBOT_BONUS_WEAPON_LOCK_PCT ||
+						 skill >= PLAYERBOT_BONUS_WEAPON_LOCK_PCT))
+					return true;
 				// Any weapon, not only the level-30 family: with the vnum test
 				// here a bow of forty-five with a 40% average was "unfinished"
 				// and rerolled towards the line score until the average was
@@ -308,6 +317,7 @@ namespace
 				// on the average line never stopped at all.
 				return average >= PLAYERBOT_BONUS_KEEP_AVERAGE ||
 						(IsPlayerBotCaster(ch) && skill >= PLAYERBOT_BONUS_KEEP_SKILL);
+			}
 			case WEAR_BODY:
 				return hp >= PLAYERBOT_BONUS_KEEP_HP &&
 						(attGrade > 0 || resistBow > 0 ||
@@ -744,6 +754,7 @@ namespace
 			// weapon full of them at twelve percent average was "good enough"
 			// to the score and not to anybody who looked at it.
 			const bool bWantChange = !bWantAdd && !bWantMarble &&
+					item->GetRefineLevel() >= PLAYERBOT_BONUS_CHANGE_MIN_REFINE &&
 					!HasPlayerBotFinishedBonus(ch, item, wearCell) &&
 					(score < PLAYERBOT_BONUS_KEEP_SCORE ||
 					 IsPlayerBotSpecialLevel30WeaponVnum(item->GetVnum()));
@@ -797,6 +808,13 @@ namespace
 				continue;
 			}
 
+			// The gear history shows the stone spent (PLAYERBOT_BONUS); this
+			// names the piece it was spent on, which is what a player asks -
+			// "na jaki przedmiot" (Tieru, 13 September).
+			LogManager::instance().ItemLog(ch, item,
+					bWantMarble ? "PLAYERBOT_BONUS_MARBLE"
+						: (bWantAdd ? "PLAYERBOT_BONUS_ADD" : "PLAYERBOT_BONUS_CHANGE"),
+					item->GetName());
 			sys_log(0, "PLAYERBOT_BONUS: %s pid=%u name=%s vnum=%u slot=%u lines=%d->%d score=%d->%d gold=%d",
 					bWantAdd ? "added" : "rerolled", ch->GetPlayerID(), ch->GetName(),
 					item->GetVnum(), (unsigned int)wearCell, count,
@@ -820,6 +838,9 @@ namespace
 			const bool bWantAdd = count < PLAYERBOT_BONUS_MAX_LINES;
 			if (!bWantAdd && HasPlayerBotFinishedBonus(ch, item, WEAR_WEAPON))
 				continue;
+			// No change stone below +5, worn or in the bag.
+			if (!bWantAdd && item->GetRefineLevel() < PLAYERBOT_BONUS_CHANGE_MIN_REFINE)
+				continue;
 			const DWORD stoneVnum = bWantAdd ? PLAYERBOT_BONUS_ADD_VNUM
 					: PLAYERBOT_BONUS_CHANGE_VNUM;
 			if (!BuyPlayerBotBonusStone(ch, stoneVnum))
@@ -835,6 +856,9 @@ namespace
 				item->ChangeAttribute();
 			ConsumePlayerBotBonusStone(ch, stoneVnum);
 			++stonesUsed;
+			LogManager::instance().ItemLog(ch, item,
+					bWantAdd ? "PLAYERBOT_BONUS_ADD" : "PLAYERBOT_BONUS_CHANGE",
+					item->GetName());
 			sys_log(0, "PLAYERBOT_BONUS: %s goods pid=%u name=%s vnum=%u lines=%d->%d score=%d->%d gold=%d",
 					bWantAdd ? "added" : "rerolled", ch->GetPlayerID(), ch->GetName(),
 					item->GetVnum(), count, item->GetAttributeCount(), score,

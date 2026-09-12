@@ -1479,15 +1479,23 @@ namespace
 			return false;
 		const bool sold = SellPlayerBotJunkAtMerchant(
 				ch, BOT_MERCHANT_ARMOR, "armor_merchant");
-		bool bought = NeedsPlayerBotProgressionArmor(ch) &&
-				BuyPlayerBotProgressionGear(ch,
-						GetPlayerBotProgressionArmorVnum(ch), "armor");
+		// The exact ladder tier first; when the merchant does not stock it -
+		// which is every tier below the bot except the three the shop carries,
+		// and every tier above level 26 - the best piece it does stock, so a
+		// naked slot is filled and the blacksmith can raise it to +6.
+		bool bought = false;
+		if (NeedsPlayerBotProgressionArmor(ch))
+			bought = BuyPlayerBotProgressionGear(ch,
+					GetPlayerBotProgressionArmorVnum(ch), "armor") ||
+				BuyPlayerBotBestMerchantSlotGear(ch, WEAR_BODY, "armor") || bought;
 		if (NeedsPlayerBotProgressionShield(ch))
 			bought = BuyPlayerBotProgressionGear(ch,
-					GetPlayerBotProgressionShieldVnum(ch), "shield") || bought;
+					GetPlayerBotProgressionShieldVnum(ch), "shield") ||
+				BuyPlayerBotBestMerchantSlotGear(ch, WEAR_SHIELD, "shield") || bought;
 		if (NeedsPlayerBotProgressionHelmet(ch))
 			bought = BuyPlayerBotProgressionGear(ch,
-					GetPlayerBotProgressionHelmetVnum(ch), "helmet") || bought;
+					GetPlayerBotProgressionHelmetVnum(ch), "helmet") ||
+				BuyPlayerBotBestMerchantSlotGear(ch, WEAR_HEAD, "helmet") || bought;
 		// The three slots nothing ever filled. A bot wore a bracelet, a necklace
 		// or an earring only when one happened to drop for it, because no ladder
 		// asked for them - so most of them went their whole lives with three

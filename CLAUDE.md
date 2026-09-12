@@ -2306,7 +2306,8 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   stall and highlights nothing, marks nothing on the map. What a keeper
   can get is a `HEADER_GC_SEPCIAL_EFFECT` (the header is misspelled in the
   engine) sent to the searcher's descriptor alone: `PlayerBotSearchStalls`
-  puts `SE_LEVELUP_ON_14_FOR_GERMANY` on every keeper found and a chat
+  puts `SE_CHINA_FIREWORK` (2.0.15 used `SE_LEVELUP_ON_14_FOR_GERMANY`, an
+  advert - see the note further down) on every keeper found and a chat
   line says how many. Anything better needs the stall to be an ikashop
   entity, which is the other shop system.
 - **A build job per core is a build that dies on a laptop.** Docker Desktop
@@ -2339,6 +2340,27 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   player of forty-six farmed level-five stones for a book each.
   `PLAYERBOT_METIN_BOOK_LEVEL_DELTA` (15) ends the top-up; the stone's own
   roll still applies. The r40250 patch still has no such cap.
+- **A refusal remembered for everybody is a feature switched off for
+  everybody.** `s_mapPlayerBotChestRefused` was keyed by vnum: the first bot
+  in the tick whose bag had no room for the Moonlight chest's group marked
+  50011 refused for the whole population for ten minutes, and with two
+  thousand bots there always was one - 165 663 unopened chests in a
+  player's bags. Keyed by (pid, vnum) now, and the two boxes the map was
+  written for (50192/50193) are a LIMIT_LEVEL the pass reads itself
+  (`IsPlayerBotChestLevelLocked`), never asked of UseItem. Any per-world
+  memory of a per-bot failure wants this check.
+- **The mt2009 CONFIG never carried MOONLIGHT_CHEST_PERMILLE.** config.cpp
+  there reads it (playerbotify), item_manager.cpp rolls on it, the Dockerfile
+  appends the chest's group - and `linux-port-mt2009/docker/game/bin/
+  m2-render-config` did not emit the token, so `g_iMoonlightChestPermille`
+  stayed 0 and no Moonlight chest ever dropped on a 2.x world (zero in six
+  hours on the test stack). A CONFIG token added to one line's renderer has
+  to be added to the other's; the two scripts are separate files.
+- **SE_LEVELUP_ON_14_FOR_GERMANY is an advert.** On the mt2009 client that
+  effect id draws "Noch 1 Level-Up! ... siehe www.metin2.de" over the
+  character; 2.0.15 hung it over every stall the finder found. Pick effects
+  from what the client actually maps them to (SE_CHINA_FIREWORK is a
+  firework everywhere), and never a *_FOR_GERMANY one.
 - **A queue whose head is offline looks like a queue that stopped.** The
   grants worker hands `MAX_PENDING` (ten) rows to the game and the quest's
   player timer serves only a row that names an online character; an offline

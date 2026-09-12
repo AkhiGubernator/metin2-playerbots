@@ -17,6 +17,36 @@ every version here.
 
 ---
 
+## 2.0.17 — 2026-09-12
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Skrzynie Blasku Księżyca: boty je otwierają, a na mt2009 w ogóle wypadają
+
+„Boty mają po 600 szkat w eq i nie ruszają ich” (uxietoszef, z tabelą:
+165 663 nieotwartych Szkatułek Blasku Księżyca w plecakach botów;
+zombian: „2.0.14 dalej nie otwierają”). Pamięć odmów otwarcia była jedna
+dla całej populacji, po numerze skrzyni: bot, któremu silnik odmówił, bo w
+tej chwili nie miał miejsca na zawartość, wyłączał tę skrzynię wszystkim na
+dziesięć minut — a przy dwóch tysiącach botów zawsze jakiś ma pełny
+plecak, więc skrzynia była wyłączona bez przerwy. Pamięć jest teraz na
+bota i skrzynię, a skrzynia ponad poziom bota (Skrzynia Eksperta III od
+50, Mistrza I od 60) jest pomijana bez pytania silnika i idzie na ladę jako
+towar. Druga rzecz: na linii mt2009 konfiguracja rdzenia nie dostawała
+`MOONLIGHT_CHEST_PERMILLE`, więc Szkatułka Blasku Księżyca z naszej listy
+(zwoje bonusów, mikstury, wzmocnienia, czasem księga) nie wypadała tam
+wcale — na stosie testowym po sześciu godzinach zero sztuk. Tokeny są
+w konfiguracji obu linii (domyślnie 10‰ z potwora, 300‰ z metina;
+`M2_MOONLIGHT_CHEST_PERMILLE` i `M2_MOONLIGHT_CHEST_STONE_PERMILLE` w
+`.env`).
+
+### Wyszukiwarka: znacznik straganu bez niemieckiej reklamy
+
+„Niemiecki komunikat nad każdym sklepem po wyszukaniu zbroi” (vasils.).
+Efekt użyty w 2.0.15 jako kolumna światła to w tym kliencie promocja
+„Noch 1 Level-Up! … siehe www.metin2.de” rysowana nad postacią. Znacznikiem
+jest teraz fajerwerk, i tak też mówi komunikat w czacie.
+
 ## 2.0.16 — 2026-09-12
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

@@ -242,6 +242,7 @@ namespace
 	// found dry is given up for good on this core, and the claim search skips
 	// it.
 	std::set<int> s_setPlayerBotDryFishingStands;
+#if defined(PLAYERBOT_ENGINE_MT2009)
 	int MarkPlayerBotFishingStandDry(DWORD playerID)
 	{
 		for (std::map<int, TPlayerBotFishingStand>::iterator it =
@@ -258,6 +259,7 @@ namespace
 		}
 		return -1;
 	}
+#endif
 
 	void ReleasePlayerBotFishingStand(DWORD playerID)
 	{
@@ -1115,11 +1117,13 @@ namespace
 			}
 		}
 
+#if defined(PLAYERBOT_ENGINE_MT2009)
 		// The one gate of fishing() the bank tables cannot promise: water beside
-		// the cell the bot stands on. A stand that has none on this engine's map
-		// is marked dry and the next pass walks to another (see
-		// s_setPlayerBotDryFishingStands); before this the bot stood there the
-		// whole idle timeout and the session ended as "never_cast".
+		// the cell the bot stands on (IsNearAttr - r40250's fishing() has no
+		// such test and its SECTREE no such method). A stand that has none on
+		// this engine's map is marked dry and the next pass walks to another
+		// (see s_setPlayerBotDryFishingStands); before this the bot stood there
+		// the whole idle timeout and the session ended as "never_cast".
 		if (!state.bIsFishing)
 		{
 			LPSECTREE dryTree = ch->GetSectree();
@@ -1132,6 +1136,7 @@ namespace
 				return true;
 			}
 		}
+#endif
 
 		LPITEM rod = ch->GetWear(WEAR_WEAPON);
 		if (!state.bIsFishing && rod && rod->GetSocket(2) == 0 && !BaitPlayerBotRod(ch))

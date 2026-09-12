@@ -1102,7 +1102,7 @@ namespace
 
 		// An unopened box. Ranked between the materials and the spare gear: it
 		// is a gamble somebody might want, not a thing anybody came for.
-		if (IsPlayerBotSurplusChest(item))
+		if (IsPlayerBotSurplusChest(ch, item))
 			return 350;
 		// A specimen of a mission already handed in. The Orc Tooth never gets
 		// here: it is a refine material and the material branch above priced

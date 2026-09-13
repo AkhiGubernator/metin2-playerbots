@@ -1141,6 +1141,14 @@ namespace
 	const DWORD PLAYERBOT_BOOK_RATE_DENOMINATOR = 1000;
 	const int PLAYERBOT_BOOK_PRICE_JITTER_MIN = 80;
 	const int PLAYERBOT_BOOK_PRICE_JITTER_MAX = 125;
+
+	// Bumped by hand whenever a price table in this file changes. An open
+	// stall keeps the price it was listed at, and the offline service visit
+	// repriced one line an hour - so a scroll listed at 9 000 before 2.0.32
+	// was still asking it a day later ("pelno w m1 sklepow gdzie Zwoje sa po
+	// 9000", Iwakura). A shop whose stamp is behind this number reprices on
+	// every service visit instead, until its whole counter has been walked.
+	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 1;
 	// Iwakura's upgrade-material prices (13 September, "CENY ULEPSZACZY"): the
 	// 78 materials a blacksmith asks for, priced by hand. Unlike the books
 	// these scale with the bare yang rate (100% is x1.0), which is his own

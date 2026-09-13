@@ -267,7 +267,8 @@ namespace {
             // Rotate by ID, one existing offer per visit; recompute from market
             // policy, not a repeated percentage markdown tending towards zero.
             auto it = shop->GetItems().upper_bound(o.repriceItem);
-            if (it == shop->GetItems().end()) it = shop->GetItems().begin();
+            bool wrapped = (it == shop->GetItems().end());
+            if (wrapped) it = shop->GetItems().begin();
             if (it != shop->GetItems().end() && it->second) {
                 o.repriceItem = it->first;
                 auto preview = BotOfflinePreview(*it->second);
@@ -282,7 +283,15 @@ namespace {
                     }
                 }
             }
-            o.nextReprice = now + 3600000;
+            // A counter priced against an older table is walked at the pace of the
+            // service visit (10-15 min), not one line an hour; the stamp is set
+            // only once the rotation has come round, so every line was seen.
+            if (o.priceGeneration != PLAYERBOT_PRICE_TABLE_VERSION) {
+                if (wrapped) o.priceGeneration = PLAYERBOT_PRICE_TABLE_VERSION;
+                o.nextReprice = now;
+            } else {
+                o.nextReprice = now + 3600000;
+            }
         }
         BotOfflineFinishVisit(ch, state, now);
         return false;

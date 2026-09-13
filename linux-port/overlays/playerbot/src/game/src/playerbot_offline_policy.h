@@ -48,6 +48,8 @@ struct State {
     uint32_t nextReprice = 0, repriceItem = 0;
     uint32_t nextBrowse = 0, buyOwner = 0, buyItem = 0, buyUntil = 0;
     uint32_t observedShop = 0;
+    // Which compiled price table this shop was last priced against.
+    uint32_t priceGeneration = 0;
     bool visiting = false;
 };
 inline bool Fits(int cell, int height, int width, int cells) {

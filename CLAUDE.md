@@ -1402,6 +1402,28 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   stack and got "volume is in use" four times for one player - the launcher
   never runs `compose down`. Remove what `docker ps -a --filter
   volume=<name>` lists first; `compose up` recreates it on the next start.
+- **Every container is `restart: unless-stopped`, so an old installation takes
+  the ports back on every engine start.** A machine that has ever held a second
+  copy of this server carries a second compose project, and Docker Desktop
+  starts all of them: five here (m2dep, m2zip, m2mt, m2fresh, metin2), each from
+  its own folder, each publishing 7788, 7790, 7791, 11000, 13000-13002 and 3306.
+  So "port jest juz zajety" came back after every quit of Docker Desktop -
+  quitting is precisely what that policy waits for - and the only thing that
+  holds is `docker stop`, whose manual-stop flag survives an engine restart.
+  The preflight made it worse by asking about the panel's 7788 alone, so the
+  collision that actually stopped an update was invisible to it: 7790, the
+  advanced panel, reported by compose as "Bind for 127.0.0.1:7790 failed" only
+  after the images had built for minutes. `Get-M2StackHostPorts` reads every
+  published port out of the installation's own .env, `Get-M2DockerPortHolders`
+  names the container, its project **and the folder it was started from** (the
+  half that makes the advice actionable), and `Stop-M2ForeignPortHolders` stops
+  the whole foreign project, because its siblings hold the other ports. Start
+  and the update call it before compose runs; `start-server.ps1` imports no
+  module, so it carries its own copy of the same lookup. Never a volume: the
+  collision is containers, and a removed volume is the world. And note the
+  tokenizer trap found writing the message: PowerShell accepts the typographic
+  double quotes as string delimiters, so a pair of them inside a `"..."` string
+  ends it mid-sentence and the whole module stops parsing.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

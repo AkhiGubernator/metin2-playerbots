@@ -66,6 +66,45 @@ if ($unknown.Code -ne 'UNKNOWN') {
     throw "Nieznany błąd powinien używać kodu UNKNOWN, otrzymano $($unknown.Code)."
 }
 
+# The collision that actually stops an update is not the panel's. 7790 is the
+# advanced panel, which a second copy of the server publishes too, and the
+# remedy has to say why quitting Docker Desktop does not help.
+$secondPanel = Get-M2LauncherErrorGuidance -Text (
+    'driver failed programming external connectivity on endpoint m2zip-seban-panel: ' +
+    'Bind for 127.0.0.1:7790 failed: port is already allocated')
+if ($secondPanel.Code -ne 'PORT_IN_USE') {
+    throw "Kolizja na porcie 7790 powinna dać PORT_IN_USE, otrzymano $($secondPanel.Code)."
+}
+if ($secondPanel.Title -notmatch '7790') {
+    throw "Komunikat powinien nazywać port 7790, otrzymano: $($secondPanel.Title)"
+}
+if ($secondPanel.Remedy -notmatch 'unless-stopped') {
+    throw 'Rada przy zajętym porcie musi tłumaczyć, dlaczego samo wyłączenie Dockera nie pomaga.'
+}
+
+# Every published port comes from the installation's own .env: compose gives up
+# on the first one that is taken, so a preflight that knows only 7788 passes and
+# the build dies afterwards.
+$fixture = Join-Path ([IO.Path]::GetTempPath()) ('m2ports-' + [Guid]::NewGuid().ToString('N'))
+$expectedPorts = @(7788, 7790, 7791, 11000, 13000, 13001, 13002, 3306)
+try {
+    New-Item -ItemType Directory -Path (Join-Path $fixture 'linux-port\docker') -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $fixture 'linux-port\docker\.env') -Encoding UTF8 -Value @(
+        'M2_PANEL_PUBLIC_PORT=7788',
+        'M2_SEBAN_PANEL_PORT=7790',
+        'M2_ITEMSHOP_PUBLIC_PORT=7791',
+        'M2_AUTH_PORT=11000',
+        'M2_GAME_PORT_RANGE=13000-13002',
+        'M2_DB_PUBLISH_PORT=3306')
+    $stackPorts = @(Get-M2StackHostPorts -ServerRoot $fixture | ForEach-Object { [int]$_.Port })
+    foreach ($expected in $expectedPorts) {
+        if ($stackPorts -notcontains $expected) {
+            throw "Preflight musi sprawdzać port $expected; otrzymano: $($stackPorts -join ', ')."
+        }
+    }
+}
+finally { Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue }
+
 [pscustomobject]@{
     Result = 'OK'
     ParserErrors = @($parserErrors).Count

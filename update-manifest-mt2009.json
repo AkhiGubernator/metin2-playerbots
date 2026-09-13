@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T16:30:00Z",
-  "statusMessage": "2.0.31: misja na konia bojowego wreszcie sie liczy - proba liczyla potwory, ktorych na pustyni nie ma; teraz liczy Skorpiona i Wezowego Lucznika, tak jak misja u Stajennego, i bez limitu czasu. Szkatulki blasku i zwoje blogoslawienstwa trafiaja na stragany (co piaty bot handluje zasobami). Przelacznik M2_PLAYERBOT_WORLD_LAYOUT pojawia sie w .env po aktualizacji. Okno ulepszania moze zostawac otwarte (/refine_keep_open 1, dzieki Pabloo). Launcher sam zwalnia porty zajete przez inna instalacje. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-13T17:00:00Z",
+  "statusMessage": "2.0.32 - WAZNA POPRAWKA: jesli masz 2.0.31, zaktualizuj sie. Tamto wydanie potrafilo zablokowac start serwera komunikatem \"port 13001 zajmuje com.docker.backend\" - launcher nie rozpoznawal zakresu portow i uznawal Twoj wlasny dzialajacy serwer za obcy program. Nie trzeba nic czyscic w Dockerze. Poza tym: przywracanie kopii swiata znow dziala, launcher pokazuje jak dlugo trwa dany etap, ceny ksiag i 78 ulepszaczy wg nowych tabel Iwakury (plus zaokraglanie kwot do ludzkich liczb), polskie znaki w panelu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.31",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.31/metin2-server-update-2.0.31.zip",
-    "sha256": "D0E0D619E359C488B3D737CCB194443DD3AB681F175564383D41205C5E09A85C"
+    "version": "2.0.32",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.32/metin2-server-update-2.0.32.zip",
+    "sha256": "E5E48260D321C1AF3C71715326A539EEDE0474C8DA69BE7A4BE131B8B81E67D8"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

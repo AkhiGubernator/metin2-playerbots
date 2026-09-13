@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T10:58:00Z",
-  "statusMessage": "2.0.28: koniec biegania botow tam i z powrotem przy straganach (po 2.0.26), wybor broni liczony na cios, dzialajacy reset swiata w launcherze (KOPIA / NOWY SWIAT), logi sklepow offline w pakiecie wsparcia. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-13T11:45:00Z",
+  "statusMessage": "2.0.29: zbanowany bot znika i nie wraca (rdzen czyta rejestr banow /block_player, nie status konta - konta botow sa z zalozenia BLOCK). Dla darkroom22: segfault 2.0.14 to wywalka Teleportera naprawiona w 2.0.27. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.28",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.28/metin2-server-update-2.0.28.zip",
-    "sha256": "0D3F38612A4B9B8AC136A1B0A90B3E680C0BC0412DCF50A051ECF840D30D1683"
+    "version": "2.0.29",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.29/metin2-server-update-2.0.29.zip",
+    "sha256": "FF333F799A5C5A63C847570E6FDEF83F64B3EA5250337787DF57BD7AC9719FF2"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

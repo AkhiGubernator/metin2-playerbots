@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T17:45:00Z",
-  "statusMessage": "2.0.33: podaz i popyt na straganach (Iwakura) - przedmiot, ktory schodzi od reki, nastepnym razem idzie drozej o 10-25%, a to co zalega tanieje o tyle samo. Znika tez \"Polowanie\" z paneli: misja polowania nie dziala na tej linii silnika, wiec wiersz \"Polowanie: Brak danych\" i zakladka w rankingach tylko myliły. Jesli przy starcie widzisz \"port 13001 zajmuje com.docker.backend\", to blad z 2.0.31 naprawiony w 2.0.32 - nie trzeba nic czyscic w Dockerze. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-13T16:50:00Z",
+  "statusMessage": "2.0.34: panel GM na F9 i okno administracji botami na F10 (OskarPWA) — wyszukiwanie gracza, podgląd EQ, tworzenie przedmiotów, spawn, stawki i suwaki AI pod jednym oknem; na oknie celu przybywają przyciski Sprawdź i EQ. Okna powstają w osłonie, więc panel nie może zatrzymać wczytywania gry. Stragany nadrabiają stary cennik (Iwakura): stoisko wycenione według starszej tabeli przecenia się co wizytę serwisową, a nie raz na godzinę. Ta aktualizacja zmienia także klienta — kliknij ZAINSTALUJ AKTUALIZACJE, a potem AKTUALIZUJ KLIENTA.",
   "server": {
-    "version": "2.0.33",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.33/metin2-server-update-2.0.33.zip",
-    "sha256": "3B6D79EC10B19AE47F7FB8D3FDA7447F0A6E11703EED714A37C92B2214DA5B04"
+    "version": "2.0.34",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.34/metin2-server-update-2.0.34.zip",
+    "sha256": "8DC76BCF99D993C37D19CB53240D1AB00AB4834D496098AF5ECE55D6A236B05A"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.3",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.3/metin2-client-update-2.0.3.zip",
-    "sha256": "02C1492C48F409CC89F172DCD2DD34680474981B674059CB80E98C72E51C2803"
+    "version": "2.0.4",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.34/metin2-client-update-2.0.4.zip",
+    "sha256": "87A8B85183CF4CE26ADBCA624AE04286B63451618168908A321634BF841A1DC1"
   }
 }

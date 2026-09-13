@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T12:30:00Z",
-  "statusMessage": "2.0.30: Shinsoo i Jinno moga wyjsc z M2 - nowy tryb jednego swiata M2_PLAYERBOT_WORLD_LAYOUT=unified (kazdy bot przechodzi 1->104; domyslnie split, bez zmian). Ceny +7/+8/+9 roznia sie miedzy straganami (+/-20%, Iwakura). Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-13T16:30:00Z",
+  "statusMessage": "2.0.31: misja na konia bojowego wreszcie sie liczy - proba liczyla potwory, ktorych na pustyni nie ma; teraz liczy Skorpiona i Wezowego Lucznika, tak jak misja u Stajennego, i bez limitu czasu. Szkatulki blasku i zwoje blogoslawienstwa trafiaja na stragany (co piaty bot handluje zasobami). Przelacznik M2_PLAYERBOT_WORLD_LAYOUT pojawia sie w .env po aktualizacji. Okno ulepszania moze zostawac otwarte (/refine_keep_open 1, dzieki Pabloo). Launcher sam zwalnia porty zajete przez inna instalacje. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.30",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.30/metin2-server-update-2.0.30.zip",
-    "sha256": "5E1A95402D142635F8DBD7BABFD2733FB412A7AA132449D312184729EC176DA0"
+    "version": "2.0.31",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.31/metin2-server-update-2.0.31.zip",
+    "sha256": "D0E0D619E359C488B3D737CCB194443DD3AB681F175564383D41205C5E09A85C"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

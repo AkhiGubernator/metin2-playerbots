@@ -1424,6 +1424,21 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   tokenizer trap found writing the message: PowerShell accepts the typographic
   double quotes as string delimiters, so a pair of them inside a `"..."` string
   ends it mid-sentence and the whole module stops parsing.
+- **A number in regen.txt is a group id, not a monster vnum.** The desert's
+  regen.txt is 1172 lines and almost every one is type `r`, whose last field is
+  a **group_group** id - and on that map those ids are 401 to 404. Read as
+  monster vnums they name the Black Wind band, which lives on the three second
+  villages (a3/b3/c3) and never sets foot in the desert, so the battle-horse
+  trial counted kills no bot on it could ever make and every one of them read
+  "Zdobywam konia bojowego na pustyni (0/100)" for ever (sosen, 13 September).
+  The same misreading also produced a written claim in the source that the
+  quest's own monsters "are not spawned anywhere here", and that sentence is
+  what stopped anybody checking for months. Resolved through the **global**
+  group_group.txt and group.txt - this map has no per-map group.txt at all -
+  the desert carries exactly what the wiki says: Skorpion Lucznik 2105 at 998
+  spawn points and Wezowy Lucznik 2107 at 760. Resolve the groups before naming
+  a monster, and never grep: `grep -c '\b40[1-4]\b' regen.txt` answered 1168 of
+  1172 lines here, because those digits are coordinates and respawn timers too.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

@@ -415,6 +415,14 @@ namespace
 		// all outrank the role. A course in progress ends here rather than
 		// being suspended: half a pull is not a state worth keeping.
 		if (!ch || ch->IsDead() || !ch->GetParty() || !IsPlayerBotArcher(ch) ||
+				// "In a party, on a big spot" is the whole point of the role, and
+				// there was no map rule at all: an Archer with a party anywhere
+				// outside a safe zone planned a course. Measured on Yongan - a
+				// party of six, five receivers ready, and "no pack seen=0" a
+				// second later, because a first village has no pack to pull.
+				// The frontier maps are where the packs and the party cohort
+				// both are.
+				!IsPlayerBotFrontierMapIndex(ch->GetMapIndex()) ||
 				state.bTacticalRetreat || state.bRecoveringAfterDeath ||
 				state.bVisitingShop || state.bVisitingBiologist ||
 				state.bVisitingStable || state.bMarketTrip || state.bFishingSession ||

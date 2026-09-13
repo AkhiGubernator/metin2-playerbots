@@ -347,3 +347,34 @@ Punkty 5 i 11 zostały domknięte w trzeciej partii nocy — opisy wyżej. Punkt
 (łowienie od 30) miał trzecią bramkę, której nie widziałem za pierwszym razem:
 limit poziomu na samej wędce w `world.item_proto`. Zdjęty dla wszystkich
 dwudziestu wędek, w bazie na żywo i w bootstrapie dla świeżych instalacji.
+
+### 6. Wabienie w drużynie — znaleziona przyczyna, poprawka wąska
+
+Wabienie **działa** — w logu jest pełny przebieg: `planned ... party=6 ready=5`,
+czyli łucznik znalazł drużynę i pięciu odbiorców. Zaraz potem: `no pack ...
+map=1 seen=0` i koniec kursu po 957 ms.
+
+Przyczyna: `HandlePlayerBotLureCourse` nie miał **żadnej bramki mapy**. Wystarczy
+drużyna, łucznik i wyjście ze strefy bezpiecznej — więc kurs planował się w
+Yongan, w pierwszej wiosce, gdzie nie ma watahy do przyciągnięcia. Dołożyłem
+warunek „tylko mapy frontieru", bo o „duży spot" prosiłeś, i zszedłem z
+`PLAYERBOT_LURE_MAX_GROUPS` z 4 na 3, żeby trzymać się „aggro 1–3".
+
+**Czego to nie naprawi i trzeba o tym wiedzieć rano:** na mapach frontieru stoi
+teraz 33 boty i **zero drużyn** — wszystkie 24 drużyny świata siedzą w wioskach
+i na M2, bo populacja jest za słaba na frontier (najwyższy poziom to 36). Po tej
+zmianie wabienie będzie więc milczeć, dopóki boty nie dorosną. To nie jest
+regres: przedtem odpalało tam, gdzie i tak nie miało co złapać.
+
+### 14 (druga połowa). Angielski w panelu klasycznym — zmierzone
+
+Liczba „530 polskich napisów na sztywno" z pierwszej partii nocy jest myląca i
+prostuję ją: z 531 literałów z ogonkami zdecydowana większość to **dane gry**, a
+nie interfejs — „Korzeń Gango", „Ząb Orka", „Pamiątka Po Demonie" — i tych się
+nie tłumaczy.
+
+Realna dziura jest mała i policzalna: **20 napisów w szablonach HTML** (m.in.
+„Mapa na żywo", „Broń 30 Lv", „Pęknięty Kamień", etykiety w JS podpowiedzi) oraz
+**15 komunikatów `flash()`** wpisanych po polsku zamiast przez `t()`. Do tego
+`🗺️ Map {{p.map_index}}` po angielsku w polskim widoku. To robota na jedno
+posiedzenie z listą w ręku, nie przepisywanie panelu.

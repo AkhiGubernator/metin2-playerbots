@@ -868,7 +868,9 @@ namespace
 	// Groups and monsters per course: what a first course asks for, and the
 	// ceiling a party earns by finishing courses without losing anybody.
 	const int PLAYERBOT_LURE_FIRST_GROUPS = 2;
-	const int PLAYERBOT_LURE_MAX_GROUPS = 4;
+	// Three, not four: the operator's rule for a pull is "aggro 1-3 party bots",
+	// and a fourth group is a pack the waiting members cannot share out.
+	const int PLAYERBOT_LURE_MAX_GROUPS = 3;
 	const int PLAYERBOT_LURE_FIRST_BUDGET = 7;
 	const int PLAYERBOT_LURE_MAX_BUDGET = 14;
 	// Courses in a row without a death or a failed handover before the plan

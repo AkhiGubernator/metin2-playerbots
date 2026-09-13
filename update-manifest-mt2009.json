@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T18:40:00Z",
-  "statusMessage": "2.0.35: konie w Shinsoo i Jinno — każde królestwo ma własny Loch Małp, a kod znał tylko mapę Chunjo, więc te dwa królestwa nie zdobywały medali w ogóle (zmierzone: 500 postaci i zero koni w każdym z nich). Do tego własne wejścia i bramy na Dolinę Orków, Pustynię i Górę Sohan — do tej pory wszystkie boty, niezależnie od królestwa, wchodziły wejściem żółtych i wracały ich bramą przez całą mapę. „Szybkość biegu” w panelu znów działa: brakowało wiązania silnika, na którym quest wywracał się w połowie i zostawiał wiersz kolejki ze swoim stemplem. Stragany offline znów zapisują sprzedaż do historii sprzętu i uczą się popytu, a rdzeń mówi teraz, która reguła pomija broń na 30 poziom. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-13T19:25:00Z",
+  "statusMessage": "2.0.36: stragany dostają cennik Iwakury. Broń i zbroja powyżej +6 miały do tej pory trzy wymyślone ceny, więc Zatruty Miecz +9 i zwykły Miecz +9 stały za te same 900 000; teraz każda ze 147 rodzin ma własną cenę na każdym plusie, a kamienie duszy w sockecie ją podnoszą. Do tego marmury po potworze, 44 Opaski Zapomnienia po umiejętności, kamienie duszy po rodzaju i stopniu, zioła, Szkatuła i Medal Konny. Osobno: **naprawiona aktualizacja z paczki na Linuksie i VPS** — paczka nie kładła pliku VERSION w korzeniu, więc serwer po aktualizacji podawał starą wersję i instalował to samo wydanie w kółko (Mkls). Po wgraniu 2.0.36 numer wreszcie się przesunie. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.35",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.35/metin2-server-update-2.0.35.zip",
-    "sha256": "7E6CC83AC86D18B81C8BA38EFC73870AE60D98F05E2EE832262C88FAB1CD148D"
+    "version": "2.0.36",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.36/metin2-server-update-2.0.36.zip",
+    "sha256": "4AF5060CD6A03F865797806C8BAD2F302422956C1B9A8762D21D969F12F6E8CD"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

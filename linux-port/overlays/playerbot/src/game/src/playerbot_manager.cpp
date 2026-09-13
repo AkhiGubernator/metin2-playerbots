@@ -1825,7 +1825,7 @@ void CPlayerBotManager::Update()
 					else if (IsPlayerBotMonkeyMap(currentMap))
 						GetPlayerBotMonkeyArrival(currentMap, fallbackX, fallbackY);
 					else
-						GetPlayerBotFrontierArrival(currentMap, fallbackX, fallbackY);
+						GetPlayerBotFrontierArrivalFor(ch, currentMap, fallbackX, fallbackY);
 					foundSafe = navigation.FindNearestWalkableWorld(
 							fallbackX, fallbackY, 30, safe, ch->GetPlayerID());
 				}

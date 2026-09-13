@@ -1396,7 +1396,17 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `PLAYERBOT_OFFLINE` lines while its own census counted 284 offline shops;
   `Metin2Launcher.psm1` names every tag it keeps. A new `PLAYERBOT_<AREA>:`
   tag has to be added there or no bundle will ever show it (OFFLINE, MARKET
-  and BAG were added in 2.0.28).
+  and BAG were added in 2.0.28). It sprang again on 13 September, and worse:
+  **`PLAYERBOT_AI` was never on the list at all**, and that is the tag the
+  refine pass logs under - every attempt writes `refine SUCCESS`,
+  `FAILED_BURNED`, `FAILED_DOWNGRADED` or `SKIPPED` (playerbot_economy.h). So
+  a bundle carrying 1165 `blacksmith visit` lines and not one refine line read
+  as "the bots never upgrade anything", which is exactly what Iwakura reported
+  from the rankings - and the log could neither confirm nor deny it. Skills,
+  death, parties, loot and combat all log under the same tag, so the whole
+  core of a bot's behaviour was invisible to every support bundle ever made.
+  Before concluding that a subsystem does nothing, check that its tag is in
+  that grep list.
 - **`compose stop` leaves the containers, and a stopped container holds its
   volume.** `Reset-M2WorldToFreshInstall` ran `docker volume rm` on a stopped
   stack and got "volume is in use" four times for one player - the launcher

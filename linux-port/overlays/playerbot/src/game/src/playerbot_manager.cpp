@@ -83,6 +83,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_gear.h"
 #include "playerbot_consumables.h"
 #include "playerbot_activities.h"
+#include "playerbot_mining.h"
 #include "playerbot_missions.h"
 #include "playerbot_skills.h"
 #include "playerbot_combat.h"
@@ -512,6 +513,115 @@ namespace
 		sys_log(0, "PLAYERBOT_PVP: challenged another bot pid=%u name=%s target_pid=%u target=%s",
 				ch->GetPlayerID(), ch->GetName(), finder.m_pFound->GetPlayerID(),
 				finder.m_pFound->GetName());
+	}
+
+	// Two kingdoms meeting on shared ground.
+	//
+	// Off unless the operator says otherwise - KINGDOMPVP in the weights file
+	// is zero by default. This changes how the world behaves towards itself
+	// rather than how one bot spends its time, and a world that starts fighting
+	// itself because a build shipped is not a world anybody asked for.
+	//
+	// Built on the duel the bots already fight rather than on the target
+	// collector, deliberately. Admitting player characters to that collector
+	// means threading them through the combat value policy, the held-target
+	// rule, the multi-pull and the party focus - every one of which was written
+	// about monsters - for a feature that ships switched off. A duel is bounded
+	// by construction: it ends when somebody falls, the health-potion pass
+	// already refuses to drink through one, and neither bot can be walked
+	// across the map by it. That is "no loops" and "the one that loses gives up
+	// and goes back to work" without a leash of its own.
+	void ManagePlayerBotKingdomHostility(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotKingdomNext;
+		// One comparison for the whole population while the switch is off.
+		if (s_iPlayerBotKingdomPvpPercent <= 0)
+			return;
+		if (!ch || ch->IsDead() || ch->GetSectree() == NULL)
+			return;
+		// A kingdom's own maps are where its bots shop and train; the frontier
+		// is the ground the three share, and the only place this belongs.
+		if (!IsPlayerBotFrontierMapIndex(ch->GetMapIndex()))
+			return;
+		if (IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()))
+			return;
+		if (playerbot_pvp::IsInDuel(ch->GetPlayerID(), dwNow))
+			return;
+		// Who is aggressive is decided by pid, not rolled: a kingdom then has a
+		// character rather than a mood, the same bots pick the fights after
+		// every restart, and the rest are left alone to hunt - which is what
+		// "some aggressive, some neutral" has to mean to be visible at all.
+		if ((int)(PlayerBotNavHash(ch->GetPlayerID() ^ 0x4B494E47U) % 100U) >=
+				s_iPlayerBotKingdomPvpPercent)
+			return;
+		// Anything the bot is actually doing outranks picking a fight.
+		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
+				state.bMarketTrip || state.bFishingSession || state.bTacticalRetreat ||
+				state.bRecoveringAfterDeath || ch->GetMyShop() ||
+				IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow))
+			return;
+		if (ch->GetMaxHP() <= 0 ||
+				(ch->GetHP() * 100) / ch->GetMaxHP() < PLAYERBOT_PVP_MIN_HP_PERCENT)
+			return;
+		std::map<DWORD, DWORD>::const_iterator nextRoll =
+				s_mapPlayerBotKingdomNext.find(ch->GetPlayerID());
+		if (nextRoll != s_mapPlayerBotKingdomNext.end() && dwNow < nextRoll->second)
+			return;
+		s_mapPlayerBotKingdomNext[ch->GetPlayerID()] =
+				dwNow + PLAYERBOT_KINGDOM_PVP_INTERVAL + number(0, 20000);
+
+		struct FFindEnemyKingdomBot
+		{
+			FFindEnemyKingdomBot(LPCHARACTER me, DWORD now) :
+				m_me(me), m_now(now), m_pFound(NULL) {}
+			bool operator()(LPENTITY ent)
+			{
+				if (m_pFound || !ent || !ent->IsType(ENTITY_CHARACTER))
+					return false;
+				LPCHARACTER candidate = static_cast<LPCHARACTER>(ent);
+				if (candidate == m_me || !candidate->IsPC() || candidate->IsDead())
+					return false;
+				// Never a person. A player who wants to fight a bot challenges
+				// one and is answered; this is the world's own quarrel.
+				if (!candidate->GetDesc() || !candidate->GetDesc()->IsBot())
+					return false;
+				if (candidate->GetEmpire() == m_me->GetEmpire())
+					return false;
+				if (candidate->GetParty() && candidate->GetParty() == m_me->GetParty())
+					return false;
+				if (playerbot_pvp::IsInDuel(candidate->GetPlayerID(), m_now))
+					return false;
+				if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) >
+						PLAYERBOT_KINGDOM_PVP_LEVEL_DELTA)
+					return false;
+				// A bot on its knees is not a fight. This is also what keeps the
+				// loser out of a second quarrel while it walks away from the
+				// first one: it is under the health floor until it has rested.
+				if (candidate->GetMaxHP() <= 0 ||
+						(candidate->GetHP() * 100) / candidate->GetMaxHP() <
+							PLAYERBOT_PVP_MIN_HP_PERCENT)
+					return false;
+				if (DISTANCE_APPROX(m_me->GetX() - candidate->GetX(),
+						m_me->GetY() - candidate->GetY()) > PLAYERBOT_KINGDOM_PVP_RANGE)
+					return false;
+				m_pFound = candidate;
+				return false;
+			}
+			LPCHARACTER m_me;
+			DWORD m_now;
+			LPCHARACTER m_pFound;
+		};
+
+		FFindEnemyKingdomBot finder(ch, dwNow);
+		ch->GetSectree()->ForEachAround(finder);
+		if (!finder.m_pFound)
+			return;
+		CPVPManager::instance().Insert(ch, finder.m_pFound);
+		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
+		sys_log(0, "PLAYERBOT_PVP: kingdom quarrel pid=%u name=%s empire=%d target_pid=%u target=%s target_empire=%d map=%ld",
+				ch->GetPlayerID(), ch->GetName(), (int)ch->GetEmpire(),
+				finder.m_pFound->GetPlayerID(), finder.m_pFound->GetName(),
+				(int)finder.m_pFound->GetEmpire(), ch->GetMapIndex());
 	}
 
 	// Walking with the player who invited you.
@@ -1204,6 +1314,7 @@ namespace
 		// A bot resting in town stands still on purpose, exactly like an angler
 		// waiting for a bite - stillness is the activity, not a symptom.
 		if (moved || foughtRecently || castRecently || state.bFishingSession ||
+				IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow) ||
 				state.dwTownLingerUntil != 0)
 		{
 			state.dwLastMeaningfulActivityTime = dwNow;
@@ -1979,6 +2090,11 @@ void CPlayerBotManager::Update()
 	RefreshPlayerBotWeights(dwNow);
 	RefreshPlayerBotItemPolicy(dwNow);
 	ManagePlayerBotNight(dwNow);
+	// The ore veins, once a minute for the whole world. A vein deletes itself
+	// after 7-15 minutes and nothing in this world's regen files puts one back -
+	// there are no vein spawns on any of its maps at all - so the sites are
+	// ours to keep standing.
+	MaintainPlayerBotOreVeins(dwNow);
 
 	static DWORD s_dwTick = 0;
 	++s_dwTick;
@@ -2250,7 +2366,15 @@ void CPlayerBotManager::Update()
 		// behind an open counter (the table points at cells), not during a
 		// town visit (the blacksmith phase moves gear itself), not with a rod
 		// in the hand, not at the stable.
+		// ...and not with a pickaxe in it either. The first live run of the
+		// mining pass logged one bot re-equipping its pickaxe every thirty-two
+		// seconds - exactly the swing cadence - because this pass ran above it
+		// and swapped a digging tool out for a sword between two swings. The
+		// engine's mining_event asks GetWear(WEAR_WEAPON) for an ITEM_PICK on
+		// the tick it fires, so every swing was refused and no ore ever
+		// dropped: the same exemption a rod has, for the same reason.
 		if (!ch->GetMyShop() && !state.bVisitingShop && !state.bFishingSession &&
+				!IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow) &&
 				!state.bVisitingStable)
 		{
 			if (ManagePlayerBotEquipment(ch, state, dwNow))
@@ -2288,6 +2412,7 @@ void CPlayerBotManager::Update()
 		// answers it.
 		AcceptPlayerBotPvpChallenge(ch, state, dwNow);
 		ManagePlayerBotPvpChallenge(ch, state, dwNow);
+		ManagePlayerBotKingdomHostility(ch, state, dwNow);
 		ManagePlayerBotParty(ch, state, dwNow);
 		// Keeping up with the player comes before the bot's own plans for the
 		// tick, or the wander pass walks it out of the party it just joined.
@@ -2371,6 +2496,13 @@ void CPlayerBotManager::Update()
 		// pass below must not run while a session is live.
 		if (!state.bMultiPullActive && !bFightingMetin &&
 				ManagePlayerBotFishing(ch, state, dwNow))
+			continue;
+
+		// And a smaller handful digs at the ore veins on the three frontier
+		// maps. Owns the tick for the same reason fishing does: the pickaxe
+		// sits in the weapon slot, so no combat or gear pass may run under it.
+		if (!state.bMultiPullActive && !bFightingMetin &&
+				ManagePlayerBotMining(ch, state, dwNow))
 			continue;
 
 		// Spending time in town once the errand that brought the bot here is

@@ -19,8 +19,9 @@ every version here.
 
 ## 2.0.39 — 2026-09-14
 
-Serwer. Pojedynki, dwie nowe mapy do polowania, Wieża Demonów, koń militarny i
-ostatni etap Biologa. Klient bez zmian (zostaje 2.0.5).
+Serwer. Pojedynki, dwie nowe mapy do polowania, Wieża Demonów, koń militarny,
+ostatni etap Biologa, górnictwo z wytapianiem ebonitu oraz wrogość między
+królestwami do włączenia. Klient bez zmian (zostaje 2.0.5).
 
 ### Pojedynki
 
@@ -36,6 +37,63 @@ poziomów i przy pełnym życiu obu stron.
 **W pojedynku nie piją potek.** Silnikowego `IsFighting` nie dało się do tego
 użyć, bo na jednej linii siedzi pod `ENABLE_NEWSTUFF`, a na drugiej nie istnieje
 w ogóle — więc bot pamięta swój pojedynek sam.
+
+### Kilof, żyły rud i wytapianie ebonitu
+
+Kopanie siedzi w silniku od zawsze — `mining.cpp` ma tabelę rud, szanse i event
+uderzenia — ale **ten świat nie stawiał ani jednej żyły**. Sprawdziłem wszystkie
+109 map: zero żył rudy (20047–20059) i zero alchemików w jakimkolwiek pliku
+odrodzeń. Brakowało więc nie AI, tylko świata.
+
+Dwadzieścia żył stoi teraz na trzech mapach frontieru — Dolina Orków, pustynia i
+Góra Sohan — a każda na rzeczywistym punkcie odrodzenia danej mapy, nie na
+zgadniętej współrzędnej. Żyła kasuje się sama po 7–15 minutach (tak działa
+silnik i tak ma być), więc rdzeń dostawia brakujące raz na minutę.
+
+Bot od 30 poziomu kupuje kilof za 80 000, zakłada go w slot broni, dochodzi do
+żyły i tłucze. Sklep `pick_shop` stoi na trzech mapach, na które żaden bot nie
+chodzi, więc kilof powstaje za cenę sklepową — tak samo jak karta wędkarska.
+Ruda spada na ziemię i jest podnoszona zwykłą drogą. Sto sztuk rudy to jedno
+wytopienie: **Ruda Ebonitu → Ebonit**, i analogicznie dla wszystkich trzynastu
+rud. Alchemika w tym świecie nie ma nigdzie, więc wytapianie liczy się tam,
+gdzie bot stoi.
+
+Ruda surowa i wytopiona nigdy nie idą do handlarza — trafiają na stragany, bo o
+handel rudą prosiłeś.
+
+### Wrogość między królestwami (domyślnie wyłączona)
+
+Nowy suwak w panelu: **Wrogość między królestwami**, na starcie 0% — czyli świat
+zachowuje się dokładnie tak jak dotąd, dopóki sam go nie podniesiesz.
+
+Powyżej zera podany procent botów wyzywa boty innych królestw spotkane na
+**wspólnym terenie**: w Dolinie, na pustyni, na Sohanie, w lochach. To, które
+boty są agresywne, jest przypisane na stałe do postaci, a nie losowane co chwilę
+— więc zaczepiają wciąż te same, a reszta spokojnie poluje. Nigdy w wiosce,
+nigdy na graczu i nigdy na bocie rannym albo już walczącym.
+
+Oparłem to na pojedynku, a nie na wpuszczeniu postaci graczy do kolektora celów.
+Pojedynek kończy się sam, gdy ktoś padnie, nie da się nim przeciągnąć bota przez
+pół mapy, a reguła „w pojedynku nie piją potek" już działa — to odpowiedź na
+„bez pętli" i „ten, który ginie, odpuszcza i bierze inny spot".
+
+### Łowienie od 30 poziomu — domknięte
+
+W tym samym wydaniu zjechały wcześniej dwie bramki z pięćdziesiątki na
+trzydziestkę: silnikowa `CHARACTER::fishing()` i bramka AI. Trzeciej nie było
+widać — **sama wędka ma limit poziomu 50**, więc bot na trzydziestce i tak nie
+mógł jej założyć ani zostać wędkarzem. Limit zszedł na 30 dla wszystkich
+dwudziestu wędek. Poprawka siedzi w bootstrapie bazy, więc obejmuje i ten świat,
+i świeże instalacje.
+
+Gdy ryby wreszcie zaczęły brać, wyszła druga rzecz, która spała od zawsze:
+**każdy połów szedł do kosza**. Tabela `log.fish_log` miała osiem kolumn wzięte z
+drugiego silnika, a ten wpisuje sześć — więc każda złowiona ryba kończyła się
+błędem „Column count doesn't match value count" w `syserr` (364 linie w pierwszych
+dziesięciu minutach) i nie zapisywała się nigdzie. Nikt tego nie widział, bo na
+tej linii nikt nigdy nie łowił. Tabela ma teraz kształt, który ten silnik
+faktycznie zapisuje; stara jest przebudowywana przy starcie, ale tylko wtedy, gdy
+ma ten zły kształt — historii, jeśli kiedyś powstanie, nic nie rusza.
 
 ### Las, Czerwony Las i Wieża Demonów
 

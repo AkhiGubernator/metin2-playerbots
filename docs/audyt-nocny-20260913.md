@@ -257,10 +257,51 @@ Etap 40 (Księga Klątw) wszedł w 2.0.37 i działa. Etap 50 (Pamiątka Po Demon
 jest w tabeli, ale celowo pomijany, bo jego potwory stoją wyłącznie w Wieży
 Demonów — patrz punkt 12. Dalszych etapów (Matowe Lody itd.) nie sprawdzałem.
 
-### 5. Kilof, kopanie rud, przetapianie
+### 5. Kilof, kopanie rud, przetapianie — ZROBIONE (trzecia partia nocy)
 
-Nie ruszone. To cały nowy podsystem (kupno kilofa, żyły rud na mapach, tłuczenie,
-handel, przetapianie na ebonit) — najdroższa pozycja z całej listy.
+Pierwsza diagnoza brzmiała „najdroższa pozycja z listy" i była trafna, ale z
+innego powodu, niż myślałem. Cała mechanika jest w silniku od r40250:
+`mining.cpp` ma tabelę osiemnastu rud, `CHARACTER::mining(żyła)` jest punktem
+wejścia, kilof musi siedzieć w slocie broni, a uderzenie to event na 2×(5..15)
+sekund z szansą 20% plus bonus za klasę kilofa.
+
+Czego nie ma: **tego świata**. Przeskanowałem wszystkie 109 map — zero spawnów
+żył (20047–20059, 30301–30305) i zero alchemików w `regen.txt`, `npc.txt` i
+`boss.txt`. AI prowadzące boty do rudy prowadziłoby je donikąd.
+
+Dlatego żyły stawia i utrzymuje sam rdzeń playerbotów (`playerbot_mining.h`), a
+nie pliki świata: `src/serverfiles/` jest w `.gitignore`, więc zmiany map i tak
+nie pojechałyby do nikogo, a `playerbot_*` jedzie w każdej paczce. Dwadzieścia
+żył na mapach 61/63/64, każda na współrzędnej istniejącego huba łowieckiego —
+bo `SpawnMob` odmawia postawienia żyły na `ATTR_BLOCK`, a hub to punkt, na
+którym świat sam odradza potwory.
+
+Dowód na żywo, pierwsze minuty po wdrożeniu:
+`veins standing=0 spawned=20 refused=0 sites=20` — **wszystkie dwadzieścia
+stanęły, żadna nie odrzucona** — a bot `ToyotaSupra` (32 lvl, Dolina) kupił
+kilof za 80 000, zaczął sesję i go założył.
+
+Pierwszy przebieg ujawnił też błąd, którego nie dało się przewidzieć z kodu:
+`pickaxe equipped` wracało dla tego samego bota **co równo 32 sekundy**, czyli
+co moje uderzenie. Przebieg ekwipunku biegnie w grupie upkeep *nad* górnictwem i
+zdejmował kilof jako „nie-broń", a `mining_event` sprawdza slot broni w chwili,
+gdy odpala — więc każde uderzenie było odrzucane i ruda nie padała ani razu.
+Wędka ma w tym miejscu wyjątek `!state.bFishingSession`; kilof dostał swój.
+
+Po poprawce, na żywo: **15 sesji kopania, zero odmów, 39 sztuk rudy w torbach i
+pierwsze wytopienie** (Ruda Miedzi → Miedź, opłata 5000) — przed poprawką ruda
+stała na zerze przy dwóch pomiarach. Tick przy 350 botach: 1,8–2,2 s z 60,
+`watchdog=0`, czyli oba nowe podsystemy nie kosztowały nic mierzalnego.
+
+### 18. Łowienie od 30 — i błąd, który odsłoniło
+
+Obniżenie limitu wędki obudziło drugą rzecz, śpiącą od zawsze: `log.fish_log`
+miała osiem kolumn z r40250, a mt2009 wpisuje sześć
+(`FishLog(playerId, itemVnum, count, rodLevel, baitVnum)`). Każdy połów kończył
+się `errno 1136` — 364 linie w dziesięć minut — i nie zapisywał się nigdzie.
+Winny był `logschemify.py`, który trzymał `fish_log` na liście „bierz z
+r40250". Tabela ma teraz własną definicję, a `apply.sh` przebudowuje starą
+tylko wtedy, gdy rozpozna w niej kolumnę, której ten silnik nigdy nie pisze.
 
 ### 8. Bossowie na wszystkich mapach
 
@@ -269,18 +310,40 @@ kilka innych) plus `IsPlayerBotBossAlive` i wołanie gildii. Plik `boss.txt` ma
 **20 map** — w tym Las i Czerwony Las. Rozszerzenie to tabela bossów per mapa
 plus reguła „idziemy gildią".
 
-### 11. Wrogość między królestwami
+### 11. Wrogość między królestwami — ZROBIONE, za przełącznikiem
 
-W `playerbot_targeting.h` i w polityce wartości walki **nie ma ani jednego
-odwołania do królestwa** — boty nigdy nie atakują botów z innego królestwa.
-Świadomie tego nie dodałem: to nowa ścieżka walki dla 2500 botów, której nie
-umiem sprawdzić na żywo w nocy, a źle wyważona zamieniłaby świat w rzeźnię.
-Wymaga: udziału „agresywnych" po pid, ograniczenia do map frontieru, smyczy i
-reguły „po śmierci odpuszcza i szuka innego spota".
+W `playerbot_targeting.h` i w polityce wartości walki nie było **ani jednego**
+odwołania do królestwa. Rozważałem rozluźnienie filtra kolektora celów, żeby
+wpuszczał postacie z innych królestw — i odrzuciłem to świadomie. Ten filtr
+występuje w trzech miejscach, a za nim stoją polityka wartości walki, reguła
+trzymanego celu, multi-pull i wspólny cel drużyny: wszystkie napisane o
+potworach. Przepuszczanie przez nie postaci graczy to duża zmiana w najgorętszej
+ścieżce, dla funkcji, która i tak ma być domyślnie wyłączona.
+
+Zamiast tego oparłem rzecz na pojedynku, który boty już umieją toczyć (z tej
+samej nocy): agresywny bot wyzywa napotkanego bota innego królestwa, a dalej
+robotę robi silnik. Pojedynek kończy się sam, gdy ktoś padnie — to „bez pętli";
+przegrany schodzi poniżej progu życia i przestaje być celem, dopóki nie odpocznie
+— to „ginący odpuszcza i bierze inny spot".
+
+Ograniczenia: tylko mapy frontieru, nigdy w wiosce, nigdy na graczu, różnica
+poziomów do ośmiu, jedno losowanie na dwie minuty. Udział agresywnych jest
+przypisany po pid, nie losowany — żeby królestwo miało charakter, a nie humor.
+
+Suwak `KINGDOMPVP` w panelu, **0% domyślnie**, czyli świat bez zmian dopóki
+Tieru sam go nie podniesie. Musiał trafić też do zapisu pliku wag w panelu: ten
+przepisuje plik w całości, więc klucz, którego panel nie zna, zostałby skasowany
+przy pierwszym zapisie strony.
 
 ---
 
 ## Czego nie dotknąłem w ogóle
 
-Punkt 1 w części „bot-lider zaprasza kolejne boty", punkt 3, 5, 8, 11, 12 oraz
-kompletność angielskiego w panelu klasycznym (punkt 14, druga połowa).
+Punkt 1 w części „bot-lider zaprasza kolejne boty", punkt 8 (bossowie na
+wszystkich mapach — zmierzony, nienapisany) oraz kompletność angielskiego w
+panelu klasycznym (punkt 14, druga połowa).
+
+Punkty 5 i 11 zostały domknięte w trzeciej partii nocy — opisy wyżej. Punkt 18
+(łowienie od 30) miał trzecią bramkę, której nie widziałem za pierwszym razem:
+limit poziomu na samej wędce w `world.item_proto`. Zdjęty dla wszystkich
+dwudziestu wędek, w bazie na żywo i w bootstrapie dla świeżych instalacji.

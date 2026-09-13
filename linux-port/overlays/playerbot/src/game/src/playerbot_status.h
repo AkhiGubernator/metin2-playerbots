@@ -124,6 +124,7 @@ namespace
 			case BOT_ACTION_MARKET: return "jestem na zakupach";
 			case BOT_ACTION_LURE: return "podciagam moby dla PT";
 			case BOT_ACTION_TOWN_REST: return "odpoczywam w miescie";
+			case BOT_ACTION_MINING: return "kopie rude";
 			default: return "mysle";
 		}
 	}
@@ -400,6 +401,16 @@ namespace
 					snprintf(status, statusSize, "%sSzukam wedki", prefix);
 				else
 					snprintf(status, statusSize, "%sZakladam przynete na wedke", prefix);
+				break;
+			case BOT_ACTION_MINING:
+				// Walking to a vein and digging at one are different things to
+				// watch, and "Kopie rude" over a bot crossing the valley is the
+				// shape of mistake the Monkey Dungeon exit line already made.
+				if (ch->GetWear(WEAR_WEAPON) &&
+						ch->GetWear(WEAR_WEAPON)->GetType() == ITEM_PICK)
+					snprintf(status, statusSize, "%sKopie rude", prefix);
+				else
+					snprintf(status, statusSize, "%sIde do zyly rudy", prefix);
 				break;
 			case BOT_ACTION_TOWN_REST:
 				// The linger after a town errand. It reads as browsing only

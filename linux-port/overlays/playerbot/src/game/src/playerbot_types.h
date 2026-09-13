@@ -2493,6 +2493,47 @@ namespace
 	const BYTE PLAYERBOT_FISHING_MIN_LEVEL = 30;
 	const DWORD PLAYERBOT_FISHING_BAIT_VNUM = 27801;  // Robak
 	const DWORD PLAYERBOT_SHELLFISH_VNUM = 27987;     // Malz
+
+	// Mining. The engine has carried the whole mechanism since r40250 and this
+	// world spawns none of it - see playerbot_mining.h, which places the veins
+	// and keeps them standing.
+	//
+	// Kilof+0 (world.item_proto 29101) carries LIMIT_LEVEL 30 and shop_buy_price
+	// 80000. Deokbae's pick_shop stands on three maps no bot is ever sent to, so
+	// the pickaxe is created for the shop's own price the way the fishing pass
+	// and the Forgetting Scroll are.
+	const DWORD PLAYERBOT_PICKAXE_VNUM = 29101;
+	const DWORD PLAYERBOT_PICKAXE_PRICE = 80000;
+	const BYTE PLAYERBOT_MINING_MIN_LEVEL = 30;
+	// A small share on purpose. A vein pays one roll every half minute, so a
+	// crowd at one is a crowd doing nothing; the collector personality, which
+	// already keeps things rather than selling them, takes the larger share.
+	const int PLAYERBOT_MINING_PERCENT = 6;
+	const int PLAYERBOT_MINING_COLLECTOR_PERCENT = 22;
+	// A vein deletes itself after 7-15 minutes (kill_ore_load_event), so the
+	// sites are swept for gaps once a minute.
+	const DWORD PLAYERBOT_ORE_VEIN_CHECK_INTERVAL = 60000;
+	const int PLAYERBOT_MINING_ARRIVE = 300;
+	// The engine draws 5..15 swings and fires the event 2*count seconds later,
+	// so the longest swing is thirty seconds; asking again before it resolves
+	// would cancel it.
+	const DWORD PLAYERBOT_MINING_SWING_WAIT = 32000;
+	const DWORD PLAYERBOT_MINING_SWING_RETRY = 8000;
+	const DWORD PLAYERBOT_MINING_SESSION_MIN = 360000;
+	const DWORD PLAYERBOT_MINING_SESSION_MAX = 720000;
+	const DWORD PLAYERBOT_MINING_REST_MIN = 900000;
+	const DWORD PLAYERBOT_MINING_REST_MAX = 2700000;
+	const DWORD PLAYERBOT_MINING_NO_PICK_RETRY = 1800000;
+	// mining::ORE_COUNT_FOR_REFINE. A hundred raw ore is one smelted piece.
+	const int PLAYERBOT_ORE_SMELT_COUNT = 100;
+	const DWORD PLAYERBOT_ORE_SMELT_FEE = 5000;
+
+	// Two kingdoms meeting on shared ground. Only ever on a frontier map, only
+	// between bots, and only while the operator's KINGDOMPVP switch is above
+	// zero - see playerbot_config.h, where it defaults to off.
+	const DWORD PLAYERBOT_KINGDOM_PVP_INTERVAL = 120000;
+	const int PLAYERBOT_KINGDOM_PVP_RANGE = 1500;
+	const int PLAYERBOT_KINGDOM_PVP_LEVEL_DELTA = 8;
 	// What a shell can hold: Biala / Niebieska / Krwawa Perla.
 	const DWORD PLAYERBOT_PEARL_FIRST_VNUM = 27992;
 	const DWORD PLAYERBOT_PEARL_LAST_VNUM = 27994;
@@ -3594,7 +3635,10 @@ namespace
 		// BOT_ACTION_RECOVER, which is a bot getting its health back, and from
 		// BOT_ACTION_STALL, which is a bot behind a counter. Appended, never
 		// inserted - the id goes into the status file the panel reads.
-		BOT_ACTION_TOWN_REST
+		BOT_ACTION_TOWN_REST,
+		// Digging at an ore vein. Appended for the same reason as the one above:
+		// both panels read these ids out of playerbot_status.tsv by position.
+		BOT_ACTION_MINING
 	};
 
 	// Where an Archer is in its course. WAIT_READY is the absence of a session

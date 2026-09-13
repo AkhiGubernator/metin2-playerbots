@@ -306,13 +306,19 @@ BOT_ACTION_LABELS = {
         4: "Regeneruje się", 5: "Wybiera profesję", 6: "Handluje", 7: "Ulepsza EQ",
         8: "Czyta KU", 9: "Wkłada KD", 10: "Organizuje PT", 11: "Robi Biologa",
         12: "Odwiedza Stajennego", 13: "Prowadzi stragan",
+        # 14-18 were missing here while playerbot_types.h had carried them for
+        # months: a bot whose status text was empty fell back to "Planuje
+        # nastepny ruch" whatever it was really doing.
+        14: "Łowi ryby", 15: "Przegląda stragany", 16: "Wabi potwory",
+        17: "Odpoczywa w mieście", 18: "Kopie rudę",
     },
     "en": {
         0: "Planning next move", 1: "Travelling", 2: "Fighting", 3: "Picking up loot",
         4: "Recovering", 5: "Choosing profession", 6: "Trading", 7: "Refining gear",
         8: "Reading a skill book", 9: "Socketing a spirit stone", 10: "Organising a party",
         11: "Doing Biologist mission", 12: "Visiting the Stable Boy",
-        13: "Keeping a stall",
+        13: "Keeping a stall", 14: "Fishing", 15: "Browsing stalls",
+        16: "Luring monsters", 17: "Resting in town", 18: "Mining ore",
     },
 }
 
@@ -1005,6 +1011,8 @@ def read_ai_weights():
     # Percent of bots that rest on the market ring after a town errand; 100 is
     # the author's town, 0 is "every bot hunting".
     vals["REST"] = 100
+    # Percent of bots that pick fights with bots of another kingdom; 0 is off.
+    vals["KINGDOMPVP"] = 0
     # The chest event's two figures. None until the file says: the panel does
     # not know what CONFIG holds, and must not write a guess over it.
     vals["CHEST"] = None
@@ -1037,6 +1045,12 @@ def read_ai_weights():
                 if name == "REST":
                     try:
                         vals["REST"] = max(0, min(100, int(parts[1])))
+                    except ValueError:
+                        pass
+                    continue
+                if name == "KINGDOMPVP":
+                    try:
+                        vals["KINGDOMPVP"] = max(0, min(100, int(parts[1])))
                     except ValueError:
                         pass
                     continue
@@ -1082,6 +1096,9 @@ def write_ai_weights(vals):
     body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
     # Percent of bots that rest in town after an errand; 0 means nobody does.
     body.append("REST\t%d" % max(0, min(100, int(vals.get("REST", 100)))))
+    # Percent of bots hostile to the other kingdoms; 0 means the world is at
+    # peace with itself, which is the default the core also starts from.
+    body.append("KINGDOMPVP\t%d" % max(0, min(100, int(vals.get("KINGDOMPVP", 0)))))
     # The Moonlight chest: thousandths per kill and per Metin. Written only once
     # the operator has set them, so an untouched install keeps its CONFIG.
     for key in ("CHEST", "CHEST_STONE"):
@@ -2994,6 +3011,12 @@ T.update({
                   "tr":"İlk köydeki işlerini bitirdikten sonra yaklaşık üç dakika pazar halkasında kalıp tezgâhlar arasında dolaşan botların payı. 0 - kimse dinlenmez: botlar sürekli avlanır, şehre yalnızca iş için gelir. Kaydırıcı ne derse desin 18. seviyenin altındaki bot asla dinlenmez, açık tezgâh yokken kimse tezgâhlara bakmaz."},
  "ai_rest_off":  {"en":"nobody rests","pl":"nikt nie odpoczywa","de":"niemand ruht","tr":"kimse dinlenmez"},
  "ai_rest_all":  {"en":"every bot","pl":"każdy bot","de":"jeder Bot","tr":"her bot"},
+ "ai_kpvp":      {"en":"Hostility between kingdoms","pl":"Wrogość między królestwami","de":"Feindschaft zwischen Königreichen","tr":"Krallıklar arası düşmanlık"},
+ "ai_kpvp_help": {"en":"The share of bots that will start a duel with a bot of another kingdom when they meet on shared ground - Orc Valley, the desert, Mount Sohan, the dungeons. Never in a village, never against a player, and never against a bot that is hurt or already fighting one. Which bots are the aggressive ones is fixed per character, so the same ones quarrel after every restart. Off by default.",
+                 "pl":"Udział botów, które zaczepią bota z innego królestwa, gdy spotkają go na wspólnym terenie - w Dolinie Orków, na pustyni, na Górze Sohan, w lochach. Nigdy w wiosce, nigdy na graczu i nigdy na bocie rannym albo już walczącym. To, które boty są agresywne, jest przypisane na stałe do postaci, więc po każdym restarcie zaczepiają te same. Domyślnie wyłączone.",
+                 "de":"Anteil der Bots, die einen Bot eines anderen Königreichs angreifen.","tr":"Başka krallıktan bir botla düello başlatacak botların oranı."},
+ "ai_kpvp_off":  {"en":"peace","pl":"pokój","de":"Frieden","tr":"barış"},
+ "ai_kpvp_all":  {"en":"every bot","pl":"każdy bot","de":"jeder Bot","tr":"her bot"},
  "ai_chest":     {"en":"Moonlight Treasure Chests","pl":"Szkatułki Księżycowe","de":"Mondschein-Schatztruhen","tr":"Ay Işığı Sandıkları"},
  "ai_chest_help":{"en":"How often a chest drops, in thousandths: per monster kill, and per broken Metin stone. The game default is 10‰ (1%) and 300‰ (30%); more chests mean more bonus scrolls, speed potions and Blessing Scrolls for the bots. Applies within five seconds, to bots and players alike.",
                   "pl":"Jak często wypada szkatułka, w promilach: z zabitego potwora i z rozbitego Metina. Domyślnie w grze 10‰ (1%) i 300‰ (30%); więcej szkatułek to więcej zwojów bonusów, mikstur szybkości i Zwojów Błogosławieństwa u botów. Działa w pięć sekund, dla botów i graczy tak samo.",
@@ -4796,6 +4819,16 @@ TPL_AI = BASE.replace("__BODY__", """
          oninput="document.getElementById('v_REST').textContent=this.value+'%'">
   <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
     <span>0 — {{t('ai_rest_off')}}</span><span>100 — {{t('ai_rest_all')}}</span>
+  </div>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">⚔️ {{t('ai_kpvp')}}
+      <span class="badge" id="v_KINGDOMPVP">{{cur.get('KINGDOMPVP', 0)}}%</span></h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_kpvp_help')}}</p>
+  <input type="range" name="KINGDOMPVP" id="s_KINGDOMPVP" min="0" max="100" step="5" value="{{cur.get('KINGDOMPVP', 0)}}" style="width:100%"
+         oninput="document.getElementById('v_KINGDOMPVP').textContent=this.value+'%'">
+  <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
+    <span>0 — {{t('ai_kpvp_off')}}</span><span>100 — {{t('ai_kpvp_all')}}</span>
   </div>
 </div>
 <div style="margin-bottom:18px">
@@ -11154,6 +11187,10 @@ def ai_weights():
             vals["REST"] = max(0, min(100, int(request.form.get("REST", 100))))
         except (TypeError, ValueError):
             vals["REST"] = 100
+        try:
+            vals["KINGDOMPVP"] = max(0, min(100, int(request.form.get("KINGDOMPVP", 0))))
+        except (TypeError, ValueError):
+            vals["KINGDOMPVP"] = 0
         for key in ("CHEST", "CHEST_STONE"):
             try:
                 vals[key] = max(0, min(1000, int(request.form.get(key))))

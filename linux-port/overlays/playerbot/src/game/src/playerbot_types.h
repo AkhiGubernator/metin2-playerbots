@@ -3225,6 +3225,9 @@ namespace
 
 	struct TPlayerBotAIState
 	{
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+		playerbot_offline::State offlineShop;
+#endif
 		TPlayerBotAIState() :
 			dwTargetVID(0),
 			dwSpawnTime(0),

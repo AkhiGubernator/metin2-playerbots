@@ -1497,7 +1497,47 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `PLAYERBOT_BAG_CELLS` (compat: `INVENTORY_DEFAULT_MAX_NUM` there,
   `INVENTORY_MAX_NUM` on r40250) is the only bound the fragments use now;
   an engine array may still be sized by the engine's constant.
+- **A bot's stall on the 2.x line is a real ikashop offline shop (2.0.26).**
+  `playerbot_offline_policy.h` (pure, unit-tested in
+  `tests/playerbot_offline_policy_test.cpp`) is a process-wide request journal
+  keyed by pid: the AI `Begin`s a request, the engine's `Send*DBPacket` marks
+  it `Sent` and the `Recv*DBPacket` handlers mark it `Complete` - those hooks
+  are exact-string edits in `ikarus_shop_manager.cpp` applied by
+  `playerbotify.py` (`apply_playerbot_offline_shops`), so the header is
+  included from an engine TU too and the map is `inline`. `EndCall` erases a
+  request the engine refused synchronously (OpenMyShop returning without
+  sending) and **a transmitted request is never retried on timeout**: ikashop
+  has no idempotency key, so a retry could double an item or the yang; the
+  bot's commerce pauses (`PLAYERBOT_OFFLINE: unresolved` in syserr) and its
+  gameplay goes on. `playerbot_offline_shop.h` (after town.h) replaces the
+  `OpenMyShop(sign, table, count, 0)` of the classic stall with a duration-1
+  shop (8 h, 6000 yang, `aOfflineShopTime[1]`) and returns - the entity owns
+  the stand, the bot hunts - then `ManagePlayerBotOfflineService` (before
+  `ManagePlayerBotShopLifetime` in the tick) walks the owner back every 10-15
+  minutes for one bounded visit: collect the shop safebox, reopen an expired
+  stand that still has goods, add one item, reprice one item an hour, close
+  edit mode. `playerbot_offline_market.h` (after market.h) is the buyer side
+  over `GetPlayerBotOfflineShops()` and feeds the ledger. All of it under
+  `PLAYERBOT_ENGINE_MT2009 && ENABLE_IKASHOP_RENEWAL`; r40250 keeps the
+  classic stall untouched. The db core edit (`ClientManagerIkarusShop.cpp`)
+  sends `SendIkarusShopBuyLockedItemPacket(peer, 0, ...)` on a refused lock,
+  which the game side reads as `owner=0` = negative acknowledgement - without
+  it the losing one of two buyers waited for ever. Things learned the first
+  hour: the cores' logs live at `/opt/metin2/var/channel1/<core>/syslog`, not
+  one level up; `OpenMyShop` refuses silently with a chat line to a bot
+  descriptor, so `PLAYERBOT_OFFLINE: refused` names what it tests (a quest
+  script running, the saddle, `GetPart(PART_MAIN)`, a busy window, the first
+  line's antiflags) - 4 of 51 opens on the test world, all in the first
+  seconds after spawn; `SetShopItems: not enough shop window` in syserr is the
+  engine's own grid refusal. Both engine files and the db file ship in
+  `server-update-files.mt2009.txt` (the .h and the db .cpp were missing from
+  it). The classic panel's "shops" ranking reads `player.ikashop_offlineshop`
+  on this line and takes the stand's map from the row, since the keeper is
+  elsewhere. A sold-out shop is deleted by the engine and the owner's next
+  service visit proceeds to the safebox anyway.
 - **The mt2009 item finder searches offline shops; a stall is not one.**
+  (r40250 semantics; on the 2.x line since 2.0.26 a bot's stall *is* an
+  offline shop in `m_mapShops`, so the native finder lists it by itself.)
   `ikashop::CShopManager::RecvShopSearchItemClientPacket` walked `m_mapShops`
   (ikarus offline shops) and a playerbot's counter is a classic `CShop`
   (`OpenMyShop`, no duration). The category switch is a template now
@@ -1925,9 +1965,15 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   and `ManagePlayerBotHuntingProgress` return early under
   `PLAYERBOT_ENGINE_MT2009`; the classic panel's `hunting_progress_label` returns
   "" there. Bots hunt by the frontier draw and the level-banded hubs, which work.
-  The seeded high-level bots (a level-50 cohort seeded, not levelled from 1) with
-  starter gear that "cannot have reached that level in M1/M2" are those
-  identities - not a bug; the armour buy above is what re-gears them.
+  A bot far above its gear ("56 lvl with M2 items") was never seeded that way:
+  every version of `generate_seed.py` in the history inserts `level = 1`, and
+  both rendered `playerbots_seed.sql` files do too (checked 13 September - the
+  operator's own world held 1500 bots of level 1-5). The only way a bot's level
+  moves without experience is the classic panel's per-character "Ustaw poziom"
+  card (`cmd=LEVEL` -> `UPDATE player.player SET level` / `pc.set_level`), and
+  a bot raised that way keeps its village gear until the armour buy above and
+  the weapon prize re-gear it. An earlier version of this note blamed "a
+  level-50 cohort seeded"; there was no such cohort.
 - **A skill book is vnum 50300 with the skill in socket0.** The classic panel's
   `item_full_name` spells it out ("Ksiega Umiejetnosci: Aura Miecza") from
   `SKILL_ID_NAMES` (the per-class skill tables flattened) when `ITEM_TYPES` says

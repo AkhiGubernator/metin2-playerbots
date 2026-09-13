@@ -77,6 +77,7 @@ linux-port-mt2009/docker/game/src/server/common/length.h
 linux-port-mt2009/docker/game/src/server/common/tables.h
 linux-port-mt2009/docker/game/src/server/db/src/ClientManager.cpp
 linux-port-mt2009/docker/game/src/server/db/src/ClientManager.h
+linux-port-mt2009/docker/game/src/server/db/src/ClientManagerIkarusShop.cpp
 linux-port-mt2009/docker/game/src/server/db/src/ClientManagerPlayer.cpp
 linux-port-mt2009/docker/game/src/server/db/src/Makefile
 linux-port-mt2009/docker/game/src/server/db/src/stdafx.h
@@ -100,6 +101,7 @@ linux-port-mt2009/docker/game/src/server/game/src/desc_client.cpp
 linux-port-mt2009/docker/game/src/server/game/src/desc_manager.cpp
 linux-port-mt2009/docker/game/src/server/game/src/desc_manager.h
 linux-port-mt2009/docker/game/src/server/game/src/ikarus_shop_manager.cpp
+linux-port-mt2009/docker/game/src/server/game/src/ikarus_shop_manager.h
 linux-port-mt2009/docker/game/src/server/game/src/input.h
 linux-port-mt2009/docker/game/src/server/game/src/input_db.cpp
 linux-port-mt2009/docker/game/src/server/game/src/input_login.cpp

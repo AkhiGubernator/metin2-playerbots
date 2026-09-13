@@ -17,6 +17,47 @@ every version here.
 
 ---
 
+## 2.0.26 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Boty prowadzą prawdziwe sklepy offline i idą grać dalej
+
+Dotąd bot wystawiał klasyczny stragan: stał przy nim jako tobołek i czekał, aż
+sprzeda wszystko albo minie czas. Teraz otwiera **prawdziwy sklep offline** —
+ten sam, który mają gracze na tych plikach (ikashop): niezależny byt na
+pierścieniu straganów, opłacony na 8 godzin (6000 yang), z szyldem, ceną i
+towarem wybranym po staremu — a sam bot **od razu wraca do gry**: poluje,
+expi, robi Biologa, jeździ do kowala. Co 10–15 minut wraca do sklepu na krótką
+wizytę serwisową: odbiera utarg ze skrytki sklepu, dokłada jeden przedmiot,
+raz na godzinę przelicza jedną cenę wg rynku, a wygasły sklep z towarem opłaca
+na nowo. Boty kupują też u siebie nawzajem w sklepach offline (te same reguły
+„czy chcę to kupić” co przy straganach). Każde żądanie do bazy (założenie,
+dołożenie, zmiana ceny, odbiór, zakup) jest zapisane w dzienniku i nigdy nie
+jest ponawiane po przekroczeniu czasu — silnik nie ma klucza idempotentności,
+więc powtórka mogłaby zdublować przedmiot lub yang; nierozwiązane żądanie
+tylko wstrzymuje handel tego bota, gra idzie dalej. Zmiana bazuje na pracy
+Codexa (handoff 2026-09-13): dziennik żądań z testem jednostkowym, serwis
+sklepu, zakupy, hooki `Sent/Complete` w silniku przez `playerbotify.py`, oraz
+poprawka rdzenia db, która odsyła kupującemu odmowę blokady (dwóch kupujących,
+jeden przedmiot). Sprawdzone na żywo: 47 sklepów założonych i potwierdzonych
+przez rdzeń db, 24 zakupy bot→bot, właściciele w statusie „Walczy / Podróżuje /
+Robi Biologa”, a nie „Prowadzi stragan”. Na www ranking „Stragany” czyta
+teraz tabelę sklepów offline (`player.ikashop_offlineshop`), a „mapa” to
+miejsce sklepu, nie miejsce, gdzie akurat poluje właściciel. Klasyczny stragan
+zostaje na linii r40250; na tej linii otwarty jeszcze stragan klasyczny jest
+zamykany raz przy pierwszym ticku („migrate_offline”), bez utraty przedmiotów.
+
+### Poziom startowy botów: zawsze 1
+
+Sprawdzone od podszewki po zgłoszeniu „postacie 56 lvl mają itemy z M2”: seed
+w każdej wersji w historii wstawia `level = 1`, oba wyrenderowane SQL-e też, a
+w bazie serwera z tym zgłoszeniem 1500 botów miało 1–5 lvl. Jedyna droga do
+skoku poziomu bez expa to karta „⭐ Ustaw poziom” w panelu, klikana ręcznie na
+konkretnej postaci — taki bot zostaje ze starym ekwipunkiem, aż przebierze go
+zakup zbroi (2.0.22) i premia broni (2.0.24/25). Poprawiono też mylną notatkę w
+dokumentacji o „kohorcie 50 lvl z seeda” — nigdy jej nie było.
+
 ## 2.0.25 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Poprawki do 2.0.24 wg uwag Tieru.

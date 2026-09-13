@@ -35,6 +35,10 @@
 
 namespace
 {
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+	bool ManagePlayerBotOfflineShopping(LPCHARACTER, TPlayerBotAIState&, DWORD);
+	void AddPlayerBotOfflineLedger(DWORD&, DWORD&);
+#endif
 	// Defined with the chat trade, after this file: the bot that found the
 	// market empty of what it came for asks the world channel.
 	void AnnouncePlayerBotNeed(LPCHARACTER ch);
@@ -533,6 +537,10 @@ namespace
 	{
 		if (!ch || !ch->IsItemLoaded() || ch->IsDead())
 			return false;
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+		if (ManagePlayerBotOfflineShopping(ch, state, dwNow)) return true;
+		if (playerbot_offline::requests.count(ch->GetPlayerID())) return false;
+#endif
 		// A keeper minding its own counter is not also a customer.
 		if (ch->GetMyShop() || state.bVisitingBiologist || state.bVisitingStable ||
 				state.bRecoveringAfterDeath || state.bTacticalRetreat ||
@@ -701,6 +709,9 @@ namespace
 				++s_mapMarketLedger[*w].dwDemandBots;
 		}
 
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+		AddPlayerBotOfflineLedger(stalls, lines);
+#endif
 		if (!wallets.empty())
 		{
 			std::sort(wallets.begin(), wallets.end());

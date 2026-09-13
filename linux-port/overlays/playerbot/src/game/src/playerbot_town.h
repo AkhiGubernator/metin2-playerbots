@@ -23,6 +23,10 @@
 
 namespace
 {
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+	bool HasPlayerBotOfflineShop(LPCHARACTER ch);
+	bool SubmitPlayerBotOfflineShop(LPCHARACTER, TPlayerBotAIState&, DWORD, const char*, TShopItemTable*, BYTE);
+#endif
 	BYTE GetPlayerBotFirstInteriorTownPhase(const TPlayerBotAIState& state)
 	{
 		if (state.bTownNeedMisc)
@@ -1859,6 +1863,9 @@ namespace
 	bool ManagePlayerBotShopLifetime(LPCHARACTER ch, TPlayerBotAIState& state,
 			DWORD dwNow)
 	{
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+		if (ch && ch->GetMyShop()) { ClosePlayerBotShop(ch, state, dwNow, "migrate_offline"); return false; }
+#endif
 		if (!ch || !ch->GetMyShop())
 		{
 			// The engine closes a stall the moment its last item is sold, so a
@@ -1992,6 +1999,9 @@ namespace
 
 	bool ManagePlayerBotPrivateShop(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+		if (HasPlayerBotOfflineShop(ch)) return false;
+#endif
 		if (!ch || !ch->IsItemLoaded())
 			return false;
 
@@ -2146,9 +2156,11 @@ namespace
 			return true; // still walking to the pitch
 		// Counted the moment it opens rather than at the next ledger sweep, or
 		// eight keepers arriving in the same minute would all read six.
+#if !defined(PLAYERBOT_ENGINE_MT2009)
 		if (IsPlayerBotM2Map(ch->GetMapIndex()))
 			++s_iPlayerBotStallsInM2;
 		++s_mapPlayerBotStallsByMap[ch->GetMapIndex()];
+#endif
 
 		// OpenMyShop refuses a character whose main part is not its own body, so
 		// the horse has to go before the stall can be set up.
@@ -2463,15 +2475,13 @@ namespace
 				return false;
 			}
 			// The bot buys its stall like anything else it carries.
-			if (ch->GetGold() >= PLAYERBOT_SHOP_BUNDLE_PRICE)
-				PlayerBotChangeGold(ch, -(int)PLAYERBOT_SHOP_BUNDLE_PRICE);
+			if (ch->GetGold() < PLAYERBOT_SHOP_BUNDLE_PRICE) return false;
+			PlayerBotChangeGold(ch, -(int)PLAYERBOT_SHOP_BUNDLE_PRICE);
 			ch->AutoGiveItem(50200, 1);
 		}
 
 #if defined(PLAYERBOT_ENGINE_MT2009)
-		// The fourth argument is the offline-shop duration index; zero is the
-		// ordinary counter that closes when the keeper leaves.
-		ch->OpenMyShop(sign, table, tableCount, 0);
+		return SubmitPlayerBotOfflineShop(ch, state, dwNow, sign, table, tableCount);
 #else
 		ch->OpenMyShop(sign, table, tableCount);
 #endif

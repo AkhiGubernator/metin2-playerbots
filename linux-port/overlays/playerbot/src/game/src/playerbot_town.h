@@ -1267,8 +1267,14 @@ namespace
 		// order, because the stall splits a stack into singles first.
 		if (IsPlayerBotSafeRefineScroll(item->GetVnum()))
 		{
+			// One bot in five keeps a single scroll rather than three, so the
+			// scrolls reach the market instead of sitting in bags until every
+			// worn piece is at +9 - which for a bot that keeps re-gearing is
+			// never ("zaden bot nie sprzedaje zwojow blogoslawienstwa").
+			const int keep = IsPlayerBotResourceTrader(ch->GetPlayerID())
+					? PLAYERBOT_REFINE_SCROLL_TRADER_KEEP : PLAYERBOT_REFINE_SCROLL_KEEP;
 			if (PlayerBotWearsScrollWork(ch) &&
-					CountPlayerBotSafeRefineScrollsAhead(ch, item) < PLAYERBOT_REFINE_SCROLL_KEEP)
+					CountPlayerBotSafeRefineScrollsAhead(ch, item) < keep)
 				return -1;
 			return 800;
 		}

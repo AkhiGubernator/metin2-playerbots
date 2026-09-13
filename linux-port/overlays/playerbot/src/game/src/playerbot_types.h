@@ -897,10 +897,25 @@ namespace
 	const BYTE PLAYERBOT_BATTLE_HORSE_FROM_HORSE_LEVEL = 10;
 	const int PLAYERBOT_BATTLE_HORSE_KILLS = 100;
 	const DWORD PLAYERBOT_BATTLE_HORSE_FEE = 500000;
-	// The Black Wind band, which is what the desert on this server is stocked
-	// with. The quest names 2105 and 2107; neither is spawned anywhere here.
-	const DWORD PLAYERBOT_BATTLE_HORSE_MOB_FIRST = 401;
-	const DWORD PLAYERBOT_BATTLE_HORSE_MOB_LAST = 404;
+	// The two archers the stable keeper's quest names, and the wiki with it:
+	// Skorpion Lucznik (2105, level 47) and Wezowy Lucznik (2107, level 51).
+	// Both stand on the desert, 998 and 760 spawn points of
+	// metin2_map_n_desert_01 - the very map the quest sends a player to.
+	//
+	// Until 2.0.31 this was "the Black Wind band, 401 to 404", on the written
+	// claim that 2105 and 2107 were spawned nowhere in this world. Both halves
+	// were wrong and one mistake made both: the desert's regen.txt is `r` lines
+	// whose last field is a group_group id, so 401-404 are group ids and not
+	// monster vnums - the exact field CLAUDE.md warns about. Resolved through
+	// the global group_group.txt and group.txt, the desert really does carry
+	// 2105 and 2107, while vnums 401-404 are the Black Wind band, which lives
+	// on the three second villages (a3/b3/c3) and never sets foot in the
+	// desert. So the trial counted kills of monsters no bot on it could ever
+	// meet, and every bot read "Zdobywam konia bojowego na pustyni (0/100)"
+	// for ever (sosen, 13 September). Measure a spawn table by resolving its
+	// groups; never by grepping a number out of regen.txt.
+	const DWORD PLAYERBOT_BATTLE_HORSE_MOB_SCORPION_ARCHER = 2105;
+	const DWORD PLAYERBOT_BATTLE_HORSE_MOB_SNAKE_ARCHER = 2107;
 	// "Zdjecie Konia", taken away, and "Ksiega Opanc. Konia", handed over.
 	const DWORD PLAYERBOT_HORSE_PHOTO_VNUM = 50051;
 	const DWORD PLAYERBOT_BATTLE_HORSE_BOOK_VNUM = 50052;
@@ -1739,6 +1754,19 @@ namespace
 	// from - but an unopened box is the one thing in this market a player can
 	// gamble on, and there was never one on a counter.
 	const DWORD PLAYERBOT_CHEST_STALL_MIN_STACK = 5;
+	// A share of the population trades its resources instead of spending all
+	// of them on itself. "Zaden bot nie sprzedaje szkat blasku i zwojow
+	// blogoslawienstwa" (sizowski, 13 September), and his own proposal was a
+	// proportion rather than a switch: "4 uzywaja do rozwijania postaci, 1
+	// sprzedaje - jak prawdziwy gracz". So one bot in five is a trader, drawn
+	// by pid the way the scrap keeper is, and the two roles are salted apart.
+	// A trader still opens chests and still refines - it simply keeps a much
+	// smaller reserve, so the surplus reaches a counter instead of the bag.
+	const int PLAYERBOT_RESOURCE_TRADER_PERCENT = 20;
+	// What a trader keeps back: two of a chest stack (against five) and one
+	// safe refine scroll (against three).
+	const DWORD PLAYERBOT_CHEST_TRADER_MIN_STACK = 2;
+	const int PLAYERBOT_REFINE_SCROLL_TRADER_KEEP = 1;
 	// The Forgetting Scroll (ITEM_SKILLFORGET): one level off a skill and the
 	// point back. A skill that reached seventeen without turning Master is
 	// left there rather than pushed on - every further point is a point the

@@ -17,6 +17,68 @@ every version here.
 
 ---
 
+## 2.0.24 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Boty zakładają broń 30 lvl ze średnimi zamiast gorszej ulepszonej
+
+„Boty mają w dupie bronie 30 lvl ze średnimi — bot ma Ribę 48 średnie w EQ, a
+biega w Kosie Bojowej +6” (sosen94). Nieulepszona broń-nagroda ze średnią 48%
+przegrywała w ocenie z bronią +6/+9 niższego poziomu, bo mnożnik działał na jej
+niską bazę. Teraz broń z linią średnich (albo, u maga, umiejętności) na poziomie
+progu (25%) dostaje premię proporcjonalną do tej linii, więc bot ją zakłada i
+dopiero ulepsza — a przy tym gorsza, ale bardziej ulepszona broń już nie wygrywa.
+
+### Łucznicy-ninja ulepszają sztylet do metinów (co najmniej +4)
+
+„Powinni używać ulepszonych sztyletów na co najmniej +4, nie niżej, bo nic z
+tego nie będzie” (Tieru). Łucznik rozbija metiny sztyletem, ale sztylet leży w
+plecaku (gdy trzyma łuk), więc nigdy nie liczył się ani jako ulepszenie do
+założenia, ani jako lepszy zapas — i zostawał na +0, którym metina się nie
+rozbije. Teraz wybrany sztylet do metinów jest ulepszany w plecaku jak noszona
+broń, z celem +4: kroki +1..+4 to na tych plikach po 90%, więc dojście jest
+tanie i prawie bez spalenia, a zwój w plecaku dalej niesie go wyżej.
+
+### Stragany na duplikaty nie zalewają miasta
+
+„759 botów »Prowadzę stragan (zbędny duplikat)«” (AkhiGubernator) — poprawka z
+2.0.22 otwierała stragan na każdy duplikat od +4, więc niemal każdy bot z drugą
+bronią czy zbroją w plecaku wystawiał się, ignorując suwak handlu. Teraz stragan
+na zbędny duplikat otwiera się dopiero od +7 (naprawdę wartościowy, jak FMS +9 z
+pierwotnego zgłoszenia), więc miasto nie jest zalewane.
+
+### Materiały pod presją plecaka trafiają do magazynu, nie do handlarza
+
+Na prośbę Tieru: gdy w plecaku brakuje miejsca, ulepszacze (materiały) idą teraz
+do magazynu u Dozorcy (M1/M2), a nie do handlarza za grosze. Materiał, którego
+ktoś potrzebuje, dalej trafia na stragan; do magazynu idzie tylko to, czego bot
+nie sprzeda na ladzie.
+
+### Handlarz tylko dla przypartego do ściany
+
+„Jeśli wystawiają stragan bo mają extra, a nie że potrzebują yang, to mogą stać
+ile trzeba” (AkhiGubernator). Przymusowa sprzedaż niesprzedanego towaru
+handlarzowi po sześciu wystawieniach działa teraz tylko pod presją plecaka. Bot,
+który po prostu ma nadwyżkę, może wystawiać ją dowolnie długo.
+
+### Koniec drżenia konia przy podróży (wsiada/zsiada co sekundę)
+
+Bot z koniem transportowym w drodze przez zatłoczoną mapę (np. pustynię) łapał
+mijanego potwora, zsiadał do walki pieszej, a pas podróży zaraz znów go wsadzał
+na konia — i tak w kółko, po parę razy na sekundę, nie robiąc ani kroku
+(sizowski: KimJestes2 wsiadał i zsiadał co sekundę przez minuty). Teraz koń
+transportowy nie wsiada na etap podróży, dopóki bot ma żywy cel do walki
+pieszej — walkę oddaje pasowi walki, a po jej końcu jedzie dalej. Samoobrona
+działa jak dawniej.
+
+### Panel: martwy suwak i tłok w mieście
+
+Suwak „Polowanie” (HUNTING) sterował misjami polowań, które na tej linii są
+wyłączone (quest w `_unused`), więc nic nie robił — ukryty na wersji mt2009;
+leveling steruje suwak „Poziom”. Tłum botów „Oglądam stragany” w mieście to
+odpoczynek (suwak „Odpoczynek”): to celowe i sterowane suwakiem, nie błąd.
+
 ## 2.0.23 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

@@ -267,6 +267,16 @@ namespace
 	// build the other way round.
 	const int PLAYERBOT_WEAPON_OWN_LINE_PERCENT = 100;
 	const int PLAYERBOT_WEAPON_OTHER_LINE_PERCENT = 35;
+	// A weapon carrying its build's damage line at or above the lock (25%) is
+	// the prize a player hand-made, and it must beat a refined lower weapon
+	// even unrefined - because once worn it is what the blacksmith raises.
+	// "boty maja w dupie bronie 30lvl ze srednimi ... biega w kosie +6"
+	// (sosen94): a Riba 48% or Antyk 40% in the bag while a +6/+9 lesser
+	// weapon is worn. The multiplier alone could not win it: 48% of a low
+	// unrefined base is less than a +9's raised base. Proportional to the
+	// line, so a genuinely better weapon still outscores it and a 12% one
+	// (which is not a prize) gets nothing.
+	const long long PLAYERBOT_WEAPON_PRIZE_PER_PCT = 6000;
 	// A skill line this high on a weapon is a prize line too (the bonus pass
 	// keeps an average line from PLAYERBOT_BONUS_KEEP_AVERAGE).
 	const long PLAYERBOT_WEAPON_PRIZE_SKILL_PERCENT = 15;
@@ -445,6 +455,20 @@ namespace
 	// one operator's equipment history; 12 534 pieces refined in the bag and
 	// then vendored in six hours on our own world.
 	const BYTE PLAYERBOT_PRECIOUS_REFINE = 4;
+	// A worse duplicate of a filled slot opens a stall only when it is this
+	// refined - a genuinely valuable spare, the +9 FMS the report was about.
+	// At +4 it caught 759 bots at once ("759 Prowadze stragan (zbedny
+	// duplikat)", akhigubernator): every second weapon or armour in a bag
+	// qualified, and the town filled with keepers ignoring the trade slider.
+	const BYTE PLAYERBOT_SHOP_SPARE_MIN_REFINE = 7;
+	// An Archer breaks a Metin with a dagger, and a +0 dagger breaks nothing:
+	// "powinni uzywac ulepszonych sztyletow na co najmniej +4, nie nizej bo nic
+	// z tego nie bedzie" (Tieru). The stone dagger is worn only on a stone, so it
+	// never counts as a wearable upgrade or a higher-tier spare and would never
+	// be refined in the bag - this floor makes it a refine candidate and its
+	// target. The +1..+4 steps are 90% each on this world's table, so reaching it
+	// is cheap and low-burn; a scroll in the bag still carries it higher.
+	const BYTE PLAYERBOT_ARCHER_STONE_MIN_REFINE = 4;
 	// The lowest refine an ordinary spare may carry and still be worth a counter
 	// slot. Below it nobody wants the thing: the market code buys medals,
 	// level-30 weapons and big bonus rolls, and a person walking the market sees

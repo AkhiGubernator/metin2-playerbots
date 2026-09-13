@@ -661,8 +661,13 @@ namespace
 		// This has to come before the precious-refine keep below, or it never
 		// applies to the +4 and +5 the counter actually keeps, which is what it
 		// was written for: with it underneath, a bag of unsold +5 was for life.
+		// Only when the bag is under pressure, though: a keeper that simply has
+		// extra and does not need the yang can stand as long as the loop needs,
+		// re-listing the piece; the merchant is for a cornered bot, not a bored
+		// one ("jesli maja extra a nie potrzebuja yang, moga stac", akhigubernator).
 		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
-				item->GetRefineLevel() <= PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE)
+				item->GetRefineLevel() <= PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE &&
+				IsPlayerBotBagUnderPressure(ch))
 		{
 			TPlayerBotAIStateMap::const_iterator st = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
 			if (st != s_mapPlayerBotAIStates.end())
@@ -838,11 +843,13 @@ namespace
 		// material this bot has no counter to sell from, whoever wants it.
 		// And only under bag pressure at all: "Stalowy Grot, Futro Yeti, Kawalek
 		// Lodu ... sprzedane handlarzowi" non stop from bags with room to spare.
+		// A refine material is never merchant scrap. What it does not sell on a
+		// counter and the bag has no room for goes to the storekeeper
+		// (CollectPlayerBotSafeboxMaterials), not to the merchant for pennies:
+		// "jak nie ma miejsca to materialy niech traf ia do magazynu u Dozorcy"
+		// (Tieru, 13 September).
 		if (IsPlayerBotTradeableMaterial(item))
-			return !PlayerBotNeedsRefineMaterial(ch, vnum) &&
-					IsPlayerBotSurplusMaterial(ch, item) &&
-					IsPlayerBotBagUnderPressure(ch) &&
-					(GetPlayerBotLedgerDemand(vnum) == 0 || !PlayerBotCanOpenShop(ch));
+			return false;
 		// The rest of the 30000 block is eight gift boxes and two quest items.
 		// No counter would carry those, so there junk still means junk.
 		if (vnum >= 30000 && vnum <= 30200)
@@ -1075,6 +1082,11 @@ namespace
 				!IsPlayerBotEquipmentCandidate(ch, item) ||
 				IsPlayerBotJunkItem(ch, item))
 			return false;
+		// An Archer's stone dagger is worn only on a stone, so it is neither a
+		// wearable upgrade nor a higher-tier spare - yet it must reach +4 to break
+		// stones at all (Tieru). Refine it in the bag like a worn piece.
+		if (IsPlayerBotArcherStoneWeapon(ch, item))
+			return item->GetRefineLevel() < GetPlayerBotRefineTarget(ch, item);
 		return IsPlayerBotHigherTierSpare(ch, item) ||
 				IsPlayerBotWearableUpgrade(ch, item, item->GetCell());
 	}

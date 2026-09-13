@@ -11096,8 +11096,12 @@ def ai_weights():
         flash(t("ai_live"))
         return redirect(url_for("ai_weights"))
 
+    # HUNTING drives the level-up mission goal, which is disabled on the mt2009
+    # line (levelup.quest ships in quest/_unused - see playerbot_missions.h), so
+    # the slider would do nothing there. LEVEL is the leveling control on 2.x.
+    keys = [k for k in AI_WEIGHT_KEYS if not (ENGINE_MT2009 and k[0] == "HUNTING")]
     return render_template_string(TPL_AI, cur=read_ai_weights(),
-                                  keys=AI_WEIGHT_KEYS, wmin=AI_W_MIN,
+                                  keys=keys, wmin=AI_W_MIN,
                                   wmax=AI_W_MAX, wneutral=AI_W_NEUTRAL)
 
 

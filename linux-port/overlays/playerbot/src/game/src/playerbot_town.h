@@ -108,6 +108,32 @@ namespace
 		}
 	}
 
+	// Surplus refine materials, under bag pressure, that the bot cannot sell
+	// on its own counter - no demand for them, or it cannot keep a shop.
+	// What it can sell (a material somebody is short of, and the bot can open
+	// a stall) stays for the counter; the anvil's reserve is never touched.
+	void CollectPlayerBotSafeboxMaterials(LPCHARACTER ch, std::vector<WORD>& cells)
+	{
+		cells.clear();
+		if (!ch || (!IsPlayerBotBagFull(ch) &&
+				CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_BAG_PRESSURE_FREE_CELLS))
+			return;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->IsEquipped() || item->isLocked())
+				continue;
+			if (!IsPlayerBotTradeableMaterial(item))
+				continue;
+			if (PlayerBotNeedsRefineMaterial(ch, item->GetVnum()) ||
+					!IsPlayerBotSurplusMaterial(ch, item))
+				continue;
+			if (GetPlayerBotLedgerDemand(item->GetVnum()) > 0 && PlayerBotCanOpenShop(ch))
+				continue;
+			cells.push_back(cell);
+		}
+	}
+
 	bool HasPlayerBotSafeboxDeposit(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
 		std::vector<WORD> cells;
@@ -115,6 +141,9 @@ namespace
 		if (!cells.empty())
 			return true;
 		CollectPlayerBotSafeboxDeadStock(ch, state, cells);
+		if (!cells.empty())
+			return true;
+		CollectPlayerBotSafeboxMaterials(ch, cells);
 		return !cells.empty();
 	}
 
@@ -129,6 +158,9 @@ namespace
 		std::vector<WORD> dead;
 		CollectPlayerBotSafeboxDeadStock(ch, state, dead);
 		cells.insert(cells.end(), dead.begin(), dead.end());
+		std::vector<WORD> mats;
+		CollectPlayerBotSafeboxMaterials(ch, mats);
+		cells.insert(cells.end(), mats.begin(), mats.end());
 		int deposited = 0;
 		const DWORD dwNow = get_dword_time();
 		for (size_t i = 0; i < cells.size(); ++i)
@@ -677,7 +709,7 @@ namespace
 			const BYTE type = item->GetType();
 			if (type != ITEM_WEAPON && type != ITEM_ARMOR)
 				continue;
-			if (item->GetRefineLevel() < PLAYERBOT_PRECIOUS_REFINE)
+			if (item->GetRefineLevel() < PLAYERBOT_SHOP_SPARE_MIN_REFINE)
 				continue;
 			if (IsPlayerBotWearableUpgrade(ch, item, cell))
 				continue;

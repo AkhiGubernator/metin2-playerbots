@@ -335,6 +335,15 @@ namespace
 				multiplier = 20;
 			score += attack * 1000 * multiplier / 100;
 
+			// The prize a player looks at: a strong average line (or, for a
+			// caster, a strong skill line) makes the weapon worth wearing and
+			// then refining, over a lower weapon already at +6/+9. Gated at the
+			// lock so only a genuine prize gets it, proportional so ordering
+			// among prizes and against a real high-tier weapon still holds.
+			const long prizeLine = style > 0 ? skillPct : avgPct;
+			if (prizeLine >= PLAYERBOT_BONUS_WEAPON_LOCK_PCT)
+				score += (long long)prizeLine * PLAYERBOT_WEAPON_PRIZE_PER_PCT;
+
 			// A level-30 average-damage weapon used to be handed a flat 350000
 			// here. Damage is scored at a thousand a point, so that was more than
 			// any weapon in the game is worth and no bot ever replaced one: an
@@ -608,6 +617,18 @@ namespace
 				best = worn;
 		}
 		return best;
+	}
+
+	// The one blade an Archer keeps for Metin stones - the chosen bag weapon, or
+	// the one worn while it is on a stone. It is worth refining even though it is
+	// never a wearable upgrade or a higher-tier spare, because a bow cannot break
+	// a stone and a +0 dagger barely can.
+	bool IsPlayerBotArcherStoneWeapon(LPCHARACTER ch, LPITEM item)
+	{
+		if (!item || !IsPlayerBotArcherBuild(ch) || !IsPlayerBotStoneMeleeWeapon(ch, item))
+			return false;
+		return FindPlayerBotStoneWeapon(ch, false) == item ||
+				ch->GetWear(WEAR_WEAPON) == item;
 	}
 
 	// What the hand should hold right now: the job's weapon, or the stone
@@ -1363,6 +1384,13 @@ namespace
 		// while one is there. See PLAYERBOT_SCROLL_REFINE_MAX_PLUS.
 		if (CountPlayerBotSafeRefineScrolls(ch) > 0)
 			return PLAYERBOT_SCROLL_REFINE_MAX_PLUS;
+
+		// The Archer's stone dagger is a tool, not a prize: carry it to +4, where
+		// the steps are still 90% and a burn is rare, and stop - going for +6
+		// without a scroll would burn it and leave the bot breaking stones with a
+		// bow again. (A scroll, handled above, still takes it higher safely.)
+		if (IsPlayerBotArcherStoneWeapon(ch, item))
+			return PLAYERBOT_ARCHER_STONE_MIN_REFINE;
 
 		// Equipment is a primary progression system, not a side activity. Every bot
 		// aims for at least +6, while a stable per-character/per-family personality

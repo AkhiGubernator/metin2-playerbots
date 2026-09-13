@@ -17,6 +17,77 @@ every version here.
 
 ---
 
+## 2.0.34 — 2026-09-13
+
+Serwer **i klient** — pierwsza zmiana klienta od 2.0.3. Panel GM na F9 od
+OskarPWA wchodzi na tę linię silnika, razem z osobnym oknem administracji botami
+na F10.
+
+### Panel GM (F9) — OskarPWA
+
+Trzydzieści jeden komend serwera pod jednym oknem: wyszukiwanie gracza,
+teleportacja po mapach i zapisane miejsca, tworzenie przedmiotów (także prosto
+do skrytki i do sklepu z monetami), podgląd ekwipunku i zmiana statystyk,
+umiejętności, yang i monet, spawn potworów, metinów i botów, nadawanie rang GM,
+stawki serwera oraz suwaki AI botów.
+
+Każde kliknięcie to zwykła komenda czatu, a serwer sprawdza poziom GM osobno
+przy każdej z nich (tabela `cmd_info[]`) — samo okno niczego nie odblokowuje.
+Stawki działają również na tej linii silnika: przycisk restartu zapisuje je do
+tego samego kanału, który obsługuje `m2-rates`.
+
+### Okno administracji botami (F10)
+
+Ile botów żyje, ile jest w drużynie, ile stoi na straganie; lista botów
+z poziomem, królestwem i pozycją; ostatnie akcje wybranego bota; nadanie mu
+przedmiotu; tablica osiągnięć. Trzy rzeczy, których nasz rdzeń nie potrafił,
+zostały dopisane:
+
+- **Ostatnie akcje** — nic nie zapisywało historii pojedynczego bota, bo log
+  rdzenia celowo skleja linię napisaną przez trzysta botów w jedną. Teraz
+  migawka statusu, która i tak co dwie sekundy układa jedno zdanie na bota,
+  odkłada je wtedy, gdy się **zmieni**. Bot stojący dwadzieścia minut przy
+  straganie nie zapcha sobie historii jednym powtórzonym zdaniem.
+- **Osiągnięcia** — „Pierwszy 30/60/90 poziom”. Jedyny uczciwy sposób, żeby
+  wiedzieć, kto był pierwszy, to zobaczyć, jak ktoś przekracza próg: pierwsze
+  spojrzenie na bota tylko zapisuje, gdzie on już jest, a nagroda przypada
+  dopiero temu, kogo rdzeń widział niżej, a potem wyżej. Na świecie, którego
+  boty są już po trzydziestce, tablica zostaje pusta, dopóki ktoś naprawdę nie
+  awansuje — i tak ma być. Zwycięzcy przeżywają restart serwera.
+- **Liczby na zakładce ogólnej** — liczone po żywych botach tego rdzenia. „Prowadzą stragan” pyta natywny rejestr sklepów offline o każdego bota z osobna, a nie o jego akcję: na tej linii silnika bot otwiera stoisko i **wraca na łowy**, bo stoiskiem opiekuje się encja — liczone po akcji pokazywałoby zero przy trzydziestu ośmiu stojących straganach. Rejestr trzyma też sklep gracza, więc pytanie idzie po właścicielu, nie hurtem.
+
+### Panel nie zatrzyma już wczytywania klienta
+
+Wersja autora budowała swoje okna bezwarunkowo. To dokładnie ten mechanizm,
+przez który przed 1.33.3 pięciu graczom klient stawał na 100% z pustym ekranem —
+wystarczył jeden wyjątek w oknie panelu, żeby przerwać budowę całego interfejsu.
+Wszystkie trzy okna powstają teraz w osłonie: gdy któreś się nie zbuduje, powód
+trafia do `syserr.txt`, gra wstaje bez niego, a próba otwarcia mówi o tym na
+czacie zamiast wywalać błąd.
+
+### Stragany przeceniają się po zmianie cennika (Iwakura)
+
+„Pełno w m1 sklepów, gdzie Zwoje Błogosławieństwa nadal są po 9000”. Cena w kodzie była
+już poprawna (150 000 od 2.0.32) — to wystawki były stare. Otwarty stragan przeceniał
+**jeden przedmiot na godzinę**, więc stoisko z kilkunastoma liniami schodziło do nowych
+cen kilkanaście godzin.
+
+Cennik ma teraz numer wersji. Stragan, który został wyceniony według starszego,
+przecenia się **na każdej wizycie serwisowej** (co 10–15 minut) zamiast raz na godzinę,
+aż obejdzie cały swój blat — dopiero wtedy dostaje nową pieczątkę. Tempo wraca do
+godziny, gdy nie ma czego nadrabiać. Żadnej masowej przeceny na raz: to ta sama
+ścieżka żądań, co zwykle, tylko częściej pytana.
+
+### Naprawy przy okazji
+
+- **Aktualizacja z paczki na Linuksie i VPS działa ponownie.** Skrypt portujący
+  silnik zatrzymywał się przy drugim przebiegu: jedna z edycji rozpoznawała swoją
+  pracę po własnym wstawionym tekście, a późniejsza edycja ten tekst rozbijała —
+  więc pierwsza dokładała nagłówek drugi raz, a druga traciła kotwicę i cały
+  skrypt padał. Instalacje windowsowe tego nie widziały, bo dostają gotowe pliki.
+- Dwie nasze wcześniejsze wstawki w plikach silnika miały zakończenia linii
+  niezgodne z resztą pliku, przez co ten sam skrypt ich nie rozpoznawał.
+
 ## 2.0.33 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Domknięcie systemu cen

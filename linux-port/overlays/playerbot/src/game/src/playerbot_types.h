@@ -794,6 +794,17 @@ namespace
 	const DWORD PLAYERBOT_INACTIVITY_RESET_TIME = 90000;
 	const DWORD PLAYERBOT_WANDER_INTERVAL = 8000;
 	const DWORD PLAYERBOT_PARTY_CHECK_INTERVAL = 10000;
+	// Running with the player who invited you.
+	//
+	// A bot in a party of its own keeps station by the straggler radius and
+	// leaves the party when it cannot; a bot in a PLAYER's party has to do the
+	// opposite - stay, and walk after them. The distance is under the party
+	// cohesion radius so the bot closes up before the leader is out of range of
+	// anything shared, and the pass runs on its own short clock rather than the
+	// party pass's ten seconds, because following at ten-second granularity is
+	// a bot that is always a screen behind.
+	const int PLAYERBOT_PARTY_FOLLOW_DISTANCE = 1500;
+	const DWORD PLAYERBOT_PARTY_FOLLOW_INTERVAL = 2000;
 	const int PLAYERBOT_PARTY_DESIRED_MAX = 6;
 	const int PLAYERBOT_PARTY_COHESION_RADIUS = 2800;
 	const int PLAYERBOT_ARCHER_LURE_MIN_PARTY_MEMBERS = 5;
@@ -2000,6 +2011,20 @@ namespace
 	// way: a Carp for twenty movement speed, a Rudd for ten dexterity, ten
 	// minutes each (item_proto USE_ABILITY_UP).
 	const DWORD PLAYERBOT_BOOSTER_VNUMS[] = { 71044, 71045, 27866, 27873 };
+	// The polymorph marbles, as ItemProcess_Polymorph names them. Nothing else
+	// this world calls ITEM_POLYMORPH takes that branch, and the branch is what
+	// gives the transformation its damage bonus (200 + skill, five minutes with
+	// no Polymorph skill), so a marble outside this list would be spent for
+	// nothing. The monster is in socket 0 and the engine refuses one whose
+	// level is at or above the bot's own plus MAX(0, 20 - level*3/10) - which is
+	// why a marble is worth keeping for a boss rather than burning on a pack.
+	const DWORD PLAYERBOT_POLYMORPH_MARBLE_VNUMS[] = { 70104, 70105, 70106, 70107, 71093 };
+	// A transformation is spent on something that takes a while to kill. The
+	// engine refuses every skill while polymorphed (char_skill.cpp), so this is
+	// a trade: the marble's damage bonus against the whole rotation, and it is
+	// only worth it where the rotation is not what wins the fight anyway.
+	const int PLAYERBOT_POLYMORPH_BOSS_HP_PERCENT = 90;
+	const DWORD PLAYERBOT_POLYMORPH_RETRY_MS = 60000;
 	// Since 2.0.27 a booster is recognised by what the engine does with it, not
 	// by its vnum: USE_AFFECT with value0 510 is the timed stat buff (attack
 	// +10/+15, speed, critical, penetration, the Dragon God set, the experience
@@ -2244,6 +2269,25 @@ namespace
 	// M2 or medal one, drawn evenly. The Metin dropper is a third of the metin
 	// hunter role instead, because hunting stones is that role's whole day.
 	const DWORD PLAYERBOT_DROPPER_SHARE = 8;
+	// A dropper stops levelling once it reaches the band it farms.
+	//
+	// Every drop in this engine is faded by aiPercentByDeltaLev, so a farmer
+	// that keeps levelling walks away from its own table: the medal is a kill
+	// group and is worth 1 at fifteen levels over the monster, which is how a
+	// bot of forty-five came to need 140 trips through the easy Monkey Dungeon
+	// for one medal. The operator's rule is that a dropper "ma miec staly level
+	// i robil zawsze to samo" - so at its working level it takes the engine's
+	// own AFFECT_EXP_BLOCK, which PointChange honours by returning before it
+	// adds anything, and goes on dropping and selling for good.
+	//
+	// The numbers are each personality's own ground: the easy dungeon's monkeys
+	// are 22-30, the second village's soldiers 18-36, the guild map's spawns
+	// 8-24 with the level-30 weapon farm running to forty, and a stone hunter's
+	// book top-up dies fifteen levels over the stone.
+	const BYTE PLAYERBOT_EXP_LOCK_METIN_DROPPER = 40;
+	const BYTE PLAYERBOT_EXP_LOCK_M3_DROPPER = 30;
+	const BYTE PLAYERBOT_EXP_LOCK_M2_DROPPER = 36;
+	const BYTE PLAYERBOT_EXP_LOCK_MEDAL_DROPPER = 33;
 	// A dropper opens its stall on a third of its town visits, against one in
 	// ten for an adventurer and every visit for a merchant: it hunts for a
 	// living and sells what the hunt brought, not the other way round.
@@ -2334,6 +2378,13 @@ namespace
 	// talk through, so it is created for the price of a rod and a bundle of
 	// wood together. Unused on r40250, which has no pass.
 	const DWORD PLAYERBOT_FISHING_PASS_PRICE = 50000;
+	// The level a bot may start fishing at. The mt2009 engine's own
+	// CHARACTER::fishing() refused under fifty, and the two gates here refused
+	// with it so that nobody walked to a bank it would turn away; the operator
+	// asked for thirty, so the engine's number moves with them
+	// (playerbotify.py, apply_fishing_min_level) and this is the one place the
+	// AI states it.
+	const BYTE PLAYERBOT_FISHING_MIN_LEVEL = 30;
 	const DWORD PLAYERBOT_FISHING_BAIT_VNUM = 27801;  // Robak
 	const DWORD PLAYERBOT_SHELLFISH_VNUM = 27987;     // Malz
 	// What a shell can hold: Biala / Niebieska / Krwawa Perla.

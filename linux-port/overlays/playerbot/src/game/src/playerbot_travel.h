@@ -517,12 +517,13 @@ namespace
 		if (!IsPlayerBotAngler(ch, state))
 			return false;
 #if defined(PLAYERBOT_ENGINE_MT2009)
-		// CHARACTER::fishing() here wants level 50, the fishing pass (unique
+		// CHARACTER::fishing() here wants a level, the fishing pass (unique
 		// item 27620) worn and water in front of the rod. The level is asked
 		// here so a bot under it never walks to the water; the pass is bought
 		// and worn on the spot (EnsurePlayerBotFishingPass), because nothing
 		// sells one and refusing without it meant no bot ever fished here.
-		if (ch->GetLevel() < 50 || !EnsurePlayerBotFishingPass(ch, dwNow))
+		if (ch->GetLevel() < PLAYERBOT_FISHING_MIN_LEVEL ||
+				!EnsurePlayerBotFishingPass(ch, dwNow))
 			return false;
 #endif
 		// A trip to a village with no measured bank is a walk to nowhere: the

@@ -94,6 +94,9 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_targeting.h"
 #include "playerbot_lure.h"
 #include "playerbot_admin.h"
+// A player's party invitation, left by the engine for the bot's tick to answer.
+// Inline and engine-free, so char.cpp can include the same header.
+#include "playerbot_party_policy.h"
 
 namespace
 {
@@ -245,6 +248,191 @@ namespace
 		return a && b && a->GetGuild() != NULL && a->GetGuild() == b->GetGuild();
 	}
 
+	// Is this party a player's rather than the bots' own? The leader's
+	// descriptor answers it: a bot's says IsBot, a person's does not.
+	bool IsPlayerBotHumanLedParty(LPPARTY party)
+	{
+		if (!party)
+			return false;
+		LPCHARACTER leader = party->GetLeaderCharacter();
+		if (!leader)
+			return false;
+		return !leader->GetDesc() || !leader->GetDesc()->IsBot();
+	}
+
+	// Answering a player's invitation.
+	//
+	// The engine sends HEADER_GC_PARTY_INVITE to the invitee's descriptor and
+	// waits ten seconds for an Accept that a bot has nobody to send. So the
+	// engine leaves the invitation in playerbot_party (playerbotify.py puts the
+	// call into CHARACTER::PartyInvite) and this runs on the bot's own tick,
+	// inside those ten seconds, calling the same method the client's Accept
+	// would have reached. The bot never refuses: every condition that could
+	// refuse is the engine's own (same kingdom, thirty levels, a free place in a
+	// party of eight) and PartyInviteAccept reports those itself.
+	void AcceptPlayerBotPartyInvite(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch)
+			return;
+		uint32_t leaderPid = 0, notedAt = 0;
+		if (!playerbot_party::TakeInvite(ch->GetPlayerID(), leaderPid, notedAt))
+			return;
+		LPCHARACTER leader = CHARACTER_MANAGER::instance().FindByPID(leaderPid);
+		if (!leader || leader->IsDead())
+			return;
+		// Joining is a thing the bot is now doing: an errand it was walking to
+		// keeps its own state, but the party check must not run in the same
+		// second and weigh a party the bot has not joined yet.
+		state.dwNextPartyCheckTime = dwNow + 5000;
+		leader->PartyInviteAccept(ch);
+		sys_log(0, "PLAYERBOT_PARTY: accepted an invitation pid=%u name=%s leader_pid=%u leader=%s",
+				ch->GetPlayerID(), ch->GetName(), leaderPid, leader->GetName());
+	}
+
+	// The level a dropper stops at, or zero for everybody else.
+	BYTE GetPlayerBotExpLockLevel(BYTE personality)
+	{
+		switch (personality)
+		{
+			case BOT_PERSONALITY_METIN_DROPPER: return PLAYERBOT_EXP_LOCK_METIN_DROPPER;
+			case BOT_PERSONALITY_M3_DROPPER:    return PLAYERBOT_EXP_LOCK_M3_DROPPER;
+			case BOT_PERSONALITY_M2_DROPPER:    return PLAYERBOT_EXP_LOCK_M2_DROPPER;
+			case BOT_PERSONALITY_MEDAL_DROPPER: return PLAYERBOT_EXP_LOCK_MEDAL_DROPPER;
+			default: return 0;
+		}
+	}
+
+	// A farmer keeps the level its table pays at. See the constants: every drop
+	// in this engine fades with the level gap, so a dropper that goes on
+	// levelling farms its way out of its own living. The lock is the engine's
+	// AFFECT_EXP_BLOCK, which PointChange checks before it adds any experience,
+	// so nothing else has to know about it - and it is permanent, because the
+	// point is a bot that does the same thing for good.
+	void ManagePlayerBotExpLock(LPCHARACTER ch, const TPlayerBotAIState& state)
+	{
+		if (!ch)
+			return;
+		const BYTE lockLevel = GetPlayerBotExpLockLevel(state.bPersonality);
+		if (lockLevel == 0 || ch->GetLevel() < lockLevel)
+			return;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		if (ch->FindAffect(AFFECT_EXP_BLOCK))
+			return;
+		ch->AddAffect(AFFECT_EXP_BLOCK, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, true, true);
+		sys_log(0, "PLAYERBOT_AI: exp locked for a dropper pid=%u name=%s level=%u personality=%u",
+				ch->GetPlayerID(), ch->GetName(), (unsigned)ch->GetLevel(),
+				(unsigned)state.bPersonality);
+#else
+		// r40250 has no AFFECT_EXP_BLOCK at all - PointChange there knows no
+		// such affect, so there is nothing to ask it for and a dropper on that
+		// line goes on levelling as it always did. Freezing it would need an
+		// engine patch of its own, and this feature was asked for on the 2.x
+		// world; the shared overlay simply does nothing here.
+		(void)lockLevel;
+#endif
+	}
+
+	// When a marble is worth more than the whole skill rotation.
+	//
+	// A polymorph marble gives a large flat damage bonus for five minutes and
+	// the engine refuses every skill while it lasts (char_skill.cpp), so it is a
+	// trade, not an upgrade: worth taking against something that stands there
+	// long enough for the bonus to add up and cannot be killed faster by a
+	// rotation anyway. That is a boss, at the start of the fight - which is
+	// exactly where the players use them.
+	//
+	// Every refusal the engine can raise is left to the engine (already
+	// transformed, in the saddle, a monster too high for the bot's level): none
+	// of them spends the marble, and the retry clock keeps a refused one from
+	// being tried every tick for the rest of the fight.
+	void ManagePlayerBotPolymorph(LPCHARACTER ch, const TPlayerBotAIState& state, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotPolymorphRetry;
+		if (!ch || ch->IsDead() || ch->IsPolymorphed() || ch->IsRiding())
+			return;
+		LPCHARACTER victim = ch->GetVictim();
+		if (!victim || victim->IsDead() || !victim->IsMonster() ||
+				victim->GetMobRank() < MOB_RANK_BOSS)
+			return;
+		// Early in the fight, or the five minutes are spent on a boss that is
+		// nearly down and the bot has thrown a marble away for one hit.
+		if (victim->GetMaxHP() <= 0 ||
+				(victim->GetHP() * 100) / victim->GetMaxHP() < PLAYERBOT_POLYMORPH_BOSS_HP_PERCENT)
+			return;
+		std::map<DWORD, DWORD>::const_iterator retry =
+				s_mapPlayerBotPolymorphRetry.find(ch->GetPlayerID());
+		if (retry != s_mapPlayerBotPolymorphRetry.end() && dwNow < retry->second)
+			return;
+
+		for (int cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->GetType() != ITEM_POLYMORPH || item->GetSocket(0) == 0)
+				continue;
+			bool known = false;
+			for (size_t i = 0; i < sizeof(PLAYERBOT_POLYMORPH_MARBLE_VNUMS) /
+					sizeof(PLAYERBOT_POLYMORPH_MARBLE_VNUMS[0]); ++i)
+				if (PLAYERBOT_POLYMORPH_MARBLE_VNUMS[i] == item->GetVnum())
+					known = true;
+			if (!known)
+				continue;
+			s_mapPlayerBotPolymorphRetry[ch->GetPlayerID()] = dwNow + PLAYERBOT_POLYMORPH_RETRY_MS;
+			if (ch->UseItem(TItemPos(INVENTORY, cell)))
+			{
+				sys_log(0, "PLAYERBOT_AI: polymorphed for a boss pid=%u name=%s marble=%u mob=%u boss=%u",
+						ch->GetPlayerID(), ch->GetName(), item->GetVnum(),
+						item->GetSocket(0), (unsigned)victim->GetRaceNum());
+			}
+			return;
+		}
+	}
+
+	// Walking with the player who invited you.
+	//
+	// Claims the tick when it moves, because the alternative is the wander pass
+	// sending the bot to its own hunting hub twenty kilometres away while the
+	// player it just joined watches it leave. Combat is not interrupted - the
+	// target sections run later and a bot with a victim is kept where it is -
+	// and an errand the bot had already begun keeps its own state; this only
+	// covers the ordinary case of standing about far from the leader.
+	bool ManagePlayerBotFollowHumanLeader(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		// The clock lives beside the pass rather than in TPlayerBotAIState: a
+		// new field in that struct has to be initialised in declaration order or
+		// -Wreorder fires, and this one is nobody else's business.
+		static std::map<DWORD, DWORD> s_mapPlayerBotFollowNext;
+		if (!ch || ch->IsDead())
+			return false;
+		std::map<DWORD, DWORD>::const_iterator nextFollow =
+				s_mapPlayerBotFollowNext.find(ch->GetPlayerID());
+		if (nextFollow != s_mapPlayerBotFollowNext.end() && dwNow < nextFollow->second)
+			return false;
+		LPPARTY party = ch->GetParty();
+		if (!party || !IsPlayerBotHumanLedParty(party))
+			return false;
+		LPCHARACTER leader = party->GetLeaderCharacter();
+		if (!leader || leader->IsDead() || leader == ch)
+			return false;
+		// A leader on another map is a leader this bot cannot walk to: the map
+		// change is somebody else's decision and a bot has no client to follow
+		// a warp with.
+		if (leader->GetMapIndex() != ch->GetMapIndex())
+			return false;
+		// Fighting something is not standing about.
+		if (ch->GetVictim() && !ch->GetVictim()->IsDead())
+			return false;
+		const int dist = DISTANCE_APPROX(ch->GetX() - leader->GetX(), ch->GetY() - leader->GetY());
+		if (dist <= PLAYERBOT_PARTY_FOLLOW_DISTANCE)
+			return false;
+		s_mapPlayerBotFollowNext[ch->GetPlayerID()] = dwNow + PLAYERBOT_PARTY_FOLLOW_INTERVAL;
+		// The horse is allowed: a player crossing a map on one leaves a walking
+		// bot behind within seconds.
+		if (!MovePlayerBot(ch, leader->GetX(), leader->GetY(), dwNow, 8, true, true, false, false))
+			return false;
+		SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
+		return true;
+	}
+
 	void ManagePlayerBotParty(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !ch->GetSectree() || dwNow < state.dwNextPartyCheckTime)
@@ -253,6 +441,18 @@ namespace
 		state.dwNextPartyCheckTime = dwNow + PLAYERBOT_PARTY_CHECK_INTERVAL + number(0, 3000);
 
 		LPPARTY pParty = ch->GetParty();
+		// A party a player leads is the player's, and none of the rules below
+		// are about it. The cohort draw, the five-to-fifteen-minute rotation and
+		// the straggler radius all exist to stop bot parties ossifying around
+		// one camp; applied to a person's party they would walk the bot back
+		// out within a minute of it being invited, which is the opposite of
+		// what an invitation means. The player decides when it ends.
+		if (pParty && IsPlayerBotHumanLedParty(pParty))
+		{
+			if (pParty->GetExpDistributionMode() != PARTY_EXP_DISTRIBUTION_PARITY)
+				pParty->SetParameter(PARTY_EXP_DISTRIBUTION_PARITY);
+			return;
+		}
 		// Party play is an explicit, deterministic cohort. Archer weighting is
 		// decided at login, while the total cohort remains close to ten percent.
 		if (!IsPlayerBotPartyEligible(ch, state))
@@ -1946,8 +2146,21 @@ void CPlayerBotManager::Update()
 		// for. One item a tick, like the chests above.
 		ProcessPlayerBotCatch(ch);
 		ManagePlayerBotHairDye(ch);
+		// A dropper that has reached its band stops earning experience, and a
+		// marble is spent on a boss. Both are cheap tests that end on the first
+		// line for everybody they do not concern.
+		ManagePlayerBotExpLock(ch, state);
+		ManagePlayerBotPolymorph(ch, state, dwNow);
 		ManagePlayerBotGuild(ch, state, dwNow);
+		// Answered every tick and not on the party pass's own clock: the engine
+		// gives an invitation ten seconds to live, and the party pass can be
+		// three minutes away.
+		AcceptPlayerBotPartyInvite(ch, state, dwNow);
 		ManagePlayerBotParty(ch, state, dwNow);
+		// Keeping up with the player comes before the bot's own plans for the
+		// tick, or the wander pass walks it out of the party it just joined.
+		if (ManagePlayerBotFollowHumanLeader(ch, state, dwNow))
+			continue;
 		// The regular levelup.quest opens a selection dialog. A fake descriptor
 		// cannot press its Confirm button, so accept/claim that official mission
 		// here while leaving kill counting to the normal quest event.

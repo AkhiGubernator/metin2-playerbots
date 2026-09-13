@@ -1213,6 +1213,8 @@ def main(root):
     apply_playerbot_offline_shops(game, db)
     apply_refine_quality_of_life(game)
     apply_affect_remove_collect(game)
+    apply_fishing_min_level(game)
+    apply_playerbot_party_invites(game)
     apply_gm_panel(game)
     print('playerbotify: done')
 
@@ -1624,6 +1626,59 @@ def apply_affect_remove_collect(game):
          '\t\t\t{ "remove_collect",\t\taffect_remove_collect\t\t},\n'
          '\t\t\t{ "remove_all_collect",\taffect_remove_all_collect\t},\n',
          marker='{ "remove_collect",')
+
+
+def apply_fishing_min_level(game):
+    # Lowienie od 30 poziomu zamiast od 50 (prosba operatora).
+    #
+    # CHARACTER::fishing() na tej linii odmawia ponizej piecdziesiatki i to jest
+    # jedyne miejsce, ktore o tym decyduje po stronie silnika - reszta bramek
+    # (mapa, przepustka, przyneta) zostaje bez zmian. Nakladka pyta o ten sam
+    # prog przez PLAYERBOT_FISHING_MIN_LEVEL w dwoch miejscach (activities.h,
+    # travel.h), zeby bot ponizej progu nie szedl nad wode, ktora i tak by go
+    # odprawila; te dwie liczby musza sie zgadzac.
+    edit(os.path.join(game, 'char.cpp'),
+         '\tif (GetLevel() < 50)\n\t\treturn;\n',
+         '\t// Lowienie od 30 poziomu - patrz PLAYERBOT_FISHING_MIN_LEVEL.\n'
+         '\tif (GetLevel() < 30)\n\t\treturn;\n',
+         marker='\t// Lowienie od 30 poziomu - patrz PLAYERBOT_FISHING_MIN_LEVEL.\n')
+
+
+def apply_playerbot_party_invites(game):
+    # Zaproszenie gracza do party dociera do bota.
+    #
+    # CHARACTER::PartyInvite konczy sie wyslaniem HEADER_GC_PARTY_INVITE na
+    # deskryptor zapraszanego. Bot ma deskryptor, ale nie ma za nim klienta,
+    # wiec pakiet nie dociera do nikogo, nikt nie klika "Akceptuj" i po
+    # dziesieciu sekundach zdarzenie zaproszenia wygasa - zapraszanie bota nie
+    # robilo dotad dosłownie nic i nie zostawialo po sobie sladu.
+    #
+    # Silnik nie moze odpowiedziec za bota, bo akceptacja jest metoda LIDERA
+    # (leader->PartyInviteAccept(guest)) i musi sie wykonac, dopoki zdarzenie
+    # zyje. Wiec silnik tylko zapisuje, ze bot zostal zaproszony, a odpowiada
+    # tick bota (AcceptPlayerBotPartyInvite) - tam, gdzie mieszkaja wszystkie
+    # inne decyzje botow. Warunki dolaczenia zostaja silnikowe: to samo
+    # krolestwo, roznica trzydziestu poziomow i wolne miejsce w osmioosobowej
+    # druzynie.
+    edit(os.path.join(game, 'char.cpp'),
+         '#include "pvp.h"\n#include "party.h"\n',
+         '#include "pvp.h"\n#include "party.h"\n#include "playerbot_party_policy.h"\n',
+         marker='#include "playerbot_party_policy.h"\n')
+    edit(os.path.join(game, 'char.cpp'),
+         '\tTPacketGCPartyInvite p;\n'
+         '\tp.header = HEADER_GC_PARTY_INVITE;\n',
+         '\t// Bot nie ma klienta, ktory nacisnie "Akceptuj" - zostawiamy\n'
+         '\t// zaproszenie jego tickowi i nie wysylamy pakietu w prozne.\n'
+         '\tif (pchInvitee->GetDesc() && pchInvitee->GetDesc()->IsBot())\n'
+         '\t{\n'
+         '\t\tplayerbot_party::NoteInvite(GetPlayerID(), pchInvitee->GetPlayerID(),\n'
+         '\t\t\t\t(uint32_t) get_global_time());\n'
+         '\t\treturn;\n'
+         '\t}\n'
+         '\n'
+         '\tTPacketGCPartyInvite p;\n'
+         '\tp.header = HEADER_GC_PARTY_INVITE;\n',
+         marker='playerbot_party::NoteInvite(')
 
 
 def apply_gm_panel(game):

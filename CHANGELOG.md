@@ -17,6 +17,74 @@ every version here.
 
 ---
 
+## 2.0.38 — 2026-09-14
+
+Serwer. Boty przyjmują zaproszenie do drużyny i biegną z graczem, łowią od 30
+poziomu, zakładają marmury polimorfii na bossów, a dropperzy przestają zbierać
+doświadczenie na poziomie swojego łowiska. Klient bez zmian (zostaje 2.0.5).
+
+### Zaproszenie do drużyny wreszcie dociera do bota
+
+Do tej pory zaproszenie gracza do bota **nie robiło dosłownie nic** i nie
+zostawiało po sobie śladu w żadnym logu. Przyczyna: `CHARACTER::PartyInvite`
+kończy się wysłaniem pakietu na deskryptor zapraszanego. Bot ma deskryptor, ale
+nie ma za nim klienta — pakiet szedł w próżnię, nikt nie klikał „Akceptuj", a po
+dziesięciu sekundach zaproszenie cicho wygasało.
+
+Teraz silnik odkłada takie zaproszenie w osobnym dzienniku, a tick bota
+odpowiada na nie tą samą metodą, którą wywołałby klient. Bot **nigdy nie
+odmawia** — wszystkie warunki, które mogą odrzucić, są silnikowe i o nich warto
+wiedzieć: to samo królestwo, różnica do trzydziestu poziomów i wolne miejsce w
+drużynie ośmioosobowej.
+
+Do tego dwie rzeczy, bez których to nie miałoby sensu. Drużyna prowadzona przez
+**gracza** jest wyjęta ze wszystkich reguł rotacji botów — kohorty, wygasania po
+5–15 minutach i promienia maruderów — bo inaczej bot dołączyłby i wyszedł w
+ciągu minuty. I biegnie za graczem: gdy oddali się o ponad 1500 jednostek,
+rusza za nim, z koniem, zanim pas wędrowania zdąży go wysłać na własne łowisko.
+
+Czego jeszcze nie ma: bot-lider nie zaprasza kolejnych botów. Każdego zapraszasz
+sam.
+
+### Łowienie od 30 poziomu
+
+Wymóg pięćdziesiątki siedział w trzech miejscach naraz — w samym silniku
+(`CHARACTER::fishing()`) i w dwóch bramkach botów, żeby nikt nie szedł nad wodę,
+która i tak by go odprawiła. Wszystkie trzy mówią teraz trzydzieści. Reszta
+warunków bez zmian: mapa pierwszej wioski, przepustka i przynęta.
+
+### Marmury polimorfii na bossów
+
+Dotąd **żaden bot nigdy nie użył marmuru** — były wyłącznie towarem na stragan.
+Teraz bot zakłada marmur, gdy bije bossa, który ma jeszcze co najmniej 90%
+życia. Nie robi tego w siodle ani pod inną przemianą, bo silnik i tak by
+odmówił. Zakaz używania umiejętności pod marmurem jest silnikowy i nic nie
+trzeba było dodawać — dlatego marmur idzie tylko na bossa, gdzie rotacja i tak
+nie decyduje o walce.
+
+### Dropperzy zatrzymują poziom
+
+Każdy drop w tym silniku blednie wraz z różnicą poziomów, więc farmer, który się
+dalej rozwija, wychodzi z własnej tabeli: medal to grupa „kill", a przy
+piętnastu poziomach nad potworem jest wart tyle co nic. Dropper dochodzi teraz
+do poziomu swojego łowiska i **zatrzymuje doświadczenie na stałe** — medale 33,
+M2 36, M3 30, metiny 40 — po czym robi w kółko to, po co jest: dropi i sprzedaje.
+
+### Launcher mówi po angielsku, że mówi po angielsku
+
+Przełącznik języka był, ale napis „JEZYK: POLSKI" nie mówi anglojęzycznemu, w co
+kliknąć. Przycisk pokazuje teraz oba języki naraz.
+
+---
+
+Sprawdzone przed wydaniem: składnia nakładki bez błędów na obu silnikach, obraz
+mt2009 przebudowany, rdzeń wstał z 2500 tożsamościami bez nowych błędów, a
+binarka niesie wszystkie nowe linie logu. Tick 2,8 s z 60 przy 318 botach,
+watchdog zero. Czego **nie** udało się zobaczyć na żywo: żadnej z czterech
+nowych rzeczy w działaniu — w świecie testowym jest ośmiu botów powyżej
+trzydziestki, jedyny dropper wśród nich ma 31 poziom przy progu 33, a
+zaproszenia do drużyny nie ma kto wysłać bez klienta.
+
 ## 2.0.37 — 2026-09-13
 
 Serwer i panel. Łańcuch Biologa nie kończy się już na Zębie Orka — dochodzi

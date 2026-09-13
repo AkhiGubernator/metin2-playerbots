@@ -954,12 +954,14 @@ namespace
 			if (victim && !victim->IsDead())
 				return false;
 #if defined(PLAYERBOT_ENGINE_MT2009)
-			// This engine's fishing() wants level 50 and the pass worn; a session
+			// This engine's fishing() wants a level and the pass worn; a session
 			// begun without them walked to the stand and stood there two minutes
 			// to "never_cast" (measured on the test world the day the pass was
-			// added). Under fifty there is nothing to wait for; without the gold
-			// for a pass the next ask is in an hour.
-			if (ch->GetLevel() < 50)
+			// added). Under the floor there is nothing to wait for; without the
+			// gold for a pass the next ask is in an hour. The floor is the
+			// engine's own - playerbotify.py moves fishing() to the same number,
+			// so this gate and the engine can never disagree.
+			if (ch->GetLevel() < PLAYERBOT_FISHING_MIN_LEVEL)
 				return false;
 			if (!EnsurePlayerBotFishingPass(ch, dwNow))
 			{

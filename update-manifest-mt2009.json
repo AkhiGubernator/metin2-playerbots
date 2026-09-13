@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T08:09:17Z",
-  "statusMessage": "Wersja 2.0.24: boty zakladaja bronie 30 lvl ze srednimi, lucznicy ulepszaja sztylet do metinow (+4), koniec drzenia konia w podrozy, stragany na duplikaty dopiero od +7, a materialy pod presja plecaka ida do magazynu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-13T08:34:27Z",
+  "statusMessage": "Wersja 2.0.25: w PvE liczy sie srednia obrazen (bot zaklada bron ze srednimi, takze sura/mag), bron ze srednimi umiejetnosci >21% zostaje do PvP, a lucznicy ulepszaja sztylet u kowala do +4 i bez niego nie zaczepiaja metina sami. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.24",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.24/metin2-server-update-2.0.24.zip",
-    "sha256": "56C435B81B759BAFDE0CF63C1DDBBBCF5A9DDAE2AA24B64E0BE1F8AABDF88FB7"
+    "version": "2.0.25",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.25/metin2-server-update-2.0.25.zip",
+    "sha256": "D6BEF84BD013AD609E2DCFD238B2154E393C818525E274E8C04ED400423ED174"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

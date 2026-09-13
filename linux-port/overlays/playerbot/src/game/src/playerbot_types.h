@@ -709,6 +709,13 @@ namespace
 	// (Ciapek, 13 September). And a change stone is never spent on a +0..+4
 	// piece: raise it first, mix later.
 	const long PLAYERBOT_BONUS_WEAPON_LOCK_PCT = 25;
+	// A weapon with a skill-damage line above this is a PvP prize and is never
+	// rerolled away, whatever the class - not only a caster's. The equip pass
+	// values average damage for PvE (see the prize in playerbot_gear.h), but a
+	// big skill line is a nice PvP bonus this world will use once PvP ships, and
+	// "szkoda tracic takiego ladnego bonusu do PvP" (Tieru): the bot keeps such a
+	// weapon, or sells it whole on an offline counter, rather than mixing it off.
+	const long PLAYERBOT_BONUS_SKILL_PVP_PCT = 21;
 	const BYTE PLAYERBOT_BONUS_CHANGE_MIN_REFINE = 5;
 	const long PLAYERBOT_BONUS_KEEP_HP = 1500;
 	const long PLAYERBOT_BONUS_KEEP_CRIT = 5;

@@ -315,7 +315,14 @@ namespace
 				// the skill line and then sets the average to minus twice it, so
 				// a weapon cannot carry both and a Shaman that only ever stopped
 				// on the average line never stopped at all.
+				//
+				// And a big skill line is finished for every class, not only a
+				// caster: it is a PvP prize this world will use later, and mixing
+				// it off would waste it ("szkoda tracic takiego ladnego bonusu do
+				// PvP", Tieru). PvE still wears the average weapon - this only
+				// stops the reroll from destroying the skill one.
 				return average >= PLAYERBOT_BONUS_KEEP_AVERAGE ||
+						skill > PLAYERBOT_BONUS_SKILL_PVP_PCT ||
 						(IsPlayerBotCaster(ch) && skill >= PLAYERBOT_BONUS_KEEP_SKILL);
 			}
 			case WEAR_BODY:

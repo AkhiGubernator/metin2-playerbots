@@ -17,6 +17,28 @@ every version here.
 
 ---
 
+## 2.0.25 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Poprawki do 2.0.24 wg uwag Tieru.
+
+### Broń: w PvE liczą się średnie obrażenia, umiejętności zostają do PvP
+
+Premia „którą broń założyć” liczy się teraz **ze średnich obrażeń dla każdej klasy**
+— także dla sury i maga. W PvE (rozbijanie metinów i potworów zwykłym atakiem) liczą
+się średnie obrażenia, a nie umiejętności; linia umiejętności to bonus do PvP, którego
+jeszcze nie wdrożyliśmy. Dzięki temu bot zakłada Ribę 48% czy Antyka 40% średnich i już
+nie zostaje w wachlarzu +9 obok Antyka ze średnimi. Osobno: broń ze **średnimi
+umiejętności powyżej 21%** nie jest już mieszana Zmianą Bonusów u żadnej klasy — zostaje
+jako ładny bonus do PvP albo idzie na stragan offline, zamiast zostać zniszczona.
+
+### Łucznicy-ninja: sztylet +4 u kowala, albo nie zaczepiają metina sami
+
+Sztylet do metinów jest ulepszany **u kowala** do co najmniej +4 (poprzednio napisałem
+mylnie „w plecaku” — ulepszanie idzie przez kowala, tak jak dla noszonej broni). Dopóki
+łucznik nie ma sztyletu co najmniej +4, **nie zaczepia metina w pojedynkę** — samym
+łukiem i tak sobie nie poradzi. Może za to dobić metina z łuku, jeśli ktoś inny (bot
+albo gracz) już go bije.
+
 ## 2.0.24 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

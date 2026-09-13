@@ -335,12 +335,19 @@ namespace
 				multiplier = 20;
 			score += attack * 1000 * multiplier / 100;
 
-			// The prize a player looks at: a strong average line (or, for a
-			// caster, a strong skill line) makes the weapon worth wearing and
-			// then refining, over a lower weapon already at +6/+9. Gated at the
-			// lock so only a genuine prize gets it, proportional so ordering
-			// among prizes and against a real high-tier weapon still holds.
-			const long prizeLine = style > 0 ? skillPct : avgPct;
+			// The prize a player looks at, and it is the average-damage line for
+			// every class, not the skill line: in PvE - which is all a bot does,
+			// breaking Metins and mobs with ordinary hits - average damage is what
+			// counts, while skill damage is a PvP line that this world does not use
+			// yet ("najbardziej licza sie srednie obrazenia a nie umiejetnosci ...
+			// glownie stawiajmy na srednie", Tieru). So a Riba 48% avg or an Antyk
+			// 40% avg is worn and refined over a lower weapon already at +6/+9,
+			// whatever the class - a Sura no longer keeps a fan +9 beside an Antyk
+			// with a big average line. Skill-damage weapons are not prized for wear
+			// here; they are kept for PvP by the reroll and disposition rules
+			// (PLAYERBOT_BONUS_SKILL_PVP_PCT). Gated at the lock, proportional so
+			// ordering among prizes and against a real high-tier weapon holds.
+			const long prizeLine = avgPct;
 			if (prizeLine >= PLAYERBOT_BONUS_WEAPON_LOCK_PCT)
 				score += (long long)prizeLine * PLAYERBOT_WEAPON_PRIZE_PER_PCT;
 
@@ -631,6 +638,15 @@ namespace
 				ch->GetWear(WEAR_WEAPON) == item;
 	}
 
+	// Whether the Archer holds a dagger good enough to break a stone: at least
+	// +4, worn or in the bag. Below that a stone is not worth taking on alone -
+	// the dagger is refined at the blacksmith towards this first.
+	bool HasPlayerBotUsableStoneDagger(LPCHARACTER ch)
+	{
+		LPITEM w = FindPlayerBotStoneWeapon(ch, true);
+		return w && w->GetRefineLevel() >= PLAYERBOT_ARCHER_STONE_MIN_REFINE;
+	}
+
 	// What the hand should hold right now: the job's weapon, or the stone
 	// weapon while an Archer is on a stone.
 	bool PlayerBotWeaponFitsNow(LPCHARACTER ch, const TPlayerBotAIState& state, LPITEM item)
@@ -653,8 +669,11 @@ namespace
 		{
 			LPCHARACTER target = state.dwTargetVID != 0
 					? CHARACTER_MANAGER::instance().Find(state.dwTargetVID) : NULL;
+			// Only a dagger at +4 or better puts the Archer into melee; below that
+			// it stays on the bow and reaches a stone only when others are already
+			// breaking it (CanPlayerBotEngageStone).
 			const bool wantMelee = target && target->IsStone() && !target->IsDead() &&
-					FindPlayerBotStoneWeapon(ch, true) != NULL;
+					HasPlayerBotUsableStoneDagger(ch);
 			if (wantMelee != state.bMeleeForStone)
 			{
 				state.bMeleeForStone = wantMelee;

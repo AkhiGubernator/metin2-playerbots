@@ -1212,6 +1212,7 @@ def main(root):
 
     apply_playerbot_offline_shops(game, db)
     apply_refine_quality_of_life(game)
+    apply_affect_remove_collect(game)
     apply_gm_panel(game)
     print('playerbotify: done')
 
@@ -1563,6 +1564,66 @@ def apply_refine_quality_of_life(game):
          '\t\t}\n'
          '\t}\n'
          '}\n\n#ifdef ENABLE_ACCE_COSTUME_SYSTEM\n')
+
+
+def apply_affect_remove_collect(game):
+    # web_admin.quest takes its own speed effects off before adding a new one,
+    # and it does it by name rather than with remove_all_collect - that would
+    # also strip the potions, buffs and blessings a player earned. It calls
+    # affect.remove_collect; this engine binds remove_all_collect and nothing
+    # else, so that call was a nil value. The quest died on it, never reached
+    # the line that writes its result, and left the panel's queue row holding
+    # the quest's own claim stamp for ever - which the panel then showed as
+    # "Cos poszlo nie tak (w1x257t780)" (Sammy Suricate, 13 September). Bind
+    # the function it actually calls.
+    edit(os.path.join(game, 'questlua_affect.cpp'),
+         '\tALUA(affect_remove_all_collect)\n',
+         '\t// playerbot/panel: affect.remove_collect (playerbotify.py).\n'
+         '\t//\n'
+         '\t// This engine binds remove_all_collect and not this one, so web_admin.quest\n'
+         '\t// - which takes its own speed effects off by name before adding a new one,\n'
+         '\t// rather than stripping everything the player earned - died on a nil\n'
+         '\t// function, never wrote its result, and left the queue row holding the\n'
+         "\t// quest's claim stamp for ever.\n"
+         '\t//\n'
+         '\t// affect_add_collect above sums into one affect per point type\n'
+         '\t// (FindAffect(AFFECT_COLLECT, point_type)), so there is exactly one to take\n'
+         '\t// off. r40250 matches on the value because there every call makes its own\n'
+         '\t// affect; here that would never match an accumulated one, so the value is\n'
+         '\t// accepted and ignored.\n'
+         '\tALUA(affect_remove_collect)\n'
+         '\t{\n'
+         '\t\tif (!lua_isnumber(L, 1))\n'
+         '\t\t{\n'
+         '\t\t\tsys_err("invalid argument");\n'
+         '\t\t\treturn 0;\n'
+         '\t\t}\n'
+         '\n'
+         '\t\tLPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();\n'
+         '\n'
+         '\t\tif (ch == NULL)\n'
+         '\t\t\treturn 0;\n'
+         '\n'
+         '\t\tBYTE point_type = (BYTE) lua_tonumber(L, 1);\n'
+         '\n'
+         '\t\tif (point_type >= POINT_MAX_NUM || point_type < 1)\n'
+         '\t\t\treturn 0;\n'
+         '\n'
+         '\t\tCAffect* pkAff = ch->FindAffect(AFFECT_COLLECT, point_type);\n'
+         '\n'
+         '\t\tif (pkAff)\n'
+         '\t\t\tch->RemoveAffect(pkAff);\n'
+         '\n'
+         '\t\treturn 0;\n'
+         '\t}\n'
+         '\n'
+         '\tALUA(affect_remove_all_collect)\n',
+         marker='ALUA(affect_remove_collect)')
+    edit(os.path.join(game, 'questlua_affect.cpp'),
+         '\t\t\t{ "remove_all_collect",\taffect_remove_all_collect\t},\n',
+         '\t\t\t{ "remove_collect",\t\taffect_remove_collect\t\t},\n'
+         '\t\t\t{ "remove_all_collect",\taffect_remove_all_collect\t},\n',
+         marker='{ "remove_collect",')
 
 
 def apply_gm_panel(game):

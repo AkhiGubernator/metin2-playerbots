@@ -17,6 +17,110 @@ every version here.
 
 ---
 
+## 2.0.35 — 2026-09-13
+
+Serwer. Pięć zgłoszeń z Discorda z jednego wieczoru, każde z inną przyczyną —
+i dwa z nich okazały się tym samym: bot z Shinsoo albo Jinno żył w świecie
+opisanym współrzędnymi Chunjo.
+
+### Konie w Shinsoo i Jinno — każde królestwo ma własny Loch Małp
+
+„Tylko boty z chunjo levelują konia" (RetroGracz38), „bo z innych nie wchodzą do
+lochu dlatego" (NerrVoVy), „jest problem z robieniem konia w shinsoo i jinno,
+przez to jak ktoś pisał, że nie mają ustawionych kordów do lochu w swoim m2"
+(Kiciamol). Sprawdzone na naszym własnym świecie przed poprawką: **Shinsoo 500
+postaci i ani jednego konia, Jinno 500 i ani jednego**, Chunjo jedyne z koniem.
+
+Każde królestwo ma swój własny łatwy Loch Małp — to trzy osobne mapy (5, 25
+i 45), o tej samej geometrii, w trzech różnych miejscach świata. Nakładka znała
+tylko mapę Chunjo. Bot z Shinsoo przechodził własną bramą i lądował na mapie,
+której kod nie rozpoznawał jako lochu: bez komór, bez punktów polowania, bez
+medalu. Bot po 33. poziomie był z kolei wysyłany do trudnego lochu, którego jego
+rdzeń w ogóle nie hostuje, więc warp był odrzucany za każdym razem.
+
+Poziom nie wskazuje już mapy, tylko **pasmo**; mapę dobiera się do bota — jego
+królestwo i to, co ten rdzeń faktycznie hostuje. Królestwo bez dostępu do
+trudniejszych lochów pracuje we własnym, dopóki to się jeszcze opłaca (medal to
+losowanie z grupy zabójstw, a mnożnik za różnicę poziomów wygasa piętnaście
+poziomów nad potworem).
+
+### Każde królestwo wchodzi na mapy wspólne własnym wejściem
+
+„Wszystkie boty po wejściu do doliny, niezależnie od królestwa z którego są,
+wchodzą w miejscu wejścia żółtych. To samo się dzieje z pustynią" (SIZOWSKI,
+potwierdzone przez NerrVoVy).
+
+Dolina Orków, Pustynia Yongbi i Góra Sohan mają po trzy wejścia i po trzy bramy
+— po jednym na królestwo. Tabela z tymi punktami istniała w kodzie od dawna
+i była poprawna; podróż po prostu jej nie pytała i brała stałą Chunjo. Teraz
+pyta. Bramy powrotne dobrano tak samo: bot wychodzi przez NPC-a stojącego obok
+**własnego** wejścia, a nie przez bramę żółtych na drugim końcu mapy.
+
+Punkty pochodzą z plików samej mapy (`Town.txt` — ogólny punkt i po jednej parze
+na królestwo, oraz `npc.txt` dla bram) i wszystkie osiemnaście sprawdzono na
+`server_attr`: każdy stoi na gruncie, po którym da się chodzić. Wiersze Chunjo
+odtwarzają co do jednostki stałe używane do tej pory, co jest dowodem, że
+pozostałe sześć jest odczytane tak samo. Test jednostkowy tego pilnuje.
+
+### Stragany offline: wracają trzy mechanizmy (mt2009)
+
+AkhiGubernator przeczytał binarkę i pokazał, że cała klasyczna obsługa straganu
+w `ManagePlayerBotShopLifetime` jest na tej linii silnika **nieosiągalna
+z konstrukcji** (dwa wyczerpujące wczesne `return`), więc kompilator usuwa ją od
+`-O1` wzwyż. Diagnoza była w punkt. Padły przez to trzy rzeczy:
+
+- **„Wysoki popyt"** (Iwakura, 2.0.33) — pamięć szybkiej sprzedaży nigdy nie
+  dostawała ani jednego wpisu, więc narzut za popyt zawsze wynosił zero.
+- **`PLAYERBOT_STALL_SOLD`** w historii sprzętu — wpisu nie było wcale.
+- **Ponowna ocena stojącego straganu** po ruszeniu suwaka TRADE.
+
+Na tej linii towar na ladzie należy do encji sklepu, a nie do plecaka bota, więc
+„jedno przejście po własnym plecaku" nie może niczego zauważyć. Sprzedaż
+zapisuje teraz natywny menedżer w chwili, w której ona następuje — jest jedyną
+stroną, która o niej wie — a bot odbiera ten zapis na swoim własnym ticku.
+Stragan, który wygasł, nie jest już odnawiany pod wagą, która go nie chce.
+
+### Panel: „Szybkość biegu" i stempel zajęcia wiersza
+
+„Bez względu na to czy postać jest zalogowana czy nie wywala błąd przy próbie
+nadania szybkości" (Sammy Suricate) — komunikat brzmiał „Coś poszło nie tak
+(w1x257t780)".
+
+Przyczyny były **dwie**, jedna pod drugą, i obie są naprawione.
+
+`w1x257t780` to nie status, tylko **stempel**, którym quest w grze zajmuje
+wiersz kolejki, zanim zacznie pracę. Panel brał każdą wartość inną niż `pending`
+za odpowiedź końcową i meldował ten stempel operatorowi jako błąd. Czeka teraz
+na słowo z listy questa; wszystko inne znaczy „jeszcze pracuje". Dotyczy to
+wszystkich komend panelu, nie tylko tej jednej.
+
+Ale sam stempel nie zniknąłby stamtąd nigdy, i to jest druga połowa. Quest
+zdejmuje własne efekty szybkości, zanim doda nowy — po nazwie, a nie hurtem,
+żeby nie zabrać graczowi mikstur i błogosławieństw — i woła do tego
+`affect.remove_collect`. **Tego wiązania na tej linii silnika nie ma**: jest
+`remove_all_collect` i nic poza tym. Quest wywracał się więc na wywołaniu
+nieistniejącej funkcji, nigdy nie dochodził do zapisu wyniku i zostawiał wiersz
+ze swoim stemplem na zawsze. Widać to było w `syserr`:
+`LUA_ERROR: attempt to call field 'remove_collect' (a nil value)`.
+
+Brakujące wiązanie jest dopisane do silnika (tą samą drogą, którą dokładane są
+inne). Implementacja różni się od r40250 celowo: tam każde wywołanie tworzy
+własny efekt i usuwa się go po wartości, tutaj silnik **sumuje** efekty w jeden
+na typ punktu, więc dopasowanie po wartości nigdy by nie trafiło.
+
+Bez tej drugiej połowy sama poprawka panelu zamieniłaby tylko dziwny komunikat
+na uczciwe „przekroczono czas oczekiwania" — i nic więcej.
+
+### Dlaczego broń na 30 poziom nie jest ulepszana — najpierw pomiar
+
+„Na 341 broni na serwerze praktycznie wszystkie są +0 (max +2)" (Iwakura). Broń
+w plecaku może zostać pominięta przez cztery różne reguły, a z zewnątrz wyglądają
+identycznie — dlatego tego zgłoszenia nie dało się ani potwierdzić, ani wyjaśnić
+z żadnego logu. Zamiast zgadywać, rdzeń mówi teraz **która** reguła ją pominęła
+(`PLAYERBOT_AI: level-30 weapon not refined ... reason=`), raz na minutę dla całej
+populacji. Poprawka pójdzie po tym, co pokaże pierwszy log — nasz własny świat
+nie ma ani jednej takiej broni, więc nie ma tu czego odtworzyć.
+
 ## 2.0.34 — 2026-09-13
 
 Serwer **i klient** — pierwsza zmiana klienta od 2.0.3. Panel GM na F9 od

@@ -17,6 +17,103 @@ every version here.
 
 ---
 
+## 2.0.31 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Misja na konia
+bojowego wreszcie się liczy, szkatułki blasku i zwoje błogosławieństwa trafiają
+na stragany, przełącznik układu świata pojawia się w `.env`, okno ulepszania
+może zostawać otwarte, a launcher sam zwalnia zajęte porty.
+
+### Misja na konia bojowego stała na 0/100 (sosen)
+
+„Boty się bugują i nie wykonują misji na konia bojowego — cały czas 0/100
+i błądzenie po mapie”. Tak było i nie mogło być inaczej: próba liczyła
+zabójstwa potworów o numerach **401–404** (Czarny Wiatr), a tych na pustyni nie
+ma ani jednego — mieszkają na drugich wioskach (mapy a3/b3/c3). Bot stał więc na
+właściwej mapie i zabijał właściwe potwory, tylko żadne z nich nie było tym,
+czego licznik szukał.
+
+Skąd ten błąd: w `regen.txt` pustyni prawie każda linia jest typu `r`, a jej
+ostatnie pole to numer **grupy grup**, nie numer potwora — i akurat te numery to
+401–404. Ktoś (my) odczytał je jako vnumy potworów i wpisał do kodu, dopisując
+przy tym nieprawdę, że potwory z oryginalnej misji „nie są nigdzie
+zespawnowane”.
+
+Po rozwinięciu grup przez globalne `group_group.txt` i `group.txt` pustynia
+niesie dokładnie to, co mówi wiki: **Skorpion Łucznik (2105, 47 lvl)** —
+998 punktów spawnu — i **Wężowy Łucznik (2107, 51 lvl)** — 760 punktów. Próba
+liczy teraz je, tak jak misja u Stajennego. Limitu 30 minut, który ma wersja dla
+graczy, nadal celowo nie ma: bot kuje aż skończy.
+
+### Szkatułki blasku i zwoje błogosławieństwa trafiają na stragany (sizowski, Iwakura)
+
+„Żaden bot nie sprzedaje szkat blasku i zwojów błogosławieństwa”. Bo każdy bot
+zużywał wszystko na siebie: szkatułka szła na stragan dopiero od stosu pięciu,
+a zwoje zostawały w plecaku, dopóki cokolwiek noszonego było poniżej +9 — czyli
+u bota, który wciąż się przezbraja, praktycznie zawsze.
+
+Zgodnie z propozycją sizowskiego („4 używają do rozwijania postaci, 1 sprzedaje
+— jak prawdziwy gracz”) **co piąty bot jest teraz handlarzem zasobów**:
+wystawia szkatułki już od stosu dwóch i zostawia sobie jeden zwój zamiast
+trzech. Rola jest stała (losowana z PID), więc nie miga między restartami, i
+jest rozdzielona od roli „skupuje złom”. Pozostałe cztery piąte populacji
+zachowuje się jak dotąd — nadal otwierają i nadal ulepszają.
+
+### Przełącznika układu świata nie było w `.env` (NerrVoVy)
+
+„Przełącznik `M2_PLAYERBOT_WORLD_LAYOUT` nie występuje po aktualizacji”.
+Zgadza się — 2.0.30 dodało go do obu plików Compose i do `m2-render-config`, ale
+nie do `.env.example`, a to jedyna droga, którą nowe ustawienie trafia do
+istniejącego `.env`. Nic się nie psuło (Compose ma własną wartość domyślną
+`split`), tylko nie dało się tego włączyć bez ręcznego dopisania linii. Teraz
+jest w `.env.example` wraz z opisem obu trybów i kosztu każdego z nich.
+
+### Okno ulepszania może zostawać otwarte (Paweł „Pabloo”)
+
+Kod przygotowany, przeniesiony na naszą wersję i przetestowany w grze przez
+Pabloo. Dwie rzeczy po stronie serwera:
+
+- **`m_iRefineAdditionalCell` nie był inicjowany** przy tworzeniu postaci, więc
+  pierwsza sesja ulepszania czytała komórkę zwoju ze śmieci. Samodzielna
+  poprawka bezpieczeństwa, niezależna od reszty.
+- **„Nie zamykaj okna”**: po próbie serwer sam otwiera okno ulepszania jeszcze
+  raz, zamiast zostawiać zamknięte. Włącza się komendą `/refine_keep_open 1`,
+  wybór przeżywa relog. Przy zwoju sprawdzane jest dodatkowo, czy w zapamiętanej
+  komórce nadal leży poprawny zwój — to naprawia przypadek zużycia ostatniego
+  Zwoju Błogosławieństwa.
+
+**Żadnego auto-refine**: każda próba nadal wymaga świadomego kliknięcia, a cała
+logika ulepszania zostaje po stronie serwera. Zabezpieczenie jednej sekundy
+zostaje — przeniesione za podstawowe walidacje, bo wcześniej przy otwartym oknie
+psuło sesję ulepszania. Sprawdzenia NPC i dystansu z 2.0.29 nietknięte, Wieża
+Demona celowo bez tej opcji.
+
+Dwa checkboxy w oknie („Nie zamykaj okna”, „Potwierdzaj Enterem”) to zmiana po
+stronie klienta i **nie ma jej w tej paczce** — wymaga osobnego wydania klienta.
+
+### Launcher: koniec z „port jest już zajęty” (Tieru)
+
+Przy każdej próbie aktualizacji launcher przerywał budowanie komunikatem
+o zajętym porcie, a wyłączanie Dockera nie pomagało. Trzy przyczyny naraz:
+
+- na jednej maszynie potrafi być kilka instalacji tego samego serwera, każda
+  jako osobny projekt Dockera, i wszystkie publikują te same porty;
+- każdy kontener ma politykę `restart: unless-stopped`, czyli Docker wskrzesza
+  starą instalację przy każdym uruchomieniu silnika — a ta polityka czeka
+  dokładnie na to, co robił operator, czyli na wyłączenie Dockera;
+- sprawdzenie przed startem patrzyło **wyłącznie na port 7788**, a kolizja była
+  na 7790 (panel zaawansowany), więc launcher meldował „porty wolne” i dopiero
+  Docker przerywał budowanie po kilkunastu minutach.
+
+Teraz launcher sprawdza **wszystkie** publikowane porty (7788, 7790, 7791,
+11000, 13000–13002, 3306), a gdy któryś jest zajęty, mówi wprost, który kontener
+go trzyma, z jakiej instalacji i **z którego folderu**. GRAJ i ZAINSTALUJ
+AKTUALIZACJE zwalniają takie porty same; w wersji konsolowej jest to opcja 21
+(„Zwolnij porty”). Zatrzymywana jest tylko obca instalacja — bez dotykania bazy,
+wolumenów i postępu botów.
+
+---
+
 ## 2.0.30 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Shinsoo i Jinno mogą

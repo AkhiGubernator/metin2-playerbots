@@ -901,6 +901,16 @@ namespace
 				base = PLAYERBOT_MATERIAL_PRICES[i].dwPrice;
 				break;
 			}
+		// His later sheets: the herbs, the Moonlight chest and the horse medal.
+		// Same rule, same scaling, a separate table only because a generator
+		// writes that one (playerbot_price_tables.h).
+		for (size_t i = 0; base == 0 &&
+				i < sizeof(PLAYERBOT_EXTRA_MATERIAL_PRICES) / sizeof(PLAYERBOT_EXTRA_MATERIAL_PRICES[0]); ++i)
+			if (PLAYERBOT_EXTRA_MATERIAL_PRICES[i].dwVnum == dwVnum)
+			{
+				base = PLAYERBOT_EXTRA_MATERIAL_PRICES[i].dwPrice;
+				break;
+			}
 		if (base == 0)
 			return 0;
 		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
@@ -928,6 +938,140 @@ namespace
 		return rounded > 0xFFFFFFFFULL ? price : (DWORD)rounded;
 	}
 
+	// Iwakura's own scaling rule, written at the top of both of his sheets:
+	// the base price times the yang drop rate over a hundred, so a world at
+	// 100% pays the table and one at 500% pays five times it, all the way to
+	// his stated ceiling of 10000%.
+	DWORD ScalePlayerBotIwakuraPrice(DWORD base)
+	{
+		if (base == 0)
+			return 0;
+		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
+		return (DWORD)((unsigned long long)base * (unsigned long long)std::max(1, rate) / 100ULL);
+	}
+
+	// What the stones seated in a weapon or armour add to its price, in
+	// percent. Two steps, both his: how many are in it, then which ones. A
+	// socket holding 1 is open and one holding the broken vnum is a failed
+	// insertion - his "Peknięte KD - 1.0" - so neither counts.
+	int GetPlayerBotSocketStonePercent(LPITEM item)
+	{
+		if (!item)
+			return 100;
+		int seated = 0;
+		int percent = 100;
+		for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+		{
+			const DWORD inSocket = (DWORD)item->GetSocket(socket);
+			if (inSocket <= 2 || inSocket == PLAYERBOT_BROKEN_SOUL_STONE_VNUM)
+				continue;
+			++seated;
+			const int kind = GetPlayerBotSoulStoneKind(inSocket);
+			const int grade = GetPlayerBotSoulStoneGrade(inSocket);
+			for (size_t i = 0; i < sizeof(PLAYERBOT_SOCKET_STONE_PERCENT) /
+					sizeof(PLAYERBOT_SOCKET_STONE_PERCENT[0]); ++i)
+				if (PLAYERBOT_SOCKET_STONE_PERCENT[i].iKind == kind &&
+						PLAYERBOT_SOCKET_STONE_PERCENT[i].iGrade == grade)
+				{
+					percent = percent * PLAYERBOT_SOCKET_STONE_PERCENT[i].iPercent / 100;
+					break;
+				}
+		}
+		if (seated <= 0)
+			return 100;
+		const int counted = seated > 3 ? 3 : seated;
+		return percent * PLAYERBOT_SOCKET_COUNT_PERCENT[counted] / 100;
+	}
+
+	// Iwakura's price for this weapon or armour, or zero when his sheets do
+	// not carry the family. The base proto is this vnum less the refine - the
+	// same arithmetic GetPlayerBotRefineInvestment walks the ladder with.
+	DWORD GetPlayerBotGearAskingBase(LPITEM item)
+	{
+		if (!item || (item->GetType() != ITEM_WEAPON && item->GetType() != ITEM_ARMOR))
+			return 0;
+		const BYTE refine = item->GetRefineLevel();
+		if (refine > 9)
+			return 0;
+		const DWORD baseVnum = item->GetVnum() - refine;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_GEAR_PRICES) / sizeof(PLAYERBOT_GEAR_PRICES[0]); ++i)
+			if (PLAYERBOT_GEAR_PRICES[i].dwBaseVnum == baseVnum)
+			{
+				const DWORD price = PLAYERBOT_GEAR_PRICES[i].adwPrice[refine];
+				if (price == 0)
+					return 0;
+				return ScalePlayerBotIwakuraPrice(
+						(DWORD)((unsigned long long)price *
+							(unsigned long long)GetPlayerBotSocketStonePercent(item) / 100ULL));
+			}
+		return 0;
+	}
+
+	// A soul stone by kind and grade. His table names every +4 one by one and
+	// gives the lower grades one price each, with three exceptions.
+	DWORD GetPlayerBotSoulStoneAskingBase(DWORD dwVnum)
+	{
+		const int kind = GetPlayerBotSoulStoneKind(dwVnum);
+		const int grade = GetPlayerBotSoulStoneGrade(dwVnum);
+		for (size_t i = 0; i < sizeof(PLAYERBOT_SOUL_STONE_PRICES) /
+				sizeof(PLAYERBOT_SOUL_STONE_PRICES[0]); ++i)
+			if (PLAYERBOT_SOUL_STONE_PRICES[i].iKind == kind &&
+					PLAYERBOT_SOUL_STONE_PRICES[i].iGrade == grade)
+				return ScalePlayerBotIwakuraPrice(PLAYERBOT_SOUL_STONE_PRICES[i].dwPrice);
+		if (grade >= 0 && grade < 5 && PLAYERBOT_SOUL_STONE_GRADE_PRICES[grade] != 0)
+			return ScalePlayerBotIwakuraPrice(PLAYERBOT_SOUL_STONE_GRADE_PRICES[grade]);
+		return 0;
+	}
+
+	// A polymorph marble, by the monster in socket 0. The named ones have
+	// their own price; everything else is drawn from his band, once and for
+	// good per marble - two counters showing the same marble at the same
+	// number is exactly what the band is there to avoid.
+	DWORD GetPlayerBotMarbleAskingBase(LPITEM item)
+	{
+		if (!item || item->GetType() != ITEM_POLYMORPH)
+			return 0;
+		const DWORD mob = (DWORD)item->GetSocket(0);
+		for (size_t i = 0; i < sizeof(PLAYERBOT_MARBLE_PRICES) / sizeof(PLAYERBOT_MARBLE_PRICES[0]); ++i)
+			if (PLAYERBOT_MARBLE_PRICES[i].dwMob == mob)
+				return ScalePlayerBotIwakuraPrice(PLAYERBOT_MARBLE_PRICES[i].dwPrice);
+		const DWORD span = PLAYERBOT_MARBLE_PRICE_MAX - PLAYERBOT_MARBLE_PRICE_MIN + 1;
+		return ScalePlayerBotIwakuraPrice(PLAYERBOT_MARBLE_PRICE_MIN +
+				PlayerBotNavHash(item->GetID() ^ 0x4d41524cU) % span);
+	}
+
+	// A Forgetting Scroll, by the skill in socket 0. Zero means two different
+	// things and both are handled by the caller: a scroll whose socket nobody
+	// has set yet (a drop nobody has aimed at a skill), and the seven skills
+	// his sheet marks "do sprzedazy u handlarki" - those are the merchant's.
+	DWORD GetPlayerBotForgetScrollAskingBase(LPITEM item)
+	{
+		if (!item || item->GetVnum() != PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+			return 0;
+		const DWORD skill = (DWORD)item->GetSocket(0);
+		for (size_t i = 0; i < sizeof(PLAYERBOT_FORGET_SCROLL_PRICES) /
+				sizeof(PLAYERBOT_FORGET_SCROLL_PRICES[0]); ++i)
+			if (PLAYERBOT_FORGET_SCROLL_PRICES[i].dwSkill == skill)
+				return ScalePlayerBotIwakuraPrice(PLAYERBOT_FORGET_SCROLL_PRICES[i].dwPrice);
+		return 0;
+	}
+
+	// Is this one of the seven scrolls his sheet sends to the merchant rather
+	// than to a counter? Only ever true for a scroll whose skill is known.
+	bool IsPlayerBotMerchantOnlyForgetScroll(LPITEM item)
+	{
+		if (!item || item->GetVnum() != PLAYERBOT_SKILL_FORGET_SCROLL_VNUM)
+			return false;
+		const DWORD skill = (DWORD)item->GetSocket(0);
+		if (skill == 0)
+			return false;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_FORGET_SCROLL_PRICES) /
+				sizeof(PLAYERBOT_FORGET_SCROLL_PRICES[0]); ++i)
+			if (PLAYERBOT_FORGET_SCROLL_PRICES[i].dwSkill == skill)
+				return PLAYERBOT_FORGET_SCROLL_PRICES[i].dwPrice == 0;
+		return false;
+	}
+
 	DWORD GetPlayerBotShopAskingPriceRaw(LPITEM item)
 	{
 		if (!item)
@@ -943,6 +1087,17 @@ namespace
 		// prices, the scrap price, the prior, and the number the memory and
 		// the step limiter finally settle on.
 		const DWORD investment = GetPlayerBotRefineInvestment(item);
+		// Iwakura's own sheet for this family and this refine, where he has
+		// priced it - 147 families, every one of them resolved to a vnum by
+		// the generator rather than by hand. It wins over the three flat
+		// prices below, which were invented ("napisane z palca") precisely
+		// because the item tables carry no price for a refined weapon: a
+		// Zatruty Miecz +9 and a Miecz +9 both asked 900 000 before this.
+		// The stones seated in it are already in the number.
+		const DWORD gearBase = GetPlayerBotGearAskingBase(item);
+		if (gearBase != 0)
+			return ApplyPlayerBotPriceCompetition(item,
+					ApplyPlayerBotBonusPremium(std::max(gearBase, investment), bonusPercent));
 		if (refine >= 9)
 			return ApplyPlayerBotPriceCompetition(item, ApplyPlayerBotBonusPremium(std::max(PLAYERBOT_SHOP_PRICE_PLUS9, investment), bonusPercent));
 		if (refine == 8)
@@ -978,10 +1133,18 @@ namespace
 		// A material Iwakura has priced by hand wins over every prior below it,
 		// pearls and the shell included - his table covers those three too.
 		const DWORD materialBase = GetPlayerBotMaterialAskingBase(item->GetVnum());
+		// The two other things his sheets price by hand: a polymorph marble by
+		// the monster in its socket, and a Forgetting Scroll by the skill in
+		// its own. Both are worth what he says whatever the merchant thinks -
+		// a marble sold for three hundred yang before there was a table.
+		const DWORD iwakuraBase = GetPlayerBotMarbleAskingBase(item) +
+				GetPlayerBotForgetScrollAskingBase(item);
 		if (bookSkill != 0)
 			unit = GetPlayerBotBookAskingBase(bookSkill);
 		else if (materialBase != 0)
 			unit = materialBase;
+		else if (iwakuraBase != 0)
+			unit = iwakuraBase;
 		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM)
 			unit = PLAYERBOT_PRIOR_PEARL_WHITE;
 		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM + 1)
@@ -992,9 +1155,15 @@ namespace
 			unit = PLAYERBOT_PRIOR_SHELLFISH;
 		else if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM)
 			unit = PLAYERBOT_PRIOR_HORSE_MEDAL;
-		// A soul stone has no merchant price: the counter asks by grade.
+		// A soul stone has no merchant price: the counter asks by grade. His
+		// table names every +4 by kind and three of the lower ones; the old
+		// per-grade array stays for a stone he has not priced.
 		if (item->GetType() == ITEM_METIN)
-			unit = PLAYERBOT_SHOP_PRICE_SOUL_STONE[std::min(4, GetPlayerBotSoulStoneGrade(item->GetVnum()))];
+		{
+			const DWORD stoneBase = GetPlayerBotSoulStoneAskingBase(item->GetVnum());
+			unit = stoneBase != 0 ? stoneBase
+					: PLAYERBOT_SHOP_PRICE_SOUL_STONE[std::min(4, GetPlayerBotSoulStoneGrade(item->GetVnum()))];
+		}
 
 		// Anything the merchant refuses to buy has no prior at all, and the
 		// wallet block below is skipped whole while the ledger has not run yet -
@@ -1007,7 +1176,8 @@ namespace
 		// PLAYERBOT_MARKET_*_WALLET_* constants for why the merchant's markup
 		// alone was a giveaway. A soul stone keeps its grade table.
 		const DWORD wallet = GetPlayerBotMarketMedianWallet();
-		if (wallet > 0 && item->GetType() != ITEM_METIN && bookSkill == 0 && materialBase == 0)
+		if (wallet > 0 && item->GetType() != ITEM_METIN && bookSkill == 0 &&
+				materialBase == 0 && iwakuraBase == 0)
 		{
 			DWORD permille = PLAYERBOT_MARKET_OTHER_WALLET_PERMILLE;
 			if (IsPlayerBotTradeableMaterial(item))
@@ -1115,7 +1285,7 @@ namespace
 		// The same draw for a hand-priced material: Iwakura asks for it on both
 		// tables, so two counters never show the same number for a Zab Orka
 		// either.
-		if (bookSkill != 0 || materialBase != 0)
+		if (bookSkill != 0 || materialBase != 0 || iwakuraBase != 0)
 			unit = std::max<DWORD>(1, (DWORD)((unsigned long long)unit *
 					(unsigned long long)number(PLAYERBOT_BOOK_PRICE_JITTER_MIN, PLAYERBOT_BOOK_PRICE_JITTER_MAX) / 100ULL));
 		unit = ApplyPlayerBotBonusPremium(unit, bonusPercent);
@@ -1276,6 +1446,12 @@ namespace
 		}
 		if (item->GetType() == ITEM_POLYMORPH || IsPlayerBotMetinDetector(item->GetVnum()))
 			return PLAYERBOT_SHOP_POLYMORPH_SCORE;
+		// Seven of the Forgetting Scrolls are marked "do sprzedazy u
+		// handlarki" on Iwakura's sheet - the ones whose skill nobody buys a
+		// scroll for. They keep their merchant price and never take a counter
+		// slot from something that would sell.
+		if (IsPlayerBotMerchantOnlyForgetScroll(item))
+			return merchant ? 400 : -1;
 		// A weapon from the level-30 set is the prize of this whole market. It is
 		// worth a counter slot at any refine at all, unrefined included.
 		if (IsPlayerBotSpecialLevel30Weapon(item))

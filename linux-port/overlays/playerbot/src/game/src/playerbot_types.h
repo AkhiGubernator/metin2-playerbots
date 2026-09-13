@@ -1153,7 +1153,7 @@ namespace
 	// was still asking it a day later ("pelno w m1 sklepow gdzie Zwoje sa po
 	// 9000", Iwakura). A shop whose stamp is behind this number reprices on
 	// every service visit instead, until its whole counter has been walked.
-	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 1;
+	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 2;
 	// Iwakura's upgrade-material prices (13 September, "CENY ULEPSZACZY"): the
 	// 78 materials a blacksmith asks for, priced by hand. Unlike the books
 	// these scale with the bare yang rate (100% is x1.0), which is his own

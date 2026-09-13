@@ -720,6 +720,17 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   staggered path, bounded by the original window so it restores the cohort and
   never grows it. On a healthy server eleven of eight hundred and fifty were
   missing from the first fill.
+- **Every bot account is `status='BLOCK'` by design, so that column cannot say
+  who a GM banned.** Bots spawn server-side (`SpawnBot`/`CreateBotDesc`), never
+  through auth, so their accounts are created BLOCK precisely to keep humans off
+  them - all 2500 of them. A GM ban (`/block_player` -> `BanManager::Block`)
+  writes `account.account_block` (and sets availDt/status, which for a bot is a
+  no-op), so the *ledger* is the only bot-safe signal - empty until someone bans,
+  zero risk of the predicate nuking the cohort. `RefreshBannedBots` reads it on
+  the top-up cadence, despawns a banned registered bot and keeps it off the
+  spawn queue; removing the row lets the next top-up return it. Without this a
+  banned+kicked bot was resurrected by `TopUpMissingBots` a minute later
+  (mateuszp211, 2.0.29). A ban is not a delete: the `player` row stays.
 - **A conjunction that rejects tells nobody which clause did it.**
   `LoadRegisteredBots` accepts an identity only when six conditions hold at
   once, and printed one number. `ReportPlayerBotRegistryShortfall` runs the same

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T19:25:00Z",
-  "statusMessage": "2.0.36: stragany dostają cennik Iwakury. Broń i zbroja powyżej +6 miały do tej pory trzy wymyślone ceny, więc Zatruty Miecz +9 i zwykły Miecz +9 stały za te same 900 000; teraz każda ze 147 rodzin ma własną cenę na każdym plusie, a kamienie duszy w sockecie ją podnoszą. Do tego marmury po potworze, 44 Opaski Zapomnienia po umiejętności, kamienie duszy po rodzaju i stopniu, zioła, Szkatuła i Medal Konny. Osobno: **naprawiona aktualizacja z paczki na Linuksie i VPS** — paczka nie kładła pliku VERSION w korzeniu, więc serwer po aktualizacji podawał starą wersję i instalował to samo wydanie w kółko (Mkls). Po wgraniu 2.0.36 numer wreszcie się przesunie. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-13T20:35:00Z",
+  "statusMessage": "2.0.37: Biolog nie kończy się już na Zębie Orka. Quest lv30 sam uruchamia następny, a boty tego nie umiały i stały na „7/7\" do końca świata — teraz dochodzi **Księga Klątw**: piętnaście okazów po 60% przyjęcia, potem Świątynny Kamień Duszy (jeden na pięćset zabić), a na koniec nagroda questa: **+5 szybkości ataku na stałe** i szkatuła. Okaz i klucz noszą Dręczyciele z centralnej wyspy Doliny Orków, więc etap da się zrobić tam, gdzie boty i tak polują. Przy okazji nagrody idą teraz dokładnie tą samą drogą co u gracza: dotąd nowa nagroda mogła **skasować poprzednią**, bo silnik szukał efektu po samym typie. Kolejny etap (Pamiątka Po Demonie) jest w tabeli, ale celowo pomijany — jego potwory stoją wyłącznie w Wieży Demona, której rdzeń z botami nie hostuje, więc bot utknąłby na „0/15\" na zawsze; panel liczy osiem etapów. W launcherze stopka **mruga na czerwono**, kiedy jest nowa wersja serwera lub klienta. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.36",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.36/metin2-server-update-2.0.36.zip",
-    "sha256": "4AF5060CD6A03F865797806C8BAD2F302422956C1B9A8762D21D969F12F6E8CD"
+    "version": "2.0.37",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.37/metin2-server-update-2.0.37.zip",
+    "sha256": "6379AEF5D49FC91AA55DFB18463156413FA1F6F58669AC008E9A504455CBD71A"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

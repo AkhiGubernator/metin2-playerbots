@@ -213,8 +213,21 @@ out are to host every kingdom map and the shared world on **one** core so any
 bot can reach anything (at 323 bots a core the tick is 1.6-4.3 s of 60, so one
 core carrying all of them is around 8 s of 60 - affordable, at the cost of the
 three-way parallelism), or to accept that the two new kingdoms are village
-kingdoms that stop at thirty-six. That is a decision about the world rather than
-a bug, so it is not made here.
+kingdoms that stop at thirty-six.
+
+Since 2.0.30 the first way is an operator switch, `M2_PLAYERBOT_WORLD_LAYOUT`
+(m2-render-config, passed through the game service in both compose files):
+`unified` appends Shinsoo's `1 3 4 5` and Jinno's `41 43 44 45` to `MAPS_game1`
+and drops them from `MAPS_first`/`MAPS_game2`, so all three villages sit on game1
+and the bootstrap's `map_allow_find` loop spawns every kingdom there next to the
+shared frontier - no core code changed, because that loop was already generic.
+`first`/`game2` keep their guild/event/high maps and host no bots; a core that
+hosts none clears its `playerbot_status.tsv` on boot so the panel counts no
+phantoms. Measured at 1500 bots on one core: tick 9.4 s of 60, and a Shinsoo bot
+raised to 40 walked map 1 -> 64 (Orc Valley). Default is `split`, unchanged.
+`unified` is for a modest population on one machine; a 2500-bot server still
+wants the split (one core would be ~25 s of 60). This is now a config choice,
+not a code change.
 
 Separately, Chunjo's own core already hosts five maps this AI has never used -
 217 (60-68), 70 (66-77), 216 (79-82), 73 (87-97) and 69 (9-76) - and Shinsoo's
@@ -731,6 +744,15 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   spawn queue; removing the row lets the next top-up return it. Without this a
   banned+kicked bot was resurrected by `TopUpMissingBots` a minute later
   (mateuszp211, 2.0.29). A ban is not a delete: the `player` row stays.
+- **A live bot's level cannot be set with a plain SQL UPDATE.** The game core
+  holds every spawned character in memory and writes its cached copy back on the
+  save cycle, so `UPDATE player.player SET level=40` on a spawned bot is undone
+  within seconds (the bot reverts to its cached low level). It is the same cache
+  that makes `item_proto` edits stick only for offline characters. To move a live
+  bot's level for a test, use the path the panel uses - a `player.web_admin_queue`
+  row `cmd='LEVEL'`, which the `web_admin` quest applies in-core with
+  `pc.set_level` - and it sticks. Verified: a direct UPDATE left six bots at
+  their old levels; the queue raised them to 40 and held.
 - **A conjunction that rejects tells nobody which clause did it.**
   `LoadRegisteredBots` accepts an identity only when six conditions hold at
   once, and printed one number. `ReportPlayerBotRegistryShortfall` runs the same

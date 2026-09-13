@@ -117,6 +117,14 @@ namespace {
             if (total >= GOLD_MAX) return false;
         }
         constexpr BYTE duration = 1; // constants.cpp: 8 hours, 6000 Yang
+        // Not in the first two minutes after this bot spawned. The core loads
+        // the shop list from the db core when it connects, long before any bot
+        // spawns, but a keeper parked at its pitch by the last session rolls a
+        // stall on its first tick; a create for an owner the engine already
+        // has a shop for is an EXTEND (duration reset, lines added, 6000 yang
+        // paid again), harmless to the goods but pointless - and this spreads
+        // the reopenings after a restart instead of one a second.
+        if (now - state.dwSpawnTime < 120000) return false;
         if (ch->GetGold() - aOfflineShopTime[duration].price < GetPlayerBotReservedGold(ch) ||
                 !BotOfflineBudget(now) || !Begin(ch->GetPlayerID(), Create, 0, now)) return false;
         ch->OpenMyShop(sign, table, count, duration);

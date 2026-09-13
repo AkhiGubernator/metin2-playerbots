@@ -1534,7 +1534,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   it). The classic panel's "shops" ranking reads `player.ikashop_offlineshop`
   on this line and takes the stand's map from the row, since the keeper is
   elsewhere. A sold-out shop is deleted by the engine and the owner's next
-  service visit proceeds to the safebox anyway.
+  service visit proceeds to the safebox anyway. A create for an owner whose
+  shop the engine already holds is not a duplicate: `RecvShopCreateNewDBPacket`
+  takes the "EXTEND DURATION" branch (duration, name and spawn refreshed, the
+  entity recreated, the new lines added) and the db core's `CreateShop` does
+  the same - that is how the native reopen works - so the boot race (a keeper
+  parked at its pitch rolling a stall before the shop list has arrived) costs
+  the bot 6000 yang and nothing else; `SubmitPlayerBotOfflineShop` still waits
+  two minutes after the bot's own spawn. Restart measured: 48 shops before,
+  54 after, entities recreated, 10 adds and 24 reprices in the first five
+  minutes of service visits.
 - **The mt2009 item finder searches offline shops; a stall is not one.**
   (r40250 semantics; on the 2.x line since 2.0.26 a bot's stall *is* an
   offline shop in `m_mapShops`, so the native finder lists it by itself.)

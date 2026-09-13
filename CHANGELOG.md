@@ -17,6 +17,54 @@ every version here.
 
 ---
 
+## 2.0.30 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Shinsoo i Jinno mogą
+wyjść z M2, ceny na straganach różnią się między botami, liczba botów domyślnie
+1500.
+
+### Shinsoo i Jinno wychodzą z M2 — tryb jednego świata (thespartanin, sizowski)
+
+„Czerwoni i niebiescy nie mogą wyjść z M2”. Cały front (Dolina Orków, Pustynia,
+Sohan, Lochy Pająków, Hwang) hostuje wyłącznie rdzeń Chunjo (game1), a bot nie ma
+klienta, więc nie przechodzi między rdzeniami — Shinsoo (rdzeń first) i Jinno
+(rdzeń game2) nie miały dokąd pójść po M2 i kapowały na ~36 lvl. To nie był błąd
+kodu, tylko podział świata na trzy rdzenie.
+
+Nowy przełącznik **`M2_PLAYERBOT_WORLD_LAYOUT`**:
+- `split` (domyślnie) — dotychczasowy układ trzy rdzenie, pełna równoległość, bez
+  zmian dla nikogo; Shinsoo/Jinno nadal kapują ~36.
+- `unified` — mapy wszystkich trzech królestw i cały front lądują na jednym
+  rdzeniu (game1), więc **każdy** bot przechodzi 1→104 i może stanąć na ziemi
+  dowolnego królestwa. Kod bootstrapu jest generyczny (królestwo startuje tam,
+  gdzie rdzeń hostuje jego wioskę), więc żaden kod rdzenia się nie zmienia; first
+  i game2 trzymają swoje mapy gildii/eventów i nie mają botów.
+
+Sprawdzone na żywo (stos testowy, 1500 botów, `unified`): po 500 botów każdego
+królestwa wystartowało na game1, boty Shinsoo/Jinno podbite do 40 lvl ruszają na
+front tak jak Chunjo. Koszt: cały świat tyka na jednym rdzeniu — zmierzony tick
+game1 przy 1500 botach to **9,4 s z każdych 60** (pojedynczy tick maks. 48 ms),
+w pełni grywalny. To tryb dla jednej maszyny z jednym światem; przy bardzo dużej
+populacji zostaw `split`. Boty widmowe z poprzedniego układu są czyszczone przy
+starcie (rdzeń bez botów nie zostawia już nieaktualnego `playerbot_status.tsv`).
+
+### Ceny +7/+8/+9 różnią się między straganami (Iwakura)
+
+Iwakura zauważył, że itemy +7 bez bonusów wszędzie kosztowały równo 150 000 —
+brak konkurencji cenowej. Każdy bot ma teraz stały (per bot i per przedmiot)
+rozrzut do ±20% na cenach +7/+8/+9, więc rynek pokazuje widełki, jeden bot
+podbija drugiego. Rozrzut jest stały (nie miga między stoiskami) i nie psuje
+pamięci sprzedaży. Sprawdzone: ceny +7 rozjechały się na 139 500–168 000 zamiast
+jednej 150 000.
+
+### Liczba botów 1500
+
+Domyślny sufit populacji na serwerze testowym i głównym ustawiony na 1500 — tyle
+w zupełności wystarcza, a przy trybie `unified` trzyma tick w rozsądnych
+granicach.
+
+---
+
 ## 2.0.29 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Zbanowany bot znika

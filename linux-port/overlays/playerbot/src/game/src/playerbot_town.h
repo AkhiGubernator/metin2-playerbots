@@ -879,11 +879,56 @@ namespace
 				base = PLAYERBOT_BOOK_PRICES[i].dwPrice;
 				break;
 			}
+		// Iwakura's scale, not the bare rate: his table starts at x1.1 for a
+		// world at 100% and rises proportionally (rate * 11 / 1000). Before
+		// 2.0.31 this was the rate alone, so every book asked a tenth under the
+		// table it was meant to implement.
+		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
+		return (DWORD)((unsigned long long)base * (unsigned long long)std::max(1, rate) *
+				(unsigned long long)PLAYERBOT_BOOK_RATE_NUMERATOR /
+				(unsigned long long)PLAYERBOT_BOOK_RATE_DENOMINATOR);
+	}
+
+	// Iwakura's price for an upgrade material, or zero when he has not priced
+	// this one. His rule for this table is the bare yang rate - 100% is the
+	// base price, 200% doubles it - and not the books' x1.1 line.
+	DWORD GetPlayerBotMaterialAskingBase(DWORD dwVnum)
+	{
+		DWORD base = 0;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_MATERIAL_PRICES) / sizeof(PLAYERBOT_MATERIAL_PRICES[0]); ++i)
+			if (PLAYERBOT_MATERIAL_PRICES[i].dwVnum == dwVnum)
+			{
+				base = PLAYERBOT_MATERIAL_PRICES[i].dwPrice;
+				break;
+			}
+		if (base == 0)
+			return 0;
 		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
 		return (DWORD)((unsigned long long)base * (unsigned long long)std::max(1, rate) / 100ULL);
 	}
 
-	DWORD GetPlayerBotShopAskingPrice(LPITEM item)
+	// A round number, the way a person writes one. The step is the price's own
+	// order of magnitude over PLAYERBOT_PRICE_ROUND_DIVISOR and the price goes
+	// up to the next step, so the shape of the number survives and only the
+	// tail goes: 1 591 511 becomes 1 595 000 rather than a machine's exact sum.
+	// Applied to every price this file hands out - see the wrapper below.
+	DWORD RoundPlayerBotPrice(DWORD price)
+	{
+		if (price < PLAYERBOT_PRICE_ROUND_MIN)
+			return price;
+		unsigned long long magnitude = 1;
+		while (magnitude * 10ULL <= (unsigned long long)price)
+			magnitude *= 10ULL;
+		const unsigned long long step = magnitude / PLAYERBOT_PRICE_ROUND_DIVISOR;
+		if (step < 2)
+			return price;
+		const unsigned long long rounded = ((unsigned long long)price + step - 1ULL) / step * step;
+		// A price that would overflow the type it came in keeps its old value:
+		// nothing on a counter is worth an arithmetic surprise.
+		return rounded > 0xFFFFFFFFULL ? price : (DWORD)rounded;
+	}
+
+	DWORD GetPlayerBotShopAskingPriceRaw(LPITEM item)
 	{
 		if (!item)
 			return 1;
@@ -930,8 +975,13 @@ namespace
 		// it stays.
 		// A book asks Iwakura's price for its skill (PLAYERBOT_BOOK_PRICES),
 		// at the world's yang rate; the wallet block below is not for it.
+		// A material Iwakura has priced by hand wins over every prior below it,
+		// pearls and the shell included - his table covers those three too.
+		const DWORD materialBase = GetPlayerBotMaterialAskingBase(item->GetVnum());
 		if (bookSkill != 0)
 			unit = GetPlayerBotBookAskingBase(bookSkill);
+		else if (materialBase != 0)
+			unit = materialBase;
 		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM)
 			unit = PLAYERBOT_PRIOR_PEARL_WHITE;
 		else if (item->GetVnum() == PLAYERBOT_PEARL_FIRST_VNUM + 1)
@@ -957,7 +1007,7 @@ namespace
 		// PLAYERBOT_MARKET_*_WALLET_* constants for why the merchant's markup
 		// alone was a giveaway. A soul stone keeps its grade table.
 		const DWORD wallet = GetPlayerBotMarketMedianWallet();
-		if (wallet > 0 && item->GetType() != ITEM_METIN && bookSkill == 0)
+		if (wallet > 0 && item->GetType() != ITEM_METIN && bookSkill == 0 && materialBase == 0)
 		{
 			DWORD permille = PLAYERBOT_MARKET_OTHER_WALLET_PERMILLE;
 			if (IsPlayerBotTradeableMaterial(item))
@@ -1062,12 +1112,24 @@ namespace
 		// A book's market has some noise in it: a fifth under to a quarter
 		// over, drawn per listing. After the limiter and the memory, so the
 		// anchor they keep is the table's number and not one draw of it.
-		if (bookSkill != 0)
+		// The same draw for a hand-priced material: Iwakura asks for it on both
+		// tables, so two counters never show the same number for a Zab Orka
+		// either.
+		if (bookSkill != 0 || materialBase != 0)
 			unit = std::max<DWORD>(1, (DWORD)((unsigned long long)unit *
 					(unsigned long long)number(PLAYERBOT_BOOK_PRICE_JITTER_MIN, PLAYERBOT_BOOK_PRICE_JITTER_MAX) / 100ULL));
 		unit = ApplyPlayerBotBonusPremium(unit, bonusPercent);
 		const DWORD price = unit * (DWORD)item->GetCount();
 		return price == 0 ? 1U : price;
+	}
+
+	// The one door out. The function above has five ways to return - the three
+	// flat refine prices, the scrap price and the settled one - and rounding
+	// only the last of them would have left exactly the prices players look at
+	// (+7, +8, +9) as raw sums. Every caller goes through here.
+	DWORD GetPlayerBotShopAskingPrice(LPITEM item)
+	{
+		return RoundPlayerBotPrice(GetPlayerBotShopAskingPriceRaw(item));
 	}
 
 	// How much a stall wants this on its counter rather than in the bag. Higher

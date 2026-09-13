@@ -17,6 +17,35 @@ every version here.
 
 ---
 
+## 2.0.29 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Zbanowany bot znika
+i nie wraca.
+
+### Zbanowany bot loguje się z powrotem (mateuszp211)
+
+„Po zbanowaniu bota i kicku bot loguje się z powrotem”. Kick usuwał postać, a
+pas dopełniania kohorty (`TopUpMissingBots`) minutę później widział brak i
+wstawiał bota z powrotem — bo nikt nie sprawdzał bana. Oczywista blokada, czyli
+`account.status='BLOCK'`, tu nie działa: **każde konto bota jest z założenia
+`BLOCK`** (żeby nikt się na nie nie zalogował), więc ta kolumna nie odróżnia
+zbanowanego bota od zwykłego. Rejestrem, który ban faktycznie zapisuje
+(`/block_player` → `account.account_block`), jest osobna tabela — pusta, dopóki
+ktoś nie zbanuje. Rdzeń czyta ją co minutę: bota z wpisem w `account_block`
+usuwa ze świata i nie wstawia z powrotem, a zdjęcie bana (usunięcie wpisu)
+pozwala mu wrócić przy najbliższym dopełnieniu. Sprawdzone na żywo: ban jednego
+bota usuwa dokładnie tego jednego, reszta kohorty stoi nietknięta.
+
+### Dla darkroom22: „segmentation fault” na 2.0.14
+
+To ta sama wywałka, którą zdiagnozował kimakatsu: linia logu odmowy Teleportera
+miała `%d` dla 64-bitowego yang przed `%s`, więc rdzeń czytał numer mapy jako
+wskaźnik i padał (ślad stosu w Twojej paczce prowadzi przez `CPlayerBotManager::Update`
+do funkcji formatującej tekst — co do joty ta sama sygnatura). Naprawione w
+2.0.27; aktualizacja rozwiązuje Twój crash.
+
+---
+
 ## 2.0.28 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Poprawia bieganie

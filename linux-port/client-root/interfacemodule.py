@@ -1179,19 +1179,11 @@ class GMPanelWindow(ui.BoardWithTitleBar):
 		self.__MakeText(page, 10, 62, "Panel jest w wersji BETA. Jak zauwazysz bugi")
 		self.__MakeText(page, 10, 76, "napisz na Discord do OskarPWA.")
 
-		# m2sp_logo.tga: pack\ETC\ymir work\ui\public\ - a loose folder that
-		# mirrors the ETC.epk archive (the "d:/ymir work/..." namespace
-		# every stock .tga in this client loads from), separate from the
-		# root/locale_pl script packs this session has otherwise worked in.
-		# 512x256 image: "GM Panel" + the real M2Singleplayer logo +
-		# "www.m2singleplayer.pl" composited into one graphic (baked-in
-		# text, not engine TextLine widgets - matches the reference mockup).
-		logo = ui.ImageBox()
-		logo.SetParent(page)
-		logo.LoadImage("d:/ymir work/ui/public/m2sp_logo.tga")
-		logo.SetPosition((WINDOW_WIDTH - 20 - 512) / 2, 100)
-		logo.Show()
-		self._widgets.append(logo)
+		# Logo autora (m2sp_logo.tga) lezy w jego paczce ETC, ktorej ten pakiet
+		# nie wysyla i ktorej pliku nikt tu nie ma. ImageBox wczytuje obrazek
+		# dopiero przy rysowaniu, wiec zaden try/except wokol LoadImage tego nie
+		# lapal - wyjatek wychodzil pozniej i zabieral cale okno panelu, kazdemu.
+		# Widget zostal usuniety w calosci: nie ma obrazka, nie ma czego wczytac.
 
 	def __BuildPlaceholderPage(self, page):
 		self.__MakeText(page, 10, 10, "W przygotowaniu.")
@@ -3642,8 +3634,6 @@ class Top1Badge(ui.ThinBoard):
 			icon.SetPosition(0, 0)
 			width = icon.GetWidth()
 			height = icon.GetHeight()
-			# TEMP DEBUG (2026-09-11) - remove once confirmed live.
-			chat.AppendChat(chat.CHAT_TYPE_INFO, "Top1 icon path=%s w=%s h=%s" % (repr(path), repr(width), repr(height)))
 			if width <= 0 or height <= 0:
 				return
 			icon.Show()
@@ -3651,8 +3641,6 @@ class Top1Badge(ui.ThinBoard):
 			self.textLine.Hide()
 			self.SetSize(width, height)
 		except Exception, e:
-			# TEMP DEBUG (2026-09-11) - remove once confirmed live.
-			chat.AppendChat(chat.CHAT_TYPE_INFO, "Top1 icon FAILED path=%s err=%s" % (repr(path), repr(e)))
 			self.icon = None
 
 	def Refresh(self, vid):
@@ -3795,7 +3783,9 @@ class PlayerbotAdminWindow(ui.BoardWithTitleBar):
 
 		tabDefs = (
 			("general",       15,  110, "Ogolne"),
-			("globalchat",    130, 125, "Czat ogolny"),
+			# "Czat ogolny" wycieta: jej jedyna trescia byla strona /botchat z panelu
+			# autora, ktorej ten panel nie serwuje - zakladka mogla pokazac wylacznie
+			# pustke, a wbudowana przegladarka zamykala klientowi gre.
 			("live",          260, 125, "Akcje botow"),
 			("manage",        390, 125, "Zarzadzanie"),
 			("achievements",  520, 110, "Osiagniecia"),
@@ -3806,7 +3796,6 @@ class PlayerbotAdminWindow(ui.BoardWithTitleBar):
 			button.SetEvent(ui.__mem_func__(self.OnClickTab), tabName)
 			tabButtons[tabName] = button
 		self.tabGeneral = tabButtons["general"]
-		self.tabGlobalChat = tabButtons["globalchat"]
 		self.tabLive = tabButtons["live"]
 		self.tabManage = tabButtons["manage"]
 		self.tabAchievements = tabButtons["achievements"]
@@ -3905,7 +3894,10 @@ class PlayerbotAdminWindow(ui.BoardWithTitleBar):
 			newPos = self.GetGlobalPosition()
 			if newPos != self.globalChatWebLastPos:
 				self.globalChatWebLastPos = newPos
-				app.MoveWebPage(self.__PBAGlobalChatRect())
+				try:
+					app.MoveWebPage(self.__PBAGlobalChatRect())
+				except:
+					self.globalChatWebOpen = False
 
 	######################################################################
 	## Dymki nad glowami botow - BotOverheadTail (na gorze pliku), pozycja
@@ -4032,14 +4024,27 @@ class PlayerbotAdminWindow(ui.BoardWithTitleBar):
 
 	def __PBAOpenGlobalChatWeb(self):
 		self.globalChatWebLastPos = self.GetGlobalPosition()
-		app.ShowWebPage(PBA_BOTCHAT_URL, self.__PBAGlobalChatRect())
-		self.globalChatWebOpen = True
+		# The flag drives MoveWebPage every frame from OnUpdate, so it may
+		# only go up once the browser really started: the embedded control
+		# refuses on some machines (CREATE_WEBBROWSER_ERROR 1407) and moving
+		# a page that was never created is the same crash by another door.
+		try:
+			app.ShowWebPage(PBA_BOTCHAT_URL, self.__PBAGlobalChatRect())
+			self.globalChatWebOpen = True
+		except:
+			self.globalChatWebOpen = False
 
 	def __PBACloseGlobalChatWeb(self):
 		if not self.globalChatWebOpen:
 			return
 		self.globalChatWebOpen = False
-		app.HideWebPage()
+		try:
+			app.HideWebPage()
+		except:
+			# The embedded browser can refuse to start (CREATE_WEBBROWSER_ERROR
+			# 1407 on every machine that reported this), and it took the whole
+			# client down with it. A tab that cannot draw must not close the game.
+			pass
 
 	######################################################################
 	## Lista botow (wspolna: Akcje na zywo + Zarzadzanie)
@@ -4430,8 +4435,12 @@ class Interface(object):
 			wndGMPanel.Hide()
 			self.wndGMPanel = wndGMPanel
 		except:
-			import dbg
+			# The reason, not just the fact: a fail-safe that hides why it fired
+			# turns every player report into one nobody can act on.
+			import dbg, traceback
 			dbg.TraceError("GM panel (F9) could not be built - the game loads without it")
+			for line in traceback.format_exc().splitlines():
+				dbg.TraceError("    " + line)
 
 		# To samo dla plakietki Top1: jej rejestracja w game.py siedzi juz w
 		# try/except, ale samo okno powstawalo tutaj bez oslony, a pliku
@@ -4442,8 +4451,12 @@ class Interface(object):
 			wndTop1Badge.Hide()
 			self.wndTop1Badge = wndTop1Badge
 		except:
-			import dbg
+			# The reason, not just the fact: a fail-safe that hides why it fired
+			# turns every player report into one nobody can act on.
+			import dbg, traceback
 			dbg.TraceError("Top1Badge could not be built - the game loads without it")
+			for line in traceback.format_exc().splitlines():
+				dbg.TraceError("    " + line)
 
 		self.wndCharacter = wndCharacter
 		self.wndInventory = wndInventory
@@ -4630,8 +4643,12 @@ class Interface(object):
 			wndPlayerbotAdmin.Hide()
 			self.wndPlayerbotAdmin = wndPlayerbotAdmin
 		except:
-			import dbg
+			# The reason, not just the fact: a fail-safe that hides why it fired
+			# turns every player report into one nobody can act on.
+			import dbg, traceback
 			dbg.TraceError("Playerbot admin window (F10) could not be built - the game loads without it")
+			for line in traceback.format_exc().splitlines():
+				dbg.TraceError("    " + line)
 
 	def MakeInterface(self):
 		self.__MakeMessengerWindow()

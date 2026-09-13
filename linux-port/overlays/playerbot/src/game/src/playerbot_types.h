@@ -243,6 +243,12 @@ namespace
 	// of the goods a player buys one at a time - scrolls, soul stones - on
 	// lines of their own, because a private shop sells a line whole.
 	const DWORD PLAYERBOT_STACK_MERGE_INTERVAL = 300000;
+	// A tidy bag: potions on the first lines, then boosters, then chests -
+	// the rest left where it is (Tieru: "co jakis czas sortowac ekwipunek").
+	// Only single-cell items move, and only into an empty earlier cell with
+	// the engine's own MoveItem, which never deletes - so nothing can be
+	// lost or bugged. Bounded per pass; runs on the stack-merge clock.
+	const int PLAYERBOT_SORT_MAX_MOVES = 15;
 	// How long a bot may stand waiting for the engine's equip window before
 	// the wait is abandoned. Twelve archers stood at arrival points for
 	// twenty minutes, reset by the watchdog every ninety seconds, ticked and
@@ -1959,6 +1965,14 @@ namespace
 	// and its status said "Ide na Gore Sohan" all the while. The wait is
 	// what lets the town visit and the stall run and earn the fee.
 	const DWORD PLAYERBOT_TELEPORTER_RETRY_MS = 300000;
+	// The Teleport Ring (70058, level 30): a bot out of potions or a weapon
+	// on a frontier map recalls home with it instead of the long, dangerous
+	// walk to the exit portal ("musza isc po potki bo sie skonczyly a sa w
+	// Dolinie Orkow czy na V1", Tieru). Not consumed; a per-bot clock keeps
+	// it to the engine's own 30-minute cooldown.
+	const DWORD PLAYERBOT_TELEPORT_RING_VNUM = 70058;
+	const BYTE PLAYERBOT_TELEPORT_RING_MIN_LEVEL = 30;
+	const DWORD PLAYERBOT_TELEPORT_RING_COOLDOWN_MS = 1800000;
 	// A departure held longer than this is reported with what holds it
 	// (PLAYERBOT_DEPARTURE: overdue), once per this interval per bot.
 	const DWORD PLAYERBOT_DEPARTURE_OVERDUE_MS = 600000;

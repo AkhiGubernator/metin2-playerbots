@@ -1859,6 +1859,31 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `m2-render-config` writes `LOCALE = "cp1250"` into `db/conf.txt`; verify
   with `mysql_set_character_set(cp1250)` in the db core's syslog, never with
   a name that has no diacritics.
+- **The Teleport Ring recalls a stranded bot home.** A bot out of potions or a
+  weapon on a frontier map (Orc Valley, desert, Sohan, Spider Dungeon) walked
+  all the way to the exit portal; if it holds the Teleport Ring (70058, level
+  30) `TryPlayerBotTeleportRingHome` warps it straight to its village with
+  `TransitionPlayerBotMap` instead (Tieru: "musza isc po potki ... a sa w
+  Dolinie Orkow czy na V1"). Same destination the walk would reach, so same
+  core - only Chunjo bots stand on the shared frontier and their village is on
+  game1. Not consumed; `s_mapPlayerBotTeleportRingReady` keeps it to the ring's
+  30-minute cooldown, and only a *blocking* need (BlocksPlayerBotTravel) uses it.
+- **The bag is tidied with MoveItem, which cannot lose an item.**
+  `SortPlayerBotConsumablesToFront` (in the stack-merge pass, off behind a
+  counter) pulls single-cell potions, then boosters, then chests/keys into the
+  earliest empty cell before them - `ch->MoveItem` only moves, never deletes or
+  overwrites, so the worst case is an item that does not move (Tieru asked for a
+  sort and warned against losing items). Gear (size > 1) is left where it is.
+  `GetPlayerBotSortPriority` is the order; `PLAYERBOT_SORT_MAX_MOVES` bounds it.
+- **Dragon Coins get into the game from Metin stones and bosses.** The ItemShop
+  currency (DRAGON_COIN) had no in-game source, so `CreateDropItem` (playerbotify
+  on mt2009, the staged item_manager.cpp) rolls a Kupon SM voucher (80017, used
+  it credits `pc.charge_cash`) at `g_iDragonCoinStonePermille` per stone and
+  `g_iDragonCoinBossPermille` per boss - CONFIG tokens rendered by
+  m2-render-config from `M2_DRAGON_COIN_STONE_PERMILLE` (default 3) and
+  `M2_DRAGON_COIN_BOSS_PERMILLE` (default 50), the same shape as the Moonlight
+  chest. mt2009 only; balance via .env. The vouchers are 80014/80015/80016/80017
+  = 100/500/1000/50 coins (charge_cash_by_voucher.quest).
 - **The armour merchant stocks three tiers, and the ladder wants ten.** NPC
   9002 sells body armour at levels 0/18/26 per class (11200/11220/11230 for a
   warrior), but `GetPlayerBotProgressionArmorVnum` walks the family by stride

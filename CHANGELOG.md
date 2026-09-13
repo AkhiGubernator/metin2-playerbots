@@ -17,6 +17,33 @@ every version here.
 
 ---
 
+## 2.0.23 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.
+
+### Boty wracają Pierścieniem Teleportacji, gdy skończą się mikstury
+
+Bot na mapie frontu (Dolina Orków, Pustynia, Góra Sohan, Loch Pająków), któremu
+skończyły się mikstury albo broń, i który ma w plecaku Pierścień Teleportacji
+(poziom 30+), wraca teraz do miasta od razu, zamiast iść pieszo do portalu przez
+całą mapę. Pierścień nie znika — działa raz na 30 minut, jak jego własny czas
+odnowienia.
+
+### Boty sortują ekwipunek
+
+Co jakiś czas bot porządkuje plecak: mikstury na pierwszych liniach, potem
+wspomagacze i mikstury szybkości, potem skrzynie i klucze. Przenoszone są tylko
+pojedyncze przedmioty i wyłącznie na puste, wcześniejsze pola — silnikowym
+`MoveItem`, który nigdy nie usuwa ani nie nadpisuje, więc nic nie może zginąć ani
+się zbugować. Ekwipunek (zbroje, bronie) zostaje na miejscu.
+
+### Kupony Smoczych Monet z metinów i bossów
+
+ItemShop używa Smoczych Monet, a w grze nie było jak ich zdobyć. Teraz z rozbicia
+Metina i z zabicia bossa jest niewielka szansa na Kupon SM (użyty dolicza monety
+na konto). Domyślnie ostrożnie: 3‰ z metina, 50‰ z bossa — do wyważenia przez
+`M2_DRAGON_COIN_STONE_PERMILLE` i `M2_DRAGON_COIN_BOSS_PERMILLE`.
+
 ## 2.0.22 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

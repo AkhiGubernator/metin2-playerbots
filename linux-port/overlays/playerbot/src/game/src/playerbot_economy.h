@@ -177,6 +177,61 @@ namespace
 		return merged;
 	}
 
+	// The order the bag is tidied into: potions first, then the boosters and
+	// speed potions, then chests and keys. Everything else is left where it
+	// is (99), so gear the bot is keeping does not shuffle around.
+	int GetPlayerBotSortPriority(LPITEM item)
+	{
+		if (!item)
+			return 99;
+		const DWORD vnum = item->GetVnum();
+		if ((vnum >= 27001 && vnum <= 27006) || vnum == 27051 || vnum == 27052)
+			return 0;   // red/blue/big HP-SP potions
+		if ((vnum >= 27100 && vnum <= 27105) || vnum == 27053 || vnum == 27054 ||
+				vnum == 71044 || vnum == 71045 || vnum == 71050)
+			return 1;   // green/purple potions, Hand of Critic/Penetration, Swiftness
+		const BYTE type = item->GetType();
+		if (vnum == PLAYERBOT_MOONLIGHT_CHEST_VNUM || type == ITEM_TREASURE_BOX ||
+				type == ITEM_TREASURE_KEY || type == ITEM_GIFTBOX)
+			return 2;   // Moonlight chests, silver/gold chests and keys, boss caskets
+		return 99;
+	}
+
+	// Pull single-cell consumables to the front, group by group, into the
+	// earliest empty cell before each. MoveItem only moves - it cannot delete
+	// or overwrite - so the worst case is an item that does not move.
+	void SortPlayerBotConsumablesToFront(LPCHARACTER ch)
+	{
+		if (!ch)
+			return;
+		int moves = 0;
+		for (int prio = 0; prio <= 2 && moves < PLAYERBOT_SORT_MAX_MOVES; ++prio)
+		{
+			for (WORD cell = 1; cell < PLAYERBOT_BAG_CELLS && moves < PLAYERBOT_SORT_MAX_MOVES; ++cell)
+			{
+				LPITEM item = ch->GetInventoryItem(cell);
+				if (!item || item->IsEquipped() || item->isLocked() || item->GetSize() > 1)
+					continue;
+				if (GetPlayerBotSortPriority(item) != prio)
+					continue;
+				WORD dest = 0;
+				bool found = false;
+				for (WORD f = 0; f < cell; ++f)
+					if (ch->IsEmptyItemGrid(TItemPos(INVENTORY, f), 1))
+					{
+						dest = f;
+						found = true;
+						break;
+					}
+				if (found && ch->MoveItem(TItemPos(INVENTORY, cell), TItemPos(INVENTORY, dest), 0))
+					++moves;
+			}
+		}
+		if (moves > 0)
+			sys_log(0, "PLAYERBOT_BAG: sorted pid=%u name=%s moves=%d",
+					ch->GetPlayerID(), ch->GetName(), moves);
+	}
+
 	void ManagePlayerBotStackMerge(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || dwNow < state.dwNextStackMergeTime)
@@ -191,6 +246,8 @@ namespace
 		if (merged > 0)
 			sys_log(0, "PLAYERBOT_BAG: merged stacks pid=%u name=%s merges=%d",
 					ch->GetPlayerID(), ch->GetName(), merged);
+		// Then tidy: potions, boosters and chests to the front.
+		SortPlayerBotConsumablesToFront(ch);
 		// A pass that used its whole budget has more to do: back soon, not in
 		// five minutes - a closed counter leaves eight packs of one material.
 		if (merged >= PLAYERBOT_STACK_MERGES_PER_PASS)

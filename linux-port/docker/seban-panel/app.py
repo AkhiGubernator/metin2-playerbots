@@ -1149,11 +1149,10 @@ def bot_ranking(kind, sort_by="avg"):
         return rows(f"""SELECT p.id,p.name,p.level,p.gold,COUNT(DISTINCT q.szName) AS score,CONCAT(COUNT(DISTINCT q.szName),' / {len(missions)} misji') AS detail
             FROM player.player p LEFT JOIN player.quest q ON q.dwPID=p.id AND q.szName IN ({marks}) AND q.szState='__status' AND q.lValue=%s
             WHERE {base} GROUP BY p.id ORDER BY score DESC,p.level DESC LIMIT 100""", (*missions, BIOLOGIST_COMPLETE_STATE))
-    if kind == "hunting":
-        return rows(f"""SELECT p.id,p.name,p.level,p.gold,MAX(CASE WHEN q.szState='complete' THEN q.lValue ELSE 0 END) AS score,
-            CONCAT('Ukończone do Lv ',MAX(CASE WHEN q.szState='complete' THEN q.lValue ELSE 0 END)) AS detail
-            FROM player.player p LEFT JOIN player.quest q ON q.dwPID=p.id AND q.szName='levelup'
-            WHERE {base} GROUP BY p.id ORDER BY score DESC,p.level DESC LIMIT 100""")
+    # Ranking "hunting" usuniety razem z zakladka: levelup.quest nie dziala na
+    # tej linii silnika, wiec zapytanie zwracalo sto rekordow z zerem. Gdyby
+    # ktos wszedl ze starym ?type=hunting, kind nie ma go juz w kinds i strona
+    # pokazuje domyslny ranking poziomu.
     if kind == "shops":
         keeper_ids = [pid for pid, state in live_statuses().items() if int(state.get("action") or 0) == 13]
         if not keeper_ids:
@@ -1719,7 +1718,11 @@ def api_system_current():
 def rankings():
     kinds = {
         "level": "Poziom", "armor": "Zbroja", "weapon": "Broń", "weapon30": "Broń 30 Lv",
-        "gold": "Yang", "items": "Przedmioty", "horse": "Koń", "hunting": "Polowanie", "biologist": "Biolog",
+        # Bez "Polowanie": na tej linii silnika levelup.quest lezy w
+        # quest/_unused, zaden hook zabicia nie strzela i licznik stoi na zero
+        # dla kazdego bota - ranking miał wiec 100 pozycji z "Ukonczone do Lv 0"
+        # (Tieru, 13 wrzesnia).
+        "gold": "Yang", "items": "Przedmioty", "horse": "Koń", "biologist": "Biolog",
         "shops": "Otwarte stragany", "skills": "Umiejętności", "plus9": "Przedmiot +9", "playtime": "Czas gry", "bosses": "Bossy",
     }
     kind = request.args.get("type", "level")

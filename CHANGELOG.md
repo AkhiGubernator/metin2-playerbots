@@ -17,6 +17,85 @@ every version here.
 
 ---
 
+## 2.0.36 — 2026-09-13
+
+Serwer. Rynek przestaje zgadywać ceny — dostaje cenniki Iwakury. Do tego
+poprawka aktualizatora na Linuksie i VPS, przez którą serwer po aktualizacji
+podawał starą wersję i instalował to samo wydanie w kółko.
+
+### Aktualizacja mówiła, że nic się nie zmieniło — i miała rację
+
+„Drugi raz robię aktualizację z 2.0.34 do 2.0.35 i drugi raz komunikat:
+*the server is now running version 2.0.34*" (Mkls).
+
+Paczka aktualizacji nie zawierała pliku `VERSION` w korzeniu instalacji.
+Zawierała go — ale pod `linux-port/VERSION`, czyli tam, gdzie **nikt go nie
+czyta**. Wzięło się to z mapowania ścieżek: drzewo 2.x wdraża się pod nazwą
+`linux-port`, a reguła przenosiła cały katalog razem z plikiem wersji.
+
+To nie był tylko mylący komunikat. `tools/update.sh` czyta `<korzeń>/VERSION`
+dwa razy: żeby powiedzieć, co jest zainstalowane, i żeby **zdecydować, czy w
+ogóle jest co instalować**. Skoro numer nigdy się nie zmieniał, porównanie
+z manifestem nigdy nie trafiało — więc każde uruchomienie pobierało i
+rozpakowywało to samo wydanie od nowa.
+
+Naprawione w trzech miejscach naraz: plik wersji trafia do korzenia,
+dokumentacja wydania nosi pełne mapowanie (brakowało w niej dwóch wierszy,
+choć narzędzie `New-M2DeployTree.ps1` miało je od zawsze), a pakowarka
+**odmawia zbudowania** paczki serwera bez `VERSION` w korzeniu. Przy okazji
+wraca do paczek `PACZKA_INFO.txt`, który ginął z tego samego powodu.
+
+Po zainstalowaniu 2.0.36 numer w korzeniu wreszcie się przesunie i kółko się
+zatrzyma.
+
+### Bronie i zbroje: 147 rodzin, cena za każdy plus
+
+Do tej pory broń i zbroja powyżej +6 miały trzy wymyślone ceny: 150 000 za +7,
+400 000 za +8, 900 000 za +9. Wymyślone, bo tabele gry nie zawierają ceny
+ulepszonego przedmiotu i trzeba ją było kiedyś zgadnąć. Skutek: **Zatruty Miecz
++9 i zwykły Miecz +9 stały na straganie za te same 900 000**.
+
+Teraz każda rodzina ma własną cenę na każdym poziomie ulepszenia, wprost z jego
+arkusza: Miecz +9 to 120 000, Zatruty Miecz +9 to 13 000 000. Rodzin jest 147 —
+miecze, sztylety, łuki, bronie dwuręczne, dzwony, wachlarze i zbroje wszystkich
+czterech klas.
+
+### Kamienie duszy w sockecie podnoszą cenę przedmiotu
+
+Też z jego arkusza, w dwóch krokach: najpierw ile kamieni siedzi w przedmiocie
+(jeden ×1.2, dwa ×1.3, trzy ×1.5), potem które konkretnie — Kamień Duszy Potwora
++4 mnoży przez 1.8, Śmierci +4 przez 1.7, i tak dalej. Pęknięty kamień nie liczy
+się wcale, dokładnie jak u niego.
+
+### Marmury, opaski, zioła, kamienie duszy, skrzynki
+
+- **Marmury polimorfii** wyceniane po potworze siedzącym w sockecie: trzynaście
+  nazwanych wyjątków (od 40 000 za Wojownika z Toporem po 75 000 za Małego
+  Trującego Pająka), reszta z pasma 15 000–35 000, losowana raz na marmur.
+- **Opaski Zapomnienia** po umiejętności — 44 pozycje. Siedem z nich Iwakura
+  oznaczył „do sprzedaży u handlarki": te nie zajmują już miejsca na straganie.
+- **Kamienie duszy** po rodzaju i stopniu: osiemnaście wyjątków (Potwora +4 za
+  350 000, Śmierci +4 za 250 000), reszta po cenie swojego stopnia.
+- **Zioła** (osiem), **Szkatuła Blasku Księżyca** 35 000 i **Medal Konny**
+  250 000.
+
+### Jak to zrobione
+
+Ceny nie są przepisane ręcznie. Generator czyta jego pliki i wiąże **każdą**
+nazwę z vnumem tego świata, pytając `item_proto` i `mob_proto`; jeśli choć
+jednej nazwy nie da się dopasować, **odmawia zapisania tabeli**. Dzięki temu
+nowa pozycja w arkuszu zatrzyma budowę zamiast po cichu zostawić starą cenę.
+Dziesięć nazw, które gra skraca („Zbr. Płyt." wobec jego „Zbroja Płytowa"),
+ma jawną tabelę aliasów — każdy sprawdzony jako jedyny kandydat.
+
+Wszystko skaluje się mnożnikiem dropu yang tak, jak napisał na górze obu
+arkuszy: cena bazowa razy stawka przez sto. Na serwerze ze stawką 100% obowiązuje
+cena z tabeli, przy 500% jest pięć razy wyższa.
+
+Numer wersji cennika idzie na 2, więc stragany stojące na starych cenach
+przeceniają się na najbliższej wizycie serwisowej, zamiast trzymać je przez całe
+osiem godzin stoiska.
+
 ## 2.0.35 — 2026-09-13
 
 Serwer. Pięć zgłoszeń z Discorda z jednego wieczoru, każde z inną przyczyną —

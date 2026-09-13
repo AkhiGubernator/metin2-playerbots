@@ -356,33 +356,37 @@ namespace
 		if (!ch)
 			return;
 
+		// What the quest actually gives on this server, and nothing besides.
+		//
+		// Read row by row out of the server's own files: only the first herb
+		// pays anything. collect_herb_lv4 ends with select_weapon_reward() - a
+		// weapon per class, and the first of each list is what a player who
+		// makes no choice gets. The other five rows call give_reward("herb_lvN")
+		// and reward_data.lua has no such key: seventy-nine entries and not one
+		// of them a biologist quest, so give_reward logs "ERROR NO QUEST REWARD
+		// DATA" and hands out nothing at all.
+		//
+		// Until now this function invented a reward for every row - armour at
+		// seven, a bracelet at ten, an earring at fifteen, a necklace at twenty,
+		// a helmet at twenty-five - and gold and experience on top of all of
+		// them. No player has ever been paid any of it ("boty maja miec te same
+		// nagrody co gracz 1:1", Tieru). The Orc Tooth's own reward is not here
+		// either: it is paid where the quest pays it, at the key-item hand-in.
 		DWORD rewardItem = 0;
-		switch (mission.requiredLevel)
+		if (mission.requiredLevel == 4)
 		{
-			case 4:
-				rewardItem = ch->GetJob() == JOB_SHAMAN ? 7003 : 13;
-				break;
-			case 7:
-			{
-				const DWORD armorRewards[4] = { 11203, 11403, 11603, 11803 };
-				if (ch->GetJob() <= JOB_SHAMAN)
-					rewardItem = armorRewards[ch->GetJob()];
-				break;
-			}
-			case 10: rewardItem = 16023; break;
-			case 15: rewardItem = 17023; break;
-			case 20: rewardItem = 14023; break;
-			case 25:
-			{
-				const DWORD helmetRewards[4] = { 12222, 12362, 12502, 12642 };
-				if (ch->GetJob() <= JOB_SHAMAN)
-					rewardItem = helmetRewards[ch->GetJob()];
-				break;
-			}
+			// JOB_WARRIOR, JOB_ASSASSIN, JOB_SURA, JOB_SHAMAN - the quest's
+			// weapon_reward_by_job: warrior {13, 3003}, ninja {1003, 2003},
+			// sura {13}, shaman {7003}.
+			const DWORD herbWeapons[4] = { 13, 1003, 13, 7003 };
+			if (ch->GetJob() <= JOB_SHAMAN)
+				rewardItem = herbWeapons[ch->GetJob()];
 		}
 
 		if (rewardItem != 0)
 			ch->AutoGiveItem(rewardItem, 1, -1, false);
+		// Kept as fields rather than deleted: a row whose quest does carry a
+		// reward_data entry can fill them in without this function changing.
 		if (mission.rewardGold > 0)
 			PlayerBotChangeGold(ch, mission.rewardGold);
 		if (mission.rewardExp > 0)
@@ -521,17 +525,35 @@ namespace
 			return false;
 		}
 
-		// The second half of the Orc Tooth quest: the stone is handed in, and the
-		// reward is what the quest's own last state gives - ten movement speed
-		// for sixty years, and the box.
+		// The second half of a row: the key item is handed in, and the reward is
+		// what the quest's own last state gives - a permanent collect affect and
+		// a casket, both read from the row rather than named after the tooth.
+		//
+		// Paid the way affect.add_collect pays a player, which is not what a
+		// bare AddAffect does: the engine's binding finds the existing affect of
+		// that point, adds the new value to it and writes it back with bOverride
+		// and IsCube both true. IsCube is the load-bearing one - with it false
+		// AddAffect looks an affect up by TYPE alone, so paying the Curse Book's
+		// attack speed would have overwritten the Orc Tooth's movement speed
+		// instead of standing beside it.
 		if (keyPhase)
 		{
 			ch->RemoveSpecifyItem(wantedVnum, 1);
-			ch->AddAffect(AFFECT_COLLECT, POINT_MOV_SPEED, PLAYERBOT_ORC_TOOTH_REWARD_MOV_SPEED,
-					0, 60L * 60L * 24L * 365L * 60L, 0, false);
-			ch->AutoGiveItem(PLAYERBOT_ORC_TOOTH_REWARD_BOX_VNUM, 1, -1, false);
-			sys_log(0, "PLAYERBOT_BIOLOGIST: soul stone handed in pid=%u name=%s quest=%s mov_speed=+%d",
-					ch->GetPlayerID(), ch->GetName(), mission->questName, PLAYERBOT_ORC_TOOTH_REWARD_MOV_SPEED);
+			if (mission->rewardPoint != 0)
+			{
+				long lValue = mission->rewardPointValue;
+				const CAffect* pkAffect = ch->FindAffect(AFFECT_COLLECT, mission->rewardPoint);
+				if (pkAffect)
+					lValue += pkAffect->lApplyValue;
+				ch->AddAffect(AFFECT_COLLECT, mission->rewardPoint, lValue, 0,
+						INFINITE_AFFECT_DURATION, 0, true, true);
+			}
+			if (mission->rewardBoxVnum != 0)
+				ch->AutoGiveItem(mission->rewardBoxVnum, 1, -1, false);
+			sys_log(0, "PLAYERBOT_BIOLOGIST: key item handed in pid=%u name=%s quest=%s point=%u value=+%d box=%u",
+					ch->GetPlayerID(), ch->GetName(), mission->questName,
+					(unsigned)mission->rewardPoint, mission->rewardPointValue,
+					mission->rewardBoxVnum);
 			CompletePlayerBotBiologistMission(ch, missionIndex);
 			state.bVisitingBiologist = false;
 			state.dwNextBiologistActionTime = 0;
@@ -552,10 +574,10 @@ namespace
 				ch->GetPlayerID(), ch->GetName(), mission->questName, acceptedNow ? 1 : 0,
 				newAccepted, mission->requiredCount, ch->CountSpecifyItem(mission->itemVnum));
 
-		// Ten teeth in: the Orc Tooth quest does not end here, it waits in
-		// key_item for the stone. The quest's own kill hook drops it, one in
-		// five hundred Elite Orcs, once the state says so.
-		if (newAccepted >= mission->requiredCount && missionIndex == PLAYERBOT_BIOLOGIST_ORC_TOOTH_INDEX)
+		// The specimens are in, but a row with a key item does not end here: it
+		// waits in key_item for the key, which the quest's own kill hook drops
+		// one time in five hundred once the state says so.
+		if (newAccepted >= mission->requiredCount && mission->keyItemVnum != 0)
 		{
 			const int keyState = GetPlayerBotBiologistStateIndex(missionIndex, "key_item");
 			quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ch->GetPlayerID());
@@ -1707,8 +1729,7 @@ namespace
 			// Biologist specimens stay: they are quest progress, not goods. Horse
 			// medals used to be excluded here as well, which meant nobody could
 			// ever buy one; whether they are for sale is now the scoring's call.
-			if (((vnum >= 50701 && vnum <= 50706) || vnum == PLAYERBOT_ORC_TOOTH_VNUM ||
-					vnum == PLAYERBOT_JINUNGGYI_STONE_VNUM) &&
+			if ((IsPlayerBotBiologistSpecimen(vnum) || IsPlayerBotBiologistKeyItem(vnum)) &&
 					!IsPlayerBotBiologistSpecimenSurplus(ch, vnum))
 				continue;
 			// Spare gear is the most interesting thing a stall can offer, but the

@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T16:50:00Z",
-  "statusMessage": "2.0.34: panel GM na F9 i okno administracji botami na F10 (OskarPWA) — wyszukiwanie gracza, podgląd EQ, tworzenie przedmiotów, spawn, stawki i suwaki AI pod jednym oknem; na oknie celu przybywają przyciski Sprawdź i EQ. Okna powstają w osłonie, więc panel nie może zatrzymać wczytywania gry. Stragany nadrabiają stary cennik (Iwakura): stoisko wycenione według starszej tabeli przecenia się co wizytę serwisową, a nie raz na godzinę. Ta aktualizacja zmienia także klienta — kliknij ZAINSTALUJ AKTUALIZACJE, a potem AKTUALIZUJ KLIENTA.",
+  "publishedAt": "2026-09-13T17:32:00Z",
+  "statusMessage": "2.0.34 + klient 2.0.5: panel GM na F9 i okno administracji botami na F10 (OskarPWA). UWAGA — klient 2.0.4 był zepsuty (panel F9 się nie budował, a zakładka „Czat ogólny” zamykała grę); klient 2.0.5 to naprawia, więc kliknij AKTUALIZUJ KLIENTA. Po stronie serwera bez zmian: wyszukiwanie gracza, podgląd EQ, tworzenie przedmiotów, spawn, stawki i suwaki AI pod jednym oknem, a na oknie celu przybywają przyciski Sprawdź i EQ. Stragany nadrabiają też stary cennik (Iwakura): stoisko wycenione według starszej tabeli przecenia się co wizytę serwisową, a nie raz na godzinę.",
   "server": {
     "version": "2.0.34",
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.34/metin2-server-update-2.0.34.zip",
@@ -13,8 +13,8 @@
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.4",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.34/metin2-client-update-2.0.4.zip",
-    "sha256": "87A8B85183CF4CE26ADBCA624AE04286B63451618168908A321634BF841A1DC1"
+    "version": "2.0.5",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.34/metin2-client-update-2.0.5.zip",
+    "sha256": "7EBBBBC3DD3E6337F75FB74DE4613732CB6EB9A36131BDFC3ED2AA69909B8119"
   }
 }

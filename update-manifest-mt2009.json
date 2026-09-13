@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T17:32:00Z",
-  "statusMessage": "2.0.34 + klient 2.0.5: panel GM na F9 i okno administracji botami na F10 (OskarPWA). UWAGA — klient 2.0.4 był zepsuty (panel F9 się nie budował, a zakładka „Czat ogólny” zamykała grę); klient 2.0.5 to naprawia, więc kliknij AKTUALIZUJ KLIENTA. Po stronie serwera bez zmian: wyszukiwanie gracza, podgląd EQ, tworzenie przedmiotów, spawn, stawki i suwaki AI pod jednym oknem, a na oknie celu przybywają przyciski Sprawdź i EQ. Stragany nadrabiają też stary cennik (Iwakura): stoisko wycenione według starszej tabeli przecenia się co wizytę serwisową, a nie raz na godzinę.",
+  "publishedAt": "2026-09-13T18:40:00Z",
+  "statusMessage": "2.0.35: konie w Shinsoo i Jinno — każde królestwo ma własny Loch Małp, a kod znał tylko mapę Chunjo, więc te dwa królestwa nie zdobywały medali w ogóle (zmierzone: 500 postaci i zero koni w każdym z nich). Do tego własne wejścia i bramy na Dolinę Orków, Pustynię i Górę Sohan — do tej pory wszystkie boty, niezależnie od królestwa, wchodziły wejściem żółtych i wracały ich bramą przez całą mapę. „Szybkość biegu” w panelu znów działa: brakowało wiązania silnika, na którym quest wywracał się w połowie i zostawiał wiersz kolejki ze swoim stemplem. Stragany offline znów zapisują sprzedaż do historii sprzętu i uczą się popytu, a rdzeń mówi teraz, która reguła pomija broń na 30 poziom. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.34",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.34/metin2-server-update-2.0.34.zip",
-    "sha256": "8DC76BCF99D993C37D19CB53240D1AB00AB4834D496098AF5ECE55D6A236B05A"
+    "version": "2.0.35",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.35/metin2-server-update-2.0.35.zip",
+    "sha256": "7E6CC83AC86D18B81C8BA38EFC73870AE60D98F05E2EE832262C88FAB1CD148D"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

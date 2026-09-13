@@ -541,6 +541,11 @@ namespace
 	const DWORD PLAYERBOT_SHOP_PRICE_PLUS7 = 150000;
 	const DWORD PLAYERBOT_SHOP_PRICE_PLUS8 = 400000;
 	const DWORD PLAYERBOT_SHOP_PRICE_PLUS9 = 900000;
+	// Iwakura's price competition: two bots holding the same +N with the same
+	// bonus lines would otherwise both ask the flat price above, so a market of
+	// stalls shows one number instead of a spread. A stable per-keeper swing of
+	// up to this many percent (Iwakura's "1-20%") lets one undercut the other.
+	const DWORD PLAYERBOT_SHOP_PRICE_JITTER_PCT = 20;
 	// Refine materials go up at a small markup over the merchant price, so a bot
 	// that needs one can buy it from a neighbour instead of farming for it.
 	const DWORD PLAYERBOT_SHOP_MATERIAL_MARKUP = 3;

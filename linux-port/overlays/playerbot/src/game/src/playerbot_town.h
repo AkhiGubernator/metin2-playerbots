@@ -846,6 +846,27 @@ namespace
 				(unsigned long long)(100 + bonusPercent) / 100ULL));
 	}
 
+	// Iwakura's price competition (see PLAYERBOT_SHOP_PRICE_JITTER_PCT): a stable
+	// per-keeper, per-item swing so two stalls with the same +7 do not both ask
+	// the flat 150 000. Hashed on the owner and the item, so it does not flicker
+	// between stands; keyed off the item's owner, so a preview with no owner (the
+	// offline reprice path) is left exactly as priced.
+	DWORD ApplyPlayerBotPriceCompetition(LPITEM item, DWORD price)
+	{
+		if (!item || price <= 1)
+			return price;
+		LPCHARACTER owner = item->GetOwner();
+		if (!owner)
+			return price;
+		const DWORD span = 2U * PLAYERBOT_SHOP_PRICE_JITTER_PCT + 1U;
+		const int delta = (int)(PlayerBotNavHash(owner->GetPlayerID() ^
+				(item->GetVnum() * 2654435761U) ^
+				((DWORD)item->GetRefineLevel() * 0x9E3779B9U)) % span) -
+				(int)PLAYERBOT_SHOP_PRICE_JITTER_PCT;
+		return std::max<DWORD>(1, (DWORD)((unsigned long long)price *
+				(unsigned long long)(100 + delta) / 100ULL));
+	}
+
 	// Iwakura's base for a book, at this world's yang rate. The rate is the
 	// mob_gold multiplier in percent (100 when nothing set it), the same
 	// number the panel's rates page writes.
@@ -878,11 +899,11 @@ namespace
 		// the step limiter finally settle on.
 		const DWORD investment = GetPlayerBotRefineInvestment(item);
 		if (refine >= 9)
-			return ApplyPlayerBotBonusPremium(std::max(PLAYERBOT_SHOP_PRICE_PLUS9, investment), bonusPercent);
+			return ApplyPlayerBotPriceCompetition(item, ApplyPlayerBotBonusPremium(std::max(PLAYERBOT_SHOP_PRICE_PLUS9, investment), bonusPercent));
 		if (refine == 8)
-			return ApplyPlayerBotBonusPremium(std::max(PLAYERBOT_SHOP_PRICE_PLUS8, investment), bonusPercent);
+			return ApplyPlayerBotPriceCompetition(item, ApplyPlayerBotBonusPremium(std::max(PLAYERBOT_SHOP_PRICE_PLUS8, investment), bonusPercent));
 		if (refine == 7)
-			return ApplyPlayerBotBonusPremium(std::max(PLAYERBOT_SHOP_PRICE_PLUS7, investment), bonusPercent);
+			return ApplyPlayerBotPriceCompetition(item, ApplyPlayerBotBonusPremium(std::max(PLAYERBOT_SHOP_PRICE_PLUS7, investment), bonusPercent));
 		// A skill book's own market, and the goods whose merchant price says
 		// nothing about what they are worth here. Both come from the audit of
 		// 8 September: the merchant charges a thousand yang for every book

@@ -17,6 +17,85 @@ every version here.
 
 ---
 
+## 2.0.28 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Poprawia bieganie
+botów „tam i z powrotem” po 2.0.26, daje botom matematyczny wybór broni,
+naprawia wyzerowanie świata w launcherze i uzupełnia pakiet wsparcia o logi
+sklepów offline.
+
+### Boty biegają tam i z powrotem przy pierścieniu straganów (FanFar)
+
+„Boty po aktualizacji sklepów offline biegają w jedną i drugą stronę bez celu”.
+Z pakietu wsparcia: na jednym rdzeniu ~430 z 500 botów co ~5 s rozdzielało te
+same stosy „na ladę” (8250 linii `split` w 13 minut) — a sklepy offline
+powstawały normalnie (284 na świecie po pięciu minutach). Mechanizm: dwa wyjścia
+na końcu przejścia otwierającego stragan — trwałe zawiniątko sklepu i brak yang
+na zawiniątko — odmawiały **bez ustawienia zegara**, już po rozdzieleniu stosów;
+pas scalania stosów (po wyczerpaniu budżetu wraca po 5 s) zlewał pojedyncze
+sztuki z powrotem, pas wędrówki robił krok w bok, a następny tick znów
+rozdzielał, szedł na stanowisko i odmawiał. Teraz każde takie wyjście odczekuje
+(2–4 min, a z trwałym zawiniątkiem 10–15 min), a tanie sprawdzenia — czy bot ma
+na zawiniątko, opłatę sklepu offline i rezerwę na Teleporter, i czy minęły dwie
+minuty od spawnu — stoją **przed** skanem, rozdzielaniem i marszem. Odmowa
+jest logowana (`PLAYERBOT_SHOP: refused ... reason=cannot_pay`).
+
+### Bot liczy obrażenia na cios i tak wybiera broń (Tieru)
+
+„Wprowadź matematyczny algorytm dla bota, który przelicza atak per hit z danej
+broni uwzględniając bonusy i średnie broni”. Wynik broni w wyborze ekwipunku to
+teraz jeden zwykły cios, tak jak liczy go `battle.cpp`: rzut broni (wartości
+3–4 podwojone przez silnik; sztylet i łuk jak dotąd), klasa ataku (poziom, SIŁA,
+linie klasy ataku), linie procentowe ataku, linia rasy ważona udziałem tej rasy
+na mapie, średnie obrażenia, trafienie krytyczne (drugi cios na każdy procent) i
+przebicie (połowa). To, co kandydat zmieniłby na postaci (SIŁA, klasa ataku,
+procenty, kryty), jest liczone względem postaci **bez** noszonej broni — więc
+broń w ręku i dwie w plecaku są czytane na tym samym ciele. Obrażenia
+umiejętności nie wchodzą w cios (linia PvP, której świat jeszcze nie używa);
+szybkość ataku to ciosy na sekundę, nie obrażenia na cios. Żadna sztuczna
+„premia” nie jest już potrzebna, żeby Riba 48% śr. wygrała z niższą bronią +9 —
+robią to liczby.
+
+### Wyzeruj świat i zacznij od nowa — działa (NieBijOddam)
+
+„Brak możliwości wyzerowania serwera”: cztery próby z rzędu kończyły się „Nie
+udało się usunąć wolumenu … czy serwer na pewno jest zatrzymany?”. Był
+zatrzymany — ale launcher zatrzymuje stos przez `compose stop`, które zostawia
+kontenery, a zatrzymany kontener wciąż trzyma swój wolumen. Reset usuwa najpierw
+każdy kontener, który się do wolumenu odwołuje, potem wolumen; następny start
+odtwarza kontenery jak po aktualizacji. Opcja nazywa się teraz „Wyzeruj świat i
+zacznij od nowa” (przycisk **KOPIA / NOWY SWIAT**, w menu tekstowym pozycja 17):
+po wyzerowaniu serwer uruchamia się sam na nowym świecie, bez klikania GRAJ.
+Kopia starego świata jak dotąd trafia do `backups`.
+
+### Pakiet wsparcia niesie logi sklepów offline
+
+Pakiet FanFara nie miał **ani jednej** linii o sklepach offline, bo lista
+wzorców `grep` w launcherze nie znała `PLAYERBOT_OFFLINE`; „czy sklepy w ogóle
+powstały” trzeba było wnioskować ze spisu straganów. Dochodzą `PLAYERBOT_OFFLINE`,
+`PLAYERBOT_MARKET` i `PLAYERBOT_BAG` (scalanie i sortowanie plecaka — to ono
+zdradza pętlę wyżej).
+
+### Sprostowanie do 2.0.27
+
+Opis 2.0.27 twierdził, że odmowa Teleportera była sprawdzona na żywo. Nie była:
+poprawka jest sprawdzona kompilacją na obu silnikach, a na świecie testowym nie
+dało się wymusić samej odmowy (boty z niedoborem yang nie są tam wysyłane pod
+Teleporter). Potwierdzenie przyjdzie z logów graczy; wpis w wątku kimakatsu
+poprawiony.
+
+### Dla sizowskiego: „boty nie wystawiają sklepów”
+
+Pakiet z 11:57 był jeszcze z 2.0.25: spis pokazywał 1–21 klasycznych straganów
+na rdzeń, bo po serii stoisk straganiarz odpoczywa 30–90 min, a 2.0.24 zabrało
+straganom materiały (idą do magazynu) i podniosło próg zapasowej broni do +7.
+Od 2.0.26 straganu klasycznego nie ma — bot stawia sklep offline na 8 h i idzie
+grać, a po 8 h opłaca go na nowo, jeśli został towar. Jeśli po 2.0.28 sklepów
+offline dalej nie widać, nowy pakiet wsparcia pokaże `PLAYERBOT_OFFLINE: create`
+albo powód odmowy.
+
+---
+
 ## 2.0.27 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. **Pilna poprawka:
@@ -31,8 +110,10 @@ się o jedno miejsce, numer mapy trafiał tam, gdzie miał być tekst powodu, rd
 próbował go czytać jako tekst — i padał. Każda odmowa zabijała rdzeń, więc ta
 linia nigdy nie trafiła do żadnego logu. Poprawione tu i w dwunastu innych
 miejscach, gdzie yang szedł do logu tym samym błędnym wzorcem (te tylko
-pokazywały złe liczby). Sprawdzone na żywo botami bez yang stojącymi pod
-Teleporterem: odmowa jest logowana, rdzeń żyje.
+pokazywały złe liczby). Poprawka sprawdzona kompilacją na obu silnikach; samej
+odmowy nie udało się wymusić na świecie testowym (boty z niedoborem yang nie są
+tam w ogóle wysyłane pod Teleporter), więc potwierdzenie na żywo przyjdzie z
+logów graczy.
 
 ### Boty używają wspomagaczy, kamieni bonusów i eliksirów zamiast je sprzedawać (Pasywny)
 

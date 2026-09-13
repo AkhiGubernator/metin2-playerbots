@@ -1343,6 +1343,32 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   in Joan browsing stalls and never levels" (gregoszky, davids998). The rule
   runs first now, up to `PLAYERBOT_SHOP_UNSOLD_SCRAP_MAX_REFINE` (+6); +7 and
   up is still never scrap.
+- **The splitter and the merger must never share a tick without a clock
+  between them.** `ManagePlayerBotPrivateShop` splits singles off every
+  stack going on the counter before the walk to the pitch, and
+  `ManagePlayerBotStackMerge` pours them back whenever no counter is open -
+  and comes straight back after five seconds when its budget of four merges
+  was used up. Two refusals at the far end of the open pass (the permanent
+  bundle 71049, no yang for the 50200 bundle) returned with no
+  `dwNextShopKeepTime`, so on the first 2.0.26 run of a world whose bots
+  were parked on the ring the pass split, walked, refused, was merged back
+  and did it again every five seconds - 8250 split lines in thirteen
+  minutes, ~430 bots a core "biegaja w jedna i druga strone bez celu"
+  (FanFar, 13 September). The cheap refusals (bundle, offline fee plus the
+  fare reserve, two minutes after a spawn) sit before the scan now and every
+  exit sets the clock. Measure it as identical `PLAYERBOT_SHOP: split`
+  lines for one pid seconds apart, beside `PLAYERBOT_BAG: merged`.
+- **The support bundle's syslog is a grep list, and a tag missing from it is
+  a subsystem that never happened.** FanFar's bundle carried zero
+  `PLAYERBOT_OFFLINE` lines while its own census counted 284 offline shops;
+  `Metin2Launcher.psm1` names every tag it keeps. A new `PLAYERBOT_<AREA>:`
+  tag has to be added there or no bundle will ever show it (OFFLINE, MARKET
+  and BAG were added in 2.0.28).
+- **`compose stop` leaves the containers, and a stopped container holds its
+  volume.** `Reset-M2WorldToFreshInstall` ran `docker volume rm` on a stopped
+  stack and got "volume is in use" four times for one player - the launcher
+  never runs `compose down`. Remove what `docker ps -a --filter
+  volume=<name>` lists first; `compose up` recreates it on the next start.
 - **Measure before tuning a budget.** `CPlayerBotManager::Update` logs
   `PLAYERBOT_LOAD:` once a minute: tick time, plans by distance bucket with
   their cost, deferrals, target searches, snapshot, map scans, saves, watchdog

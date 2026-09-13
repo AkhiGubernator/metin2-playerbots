@@ -2075,6 +2075,47 @@ namespace
 		if (!justFinishedInTown && !alreadyAtPitch)
 			return false;
 
+		// The cheap refusals come before the scan, the split and the walk, and
+		// every one of them sets the clock. Two exits at the far end of this
+		// pass - the permanent bundle, and no yang for the bundle - returned
+		// with no clock at all, after the stacks had been split for the
+		// counter; the stack-merge pass then poured the singles back (it comes
+		// straight back after a full budget, five seconds), the wander pass
+		// took a step away, and the next tick split, walked and refused again:
+		// 8250 split lines in thirteen minutes from one world, ~430 bots a core
+		// in Bokjung "biegaja w jedna i druga strone bez celu" (FanFar,
+		// 13 September, the first run of 2.0.26). Same shape as "a pass that
+		// refuses must also back off".
+		if (ch->CountSpecifyItem(71049) > 0)
+		{
+			state.dwNextShopKeepTime = dwNow + number(600000, 900000);
+			PlayerBotLogThrottled("shop_permanent_bundle", dwNow,
+					"PLAYERBOT_SHOP: refused pid=%u name=%s reason=permanent_bundle",
+					ch->GetPlayerID(), ch->GetName());
+			return false;
+		}
+		{
+			long long need = ch->CountSpecifyItem(50200) > 0 ? 0 : (long long)PLAYERBOT_SHOP_BUNDLE_PRICE;
+#if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
+			// The offline shop's own fee and the fares the bot keeps back, the
+			// same sum SubmitPlayerBotOfflineShop refuses on - asked here so a
+			// keeper that cannot pay does not split and walk first. And not in
+			// the first two minutes after a spawn (see the submit), for the
+			// same reason.
+			need += (long long)aOfflineShopTime[1].price + (long long)GetPlayerBotReservedGold(ch);
+			if (dwNow - state.dwSpawnTime < 120000)
+				return false;
+#endif
+			if ((long long)ch->GetGold() < need)
+			{
+				state.dwNextShopKeepTime = dwNow + number(120000, 240000);
+				PlayerBotLogThrottled("shop_cannot_pay", dwNow,
+						"PLAYERBOT_SHOP: refused pid=%u name=%s reason=cannot_pay gold=%lld need=%lld",
+						ch->GetPlayerID(), ch->GetName(), (long long)ch->GetGold(), need);
+				return false;
+			}
+		}
+
 		// Sorted best first, so the head of the list is the best score there is.
 		std::vector<std::pair<int, WORD> > scored;
 		CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state));
@@ -2437,8 +2478,13 @@ namespace
 		// OpenMyShop consumes one 50200 and refuses outright without it. The other
 		// accepted item, the permanent 71049, takes a branch that writes through
 		// GetDesc() - a bot has no client descriptor, so that path must be avoided.
+		// Both asked again at the top of the pass, before the split; kept here
+		// with a clock because the bag can change on the walk to the pitch.
 		if (ch->CountSpecifyItem(71049) > 0)
+		{
+			state.dwNextShopKeepTime = dwNow + number(600000, 900000);
 			return false;
+		}
 		if (ch->CountSpecifyItem(50200) == 0)
 		{
 			// AutoGiveItem puts the bundle on the ground when the bag has no free
@@ -2475,7 +2521,11 @@ namespace
 				return false;
 			}
 			// The bot buys its stall like anything else it carries.
-			if (ch->GetGold() < PLAYERBOT_SHOP_BUNDLE_PRICE) return false;
+			if (ch->GetGold() < PLAYERBOT_SHOP_BUNDLE_PRICE)
+			{
+				state.dwNextShopKeepTime = dwNow + number(120000, 240000);
+				return false;
+			}
 			PlayerBotChangeGold(ch, -(int)PLAYERBOT_SHOP_BUNDLE_PRICE);
 			ch->AutoGiveItem(50200, 1);
 		}

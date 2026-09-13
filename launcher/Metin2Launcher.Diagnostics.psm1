@@ -227,6 +227,42 @@ function Get-M2DockerPortOwner {
     return $null
 }
 
+# Which of the wanted ports a container's PORTS column actually publishes.
+#
+# The column is a comma-separated list of "[host:]HOST->CONTAINER/proto", and a
+# published range collapses into a single entry: "127.0.0.1:13000-13002->
+# 13000-13002/tcp". The host side is what matters, and it is either one number
+# or two around a dash.
+function Get-M2PublishedPortMatches {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$PortsText,
+        [Parameter(Mandatory = $true)][int[]]$Ports
+    )
+
+    $matched = @()
+    if (-not $PortsText) { return $matched }
+    foreach ($entry in ($PortsText -split ',')) {
+        $piece = $entry.Trim()
+        if (-not $piece -or $piece -notmatch '->') { continue }
+        $hostSide = ($piece -split '->')[0].Trim()
+        # Drop the bind address; IPv6 arrives as "[::]:7788".
+        if ($hostSide -match '^\[[^\]]*\]:(.+)$') { $hostSide = $Matches[1] }
+        elseif ($hostSide -match '^[^:]*:(.+)$') { $hostSide = $Matches[1] }
+        $first = 0
+        $last = 0
+        if ($hostSide -match '^(\d+)-(\d+)$') { $first = [int]$Matches[1]; $last = [int]$Matches[2] }
+        elseif ($hostSide -match '^(\d+)$') { $first = [int]$Matches[1]; $last = $first }
+        else { continue }
+        foreach ($port in @($Ports)) {
+            $number = [int]$port
+            if ($number -ge $first -and $number -le $last -and $matched -notcontains $number) {
+                $matched += $number
+            }
+        }
+    }
+    return $matched
+}
+
 # Every running container that publishes one of these host ports, with its
 # compose project and the folder it was started from. The folder is the half an
 # operator needs and never had: one machine here carries five projects of this
@@ -246,13 +282,13 @@ function Get-M2DockerPortHolders {
     foreach ($line in ($dockerPs.Output -split '\r?\n')) {
         if (-not $line.Trim()) { continue }
         try { $container = $line | ConvertFrom-Json } catch { continue }
-        $portsText = [string]$container.Ports
-        $matched = @()
-        foreach ($port in @($Ports)) {
-            if ($portsText -match ('(?i)(?:^|,\s*)(?:(?:0\.0\.0\.0|127\.0\.0\.1|\[::\]|\*):)?' + [int]$port + '->')) {
-                $matched += [int]$port
-            }
-        }
+        # Docker prints a published range as one entry - "127.0.0.1:13000-13002
+        # ->13000-13002/tcp" - so matching the literal "13001->" found nothing
+        # and the three game channels looked like they belonged to no container
+        # at all. The preflight then called the player's own running server a
+        # foreign program and refused to start (sizowski, 13 September, on the
+        # very check meant to help). Every host side is parsed, single or range.
+        $matched = @(Get-M2PublishedPortMatches -PortsText ([string]$container.Ports) -Ports $Ports)
         if ($matched.Count -eq 0) { continue }
         $project = ''
         $workingDir = ''
@@ -556,6 +592,15 @@ function Get-M2DockerPreflight {
                 [void]$checks.Add("BŁĄD: port $($entry.Port) ($($entry.Name)) zajmuje kontener $($holder.Container) z innej instalacji (projekt $($holder.Project)$where).")
                 $foreignHolders += $holder
             }
+            elseif ($entry.Listener.Name -match '(?i)^(com\.docker|docker|vpnkit|wslrelay)') {
+                # Docker itself holds every published port on Windows, in the
+                # name of some container. Not recognising which one is a gap in
+                # this check, never a reason to refuse the start: saying "close
+                # com.docker.backend" to somebody whose own server is running is
+                # advice that cannot be followed.
+                [void]$checks.Add("UWAGA: port $($entry.Port) ($($entry.Name)) trzyma Docker ($($entry.Listener.Name)); nie rozpoznano kontenera - zakladam, ze to ta instalacja.")
+                [void]$warnings.Add("Port $($entry.Port) jest zajety przez Dockera. Jesli serwer nie wstanie, sprawdz DIAGNOSTYKA i zatrzymaj inne instalacje.")
+            }
             else {
                 $who = if ($entry.Listener.Name) { "proces $($entry.Listener.Name), PID $($entry.Listener.Pid)" } else { "PID $($entry.Listener.Pid)" }
                 [void]$checks.Add("BŁĄD: port $($entry.Port) ($($entry.Name)) zajmuje $who.")
@@ -667,6 +712,7 @@ Export-ModuleMember -Function @(
     'Get-M2DockerPreflight',
     'Format-M2DockerPreflightReport',
     'Get-M2StackHostPorts',
+    'Get-M2PublishedPortMatches',
     'Get-M2DockerPortHolders',
     'Get-M2ForeignPortHolders',
     'Stop-M2ForeignPortHolders'

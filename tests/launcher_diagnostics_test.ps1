@@ -105,6 +105,38 @@ try {
 }
 finally { Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue }
 
+# Regresja z 2.0.31: Docker drukuje opublikowany zakres jako JEDEN wpis
+# ("127.0.0.1:13000-13002->13000-13002/tcp"), a szukanie dosłownego "13001->"
+# nie trafiało w żaden kanał gry. Preflight uznawał wtedy własny, działający
+# serwer gracza za obcy program i odmawiał startu (sizowski).
+$portsColumn = '127.0.0.1:11000->11000/tcp, 127.0.0.1:13000-13002->13000-13002/tcp'
+$matchedPorts = @(Get-M2PublishedPortMatches -PortsText $portsColumn -Ports @(7788, 11000, 13000, 13001, 13002))
+foreach ($expected in @(11000, 13000, 13001, 13002)) {
+    if ($matchedPorts -notcontains $expected) {
+        throw "Port $expected z zakresu musi zostać rozpoznany; otrzymano: $($matchedPorts -join ', ')."
+    }
+}
+if ($matchedPorts -contains 7788) {
+    throw 'Port spoza opublikowanej listy nie może zostać dopasowany.'
+}
+
+# Pojedynczy port, adres IPv6 i wpis bez adresu - wszystkie trzy postacie, w
+# jakich Docker podaje stronę hosta.
+$singleMatches = @(Get-M2PublishedPortMatches -PortsText '[::]:7788->7788/tcp, 7790->7789/tcp' -Ports @(7788, 7790, 7791))
+foreach ($expected in @(7788, 7790)) {
+    if ($singleMatches -notcontains $expected) {
+        throw "Port $expected musi zostać rozpoznany; otrzymano: $($singleMatches -join ', ')."
+    }
+}
+if ($singleMatches -contains 7791) {
+    throw 'Nieopublikowany port nie może zostać dopasowany.'
+}
+
+# Port wystawiony tylko wewnątrz sieci (bez "->") nie jest publikowany na hoście.
+if (@(Get-M2PublishedPortMatches -PortsText '7789/tcp' -Ports @(7789)).Count -ne 0) {
+    throw 'Port bez publikacji na hoście nie może zostać dopasowany.'
+}
+
 [pscustomobject]@{
     Result = 'OK'
     ParserErrors = @($parserErrors).Count

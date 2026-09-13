@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T00:15:19Z",
-  "statusMessage": "Wersja 2.0.23: boty wracaja do miasta Pierscieniem Teleportacji gdy skoncza sie mikstury, sortuja plecak, a z metinow i bossow wpadaja Kupony Smoczych Monet. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-13T08:09:17Z",
+  "statusMessage": "Wersja 2.0.24: boty zakladaja bronie 30 lvl ze srednimi, lucznicy ulepszaja sztylet do metinow (+4), koniec drzenia konia w podrozy, stragany na duplikaty dopiero od +7, a materialy pod presja plecaka ida do magazynu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.23",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.23/metin2-server-update-2.0.23.zip",
-    "sha256": "3A102655DBD9427965FA103D8B32EFD0A56F6D523F2655BDBC1A4B0D0935604F"
+    "version": "2.0.24",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.24/metin2-server-update-2.0.24.zip",
+    "sha256": "56C435B81B759BAFDE0CF63C1DDBBBCF5A9DDAE2AA24B64E0BE1F8AABDF88FB7"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

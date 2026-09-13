@@ -41,6 +41,12 @@ namespace
 		// leaves it free to be out in the desert earning the thing instead.
 		if (IsPlayerBotBattleHorseCandidate(ch))
 			return false;
+		// The same shape one level up: a horse at exactly twenty is waiting on
+		// the Demon Tower trial, not on another medal, so it does not go
+		// collecting them - but once the trial is done it walks to the stable
+		// like anybody with something to hand in.
+		if (ch->GetHorseLevel() == PLAYERBOT_MILITARY_HORSE_FROM_HORSE_LEVEL)
+			return IsPlayerBotMilitaryHorseEarned(ch);
 		return ch->GetLevel() >= GetPlayerBotNextHorseRequiredLevel(ch->GetHorseLevel());
 	}
 
@@ -143,6 +149,25 @@ namespace
 			return false;
 		}
 
+		// The military horse is collected here, before any medal is looked at: a
+		// bot that finished the Demon Tower trial has nothing to hand in and
+		// would otherwise be turned away by the medal check below and never get
+		// its twenty-first level.
+		if (IsPlayerBotMilitaryHorseEarned(ch))
+		{
+			ch->SetHorseLevel(PLAYERBOT_MILITARY_HORSE_LEVEL);
+			ch->SetQuestFlag(PLAYERBOT_HORSE_MEDALS_FLAG, PLAYERBOT_MILITARY_HORSE_LEVEL);
+			ch->SetSkillLevel(131, 10);
+			sys_log(0, "PLAYERBOT_HORSE: military horse granted pid=%u name=%s horse_level=%u kills=%d",
+					ch->GetPlayerID(), ch->GetName(), ch->GetHorseLevel(),
+					GetPlayerBotMilitaryHorseKills(ch));
+			state.bVisitingStable = false;
+			state.dwNextHorseActionTime = 0;
+			state.dwNextHorseCheckTime = dwNow + number(30000, 60000);
+			ClearPlayerBotRoute(state, true);
+			return false;
+		}
+
 		if (ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) <= 0)
 		{
 			state.bVisitingStable = false;
@@ -155,15 +180,17 @@ namespace
 		ch->RemoveSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM, 1);
 		int delivered = std::max(0, ch->GetQuestFlag(PLAYERBOT_HORSE_MEDALS_FLAG));
 		delivered = std::max(delivered, (int)ch->GetHorseLevel()) + 1;
-		delivered = std::min(delivered, 21);
+		// Medals stop at twenty. The twenty-first level is the Demon Tower
+		// trial's to give, not a medal's.
+		delivered = std::min(delivered, (int)PLAYERBOT_MILITARY_HORSE_FROM_HORSE_LEVEL);
 		ch->SetQuestFlag(PLAYERBOT_HORSE_MEDALS_FLAG, delivered);
 		ch->SetQuestFlag(PLAYERBOT_HORSE_LAST_DELIVERY_TIME_FLAG, get_global_time());
 		if (ch->GetHorseLevel() < delivered)
 			ch->SetHorseLevel(delivered);
 		ch->SetSkillLevel(131, 10);
 
-		const char* stage = delivered >= 21 ? "military" :
-				(delivered >= 11 ? "combat" : "normal");
+		const char* stage = delivered >= PLAYERBOT_MILITARY_HORSE_FROM_HORSE_LEVEL
+				? "military_trial_next" : (delivered >= 11 ? "combat" : "normal");
 		sys_log(0, "PLAYERBOT_HORSE: medal delivered pid=%u name=%s delivered=%d horse_level=%u stage=%s medals_left=%d",
 				ch->GetPlayerID(), ch->GetName(), delivered, ch->GetHorseLevel(), stage,
 				ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM));

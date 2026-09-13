@@ -17,6 +17,69 @@ every version here.
 
 ---
 
+## 2.0.39 — 2026-09-14
+
+Serwer. Pojedynki, dwie nowe mapy do polowania, Wieża Demonów, koń militarny i
+ostatni etap Biologa. Klient bez zmian (zostaje 2.0.5).
+
+### Pojedynki
+
+Gracz może wyzwać bota i bot **zawsze się zgodzi** — po trzech sekundach, tak
+jak prosiłeś. Dotąd wyzwanie bota nie robiło nic: `CPVPManager::Insert` to zgoda
+obustronna, a bot nie miał klienta, który odpisze tym samym. Teraz silnik
+zapisuje wyzwanie, a tick bota odpowiada tą samą drogą, którą poszedłby klient.
+
+Boty wyzywają też siebie nawzajem — rzadko i tylko sensownie: sześć na tysiąc
+przy jednym losowaniu na minutę, wyłącznie blisko siebie, w promieniu pięciu
+poziomów i przy pełnym życiu obu stron.
+
+**W pojedynku nie piją potek.** Silnikowego `IsFighting` nie dało się do tego
+użyć, bo na jednej linii siedzi pod `ENABLE_NEWSTUFF`, a na drugiej nie istnieje
+w ogóle — więc bot pamięta swój pojedynek sam.
+
+### Las, Czerwony Las i Wieża Demonów
+
+Trzy mapy, które istniały w plikach, ale hostował je rdzeń bez botów — czyli
+żaden bot nie mógł na nie wejść. Przeniesione tam, gdzie boty żyją:
+
+- **Las (67)**: Duchy Drzewa, Pniaka, Driady i Złe Drzewa, poziomy 65–71,
+  527 punktów odrodzenia, osiem hubów.
+- **Czerwony Las (68)**: ich czerwone odpowiedniki, 74–82, 693 punkty, osiem hubów.
+- **Wieża Demonów (66)**: Demony 57–60.
+
+Huby nie są zgadnięte: każdy stoi na rzeczywistym punkcie odrodzenia z regenu
+mapy, w najgęstszej komórce, a pasmo poziomów to mediana potworów tej komórki.
+W Wieży Demonów boty **nie łamią metinów** — tak jak prosiłeś, dungeon zostaje
+na później.
+
+### Ostatni etap Biologa
+
+Pamiątka Po Demonie była w tabeli od 2.0.37, ale celowo pomijana: jej potwory
+stoją wyłącznie w Wieży Demonów. Przenosiny mapy odblokowały ją same z siebie i
+panel liczy znów dziewięć etapów.
+
+### Koń militarny
+
+Medale prowadzą konia do **dwudziestego** poziomu i tam się zatrzymują.
+Dwudziesty pierwszy pochodzi z **próby w Wieży Demonów** — pięćdziesiąt zabitych
+demonów, bez limitu czasowego — dokładnie tak, jak koń bojowy jest próbą na
+pustyni. Bot na próbie poluje tam, gdzie próba, cokolwiek mówiłby jego poziom.
+
+### Drobne
+
+Eliksiry Słońca (39037–39039) dołączyły do eliksirów doświadczenia. Wcześniej
+bot traktował je jak zwykły łup, choć Eliksiry Księżyca znał od dawna.
+
+---
+
+Sprawdzone na żywym świecie po podniesieniu stawek: **pojedynki** (cztery
+wyzwania i cztery zgody, pierwsza para `NoSiemaNie` → `xLowieRybkix`),
+**blokada expa dropperów** (`ZwojPowrotu` i `vladnerq`, obaj dropperzy medali,
+obaj zatrzymani dokładnie na swoim progu 33) i **marmury polimorfii** (bot
+`Shanks` przemienił się na Bestialskiego Kapitana, poziom 42, ranga bossa).
+Czego nie dało się jeszcze zobaczyć: łowienia od trzydziestki, gildii i ruchu na
+nowe mapy — najwyższy bot ma 36 poziom, a progi to 40, 57 i 62.
+
 ## 2.0.38 — 2026-09-14
 
 Serwer. Boty przyjmują zaproszenie do drużyny i biegną z graczem, łowią od 30

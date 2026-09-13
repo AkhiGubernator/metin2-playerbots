@@ -1215,6 +1215,7 @@ def main(root):
     apply_affect_remove_collect(game)
     apply_fishing_min_level(game)
     apply_playerbot_party_invites(game)
+    apply_playerbot_pvp_challenges(game)
     apply_gm_panel(game)
     print('playerbotify: done')
 
@@ -1626,6 +1627,38 @@ def apply_affect_remove_collect(game):
          '\t\t\t{ "remove_collect",\t\taffect_remove_collect\t\t},\n'
          '\t\t\t{ "remove_all_collect",\taffect_remove_all_collect\t},\n',
          marker='{ "remove_collect",')
+
+
+def apply_playerbot_pvp_challenges(game):
+    # Wyzwanie na pojedynek dociera do bota.
+    #
+    # CPVPManager::Insert to zgoda obustronna: pierwsze wywolanie tworzy CPVP i
+    # mowi ofierze "%s challenged you to a battle", drugie - z drugiej strony -
+    # dochodzi do Agree() i walka rusza. Gracz pisze /pvp <vid>; bot nie ma
+    # klienta, ktory odpisze tym samym, wiec wyzwanie bota wisialo bez
+    # odpowiedzi w nieskonczonosc.
+    #
+    # Hak siedzi na KONCU Insert, ktory jest osiagany dokladnie raz na nowy
+    # pojedynek: galaz wyzej (Find + Agree) wraca wczesniej, gdy para juz
+    # istnieje. Dzieki temu odpowiedz bota - ktora tez jest Insert - nie zapisze
+    # sama siebie jako nowego wyzwania.
+    #
+    # Czasu tu nie stemplujemy: ile bot czeka przed zgoda, to sprawa jego
+    # zachowania, a nie silnika.
+    edit(os.path.join(game, 'pvp.cpp'),
+         '#include "war_map.h"\n',
+         '#include "war_map.h"\n#include "playerbot_pvp_policy.h"\n',
+         marker='#include "playerbot_pvp_policy.h"\n')
+    edit(os.path.join(game, 'pvp.cpp'),
+         '\t// END_OF_NOTIFY_PVP_MESSAGE\n}\n',
+         '\t// END_OF_NOTIFY_PVP_MESSAGE\n'
+         '\n'
+         '\t// Bot nie ma klienta, ktory odpisze /pvp - zostawiamy wyzwanie\n'
+         '\t// jego tickowi (AcceptPlayerBotPvpChallenge).\n'
+         '\tif (pkVictim->GetDesc() && pkVictim->GetDesc()->IsBot())\n'
+         '\t\tplayerbot_pvp::NoteChallenge(pkChr->GetPlayerID(), pkVictim->GetPlayerID());\n'
+         '}\n',
+         marker='playerbot_pvp::NoteChallenge(')
 
 
 def apply_fishing_min_level(game):

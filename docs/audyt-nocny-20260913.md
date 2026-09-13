@@ -16,6 +16,43 @@ ile razy nieprzetestowana zmiana silnika położyła aktualizację wszystkim.
 
 ---
 
+## Druga partia nocy — z dowodami na żywo
+
+Po podniesieniu rat (exp 100×, drop i yang 30×) boty zaczęły rosnąć i część
+rzeczy dało się wreszcie **zobaczyć w działaniu**, a nie tylko skompilować.
+
+| Rzecz | Dowód z żywego serwera |
+|---|---|
+| Blokada expa dropperów | `exp locked for a dropper pid=1539 ZwojPowrotu level=33 personality=10` i to samo dla pid 1513 — obaj dropperzy medali, obaj zatrzymani **dokładnie na swoim progu 33** |
+| PvP między botami | 4 wyzwania i 4 zgody; pierwsza para: `NoSiemaNie` wyzwał `xLowieRybkix` o 21:23:13, zgoda o 21:23:17 |
+| Marmury polimorfii | pierwsza linia `polymorphed for a boss` w historii tego świata |
+| Przenosiny map | `game1 MAP_ALLOW` zawiera teraz 66, 67 i 68; `game2` już ich nie ma |
+
+Czego nadal **nie** widziałem: łowienia (wędkarz to losowanie 8% po pid, a
+najwyższy bot ma dopiero 35 poziom), gildii (próg 40) i ruchu na nowe mapy
+(progi 57 i 62).
+
+### Co doszło w drugiej partii
+
+- **PvP (zadanie 2)** — wyzwanie gracza dociera do bota tą samą drogą co
+  zaproszenie do drużyny: hak w `pvp.cpp` zapisuje wyzwanie, tick bota zgadza
+  się po trzech sekundach. Boty wyzywają też siebie nawzajem — rzadko (sześć na
+  tysiąc, raz na minutę), tylko blisko, w podobnym poziomie i przy pełnym życiu.
+  W pojedynku **nie piją potek**; silnikowego `IsFighting` nie dało się użyć, bo
+  na jednym silniku siedzi pod `ENABLE_NEWSTUFF`, a na drugim nie istnieje, więc
+  bot pamięta pojedynek sam.
+- **Las, Czerwony Las, Wieża Demonów (zadania 3 i 12)** — przeniesione z `game2`
+  na `game1`, z hubami wyliczonymi z regenów, przybyciami, trasowaniem po
+  poziomie i granicami w panelu. Wieża **nie** dostaje łamania metinów, zgodnie
+  z Twoją prośbą.
+- **Etap 50 biologa (zadanie 7)** — odblokowany samą przenosiną mapy 66; panel
+  liczy znów dziewięć etapów.
+- **Koń militarny (zadanie 12)** — medale zatrzymują się na dwudziestce, a
+  dwudziesty pierwszy poziom pochodzi z próby w Wieży Demonów: pięćdziesiąt
+  zabić na 1001–1004, bez limitu czasowego, dokładnie jak próba na pustyni.
+- **Eliksiry Słońca (zadanie 15)** — 39037–39039 dopisane do eliksirów
+  doświadczenia; wcześniej bot traktował je jak zwykły łup.
+
 ## Zrobione
 
 ### 18. Łowienie od 30 poziomu (było od 50)

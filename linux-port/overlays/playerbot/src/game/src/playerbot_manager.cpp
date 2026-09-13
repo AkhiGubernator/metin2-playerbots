@@ -60,6 +60,16 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "ikarus_shop_manager.h"
 #include "playerbot_offline_policy.h"
 #endif
+// The engine leaves two kinds of request here for the bot's tick to answer: a
+// player's party invitation and a duel challenge. Both are inline and
+// engine-free, and both belong OUTSIDE the ikashop guard above - the offline
+// shop is mt2009's alone, these two are not, and putting them inside it cost a
+// compile against r40250 with eleven "has not been declared". They come before
+// the fragments because the health potion pass in playerbot_gear.h asks
+// whether the bot is in a duel.
+#include "playerbot_party_policy.h"
+#include "playerbot_pvp_policy.h"
+#include "pvp.h"
 #include "playerbot_types.h"
 #include "playerbot_price_tables.h"
 #include "playerbot_log.h"
@@ -94,9 +104,6 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_targeting.h"
 #include "playerbot_lure.h"
 #include "playerbot_admin.h"
-// A player's party invitation, left by the engine for the bot's tick to answer.
-// Inline and engine-free, so char.cpp can include the same header.
-#include "playerbot_party_policy.h"
 
 namespace
 {
@@ -385,6 +392,126 @@ namespace
 			}
 			return;
 		}
+	}
+
+	// Agreeing to a duel.
+	//
+	// CPVPManager::Insert is a two-sided agreement, so answering a challenge is
+	// the same call the challenger made. The engine recorded the challenge
+	// (pvp.cpp, playerbotify.py) because a bot has no client to type /pvp back;
+	// this waits the agreed three seconds and then agrees, which is what makes
+	// the fight start.
+	//
+	// A bot never refuses. What it will not do is agree from the floor: a
+	// challenge taken at a sliver of health is a free kill, not a duel, and the
+	// engine has no rule against it.
+	void AcceptPlayerBotPvpChallenge(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch)
+			return;
+		uint32_t challengerPid = 0, seenAt = 0;
+		if (!playerbot_pvp::PeekChallenge(ch->GetPlayerID(), challengerPid, seenAt, dwNow))
+			return;
+		if (ch->IsDead())
+		{
+			playerbot_pvp::Forget(ch->GetPlayerID());
+			return;
+		}
+		if (dwNow < seenAt + PLAYERBOT_PVP_ACCEPT_DELAY)
+			return;
+		playerbot_pvp::Forget(ch->GetPlayerID());
+		LPCHARACTER challenger = CHARACTER_MANAGER::instance().FindByPID(challengerPid);
+		if (!challenger || challenger->IsDead() ||
+				challenger->GetMapIndex() != ch->GetMapIndex())
+			return;
+		CPVPManager::instance().Insert(ch, challenger);
+		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
+		sys_log(0, "PLAYERBOT_PVP: agreed to a duel pid=%u name=%s challenger_pid=%u challenger=%s",
+				ch->GetPlayerID(), ch->GetName(), challengerPid, challenger->GetName());
+	}
+
+	// Bots challenging one another.
+	//
+	// Rare on purpose: a duel is something that happens in a world, not the
+	// thing the world does. One roll a minute per bot, six in a thousand, and
+	// only between two bots standing close, near enough in level for the fight
+	// to be a fight, both healthy and neither already in one. The challenged
+	// bot answers through the journal above exactly as it would answer a
+	// player, so there is one code path for both.
+	void ManagePlayerBotPvpChallenge(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotPvpRollNext;
+		if (!ch || ch->IsDead() || ch->GetSectree() == NULL)
+			return;
+		if (IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()))
+			return;
+		if (playerbot_pvp::IsInDuel(ch->GetPlayerID(), dwNow))
+			return;
+		// Anything the bot is actually doing outranks picking a fight.
+		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
+				state.bMarketTrip || state.bFishingSession || state.bTacticalRetreat ||
+				state.bRecoveringAfterDeath || ch->GetMyShop())
+			return;
+		if (ch->GetMaxHP() <= 0 ||
+				(ch->GetHP() * 100) / ch->GetMaxHP() < PLAYERBOT_PVP_MIN_HP_PERCENT)
+			return;
+		std::map<DWORD, DWORD>::const_iterator nextRoll =
+				s_mapPlayerBotPvpRollNext.find(ch->GetPlayerID());
+		if (nextRoll != s_mapPlayerBotPvpRollNext.end() && dwNow < nextRoll->second)
+			return;
+		s_mapPlayerBotPvpRollNext[ch->GetPlayerID()] =
+				dwNow + PLAYERBOT_PVP_CHALLENGE_INTERVAL + number(0, 15000);
+		if (number(1, 1000) > PLAYERBOT_PVP_CHALLENGE_PER_MILLE)
+			return;
+
+		struct FFindDuelPartner
+		{
+			FFindDuelPartner(LPCHARACTER me, DWORD now) :
+				m_me(me), m_now(now), m_pFound(NULL) {}
+			bool operator()(LPENTITY ent)
+			{
+				if (m_pFound || !ent || !ent->IsType(ENTITY_CHARACTER))
+					return false;
+				LPCHARACTER candidate = static_cast<LPCHARACTER>(ent);
+				if (candidate == m_me || !candidate->IsPC() || candidate->IsDead())
+					return false;
+				// Bots pick on each other, never on a person: a player who wants
+				// a duel with a bot asks for one, and gets it.
+				if (!candidate->GetDesc() || !candidate->GetDesc()->IsBot())
+					return false;
+				if (candidate->GetParty() && candidate->GetParty() == m_me->GetParty())
+					return false;
+				if (playerbot_pvp::IsInDuel(candidate->GetPlayerID(), m_now))
+					return false;
+				if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) >
+						PLAYERBOT_PVP_CHALLENGE_LEVEL_DELTA)
+					return false;
+				if (candidate->GetMaxHP() <= 0 ||
+						(candidate->GetHP() * 100) / candidate->GetMaxHP() <
+							PLAYERBOT_PVP_MIN_HP_PERCENT)
+					return false;
+				if (DISTANCE_APPROX(m_me->GetX() - candidate->GetX(),
+						m_me->GetY() - candidate->GetY()) > PLAYERBOT_PVP_CHALLENGE_RANGE)
+					return false;
+				m_pFound = candidate;
+				return false;
+			}
+			LPCHARACTER m_me;
+			DWORD m_now;
+			LPCHARACTER m_pFound;
+		};
+
+		FFindDuelPartner finder(ch, dwNow);
+		ch->GetSectree()->ForEachAround(finder);
+		if (!finder.m_pFound)
+			return;
+		// The challenge itself. The other bot's tick agrees three seconds later
+		// through the same journal a player's challenge goes through.
+		CPVPManager::instance().Insert(ch, finder.m_pFound);
+		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
+		sys_log(0, "PLAYERBOT_PVP: challenged another bot pid=%u name=%s target_pid=%u target=%s",
+				ch->GetPlayerID(), ch->GetName(), finder.m_pFound->GetPlayerID(),
+				finder.m_pFound->GetName());
 	}
 
 	// Walking with the player who invited you.
@@ -2156,6 +2283,11 @@ void CPlayerBotManager::Update()
 		// gives an invitation ten seconds to live, and the party pass can be
 		// three minutes away.
 		AcceptPlayerBotPartyInvite(ch, state, dwNow);
+		// A duel is answered on the same cadence and for the same reason: the
+		// challenge is somebody else's move and the bot has to be the one that
+		// answers it.
+		AcceptPlayerBotPvpChallenge(ch, state, dwNow);
+		ManagePlayerBotPvpChallenge(ch, state, dwNow);
 		ManagePlayerBotParty(ch, state, dwNow);
 		// Keeping up with the player comes before the bot's own plans for the
 		// tick, or the wander pass walks it out of the party it just joined.

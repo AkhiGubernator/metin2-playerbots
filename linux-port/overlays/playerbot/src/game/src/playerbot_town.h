@@ -1191,7 +1191,7 @@ namespace
 			if (policy != PLAYERBOT_ITEM_POLICY_NONE)
 				return -1;
 		}
-		if (item->GetType() == ITEM_POLYMORPH)
+		if (item->GetType() == ITEM_POLYMORPH || IsPlayerBotMetinDetector(item->GetVnum()))
 			return PLAYERBOT_SHOP_POLYMORPH_SCORE;
 		// A weapon from the level-30 set is the prize of this whole market. It is
 		// worth a counter slot at any refine at all, unrefined included.
@@ -2972,8 +2972,8 @@ namespace
 				{
 					if (ch->GetGold() < PLAYERBOT_SAFEBOX_FEE)
 					{
-						sys_log(0, "PLAYERBOT_TOWN: safebox unaffordable pid=%u name=%s gold=%d",
-								ch->GetPlayerID(), ch->GetName(), ch->GetGold());
+						sys_log(0, "PLAYERBOT_TOWN: safebox unaffordable pid=%u name=%s gold=%lld",
+								ch->GetPlayerID(), ch->GetName(), (long long)ch->GetGold());
 						state.bTownNeedSafebox = false;
 						state.bTownVisitPhase = bDirect
 								? GetPlayerBotFirstDirectTownPhase(state)
@@ -2992,8 +2992,8 @@ namespace
 							&page, sizeof(page));
 					ch->SetSafeboxSize(SAFEBOX_PAGE_SIZE);
 					ch->SetQuestFlag(PLAYERBOT_SAFEBOX_PAID_FLAG, 1);
-					sys_log(0, "PLAYERBOT_TOWN: safebox paid pid=%u name=%s account=%u fee=%d gold_left=%d",
-							ch->GetPlayerID(), ch->GetName(), page.dwID, PLAYERBOT_SAFEBOX_FEE, ch->GetGold());
+					sys_log(0, "PLAYERBOT_TOWN: safebox paid pid=%u name=%s account=%u fee=%d gold_left=%lld",
+							ch->GetPlayerID(), ch->GetName(), page.dwID, PLAYERBOT_SAFEBOX_FEE, (long long)ch->GetGold());
 				}
 				ch->CancelSafeboxLoad();
 				ch->SetSafeboxOpenPosition();

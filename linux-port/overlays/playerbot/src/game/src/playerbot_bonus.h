@@ -678,11 +678,29 @@ namespace
 
 	// The stones cannot be dropped, sold, traded or shopped, so there is no market
 	// to walk to: the bot pays for one the same way it pays for its stall.
+	// The bag stone of the kind a vnum names: the change stone is
+	// USE_CHANGE_ATTRIBUTE and the add stone USE_ADD_ATTRIBUTE, and on these
+	// files each comes in three vnums (71084/71151/76023, 71085/71152/76024) -
+	// a bot counting only its own vnum vendored the others.
+	int FindPlayerBotBonusStoneCellLike(LPCHARACTER ch, DWORD vnum)
+	{
+		const TItemTable* proto = ITEM_MANAGER::instance().GetTable(vnum);
+		if (!ch || !proto)
+			return -1;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM stone = ch->GetInventoryItem(cell);
+			if (stone && stone->GetType() == proto->bType && stone->GetSubType() == proto->bSubType)
+				return cell;
+		}
+		return -1;
+	}
+
 	bool BuyPlayerBotBonusStone(LPCHARACTER ch, DWORD vnum)
 	{
 		if (!ch)
 			return false;
-		if (ch->CountSpecifyItem(vnum) > 0)
+		if (FindPlayerBotBonusStoneCellLike(ch, vnum) >= 0)
 			return true;
 		if (ch->GetGold() - GetPlayerBotReservedGold(ch) <
 				(int)(PLAYERBOT_BONUS_GOLD_FLOOR + PLAYERBOT_BONUS_STONE_PRICE))
@@ -699,10 +717,11 @@ namespace
 	{
 		if (!ch)
 			return false;
+		const int found = FindPlayerBotBonusStoneCellLike(ch, vnum);
 		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM stone = ch->GetInventoryItem(cell);
-			if (!stone || stone->GetVnum() != vnum)
+			if (!stone || (int)cell != found)
 				continue;
 			if (stone->GetCount() > 1)
 				stone->SetCount(stone->GetCount() - 1);

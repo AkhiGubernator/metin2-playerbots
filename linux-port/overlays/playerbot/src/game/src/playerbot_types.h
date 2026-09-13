@@ -1828,6 +1828,20 @@ namespace
 	// way: a Carp for twenty movement speed, a Rudd for ten dexterity, ten
 	// minutes each (item_proto USE_ABILITY_UP).
 	const DWORD PLAYERBOT_BOOSTER_VNUMS[] = { 71044, 71045, 27866, 27873 };
+	// Since 2.0.27 a booster is recognised by what the engine does with it, not
+	// by its vnum: USE_AFFECT with value0 510 is the timed stat buff (attack
+	// +10/+15, speed, critical, penetration, the Dragon God set, the experience
+	// ring...) and USE_ABILITY_UP the shorter one (green/purple potions, juices,
+	// sushi). The list above is only the order the chest boosters come in. The
+	// ItemShop copies (76xxx) carry no ANTI_SELL, so a bot handed a Mikstura
+	// Ataku +10 from the panel vendored it ("Bot zamiast uzyc i dodac bony to
+	// posprzedawal handlarzowi", Pasywny, 13 September).
+	const int PLAYERBOT_USE_AFFECT_TIMED_BUFF = 510;
+	// Eliksir Ksiezyca (M/S/D/S): USE_SPECIAL whose special group is experience.
+	const DWORD PLAYERBOT_EXP_ELIXIR_VNUMS[] = { 39040, 39041, 39042, 72727, 72728, 72729, 72730, 76004, 76005 };
+	// Wykrywacz Kamieni Metin: useless to a bot (it draws on a client), wanted
+	// by players - counter goods, never merchant scrap.
+	const DWORD PLAYERBOT_METIN_DETECTOR_VNUMS[] = { 27989, 76006 };
 	// Fishing, the rest of the chain. A dead fish is grilled on a campfire:
 	// the Dried Wood (27600, from the Fisherman) burns for forty seconds as a
 	// campfire mob (12000) and takes fish handed to it - alive or dead - and

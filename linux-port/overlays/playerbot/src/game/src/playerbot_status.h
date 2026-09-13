@@ -484,8 +484,8 @@ namespace
 					// reads as a bot that cannot find the portal.
 					if (where[0] && IsPlayerBotM2Map(ch->GetMapIndex()) &&
 							ch->GetGold() < GetPlayerBotTeleporterFee(ch))
-						snprintf(status, statusSize, "%sZbieram yang na Teleporter %s (%d/%d)",
-								prefix, where, ch->GetGold(), GetPlayerBotTeleporterFee(ch));
+						snprintf(status, statusSize, "%sZbieram yang na Teleporter %s (%lld/%d)",
+								prefix, where, (long long)ch->GetGold(), GetPlayerBotTeleporterFee(ch));
 					else if (where[0])
 						snprintf(status, statusSize, "%sIde %s (cel: %s)", prefix,
 								where, goal);

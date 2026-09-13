@@ -358,10 +358,10 @@ namespace
 		RememberPlayerBotSale(pick.dwVnum, pick.bRefine,
 				(DWORD)paid / std::max<DWORD>(1, pick.wCount), get_dword_time(),
 				pick.dwSkillVnum);
-		sys_log(0, "PLAYERBOT_MARKET: bought pid=%u name=%s from=%s slot=%u vnum=%u refine=%u count=%u asked=%u paid=%d gold=%d",
+		sys_log(0, "PLAYERBOT_MARKET: bought pid=%u name=%s from=%s slot=%u vnum=%u refine=%u count=%u asked=%u paid=%lld gold=%lld",
 				ch->GetPlayerID(), ch->GetName(), pick.keeper->GetName(),
 				(unsigned int)pick.bSlot, pick.dwVnum, (unsigned int)pick.bRefine,
-				(unsigned int)pick.wCount, pick.dwPrice, paid, ch->GetGold());
+				(unsigned int)pick.wCount, pick.dwPrice, (long long)paid, (long long)ch->GetGold());
 		return true;
 	}
 

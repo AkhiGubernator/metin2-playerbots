@@ -17,6 +17,41 @@ every version here.
 
 ---
 
+## 2.0.27 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. **Pilna poprawka:
+wywałka rdzenia** — aktualizuj od razu.
+
+### Wywałka rdzenia, gdy Teleporter odmawia botowi (kimakatsu)
+
+kimakatsu zdiagnozował to co do joty: linia logu, którą bot pisze, gdy Teleporter
+odmawia mu przejazdu (za niski poziom albo za mało yang), miała dla yang miejsce
+32-bitowe, a rdzeń tej linii trzyma yang 64-bitowo. Pozostałe wartości przesuwały
+się o jedno miejsce, numer mapy trafiał tam, gdzie miał być tekst powodu, rdzeń
+próbował go czytać jako tekst — i padał. Każda odmowa zabijała rdzeń, więc ta
+linia nigdy nie trafiła do żadnego logu. Poprawione tu i w dwunastu innych
+miejscach, gdzie yang szedł do logu tym samym błędnym wzorcem (te tylko
+pokazywały złe liczby). Sprawdzone na żywo botami bez yang stojącymi pod
+Teleporterem: odmowa jest logowana, rdzeń żyje.
+
+### Boty używają wspomagaczy, kamieni bonusów i eliksirów zamiast je sprzedawać (Pasywny)
+
+„Bot zamiast użyć i dodać bony to posprzedawał handlarzowi”. Bot rozpoznawał
+wspomagacze i kamienie bonusów po numerach (vnum), a na tych plikach każda z tych
+rzeczy ma po kilka numerów — Mikstura Ataku +10 ma trzy, Zielona Siła/Zielony Czar
+(dodanie/zmiana bonusu) po trzy; kopie z ItemShopu (76xxx) nie mają do tego
+blokady sprzedaży, więc dostane z panelu szły do handlarza za grosze. Teraz bot
+rozpoznaje je po tym, **co robi z nimi gra**, nie po numerze: każdy czasowy
+wspomagacz (atak, obrona, szybkość, krytyk, przebicie, zestaw Boga Smoków,
+pierścień doświadczenia, zielone/fioletowe mikstury, soki, sushi) jest wypijany
+na początku walki — jednego rodzaju naraz, a gra sama odmawia drugiej tej samej
+mikstury, póki pierwsza działa; każdy kamień dodania/zmiany bonusu i marmur idą
+na ekwipunek (bot najpierw sięga po ten, który ma w plecaku, dopiero potem
+kupuje); **Eliksir Księżyca** (doświadczenie) jest wypijany od razu, gdy bot go
+ma; a **Wykrywacz Kamieni Metin** — botowi na nic (rysuje po kliencie), graczom
+potrzebny — trafia na ladę jako towar. Żadna z tych rzeczy nie jest już złomem
+dla handlarza. Łuk +0 bez bonusów u handlarza zostaje, jak było.
+
 ## 2.0.26 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian.

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-12T23:44:45Z",
-  "statusMessage": "Wersja 2.0.22: boty kupują i noszą zbroję (nawet gdy handlarz nie ma dokładnego poziomu), sprzedają zbędne duplikaty, nie mieszają bonusów na dopracowanej broni 30/75, a panel nie pyta o hasło. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
+  "publishedAt": "2026-09-13T00:15:19Z",
+  "statusMessage": "Wersja 2.0.23: boty wracaja do miasta Pierscieniem Teleportacji gdy skoncza sie mikstury, sortuja plecak, a z metinow i bossow wpadaja Kupony Smoczych Monet. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian.",
   "server": {
-    "version": "2.0.22",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.22/metin2-server-update-2.0.22.zip",
-    "sha256": "4997061A25CEDACD42DED6441D6363982A3B11D0F0820B90F0787F57836485E3"
+    "version": "2.0.23",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.23/metin2-server-update-2.0.23.zip",
+    "sha256": "3A102655DBD9427965FA103D8B32EFD0A56F6D523F2655BDBC1A4B0D0935604F"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

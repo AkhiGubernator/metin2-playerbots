@@ -17,6 +17,112 @@ every version here.
 
 ---
 
+## 2.0.32 — 2026-09-13
+
+Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. **Naprawa błędu z
+2.0.31, który potrafił zablokować start serwera** — jeśli masz 2.0.31,
+zaktualizuj się. Poza tym: przywracanie kopii świata znów działa, ceny ksiąg
+i ulepszaczy idą według nowych tabel Iwakury, a launcher pokazuje, czy długa
+operacja faktycznie postępuje.
+
+### Serwer odmawiał startu: „port 13001 zajmuje com.docker.backend” (sizowski)
+
+Błąd wprowadzony przeze mnie w 2.0.31 razem ze sprawdzaniem portów. Docker
+publikuje zakres portów jako **jeden** wpis — `127.0.0.1:13000-13002->13000-13002/tcp`
+— a launcher szukał w nim dosłownie `13001->`. Nie znajdował więc żadnego
+z trzech kanałów gry, uznawał własny, działający serwer gracza za obcy program
+i odmawiał startu, radząc „zamknij com.docker.backend”, czego nie da się zrobić.
+
+Launcher rozumie teraz zakresy portów tak samo jak pojedyncze wpisy i adresy
+IPv6. Dołożona jest też druga warstwa zabezpieczenia: jeśli port trzyma sam
+Docker, a launcher nie rozpozna którego kontenera to sprawa, zgłasza
+ostrzeżenie i **pozwala wystartować**, zamiast blokować. Nierozpoznany kontener
+to luka w sprawdzeniu, nigdy powód, żeby nie uruchomić serwera. Przypadek
+z zakresem portów ma teraz własny test.
+
+### Launcher mówi, czy długa operacja jeszcze idzie
+
+Podczas aktualizacji pasek postępu potrafił przez wiele minut pokazywać to samo
+(„m2zip-db: Healthy”) bez żadnej wskazówki, czy to praca, czy zastój — a stało
+za tym czekanie na bazę. Teraz obok nazwy etapu widać **jak długo ten etap
+trwa**, a po czterech minutach bez zmian dochodzi ostrzeżenie „bez zmian —
+sprawdź DIAGNOSTYKA” wraz z wpisem w logu. Launcher czyta też komunikaty
+migracji bazy i pokazuje je wprost („migracja bazy: baza nie odpowiada”),
+zamiast wyświetlać sprzed minuty nazwę ostatniego kontenera.
+
+### Polskie znaki w panelu i na czacie (seban latino)
+
+Poprawka od latino. Kolumna `hint` w `log.log` jest zadeklarowana jako big5,
+podczas gdy silnik zapisuje do niej CP1250, więc sterownik bazy zwracał krzaki
+dla wszystkiego poza ASCII („Skórzane” jako „SkĂłrzane”). Panel pobiera teraz tę
+kolumnę przez `HEX()` i dekoduje bajty samodzielnie — tą samą metodą, którą już
+stosował dla nazw przedmiotów.
+
+### Przywracanie kopii świata kończyło się błędem (NieBijOddam)
+
+„Błąd występujący podczas przywracania kopii serwera”, a w logu:
+`Cannot convert value "Singleplayer\Serwer\backups\db-backup-….zip" to type
+"System.Int32"`. To był błąd po naszej stronie i trafiał w **każdego**, kto ma
+serwer w folderze ze spacją w nazwie — czyli w domyślnej instalacji „Metin2
+Singleplayer” w praktyce we wszystkich.
+
+Launcher graficzny uruchamia część konsolową przez `Start-Process`, która skleja
+argumenty spacjami i **niczego nie cytuje**. Ścieżka do kopii rozpadała się więc
+na dwa argumenty: `C:\…\Metin2` szło do `-RestoreSource`, a ogon
+`Singleplayer\Serwer\backups\…zip` lądował pozycyjnie na następnym parametrze,
+którym jest `-BotCount` typu `int` — stąd dosłownie „nie można przekonwertować na
+System.Int32”. Teraz każda wartość przekazywana do części konsolowej jest
+cytowana; nazwy parametrów przechodzą bez zmian. Dotyczyło to tak samo importu
+bazy z innej instalacji, jeśli jej ścieżka miała spację.
+
+### Ceny ksiąg umiejętności według nowej tabeli (Iwakura)
+
+Nowa wycena wszystkich 44 ksiąg — Aura Miecza 123 500, Czarowane Ostrze 65 000,
+Berserk 58 500, Strach 52 000 i tak dalej; kolejność umiejętności w każdej
+klasie jest ta sama co w poprzedniej tabeli, więc zmieniły się wyłącznie kwoty.
+
+Zmienił się też **przelicznik od dropu yang**. Tabela Iwakury zaczyna się od
+×1,1 przy dropie 100% i rośnie proporcjonalnie (200% → ×2,2, 500% → ×5,5,
+900% → ×9,9, 1500% → ×16,5). Dotąd bot skalował ceny samym mnożnikiem serwera
+(100% → ×1,0), czyli o jedną dziesiątą za nisko względem tabeli, którą miał
+realizować. Dwa zaokrąglone wpisy z jego rozpiski (1000% → ×11,1 i
+10000% → ×111,0) leżą jakieś pół procenta nad tą prostą i potraktowałem je jako
+jego własne zaokrąglenie, bo załamanie krzywej w tych dwóch punktach kłóciłoby
+się z pięcioma pozostałymi.
+
+Losowy rozrzut (od −20% do +25% na wystawienie) i pamięć sprzedaży działają jak
+dotąd.
+
+### Ceny ulepszaczy według tabeli Iwakury
+
+Wszystkie 78 materiałów do ulepszania ma teraz cenę wpisaną ręcznie — od Futra
+Wilka za 2 000 po Białą Perłę za 1 100 000 — zamiast wyliczanej z ceny
+handlarza. Skalowanie jest liniowe od mnożnika dropu yang (100% → ×1,0,
+200% → ×2,0, i tak dalej), czyli inne niż przy księgach; taka jest jego reguła
+dla tej tabeli. Rozrzut −20%/+25% na wystawienie działa tu tak samo jak przy
+księgach, więc dwa stragany nie proszą równo za ten sam Ząb Orka.
+
+Trzy pozycje z jego listy zmieniają to, co plik zakładał do tej pory: perły idą
+w drugą stronę (Biała 1 100 000, Niebieska 820 000, Krwawa 650 000, wcześniej
+odpowiednio 2 mln, 3 mln i 6 mln rosnąco), a Małż spada ze 100 000 na 93 000.
+Dwie nazwy występują w grze pod dwoma numerami przedmiotu (Nieznany Talizman+
+i Żabie Udka) — obydwa dostają tę samą cenę, bo bot wycenia przedmiot, a nie
+nazwę.
+
+### Ceny wyglądają jak wystawione przez człowieka (Iwakura)
+
+„1 591 511” czyta się jak maszyna. Kwoty na straganach są teraz zaokrąglane w
+górę do kroku wynikającego z ich własnego rzędu wielkości: 12 555 → 12 600,
+401 501 → 402 000, 1 241 412 → 1 245 000, 11 512 125 → 11 550 000,
+121 314 515 → 121 500 000. Każdy z tych wyników mieści się w przedziale, który
+Iwakura podał dla swojego poziomu. Ceny poniżej 10 000 yang zostają nietknięte —
+materiał za 300 yang nie staje się ładniejszy przez to, że kosztuje 400.
+
+Zaokrąglanie objęło **wszystkie** wyjścia wyceny, łącznie z płaskimi cenami
++7/+8/+9 — czyli dokładnie tymi, na które gracze patrzą najczęściej.
+
+---
+
 ## 2.0.31 — 2026-09-13
 
 Tylko serwer (ZAINSTALUJ AKTUALIZACJE); klient bez zmian. Misja na konia

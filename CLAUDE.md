@@ -3070,6 +3070,9 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   last 40 000 matching lines and some tags would crowd out everything else -
   `PLAYERBOT_PARTY: assist` alone writes about a hundred lines a minute at a
   thousand bots. Adding a tag is a decision about that budget, not a formality.
+  The one party line a player's report needs, `PLAYERBOT_PARTY: accepted an
+  invitation`, goes in as the pattern `PLAYERBOT_PARTY:.accepted` - a dot for
+  the space, because no quote may reach docker from PowerShell.
 - **Eliksir Slonca and Eliksir Ksiezyca are auto potions, and a use is a
   switch.** 72723-72726, 76021, 76022 and 79012 (HP) and 72727-72730, 76004,
   76005 and 79013 (SP) are `ITEM_AUTO_*_RECOVERY_*` on both engines. The
@@ -3135,11 +3138,19 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   core is judged by pid now (`CPlayerBotManager::IsRegisteredBotPID`).
   `IsPlayerBotBesideHumanLeader` is legitimate stillness to the watchdog
   now, and neither the reset nor a map change quits a player's party. Grep
-  every `->Quit(` before writing a rule about who stays in a party. Not
-  built: following a leader through a warp (a bot has no client to reconnect
-  with, so it would be `TransitionPlayerBotMap` onto the leader's map when
-  this core hosts it) and a Shaman's buffs on the player - every buff in
-  `ManagePlayerBotCombatBuffs` is `UseSkill(vnum, ch)` on the bot itself.
+  every `->Quit(` before writing a rule about who stays in a party. A player
+  who warps is followed: `ManagePlayerBotFollowHumanLeader` makes the move a
+  bot cannot make with a client - `TransitionPlayerBotMap` onto the leader's
+  spot, once the leader stands on a map this core hosts - and refuses a
+  dungeon instance (an index from `PLAYERBOT_INSTANCE_MAP_INDEX_MIN`) and a
+  spider map whose desert crossing is already under way, which the
+  transition would otherwise restart from the desert's doorstep on every
+  retry. And a Shaman buffs the player before itself
+  (`ManagePlayerBotBuffHumanLeader`): `CHARACTER::UseSkill` hands a buff that
+  is not SELFONLY to `ComputeSkill` on its victim and the affect carries the
+  skill's own vnum, so `IsPlayerBotBuffAffectOn` - the affect half of
+  `IsPlayerBotBuffActive` - reads a player as well as a bot. Neither has been
+  watched with a person in the party yet: the test world has none.
 
 ## Engine facts worth not re-deriving
 

@@ -2853,9 +2853,12 @@ namespace
 	const long PLAYERBOT_THIRD_HAND_REWIND_BELOW = 10080;
 	const DWORD PLAYERBOT_THIRD_HAND_INTERVAL = 300000;
 	// How long a bot works one chamber before walking to the portal that leads
-	// to the next. Four minutes is two respawns of a room's dozen monsters; the
-	// thirty-minute visit therefore covers six or seven of the eleven chambers.
-	const DWORD PLAYERBOT_MONKEY_CHAMBER_DWELL = 240000;
+	// to the next - and, now that the engine refuses to move a bot through a
+	// GOTO door for the same time after the last one moved it, the only way a
+	// bot leaves a chamber at all. The value and the measurements behind it
+	// live in playerbot_monkey_policy.h, because char.cpp has to read the same
+	// number: two copies of it are how a bounce would come back.
+	const DWORD PLAYERBOT_MONKEY_CHAMBER_DWELL = playerbot_monkey::kChamberDwellMs;
 	// Every kingdom has an easy dungeon of its own and they are three separate
 	// maps: metin2_map_monkey_dungeon_11 (5), _12 (25) and _13 (45), at three
 	// base positions 76800 apart. Only Chunjo's was ever listed here, so a

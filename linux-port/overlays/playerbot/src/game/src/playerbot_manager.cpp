@@ -69,6 +69,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 // whether the bot is in a duel.
 #include "playerbot_party_policy.h"
 #include "playerbot_pvp_policy.h"
+#include "playerbot_monkey_policy.h"
 #include "pvp.h"
 #include "playerbot_types.h"
 #include "playerbot_price_tables.h"

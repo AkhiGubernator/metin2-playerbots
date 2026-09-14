@@ -1216,6 +1216,7 @@ def main(root):
     apply_fishing_min_level(game)
     apply_playerbot_party_invites(game)
     apply_playerbot_pvp_challenges(game)
+    apply_playerbot_monkey_doors(game)
     apply_gm_panel(game)
     print('playerbotify: done')
 
@@ -1675,6 +1676,47 @@ def apply_fishing_min_level(game):
          '\t// Lowienie od 30 poziomu - patrz PLAYERBOT_FISHING_MIN_LEVEL.\n'
          '\tif (GetLevel() < 30)\n\t\treturn;\n',
          marker='\t// Lowienie od 30 poziomu - patrz PLAYERBOT_FISHING_MIN_LEVEL.\n')
+
+
+def apply_playerbot_monkey_doors(game):
+    # Drzwi GOTO w Lochu Malp przenosza bota najwyzej raz na czas pobytu w
+    # komorze.
+    #
+    # Loch to jedenascie komor polaczonych wylacznie NPC typu GOTO, a
+    # warp_npc_event przenosi kazdego w promieniu trzystu jednostek, dwa razy na
+    # sekunde. Bot, ktory przejdzie przez drzwi, laduje obok drzwi prowadzacych
+    # prosto z powrotem - i jesli zatrzyma sie tam, zeby walczyc, to zdarzenie
+    # odsylalo go tam, skad przyszedl, po kilku sekundach. Zmierzone na 303
+    # powrotach do komory wejsciowej: mediana 65 s, 29% w ciagu pietnastu
+    # sekund, a swiadome przejscie nie jest mozliwe przed uplywem czasu pobytu.
+    # Stad "caly loch w jednej linii": 905 przejsc na mapie 108, prawie
+    # wszystkie 0<->7 i 0<->1.
+    #
+    # Czas blokady i czas pobytu to jedna stala (playerbot_monkey_policy.h), bo
+    # tylko wtedy przejscie wybrane przez bota nigdy nie trafi na blokade, a
+    # odbicie zawsze. Gracza to nie dotyczy.
+    edit(os.path.join(game, 'char.cpp'),
+         '#include "pvp.h"\n#include "party.h"\n',
+         '#include "pvp.h"\n#include "party.h"\n#include "playerbot_monkey_policy.h"\n',
+         marker='#include "playerbot_monkey_policy.h"\n')
+    edit(os.path.join(game, 'char.cpp'),
+         '\t\t\t\t\tpkChr->Show(pkChr->GetMapIndex(), m_lTargetX, m_lTargetY);\n'
+         '\t\t\t\t\tpkChr->Stop();\n',
+         '\t\t\t\t\t// A door moves a playerbot once per chamber dwell and no more.\n'
+         '\t\t\t\t\t// A bot comes through a door beside the door that leads straight\n'
+         '\t\t\t\t\t// back, and one that stopped there to fight was returned by this\n'
+         '\t\t\t\t\t// event within seconds - the bot never chose it, and the dungeon\n'
+         '\t\t\t\t\t// was walked in one line. See playerbot_monkey_policy.h.\n'
+         '\t\t\t\t\tif (pkChr->GetDesc() && pkChr->GetDesc()->IsBot())\n'
+         '\t\t\t\t\t{\n'
+         '\t\t\t\t\t\tconst DWORD now = get_dword_time();\n'
+         '\t\t\t\t\t\tif (playerbot_monkey::IsGotoCrossingBlocked(pkChr->GetPlayerID(), now))\n'
+         '\t\t\t\t\t\t\treturn;\n'
+         '\t\t\t\t\t\tplayerbot_monkey::NoteGotoCrossing(pkChr->GetPlayerID(), now);\n'
+         '\t\t\t\t\t}\n'
+         '\t\t\t\t\tpkChr->Show(pkChr->GetMapIndex(), m_lTargetX, m_lTargetY);\n'
+         '\t\t\t\t\tpkChr->Stop();\n',
+         marker='playerbot_monkey::NoteGotoCrossing(')
 
 
 def apply_playerbot_party_invites(game):

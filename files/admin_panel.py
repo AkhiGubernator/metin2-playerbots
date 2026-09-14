@@ -1013,6 +1013,9 @@ def read_ai_weights():
     vals["REST"] = 100
     # Percent of bots that pick fights with bots of another kingdom; 0 is off.
     vals["KINGDOMPVP"] = 0
+    # The lowest plus a refine under a Blessing or Dragon God scroll may land
+    # on; 1 is no floor, which is also what the core starts from.
+    vals["SCROLL_FROM"] = 1
     # The chest event's two figures. None until the file says: the panel does
     # not know what CONFIG holds, and must not write a guess over it.
     vals["CHEST"] = None
@@ -1051,6 +1054,12 @@ def read_ai_weights():
                 if name == "KINGDOMPVP":
                     try:
                         vals["KINGDOMPVP"] = max(0, min(100, int(parts[1])))
+                    except ValueError:
+                        pass
+                    continue
+                if name == "SCROLL_FROM":
+                    try:
+                        vals["SCROLL_FROM"] = max(1, min(9, int(parts[1])))
                     except ValueError:
                         pass
                     continue
@@ -1099,6 +1108,9 @@ def write_ai_weights(vals):
     # Percent of bots hostile to the other kingdoms; 0 means the world is at
     # peace with itself, which is the default the core also starts from.
     body.append("KINGDOMPVP\t%d" % max(0, min(100, int(vals.get("KINGDOMPVP", 0)))))
+    # The lowest plus a scroll refine may land on; 1 leaves the bots' own
+    # rules alone.
+    body.append("SCROLL_FROM\t%d" % max(1, min(9, int(vals.get("SCROLL_FROM", 1)))))
     # The Moonlight chest: thousandths per kill and per Metin. Written only once
     # the operator has set them, so an untouched install keeps its CONFIG.
     for key in ("CHEST", "CHEST_STONE"):
@@ -3017,6 +3029,13 @@ T.update({
                  "de":"Anteil der Bots, die einen Bot eines anderen Königreichs angreifen.","tr":"Başka krallıktan bir botla düello başlatacak botların oranı."},
  "ai_kpvp_off":  {"en":"peace","pl":"pokój","de":"Frieden","tr":"barış"},
  "ai_kpvp_all":  {"en":"every bot","pl":"każdy bot","de":"jeder Bot","tr":"her bot"},
+ "ai_scroll":    {"en":"Blessing and Dragon God Scrolls","pl":"Zwoje Błogosławieństwa i Boga Smoków","de":"Segens- und Drachengott-Schriftrollen","tr":"Kutsama ve Ejderha Tanrısı parşömenleri"},
+ "ai_scroll_help":{"en":"The lowest plus a bot upgrades to under a Blessing Scroll or a Dragon God Scroll. At +7 a scroll goes only on the upgrades to +7, +8 and +9, and every lower one is done at the blacksmith without a scroll, like a player who has none - so the item can burn. At +1 nothing is restricted and the bots use scrolls as before: from +7, and earlier on a worn item that could burn and on an item with valuable bonuses. Applies within five seconds.",
+                  "pl":"Najniższy plus, na jaki bot ulepsza pod Zwojem Błogosławieństwa albo Zwojem Boga Smoków. Przy +7 zwój idzie tylko na ulepszenia na +7, +8 i +9, a każde niższe bot robi u kowala bez zwoju, jak gracz, który zwojów nie ma - więc przedmiot może spłonąć. Przy +1 nie ma ograniczenia i boty używają zwojów tak jak dotąd: od +7, a wcześniej na założonym przedmiocie, który mógłby spłonąć, i na przedmiocie z cennymi bonusami. Działa w pięć sekund.",
+                  "de":"Das niedrigste Plus, auf das ein Bot unter einer Segens- oder Drachengott-Schriftrolle verbessert. Bei +7 geht eine Schriftrolle nur auf die Verbesserungen auf +7, +8 und +9; jede niedrigere macht der Bot beim Schmied ohne Schriftrolle, wie ein Spieler ohne Schriftrollen - der Gegenstand kann also verbrennen. Bei +1 gibt es keine Einschränkung. Wirkt innerhalb von fünf Sekunden.",
+                  "tr":"Botun Kutsama veya Ejderha Tanrısı parşömeniyle yükselttiği en düşük artı. +7'de parşömen yalnızca +7, +8 ve +9 yükseltmelerinde kullanılır; daha düşük her yükseltmeyi bot demircide parşömensiz yapar, parşömeni olmayan bir oyuncu gibi - yani eşya yanabilir. +1'de kısıtlama yoktur. Beş saniye içinde uygulanır."},
+ "ai_scroll_off":{"en":"no restriction","pl":"bez ograniczenia","de":"keine Einschränkung","tr":"kısıtlama yok"},
+ "ai_scroll_top":{"en":"only the upgrade to +9","pl":"tylko ulepszenie na +9","de":"nur die Verbesserung auf +9","tr":"yalnızca +9 yükseltmesi"},
  "ai_chest":     {"en":"Moonlight Treasure Chests","pl":"Szkatułki Księżycowe","de":"Mondschein-Schatztruhen","tr":"Ay Işığı Sandıkları"},
  "ai_chest_help":{"en":"How often a chest drops, in thousandths: per monster kill, and per broken Metin stone. The game default is 10‰ (1%) and 300‰ (30%); more chests mean more bonus scrolls, speed potions and Blessing Scrolls for the bots. Applies within five seconds, to bots and players alike.",
                   "pl":"Jak często wypada szkatułka, w promilach: z zabitego potwora i z rozbitego Metina. Domyślnie w grze 10‰ (1%) i 300‰ (30%); więcej szkatułek to więcej zwojów bonusów, mikstur szybkości i Zwojów Błogosławieństwa u botów. Działa w pięć sekund, dla botów i graczy tak samo.",
@@ -4829,6 +4848,16 @@ TPL_AI = BASE.replace("__BODY__", """
          oninput="document.getElementById('v_KINGDOMPVP').textContent=this.value+'%'">
   <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
     <span>0 — {{t('ai_kpvp_off')}}</span><span>100 — {{t('ai_kpvp_all')}}</span>
+  </div>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">📜 {{t('ai_scroll')}}
+      <span class="badge" id="v_SCROLL_FROM">+{{cur.get('SCROLL_FROM', 1)}}</span></h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_scroll_help')}}</p>
+  <input type="range" name="SCROLL_FROM" id="s_SCROLL_FROM" min="1" max="9" step="1" value="{{cur.get('SCROLL_FROM', 1)}}" style="width:100%"
+         oninput="document.getElementById('v_SCROLL_FROM').textContent='+'+this.value">
+  <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
+    <span>+1 — {{t('ai_scroll_off')}}</span><span>+9 — {{t('ai_scroll_top')}}</span>
   </div>
 </div>
 <div style="margin-bottom:18px">
@@ -7025,6 +7054,12 @@ def api_admin_warp_me():
             with db() as c, c.cursor() as cur:
                 cur.execute("DELETE FROM player.web_admin_queue WHERE status='pending' AND id IN ({})".format(
                     ",".join(["%s"] * len(rows))), tuple(rows.keys()))
+            # Written down every time. The button moves whichever human character
+            # is in the game, wherever its player happens to be looking, and "I
+            # stood AFK and was suddenly in the Demon Tower" (sizowski, 14
+            # September) could not be told apart from a click without a line.
+            app.logger.warning("teleport me (auto): tried=%s moved=%s status=%s to=(%d, %d)",
+                               ",".join(names), moved, st, target_x, target_y)
             if moved is None:
                 return jsonify({"ok": False, "status": "player_offline", "error": "player_offline",
                                 "tried": names, "x": target_x, "y": target_y})
@@ -7035,6 +7070,7 @@ def api_admin_warp_me():
             # A WARP nobody answered must not wait for the next login.
             with db() as c, c.cursor() as cur:
                 cur.execute("DELETE FROM player.web_admin_queue WHERE id=%s AND status='pending'", (qid,))
+        app.logger.warning("teleport me: %s status=%s to=(%d, %d)", gm_name, st, target_x, target_y)
         return jsonify({"ok": st == "done", "status": st, "name": gm_name, "x": target_x, "y": target_y})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -11692,6 +11728,10 @@ def ai_weights():
             vals["KINGDOMPVP"] = max(0, min(100, int(request.form.get("KINGDOMPVP", 0))))
         except (TypeError, ValueError):
             vals["KINGDOMPVP"] = 0
+        try:
+            vals["SCROLL_FROM"] = max(1, min(9, int(request.form.get("SCROLL_FROM", 1))))
+        except (TypeError, ValueError):
+            vals["SCROLL_FROM"] = 1
         for key in ("CHEST", "CHEST_STONE"):
             try:
                 vals[key] = max(0, min(1000, int(request.form.get(key))))

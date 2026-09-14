@@ -1119,7 +1119,8 @@ namespace
 					if (cp && cp->GetMemberCount() < (DWORD)GetPlayerBotPartyDesiredMax(m_me))
 					{
 						LPCHARACTER leader = cp->GetLeaderCharacter();
-						if (leader && leader->GetMapIndex() == m_me->GetMapIndex())
+						if (leader && leader->GetMapIndex() == m_me->GetMapIndex() &&
+								leader->GetEmpire() == m_me->GetEmpire())
 						{
 							int ld = DISTANCE_APPROX(m_me->GetX() - leader->GetX(), m_me->GetY() - leader->GetY());
 							if (ld <= 1800 &&

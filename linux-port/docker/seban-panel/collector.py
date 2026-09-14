@@ -6,8 +6,6 @@ from pathlib import Path
 import pymysql
 
 INTERVAL = int(os.environ.get("SEBAN_COLLECTOR_INTERVAL", "300"))
-# First retry after a failed snapshot, in seconds; doubled up to INTERVAL.
-RETRY_MIN = 5
 STATUS_GLOB = os.environ.get("PLAYERBOTS_STATUS_GLOB", "/opt/metin2/var/channel1/*/playerbot_status.tsv")
 
 
@@ -67,13 +65,14 @@ def init(cur):
     # monitoring history, not player data, so a schema change here drops and
     # recreates rather than an in-place ALTER of the primary key.
     # SHOW COLUMNS on a table that is not there is an error (1146), not an
-    # empty answer, and web_seban_shop_item_snapshot is new in 1.41.0: on
-    # every install that never had it the check threw before the CREATE, the
-    # table was never made and /economy/shops answered 500. information_schema
-    # counts zero for a missing table instead (Playerbots 2.0.47).
-    cur.execute("""SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='player'
-      AND table_name='web_seban_item_snapshot' AND column_name='socket0'""")
-    if cur.fetchone()[0] == 0:
+    # empty answer: on an install that never had the table the check threw
+    # before the CREATE and the page reading it answered 500. information_schema
+    # counts zero for a missing table instead (Playerbots 2.0.47, kept in 2.0.49).
+    # A row or none, never a column read by position: app.py calls init()
+    # at start with its DictCursor, where [0] is a KeyError (2.0.49).
+    cur.execute("""SELECT 1 FROM information_schema.columns WHERE table_schema='player'
+      AND table_name='web_seban_item_snapshot' AND column_name='socket0' LIMIT 1""")
+    if cur.fetchone() is None:
         cur.execute("DROP TABLE IF EXISTS player.web_seban_item_snapshot")
     cur.execute("""CREATE TABLE IF NOT EXISTS player.web_seban_item_snapshot (
       captured_at DATETIME NOT NULL, vnum INT UNSIGNED NOT NULL, socket0 INT NOT NULL DEFAULT 0,
@@ -113,9 +112,15 @@ def init(cur):
     # above only keeps the per-map/empire rollup, not individual vnums.
     # socket0 added 2026-09-13, same reason and same drop/recreate approach
     # as web_seban_item_snapshot above.
-    cur.execute("""SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='player'
-      AND table_name='web_seban_shop_item_snapshot' AND column_name='socket0'""")
-    if cur.fetchone()[0] == 0:
+    # SHOW COLUMNS on a table that is not there is an error (1146), not an
+    # empty answer: on an install that never had the table the check threw
+    # before the CREATE and the page reading it answered 500. information_schema
+    # counts zero for a missing table instead (Playerbots 2.0.47, kept in 2.0.49).
+    # A row or none, never a column read by position: app.py calls init()
+    # at start with its DictCursor, where [0] is a KeyError (2.0.49).
+    cur.execute("""SELECT 1 FROM information_schema.columns WHERE table_schema='player'
+      AND table_name='web_seban_shop_item_snapshot' AND column_name='socket0' LIMIT 1""")
+    if cur.fetchone() is None:
         cur.execute("DROP TABLE IF EXISTS player.web_seban_shop_item_snapshot")
     cur.execute("""CREATE TABLE IF NOT EXISTS player.web_seban_shop_item_snapshot (
       captured_at DATETIME NOT NULL, vnum INT UNSIGNED NOT NULL, socket0 INT NOT NULL DEFAULT 0,
@@ -185,7 +190,7 @@ def collect(con, previous):
           SELECT %s, vnum, IF(vnum=50300, socket0, 0), COUNT(*), SUM(count),
                  COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(ikashop_data,'$.yang')) AS UNSIGNED)),0)
           FROM player.item WHERE window = 'IKASHOP_OFFLINESHOP' GROUP BY vnum, IF(vnum=50300, socket0, 0)""", (now,))
-        cur.execute("SELECT COALESCE(SUM(gold),0) FROM player.player WHERE name NOT IN ('[SA]Admin','Test')")
+        cur.execute("SELECT COALESCE(SUM(gold),0) FROM player.player WHERE name NOT IN ('[SA]Admin','Test','Admin','AdminNinja','AdminSura','AdminSzaman')")
         yang = cur.fetchone()[0]
         cur.execute("INSERT IGNORE INTO player.web_seban_metric_snapshot VALUES (%s,'total_yang',%s)", (now, yang))
     return previous
@@ -193,26 +198,21 @@ def collect(con, previous):
 
 def main():
     previous = None
-    retry = RETRY_MIN
     while True:
         try:
             with connect() as con:
                 previous = collect(con, previous)
                 print("[seban-collector] snapshot complete", flush=True)
+            time.sleep(INTERVAL)
         except Exception as exc:
-            # An update recreates this container and the database together,
-            # and the database is often a few seconds behind: the first
-            # attempt meets "Connection refused". Waiting the whole interval
-            # after that left the panel without the tables the first snapshot
-            # creates - a 500 on the front page for five minutes after every
-            # update. A failure is retried in seconds, doubling up to the
-            # interval.
-            print(f"[seban-collector] {exc} (retry in {retry}s)", flush=True)
-            time.sleep(retry)
-            retry = min(INTERVAL, retry * 2)
-            continue
-        retry = RETRY_MIN
-        time.sleep(INTERVAL)
+            # A failed attempt (most often: MariaDB not accepting connections
+            # yet, moments after a fresh `docker compose up`) used to fall
+            # through to the same full-length sleep as a success, so the
+            # panel's tables -- and every page that reads them -- could stay
+            # missing for a whole INTERVAL (default 300s) after a restart.
+            # Retry soon instead of waiting out the normal cadence.
+            print(f"[seban-collector] {exc}", flush=True)
+            time.sleep(10)
 
 
 if __name__ == "__main__":

@@ -52,9 +52,12 @@ MAP_BOUNDS = {
     64: (256000, 665600, 153600, 153600), 104: (51200, 486400, 76800, 76800),
     65: (537600, 51200, 102400, 102400), 71: (665600, 435200, 102400, 102400),
     108: (128000, 640000, 76800, 76800), 109: (128000, 716800, 76800, 76800),
-    # From each map's own Setting.txt (BasePosition and MapSize): the
-    # Forest is metin2_map_trent, the Red Forest metin2_map_trent02 and
-    # the Demon Tower metin2_map_deviltower1.
+    # Re-derived 2026-09-15 straight from each map's own Setting.txt
+    # (BasePosition + MapSize x 25600, the same formula that reproduces
+    # Chunjo M1's already-correct (0,102400,102400,128000) from its own
+    # MapSize 4x5 / BasePosition 0,102400) -- the original values here were
+    # wrong on all three axes for at least one of the three maps each,
+    # flagged by Tieru testing the exported panel.
     67: (281600, 0, 51200, 51200), 68: (1049600, 0, 76800, 76800),
     66: (128000, 793600, 76800, 76800),
 }
@@ -71,6 +74,7 @@ MAP_RESPAWN_OPTIONS = (
 # respawns can be configured. The explicit allowlist also protects the helper.
 MAP_STONE_RESPAWN_IDS = frozenset(index for index, _name in MAP_RESPAWN_OPTIONS if index not in {5, 25, 45, 104, 71, 108, 109})
 STATUS_GLOBS = (os.environ.get("PLAYERBOTS_STATUS_GLOB", "/opt/metin2/var/channel1/*/playerbot_status.tsv"),)
+BOT_SYSLOG_GLOB = os.environ.get("PLAYERBOTS_SYSLOG_GLOB", "/opt/metin2/var/channel1/*/syslog")
 RATES_SPOOL = Path("/opt/m2spool")
 UPDATE_SPOOL = Path("/opt/m2update")
 UPDATE_WATCHER_MAX_AGE_SECONDS = 90
@@ -168,8 +172,17 @@ ITEM_TYPE_NAMES = (
     "ITEM_TREASURE_BOX", "ITEM_TREASURE_KEY", "ITEM_SKILLFORGET", "ITEM_GIFTBOX", "ITEM_PICK", "ITEM_HAIR", "ITEM_TOTEM", "ITEM_BLEND", "ITEM_COSTUME", "ITEM_DS",
     "ITEM_SPECIAL_DS", "ITEM_EXTRACT", "ITEM_SECONDARY_COIN", "ITEM_RING", "ITEM_BELT", "ITEM_PET", "ITEM_MEDIUM", "ITEM_GACHA", "ITEM_SOUL", "ITEM_PASSIVE",
 )
+# Renumbered 2026-09-15: was consistently off by one or more across several
+# 6-8 entry runs (18..23 "Silny przeciw", 30..39 "Odporność na", ...),
+# reported as swapped bonus text on real equipped items ([GA]Seban's
+# Kolczyki Z Niebiań.Łez+9 showing "Odporność na dzwony/miecze" and "Silny
+# przeciw mistykom" for what the in-game tooltip calls wachlarze/broń
+# dwuręczną/Nieumarłym). Re-keyed against Tieru's own APPLY_META table
+# (admin_panel.py, 7788) entry by entry -- POINT_TO_APPLY below already
+# matched Tieru's exactly, so only the label side was wrong. Gaps at
+# 51/57/77/83 are Tieru's too (no player-visible text for those points).
 APPLY_LABELS = {
-    1: ("Maks. PŻ", ""), 2: ("Maks. PM", ""), 3: ("Witalność", ""), 4: ("Inteligencja", ""), 5: ("Siła", ""), 6: ("Zręczność", ""), 7: ("Szybkość ataku", "%"), 8: ("Szybkość ruchu", "%"), 9: ("Szybkość zaklęcia", "%"), 10: ("Regeneracja PŻ", "%"), 11: ("Regeneracja PM", "%"), 12: ("Odporność na truciznę", "%"), 13: ("Szansa na omdlenie", "%"), 14: ("Szansa na spowolnienie", "%"), 15: ("Szansa na cios krytyczny", "%"), 16: ("Szansa na przeszywający", "%"), 17: ("Wartość ataku", ""), 18: ("Silny przeciw ludziom", "%"), 19: ("Silny przeciw zwierzętom", "%"), 20: ("Silny przeciw orkom", "%"), 21: ("Silny przeciw mistykom", "%"), 22: ("Silny przeciw nieumarłym", "%"), 23: ("Silny przeciw diabłom", "%"), 24: ("Kradzież PŻ", "%"), 25: ("Kradzież PM", "%"), 26: ("Spalenie PM", "%"), 27: ("Odzyskanie PM po obrażeniach", "%"), 28: ("Szansa na blok", "%"), 29: ("Szansa na unik strzał", "%"), 30: ("Odporność na miecze", "%"), 31: ("Odporność na broń dwuręczną", "%"), 32: ("Odporność na sztylety", "%"), 33: ("Odporność na dzwony", "%"), 34: ("Odporność na wachlarze", "%"), 35: ("Odporność na strzały", "%"), 36: ("Odporność na ogień", "%"), 37: ("Odporność na błyskawice", "%"), 38: ("Odporność na magię", "%"), 39: ("Odporność na wiatr", "%"), 40: ("Odbicie obrażeń fizycznych", "%"), 41: ("Odbicie klątwy", "%"), 42: ("Skrócenie trucia", "%"), 43: ("Odzyskanie PM po zabiciu", "%"), 44: ("Bonus doświadczenia", "%"), 45: ("Bonus Yang", "%"), 46: ("Bonus dropu przedmiotów", "%"), 47: ("Bonus mikstur", "%"), 48: ("Odzyskanie PŻ po zabiciu", "%"), 49: ("Odporność na omdlenie", ""), 50: ("Odporność na spowolnienie", ""), 51: ("Odporność na przewrócenie", ""), 52: ("Bonus umiejętności", "%"), 53: ("Zasięg łuku", "%"), 54: ("Wartość ataku", ""), 55: ("Wartość obrony", ""), 56: ("Magiczna wartość ataku", ""), 57: ("Magiczna wartość obrony", ""), 58: ("Szansa na klątwę", "%"), 59: ("Maks. wytrzymałość", ""), 60: ("Silny przeciw wojownikom", "%"), 61: ("Silny przeciw ninja", "%"), 62: ("Silny przeciw surom", "%"), 63: ("Silny przeciw szamanom", "%"), 64: ("Silny przeciw potworom", "%"), 70: ("Maks. PŻ", "%"), 71: ("Obrażenia umiejętności", "%"), 72: ("Średnie obrażenia", "%"), 73: ("Odporność na umiejętności", "%"), 74: ("Odporność na średnie obrażenia", "%"), 75: ("Bonus doświadczenia", "%"), 76: ("Bonus dropu", "%"), 77: ("Kradzież PŻ", "%"), 78: ("Odporność na wojowników", "%"), 79: ("Odporność na ninja", "%"), 80: ("Odporność na sury", "%"), 81: ("Odporność na szamanów", "%"), 82: ("Energia", "%"), 83: ("Wartość obrony", ""), 84: ("Bonus atrybutów kostiumu", "%"), 85: ("Magiczny atak", "%"), 86: ("Atak fizyczny i magiczny", "%"), 87: ("Odporność na lód", "%"), 88: ("Odporność na ziemię", "%"), 89: ("Odporność na mrok", "%"), 90: ("Odporność na cios krytyczny", "%"), 91: ("Odporność na przeszywający", "%"), 1138: ("Terror", "%"), 1139: ("Regeneracja wytrzymałości", "%"), 1140: ("Atak sztyletem przeciw potworom", ""), 1141: ("Wartość ataku przeciw potworom", ""), 1142: ("Odporność na potwory", "‰"), 1143: ("Pochłanianie obrażeń", "%"), 1144: ("Pochłanianie obrażeń od potworów", "%"), 1145: ("Przełamanie odporności na ogłuszenie", ""), 1146: ("Przełamanie klątwy świątyni", ""), 1147: ("Czas trwania umiejętności", "%"), 1148: ("Silny przeciw potworom z Doliny Orków", "%"), 1149: ("Silny przeciw Metinom", "%"), 1150: ("Silny przeciw bossom", "%"), 1151: ("Magiczny atak przeciw potworom", "%"), 1152: ("Przełamanie odporności na miecz", "%"), 1153: ("Przełamanie odporności na broń dwuręczną", "%"), 1154: ("Przełamanie odporności na sztylet", "%"), 1155: ("Przełamanie odporności na dzwonek", "%"), 1156: ("Przełamanie odporności na wachlarz", "%"), 1157: ("Przełamanie odporności na łuk", "%"), 1158: ("Szansa na zbieranie", "%"), 1159: ("Szansa na naukę", "%"), 1160: ("Odporność na ludzi", "%"), 1161: ("Magiczny atak", ""), 1162: ("Szansa na podpalenie", "%"), 1163: ("Zamiana obrażeń na PE", "%"), 1164: ("Szansa na rzadki łup", "%"), 1165: ("Magiczna wartość ataku przeciw potworom", ""), 1166: ("Szansa na unieruchomienie", "%"), 1167: ("Atak specjalny", ""), 1168: ("Kara za śmierć", "%")}
+    1: ("Maks. PŻ", ""), 2: ("Maks. PM", ""), 3: ("Witalność", ""), 4: ("Inteligencja", ""), 5: ("Siła", ""), 6: ("Zręczność", ""), 7: ("Szybkość ataku", "%"), 8: ("Szybkość ruchu", "%"), 9: ("Szybkość zaklęcia", "%"), 10: ("Regeneracja PŻ", "%"), 11: ("Regeneracja PM", "%"), 12: ("Szansa na otrucie", "%"), 13: ("Szansa na omdlenie", "%"), 14: ("Szansa na spowolnienie", "%"), 15: ("Szansa na cios krytyczny", "%"), 16: ("Szansa na przeszywający", "%"), 17: ("Silny przeciw ludziom", "%"), 18: ("Silny przeciw zwierzętom", "%"), 19: ("Silny przeciw orkom", "%"), 20: ("Silny przeciw mistykom", "%"), 21: ("Silny przeciw nieumarłym", "%"), 22: ("Silny przeciw diabłom", "%"), 23: ("Kradzież PŻ", "%"), 24: ("Kradzież PM", "%"), 25: ("Szansa na kradzież PM", "%"), 26: ("Odzyskanie PM po obrażeniach", "%"), 27: ("Szansa na blok", "%"), 28: ("Szansa na unik strzał", "%"), 29: ("Odporność na miecze", "%"), 30: ("Odporność na broń dwuręczną", "%"), 31: ("Odporność na sztylety", "%"), 32: ("Odporność na dzwony", "%"), 33: ("Odporność na wachlarze", "%"), 34: ("Odporność na strzały", "%"), 35: ("Odporność na ogień", "%"), 36: ("Odporność na błyskawice", "%"), 37: ("Odporność na magię", "%"), 38: ("Odporność na wiatr", "%"), 39: ("Odbicie obrażeń fizycznych", "%"), 40: ("Odbicie klątwy", "%"), 41: ("Odporność na trucizny", "%"), 42: ("Odzyskanie PM po zabiciu", "%"), 43: ("Bonus doświadczenia", "%"), 44: ("Bonus Yang", "%"), 45: ("Bonus dropu przedmiotów", "%"), 46: ("Bonus mikstur", "%"), 47: ("Odzyskanie PŻ po zabiciu", "%"), 48: ("Odporność na omdlenie", ""), 49: ("Odporność na spowolnienie", ""), 50: ("Odporność na przewrócenie", ""), 52: ("Zasięg łuku", "m"), 53: ("Wartość ataku", ""), 54: ("Wartość obrony", ""), 55: ("Wartość magicznego ataku", ""), 56: ("Magiczna wartość obrony", ""), 58: ("Maks. wytrzymałość", ""), 59: ("Silny przeciw wojownikom", "%"), 60: ("Silny przeciw ninja", "%"), 61: ("Silny przeciw surom", "%"), 62: ("Silny przeciw szamanom", "%"), 63: ("Silny przeciw potworom", "%"), 64: ("Wartość ataku", "%"), 65: ("Wartość obrony", "%"), 66: ("Bonus doświadczenia", "%"), 67: ("Szansa na zdobycie przedmiotów", ""), 68: ("Szansa na zdobycie Yang", ""), 69: ("Maks. PŻ", "%"), 70: ("Maks. PM", "%"), 71: ("Obrażenia umiejętności", "%"), 72: ("Średnie obrażenia", "%"), 73: ("Odporność na obrażenia umiejętności", "%"), 74: ("Odporność na średnie obrażenia", "%"), 75: ("Bonus doświadczenia (iCafe)", "%"), 76: ("Bonus dropu przedmiotów (iCafe)", "%"), 78: ("Odporność na wojowników", "%"), 79: ("Odporność na ninja", "%"), 80: ("Odporność na sury", "%"), 81: ("Odporność na szamanów", "%"), 82: ("Energia", ""), 84: ("Bonus kostiumu", "%"), 85: ("Magiczny atak", "%"), 86: ("Magiczny/fizyczny atak", "%"), 87: ("Odporność na lód", "%"), 88: ("Odporność na ziemię", "%"), 89: ("Odporność na mrok", "%"), 90: ("Odporność na cios krytyczny", "%"), 91: ("Odporność na przeszywający", "%"), 1138: ("Terror", "%"), 1139: ("Regeneracja wytrzymałości", "%"), 1140: ("Atak sztyletem przeciw potworom", ""), 1141: ("Wartość ataku przeciw potworom", ""), 1142: ("Odporność na potwory", "‰"), 1143: ("Pochłanianie obrażeń", "%"), 1144: ("Pochłanianie obrażeń od potworów", "%"), 1145: ("Przełamanie odporności na ogłuszenie", ""), 1146: ("Przełamanie klątwy świątyni", ""), 1147: ("Czas trwania umiejętności", "%"), 1148: ("Silny przeciw potworom z Doliny Orków", "%"), 1149: ("Silny przeciw Metinom", "%"), 1150: ("Silny przeciw bossom", "%"), 1151: ("Magiczny atak przeciw potworom", "%"), 1152: ("Przełamanie odporności na miecz", "%"), 1153: ("Przełamanie odporności na broń dwuręczną", "%"), 1154: ("Przełamanie odporności na sztylet", "%"), 1155: ("Przełamanie odporności na dzwonek", "%"), 1156: ("Przełamanie odporności na wachlarz", "%"), 1157: ("Przełamanie odporności na łuk", "%"), 1158: ("Szansa na zbieranie", "%"), 1159: ("Szansa na naukę", "%"), 1160: ("Odporność na ludzi", "%"), 1161: ("Magiczny atak", ""), 1162: ("Szansa na podpalenie", "%"), 1163: ("Zamiana obrażeń na PE", "%"), 1164: ("Szansa na rzadki łup", "%"), 1165: ("Magiczna wartość ataku przeciw potworom", ""), 1166: ("Szansa na unieruchomienie", "%"), 1167: ("Atak specjalny", ""), 1168: ("Kara za śmierć", "%")}
 # 71 i 72 są w tablicy powyżej, we właściwej kolejności: common/length.h
 # niesie numery we własnych komentarzach - APPLY_SKILL_DAMAGE_BONUS to 71,
 # APPLY_NORMAL_HIT_DAMAGE_BONUS to 72. Stała tu wcześniej poprawka
@@ -183,14 +196,14 @@ APPLY_LABELS = {
 # account.account has no empire column and player.player no bank_value.
 PANEL_ENGINE = os.environ.get("PLAYERBOTS_ENGINE", "r40250").strip().lower()
 ENGINE_MT2009 = PANEL_ENGINE == "mt2009"
-# Seban's own game-side scripts - m2-botcount and m2-map-regens in the game
-# container, and the common.m2_switches row his starter chest quest reads -
-# run on his servers and are not part of the Playerbots image. Without them
-# the bot-count field and the respawn half of the console write requests
-# nothing reads, and the starter-chest switch queries a table that does not
-# exist and takes the whole Zarzadzanie page down with it. All three stay
-# off unless the operator says those scripts are installed.
-SEBAN_GAME_INTEGRATION = os.environ.get("SEBAN_GAME_INTEGRATION", "") == "1"
+# Three /manage controls (target bot count, per-map respawn, student chest
+# toggle) read/write quest and wiring files this panel's own patch_*.py
+# scripts add to the managed tree -- a fresh/public install of this panel
+# does not have them, so those controls would silently do nothing there.
+# Off by default (public release); this VPS's own .env turns it on since
+# the patches are actually applied here. Flagged by Tieru testing the
+# exported zip on a clean install, 2026-09-15.
+CUSTOM_PATCHES_ENABLED = os.environ.get("M2_PANEL_CUSTOM_PATCHES", "0").strip().lower() in ("1", "true", "yes", "on")
 ATTR_SKILL_DAMAGE = 121 if ENGINE_MT2009 else 71
 ATTR_AVG_DAMAGE = 122 if ENGINE_MT2009 else 72
 POINT_TO_APPLY = {6: 1, 8: 2, 13: 3, 15: 4, 12: 5, 14: 6, 17: 7, 19: 8, 21: 9, 32: 10, 33: 11,
@@ -315,6 +328,26 @@ def rows(sql, params=()):
 def one(sql, params=()):
     result = rows(sql, params)
     return result[0] if result else {}
+
+
+def _ensure_collector_tables():
+    """Same schema collector.py's own init() creates, run here too at
+    startup. Without this, a panel that comes up before the collector's
+    first successful cycle (e.g. right after `docker compose up`, before
+    MariaDB finishes its own startup) 500s on every web_seban_* table --
+    and if that first collector attempt fails, it does not retry until its
+    full interval (default 300s) has passed, not right away. Reported by
+    players as the panel "Internal Server Error"-ing for the first ~5
+    minutes after an update (sizowski, 2026-09-14)."""
+    try:
+        import collector
+        with db() as con, con.cursor() as cur:
+            collector.init(cur)
+    except pymysql.MySQLError as exc:
+        app.logger.warning("could not pre-create collector tables at startup: %s", exc)
+
+
+_ensure_collector_tables()
 
 
 def game_text(value):
@@ -461,26 +494,38 @@ def apply_text(apply_type, value):
 
 
 def item_base_stats(vnum):
-    """Client-side item properties displayed by the in-game tooltip."""
+    """Client-side item properties displayed by the in-game tooltip.
+    value1-4 alone are the item's +0 base -- refine level adds value5, once
+    for a weapon's attack/magic-attack range and twice for Body/Shield (per
+    Tieru's own tooltip JS, admin_panel.py 7788). Missing this made every
+    refined weapon/armor show its +0 numbers: Różowa Szata+9 read 29
+    defense here vs. 83 in the live client (29 + 27*2); Antyczny Dzwon+9
+    read 50-70/35-60 here vs. 120-140/105-130 live (both +70). Reported by
+    [GA]Seban, 2026-09-15."""
     proto = ITEM_DEFS.get(str(int(vnum or 0)), {})
     if not proto:
         return []
-    stats, item_type = [], int(proto.get("type") or 0)
+    stats, item_type, subtype = [], int(proto.get("type") or 0), int(proto.get("subtype") or 0)
     level = int(proto.get("level") or 0)
     if level:
         stats.append(f"Wymagany poziom: {level}")
     value = lambda index: int(proto.get(f"value{index}") or 0)
+    refine_bonus = value(5)
     if item_type == 1:  # ITEM_WEAPON: magic 1/2, physical 3/4.
-        attack_min, attack_max = value(3), value(4)
-        magic_min, magic_max = value(1), value(2)
+        attack_min, attack_max = value(3) + refine_bonus, value(4) + refine_bonus
+        magic_min, magic_max = value(1) + refine_bonus, value(2) + refine_bonus
         if attack_min or attack_max:
             stats.append(f"Wartość ataku: {attack_min}–{attack_max}" if attack_min != attack_max else f"Wartość ataku: {attack_max}")
         if magic_min or magic_max:
             stats.append(f"Wartość magicznego ataku: {magic_min}–{magic_max}" if magic_min != magic_max else f"Wartość magicznego ataku: {magic_max}")
-    elif item_type == 2:  # ITEM_ARMOR, including body armour and shields.
-        defense = value(1)
-        if defense:
-            stats.append(f"Wartość obrony: {defense}")
+    elif item_type == 2:  # ITEM_ARMOR. Only these four subtypes show a flat
+        # defense number in the client at all; jewelry (necklace/earring/
+        # wrist) shows none, same as the real tooltip.
+        multiplier = {0: 2, 1: 1, 2: 2, 4: 1}.get(subtype)
+        if multiplier:
+            defense = value(1) + refine_bonus * multiplier
+            if defense:
+                stats.append(f"Wartość obrony: {defense}")
     return stats
 
 
@@ -514,6 +559,31 @@ def parse_skills(raw, job, group):
             # Tieru's icon pack has the master artwork in *_m.png.  It is used
             # for every mastered stage (M, G and P); there are no *_p.png files.
             result.append({"vnum": vnum, "name": name, "level": level, "master_type": master, "rank": rank, "icon_suffix": "_m" if master >= 1 or level >= 20 else ""})
+    return result
+
+
+# Passives with no client icon pack (confirmed against Tieru's own
+# static/skill_icons/ -- none of these vnums are in it): horse riding/summon
+# and the four ability-book skills (Dowodzenie..Polimorfia). Their "level"
+# byte is a plain number here (30 lvl konia, 100% przywolania), not the
+# M/G/P combat-skill grading skill_rank() computes for SKILLS above.
+PASSIVE_SKILLS = {
+    121: "Dowodzenie", 122: "Combo", 124: "Górnictwo", 125: "Kowalstwo",
+    126: "Język Shinsoo", 127: "Język Chunjo", 128: "Język Jinno", 129: "Polimorfia",
+    130: "Poziom konia", 131: "Przywołanie konia",
+}
+
+
+def parse_passive_skills(raw):
+    if isinstance(raw, memoryview): raw = raw.tobytes()
+    if isinstance(raw, str): raw = raw.encode("latin1", "ignore")
+    raw = raw or b""
+    result = []
+    for vnum, name in PASSIVE_SKILLS.items():
+        offset = vnum * 6
+        level = raw[offset + 1] if offset + 1 < len(raw) else 0
+        if level:
+            result.append({"vnum": vnum, "name": name, "level": level})
     return result
 
 
@@ -1080,12 +1150,12 @@ def server_settings_status():
               # routes respawn changes through m2-map-regens directly on this
               # engine, so the banner below would be describing a gap that
               # does not exist here.
-              "engine_handles_directly": ENGINE_MT2009 and SEBAN_GAME_INTEGRATION}
+              "engine_handles_directly": ENGINE_MT2009 and CUSTOM_PATCHES_ENABLED}
     if worker_ready:
         result["message"] = "Helper ustawień serwera jest gotowy."
     elif result["pending"]:
         result["message"] = "Zlecenie nie jest odbierane przez helper gry. Sprawdź instalację integracji; po 10 minutach można usunąć wyłącznie zaległe zlecenie."
-    elif ENGINE_MT2009 and SEBAN_GAME_INTEGRATION:
+    elif ENGINE_MT2009 and CUSTOM_PATCHES_ENABLED:
         result["message"] = ("Ten silnik (mt2009) nie korzysta ze wspólnego helpera ustawień: "
                              "raty, docelowa liczba botów i respawny na mapach są obsługiwane "
                              "bezpośrednio przez m2-rates / m2-botcount / m2-map-regens w "
@@ -1138,7 +1208,7 @@ def queue_server_settings(action, values=None, changes=None):
         if restart_in_flight():
             raise FileExistsError("a restart is already under way")
         queue_rate_restart(values if action == "apply" and values else read_rates())
-        if changes and ENGINE_MT2009 and SEBAN_GAME_INTEGRATION:
+        if changes and ENGINE_MT2009 and CUSTOM_PATCHES_ENABLED:
             # mt2009 needs no unified helper for this half either: m2-map-regens
             # (docker/game/bin) already rewrites every named map's regen.txt from
             # its own .m2orig snapshot and restarts the cores itself, the same
@@ -1284,6 +1354,32 @@ def bot_ranking(kind, sort_by="avg"):
             FROM log.log l JOIN player.player p ON p.id=l.who
             WHERE {base} AND l.how='BOSS_KILL' AND l.time >= NOW() - INTERVAL 7 DAY
             GROUP BY p.id,p.name ORDER BY score DESC,p.level DESC,p.name LIMIT 100""")
+    if kind == "refine":
+        # Same REFINE SUCCESS count character_stat_summary() already shows
+        # on /player/ as "Pomyślne ulepszenia" -- all-time, not windowed,
+        # so this ranking's numbers line up with that page's.
+        return rows(f"""SELECT p.id,p.name,p.level,p.gold,COUNT(*) AS score,
+            CONCAT(COUNT(*),' pomyślnych ulepszeń') AS detail
+            FROM log.log l JOIN player.player p ON p.id=l.who
+            WHERE {base} AND l.how='REFINE SUCCESS'
+            GROUP BY p.id,p.name ORDER BY score DESC,p.level DESC,p.name LIMIT 100""")
+    if kind == "refine_rate":
+        # Ciekawostka, per operator's ask: % success needs a minimum sample
+        # size, or a bot's very first-ever refine lands it at #1 forever
+        # having never tried again. 20 attempts is comfortably above that.
+        # Failure here is REMOVE (REFINE FAIL), not 'REFINE FAIL' -- checked
+        # live for pid 84 (314 SUCCESS / 62 REMOVE (REFINE FAIL), matching
+        # the 83.x% the operator saw on /player/): this engine has zero
+        # 'REFINE FAIL' rows at all, every failed refine burns the item and
+        # is logged only as the burn event.
+        min_attempts = 20
+        return rows(f"""SELECT p.id,p.name,p.level,p.gold,
+            ROUND(100*SUM(l.how='REFINE SUCCESS')/COUNT(*),1) AS score,
+            CONCAT(ROUND(100*SUM(l.how='REFINE SUCCESS')/COUNT(*),1),'%% (',SUM(l.how='REFINE SUCCESS'),'/',COUNT(*),' ulepszeń)') AS detail
+            FROM log.log l JOIN player.player p ON p.id=l.who
+            WHERE {base} AND l.how IN ('REFINE SUCCESS','REMOVE (REFINE FAIL)')
+            GROUP BY p.id,p.name HAVING COUNT(*) >= {min_attempts}
+            ORDER BY score DESC,COUNT(*) DESC,p.level DESC LIMIT 100""")
     if kind == "items":
         return rows(f"""SELECT p.id,p.name,p.level,p.gold,COUNT(i.id) AS score,CONCAT(COUNT(i.id),' przedmiotów') AS detail
             FROM player.player p LEFT JOIN player.item i ON i.owner_id=p.id AND i.window='INVENTORY'
@@ -1422,7 +1518,7 @@ def dashboard():
           (SELECT COUNT(*) FROM player.player) AS characters,
           (SELECT COUNT(*) FROM account.account) AS accounts,
           (SELECT COUNT(*) FROM player.item) AS item_stacks,
-          (SELECT COALESCE(SUM(gold),0) FROM player.player WHERE name NOT IN ('[SA]Admin','Test')) AS yang
+          (SELECT COALESCE(SUM(gold),0) FROM player.player WHERE name NOT IN ('[SA]Admin','Test','Admin','AdminNinja','AdminSura','AdminSzaman')) AS yang
     """)
     bots = one("SELECT COUNT(*) AS count FROM player.player WHERE account_id BETWEEN 4 AND 1003")
     # The collector creates this table with its first snapshot; before that -
@@ -1497,11 +1593,15 @@ def dashboard():
     quick_rankings.append({"title": "Metiny", "subtitle": "rozbite · ostatnie 7 dni", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in metins]})
     bosses = bot_ranking("bosses")[:10]
     quick_rankings.append({"title": "Bossy", "subtitle": "zabite · ostatnie 7 dni", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in bosses]})
-    fish = rows("""SELECT p.id,p.name,COUNT(*) AS score FROM log.log l JOIN player.player p ON p.id=l.who
-                   WHERE """ + BOT_IS + """ AND l.time >= NOW() - INTERVAL 7 DAY
-                     AND (l.what LIKE '%%ryb%%' OR l.what LIKE '%%fish%%')
-                   GROUP BY p.id,p.name ORDER BY score DESC,p.name LIMIT 10""")
-    quick_rankings.append({"title": "Ryby", "subtitle": "wyłowione · ostatnie 7 dni", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in fish]})
+    # "Ryby" used to sit here (LIKE '%ryb%' on log.log.what) but the engine
+    # never logs a catch anywhere -- confirmed zero matching rows on live
+    # data, matching character_stat_summary()'s note that fishing has no
+    # server-side record at all. Swapped for Pomyślne ulepszenia, which does
+    # have real data (same REFINE SUCCESS count /player/ already shows).
+    refine = bot_ranking("refine")[:10]
+    quick_rankings.append({"title": "Pomyślne ulepszenia", "subtitle": "łącznie, całościowo", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in refine]})
+    refine_rate = bot_ranking("refine_rate")[:10]
+    quick_rankings.append({"title": "Skuteczność ulepszeń", "subtitle": "% sukcesu · min. 20 prób", "items": [{"id": row["id"], "name": row["name"], "value": f"{row['score']}%"} for row in refine_rate]})
     ranking_ids = {item["id"] for ranking in quick_rankings for item in ranking["items"]}
     if ranking_ids:
         placeholders = ",".join(["%s"] * len(ranking_ids))
@@ -1619,10 +1719,181 @@ def character_stat_summary(pid):
     return stats
 
 
+# Curated subset of log.log's `how` values that make an "equipment history"
+# instead of noise: log.log holds thousands of GET/SET_SOCKET/GET_GOLD rows
+# per bot, which drowned out the handful of equipment/trade events an
+# operator actually wants -- matches Tieru's own /api/bot_gear_history on
+# 7788 (audit, 2026-09-14), translated to Polish only (this panel has no
+# language switcher).
+GEAR_HISTORY_HOWS = {
+    "REFINE SUCCESS": ("refine-ok", "Ulepszenie udane"),
+    "REFINE FAIL": ("refine-fail", "Ulepszenie nieudane"),
+    "REMOVE (REFINE FAIL)": ("burned", "Spalone przy ulepszaniu"),
+    "REFINE FISH_ROD SUCCESS": ("refine-ok", "Wędka ulepszona"),
+    "REFINE FISH_ROD FAIL": ("refine-fail", "Wędka nieulepszona"),
+    "PLAYERBOT_EQUIP": ("equip", "Założone"),
+    "PLAYERBOT_GIFT_OUT": ("gift-out", "Podarowane"),
+    "PLAYERBOT_GIFT_IN": ("gift-in", "Dostane w prezencie"),
+    "PLAYERBOT_STALL_SOLD": ("stall-sold", "Sprzedane na straganie"),
+    "SHOP_BUY": ("bought", "Kupione na straganie"),
+    "PLAYERBOT_SHOP_SELL": ("vendor", "Sprzedane handlarzowi"),
+    "PLAYERBOT_BONUS": ("bonus", "Zużyte na przemianę bonusów"),
+    "PLAYERBOT_BONUS_ADD": ("bonus", "Dodano bonus (Wzmocnienie)"),
+    "PLAYERBOT_BONUS_CHANGE": ("bonus", "Zmieniono bonusy (Zmiana)"),
+    "PLAYERBOT_BONUS_MARBLE": ("bonus", "Dodano 5. bonus (Marmur)"),
+    "SAFEBOX PUT": ("safebox", "Do magazynu"),
+    "SAFEBOX GET": ("safebox", "Z magazynu"),
+    "MOONLIGHT_GET": ("get", "Ze Szkatułki Blasku"),
+    "EXCHANGE_TAKE": ("gift-in", "Z wymiany"),
+    "EXCHANGE_GIVE": ("gift-out", "Oddane w wymianie"),
+}
+
+
+def bot_gear_history(pid, limit=60):
+    hows = list(GEAR_HISTORY_HOWS.keys())
+    marks = ",".join(["%s"] * len(hows))
+    raw = rows(f"""SELECT l.time, l.how, l.hint, l.vnum, i.socket0 FROM log.log l
+      LEFT JOIN player.item i ON i.id = l.what
+      WHERE l.who=%s AND l.how IN ({marks}) ORDER BY l.time DESC LIMIT %s""", [pid] + hows + [limit])
+    result = []
+    for r in raw:
+        how = game_text(r["how"])
+        kind, label = GEAR_HISTORY_HOWS.get(how, ("other", how))
+        vnum = int(r["vnum"] or 0)
+        socket0 = int(r["socket0"] or 0) if vnum in SKILLBOOK_VNUMS else 0
+        hint = game_text(r["hint"]).strip()
+        detail = ""
+        if how == "PLAYERBOT_GIFT_OUT":
+            detail = "→ " + hint
+        elif how == "PLAYERBOT_GIFT_IN":
+            detail = "← " + hint
+        elif how == "PLAYERBOT_STALL_SOLD":
+            match = SALE_HINT_RE.match(hint)
+            if match:
+                detail = f"x{match.group(2)} za " + "{:,}".format(int(match.group(3))).replace(",", " ") + " yang"
+        elif how == "PLAYERBOT_EQUIP":
+            parts = hint.split()
+            if len(parts) >= 4 and parts[3].isdigit() and int(parts[3]) > 0:
+                detail = "zamiast " + _item_display_name(int(parts[3]))
+        elif how in ("SAFEBOX PUT", "SAFEBOX GET"):
+            parts = hint.rsplit(" ", 1)
+            if len(parts) == 2 and parts[1].isdigit() and int(parts[1]) > 1:
+                detail = "x" + parts[1]
+        result.append({
+            "time": r["time"].strftime("%d.%m %H:%M") if hasattr(r["time"], "strftime") else str(r["time"]),
+            "kind": kind, "label": label,
+            "item": _item_display_name(vnum, socket0) if vnum else "",
+            "detail": detail,
+        })
+    return result
+
+
+def bot_offline_shop(pid):
+    """Data straight from IkarusShop's own tables -- there is no separate
+    price/listing table for offline shops on this engine (confirmed against
+    a live shop while building the /economy/shops feed): ikashop_offlineshop
+    is the stall itself (map, x, y, banner name), player.item WHERE
+    window='IKASHOP_OFFLINESHOP' is the listing, and each offer's yang price
+    lives in that item's own ikashop_data JSON column."""
+    shop = one("SELECT map, x, y, name, is_premium FROM player.ikashop_offlineshop WHERE owner=%s", (pid,))
+    if not shop:
+        return None
+    offers = rows("""SELECT vnum, count, pos, socket0,
+        CAST(JSON_UNQUOTE(JSON_EXTRACT(ikashop_data,'$.yang')) AS UNSIGNED) AS price
+      FROM player.item WHERE owner_id=%s AND window='IKASHOP_OFFLINESHOP' ORDER BY pos""", (pid,))
+    for offer in offers:
+        offer["item_name"] = _item_display_name(offer["vnum"], offer.get("socket0"))
+        offer["icon_url"] = item_icon_url(offer["vnum"])
+        offer["price"] = int(offer.get("price") or 0)
+    return {
+        "name": game_text(shop["name"]) or "Bez nazwy", "map_index": int(shop["map"]), "map_name": map_name(shop["map"]),
+        "x": int(shop["x"]), "y": int(shop["y"]), "is_premium": bool(shop["is_premium"]), "offers": offers,
+    }
+
+
+def bot_live_logs(name, limit=80):
+    """Tail of the live game core's own syslogs, filtered to lines naming
+    this bot -- same source (channel1/*/syslog) and word-boundary matching
+    as Tieru's own /api/bot_logs on 7788, so a short name doesn't also
+    match a longer sibling's (botgrom vs botgrom2)."""
+    if not name:
+        return []
+    name_re = re.compile(r"(?<![A-Za-z0-9_])" + re.escape(name) + r"(?![A-Za-z0-9_])", re.IGNORECASE)
+    matched = []
+    for path in Path("/").glob(BOT_SYSLOG_GLOB.lstrip("/")):
+        try:
+            with open(path, "r", encoding="latin-1", errors="ignore") as f:
+                lines = f.readlines()
+            recent = lines[-800:] if len(lines) > 800 else lines
+            matched.extend(line.strip() for line in recent if name_re.search(line))
+        except OSError:
+            continue
+    return matched[-limit:]
+
+
+@app.route("/api/bot-logs/<int:pid>")
+@login_required
+def api_bot_logs(pid):
+    character = one("SELECT name FROM player.player WHERE id=%s", (pid,))
+    if not character:
+        return {"ok": False, "logs": []}, 404
+    return {"ok": True, "logs": bot_live_logs(character["name"])}
+
+
+@app.route("/api/admin/teleport-me", methods=["POST"])
+@login_required
+def api_admin_teleport_me():
+    """Moves whichever GM/human character is actually online right now to a
+    bot's current position -- same one-click 'teleport me' the operator uses
+    on Tieru's panel (7788), reusing the exact queue our own web_admin.quest
+    already polls for item/gold grants (see item_grants.py). The panel
+    cannot ask the database who is online (last_play only updates on save,
+    minutes later), so every recently-active human character gets a queued
+    WARP and whichever one is truly in the game answers first; the rest are
+    withdrawn immediately so nobody is moved later for a click made now."""
+    data = request.get_json(silent=True) or {}
+    pid = int(data.get("pid") or 0)
+    if data.get("x") and data.get("y"):
+        # Explicit coordinates -- e.g. a shop's own stall position, which can
+        # outlive the bot going offline (IkarusShop keeps the stall open).
+        target_x, target_y = int(data["x"]), int(data["y"])
+    else:
+        live = live_statuses().get(pid)
+        if not live:
+            return {"ok": False, "error": "bot_offline"}
+        target_x, target_y = int(live["x"]), int(live["y"])
+    names = [r["name"] for r in rows(
+        "SELECT name FROM player.player WHERE NOT (" + BOT_IS_BARE + ")"
+        " AND last_play >= NOW() - INTERVAL 7 DAY ORDER BY last_play DESC LIMIT 8")]
+    if not names:
+        return {"ok": False, "error": "no_human_player"}
+    for name in names:
+        rows("INSERT INTO player.web_admin_queue (player_name,cmd,arg1,arg2) VALUES (%s,'WARP',%s,%s)",
+             (name, str(target_x), str(target_y)))
+    ids = {r["id"]: r["player_name"] for r in rows(
+        "SELECT id, player_name FROM player.web_admin_queue WHERE cmd='WARP' AND status='pending'"
+        " AND arg1=%s AND arg2=%s AND player_name IN (" + ",".join(["%s"] * len(names)) + ")",
+        [str(target_x), str(target_y)] + names)}
+    moved, status = None, "timeout"
+    deadline = time.time() + 6.0
+    while time.time() < deadline and moved is None:
+        time.sleep(0.6)
+        for r in rows("SELECT id, player_name, status FROM player.web_admin_queue WHERE id IN (" +
+                       ",".join(["%s"] * len(ids)) + ")", list(ids.keys())):
+            if r["status"] not in ("pending", None):
+                moved, status = r["player_name"], r["status"]
+                break
+    rows("DELETE FROM player.web_admin_queue WHERE status='pending' AND id IN (" +
+         ",".join(["%s"] * len(ids)) + ")", list(ids.keys()))
+    if moved is None:
+        return {"ok": False, "error": "player_offline", "tried": names}
+    return {"ok": status == "done", "status": status, "name": moved, "x": target_x, "y": target_y}
+
+
 @app.route("/player/<int:pid>")
 @login_required
 def player(pid):
-    character = one("SELECT p.id,p.account_id,p.name,p.level,p.job,p.exp,p.gold,p.hp,p.mp,p.x,p.y,p.horse_level,p.alignment,p.st,p.ht,p.dx,p.iq,p.stat_point,p.skill_point,p.skill_group,p.skill_level,p.map_index,p.playtime,"
+    character = one("SELECT p.id,p.account_id,p.name,p.level,p.job,p.exp,p.gold,p.hp,p.mp,p.x,p.y,p.horse_level,p.alignment,p.st,p.ht,p.dx,p.iq,p.stat_point,p.skill_point,p.skill_group,p.skill_level,p.map_index,p.playtime,p.last_play,"
       "a.cash,a.silver_expire,a.gold_expire,a.safebox_expire,a.autoloot_expire,a.fish_mind_expire,a.marriage_fast_expire,a.money_drop_rate_expire,a.shop_expire,a.premium_expire,"
       + EMPIRE_EXPR + " AS empire FROM player.player p LEFT JOIN account.account a ON a.id=p.account_id LEFT JOIN player.player_index pi ON pi.id=p.account_id WHERE p.id=%s", (pid,))
     if not character:
@@ -1656,6 +1927,18 @@ def player(pid):
         # active grant, but not directly comparable to `now` either.
         if isinstance(character.get(column), datetime) and character[column] > now
     ]
+    character["playtime_hours"] = int(character.get("playtime") or 0) // 60
+    character["playtime_minutes"] = int(character.get("playtime") or 0) % 60
+    marriage = one("""SELECT p2.name AS partner_name FROM player.marriage m
+      JOIN player.player p2 ON p2.id = IF(m.pid1=%s, m.pid2, m.pid1)
+      WHERE (m.pid1=%s OR m.pid2=%s) AND m.is_married=1""", (pid, pid, pid))
+    character["marriage_partner"] = marriage.get("partner_name") if marriage else None
+    guild = one("""SELECT g.name AS guild_name, COALESCE(gg.name, '') AS grade_name FROM player.guild_member gm
+      JOIN player.guild g ON g.id=gm.guild_id
+      LEFT JOIN player.guild_grade gg ON gg.guild_id=gm.guild_id AND gg.grade=gm.grade
+      WHERE gm.pid=%s""", (pid,))
+    character["guild_name"] = guild.get("guild_name") if guild else None
+    character["guild_grade"] = game_text(guild.get("grade_name")) if guild else None
     character["max_hp"] = max(int(character.get("max_hp") or 0), int(character.get("hp") or 0), 1)
     # The live Playerbots feed exposes exact max HP.  The original server
     # schema does not persist max MP, so an offline character is shown as a
@@ -1663,7 +1946,9 @@ def player(pid):
     character["max_mp"] = max(int(character.get("max_mp") or 0), int(character.get("mp") or 0), 1)
     character["hp_percent"] = min(100, round(int(character.get("hp") or 0) * 100 / character["max_hp"], 1))
     character["mp_percent"] = min(100, round(int(character.get("mp") or 0) * 100 / character["max_mp"], 1))
-    character["skills"] = parse_skills(character.pop("skill_level", b""), character.get("job"), character.get("skill_group"))
+    skill_raw = character.pop("skill_level", b"")
+    character["skills"] = parse_skills(skill_raw, character.get("job"), character.get("skill_group"))
+    character["passive_skills"] = parse_passive_skills(skill_raw)
     items = rows("""
       SELECT i.id, i.vnum, i.count, i.window, i.pos, i.socket0,i.socket1,i.socket2,
       i.attrtype0,i.attrvalue0,i.attrtype1,i.attrvalue1,i.attrtype2,i.attrvalue2,i.attrtype3,i.attrvalue3,i.attrtype4,i.attrvalue4,i.attrtype5,i.attrvalue5,i.attrtype6,i.attrvalue6,
@@ -1709,13 +1994,11 @@ def player(pid):
             item["stones"] = []
         else:
             item["stones"] = [stone_defs[vnum] for vnum in (int(item.get(f"socket{i}") or 0) for i in range(3)) if vnum in stone_defs]
-    logs = rows("SELECT time,type,how,hint,what FROM log.log WHERE who=%s ORDER BY time DESC LIMIT 60", (pid,))
-    for log in logs:
-        for field in ("type", "how", "hint", "what"):
-            log[field] = game_text(log.get(field))
+    gear_history = bot_gear_history(pid)
+    offline_shop = bot_offline_shop(pid)
     character_stats = character_stat_summary(pid)
     # Client uiinventory.py: page I begins at slot 0 and page II at slot 45.
-    return render_template("player.html", character=character, equipment=equipment, inventory=inventory, safebox=safebox, has_inventory_page_two=any(int(item["pos"] or 0) >= 45 for item in inventory), has_safebox=bool(safebox), logs=logs, character_stats=character_stats)
+    return render_template("player.html", character=character, equipment=equipment, inventory=inventory, safebox=safebox, has_inventory_page_two=any(int(item["pos"] or 0) >= 45 for item in inventory), has_safebox=bool(safebox), gear_history=gear_history, offline_shop=offline_shop, character_stats=character_stats)
 
 
 # VIP and "Dragon Coins" both turned out to be real, already-working engine
@@ -2407,7 +2690,7 @@ def rankings():
         # dla kazdego bota - ranking miał wiec 100 pozycji z "Ukonczone do Lv 0"
         # (Tieru, 13 wrzesnia).
         "gold": "Yang", "items": "Przedmioty", "horse": "Koń", "biologist": "Biolog",
-        "shops": "Otwarte stragany", "skills": "Umiejętności", "plus9": "Przedmiot +9", "playtime": "Czas gry", "bosses": "Bossy",
+        "shops": "Otwarte stragany", "skills": "Umiejętności", "plus9": "Przedmiot +9", "playtime": "Czas gry", "bosses": "Bossy", "refine": "Pomyślne ulepszenia", "refine_rate": "Skuteczność ulepszeń",
     }
     kind = request.args.get("type", "level")
     if kind not in kinds:
@@ -2480,7 +2763,7 @@ def manage():
     current_settings = settings()
     updater = update_status()
     updater["protected"] = current_settings.get("auth_enabled") == "1" and bool(session.get("seban_admin"))
-    return render_template("manage.html", rates=read_rates(), ai_weights=read_ai_weights(), ai_weight_keys=AI_WEIGHT_KEYS, restart=restart_progress(), settings=current_settings, map_counts=map_counts, bot_count=len(live_bots()), map_respawn_options=MAP_RESPAWN_OPTIONS, map_stone_respawn_ids=MAP_STONE_RESPAWN_IDS, map_respawn_status=read_map_regen_status(), server_settings=server_settings_status(), updater=updater, playerbots_release=playerbots_release_status(), update_csrf=update_csrf_token(), bot_count_wanted=read_bot_count() if SEBAN_GAME_INTEGRATION else 0, student_chest_disabled=read_student_chest_disabled() if SEBAN_GAME_INTEGRATION else False, seban_integration=SEBAN_GAME_INTEGRATION)
+    return render_template("manage.html", rates=read_rates(), ai_weights=read_ai_weights(), ai_weight_keys=AI_WEIGHT_KEYS, restart=restart_progress(), settings=current_settings, map_counts=map_counts, bot_count=len(live_bots()), map_respawn_options=MAP_RESPAWN_OPTIONS, map_stone_respawn_ids=MAP_STONE_RESPAWN_IDS, map_respawn_status=read_map_regen_status(), server_settings=server_settings_status(), updater=updater, playerbots_release=playerbots_release_status(), update_csrf=update_csrf_token(), bot_count_wanted=read_bot_count() if CUSTOM_PATCHES_ENABLED else 0, student_chest_disabled=read_student_chest_disabled() if CUSTOM_PATCHES_ENABLED else False, custom_patches_enabled=CUSTOM_PATCHES_ENABLED)
 
 
 @app.post("/manage/update")
@@ -2567,7 +2850,7 @@ def manage_restart_config():
                             raise ValueError(f"{name}: respawn musi mieścić się w zakresie 1–3600 sekund.")
                         changes[key] = seconds
         queue_server_settings(action, values, changes)
-        if action == "apply" and bot_count is not None and SEBAN_GAME_INTEGRATION:
+        if action == "apply" and bot_count is not None and CUSTOM_PATCHES_ENABLED:
             queue_botcount_change(bot_count)
     except ValueError as exc:
         flash(str(exc) if "invalid literal" not in str(exc) else "Wpisz całkowite wartości liczbowe.", "error")
@@ -2586,7 +2869,7 @@ def manage_restart_config():
 @app.post("/manage/student-chest")
 @login_required
 def manage_student_chest():
-    if not SEBAN_GAME_INTEGRATION:
+    if not CUSTOM_PATCHES_ENABLED:
         flash("Przełącznik skrzyni startowej wymaga skryptów gry z integracji Sebana, których ten serwer nie ma.", "error")
         return redirect(url_for("manage"))
     disabled = "1" in request.form.getlist("disable_student_chest")

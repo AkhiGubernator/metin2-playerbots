@@ -1,4 +1,53 @@
 # Zmiany
+## 2026-09-15 00:11 CEST · 1.48.0
+
+- Naprawiono "Internal Server Error" przez pierwsze ~5 minut po restarcie/aktualizacji: panel sam tworzy potrzebne tabele przy starcie zamiast czekać, aż kolektor je stworzy w swoim własnym cyklu; kolektor też ponawia szybko (10s) zamiast czekać pełne 5 minut, gdy pierwsza próba się nie uda (np. baza jeszcze się budzi). Zgłoszone przez graczy (sizowski, 23:16).
+- `/manage`: docelowa liczba botów, respawn na mapach i wyłączanie skrzyni startowej — te trzy kontrolki wymagają naszych własnych skryptów questów, których świeży/publiczny install nie ma. Ukryte domyślnie, włączone na tym VPS-ie osobną flagą.
+- Poprawiono błędne granice map Las, Czerwony Las i Wieża Demonów (błąd we wszystkich trzech współrzędnych bazowych i/lub rozmiarach) — zweryfikowane wprost z plików `Setting.txt` silnika.
+- Zaktualizowano rdzeń Playerbots do wydania Tieru 2.0.48; przełączniki bez skrzyni ucznia i bez szkatułek blasku księżyca przetrwały. Liczba botów podniesiona do 1050 (+150).
+
+## 2026-09-14 23:25 CEST · 1.47.0
+
+- `/player/`: logi na żywo zaczynają się teraz same przy otwarciu strony (bez klikania), zbierają linie zamiast je zamieniać (nie "znikają" między odświeżeniami przy zatłoczonym logu) i kolorują wpisy jak w panelu Tieru.
+- `/player/`: przycisk "Teleportuj moją postać do sklepu" przy Sklepie offline — przenosi na dokładne współrzędne straganu, nawet jeśli bot akurat nie odpowiada na status live.
+
+## 2026-09-14 23:16 CEST · 1.46.0
+
+- Naprawiono ranking "Skuteczność ulepszeń": silnik loguje porażkę jako `REMOVE (REFINE FAIL)`, a nie `REFINE FAIL` (który ma zero wpisów w bazie) — stąd wszyscy pokazywali 100%. Teraz zgadza się z wartością widoczną na `/player/`.
+- `/player/`: nowa sekcja "Dziennik zdarzeń bota (logi na żywo)" — te same logi rdzenia gry co w panelu Tieru, z przyciskiem odświeżania na żądanie (co 4s) i kopiowania do schowka.
+
+## 2026-09-14 23:05 CEST · 1.45.0
+
+- Karuzela rankingów na dashboardzie sama się teraz przewija co 8s, z animacją wjazdu slajdu; kliknięcie strzałki/punktu resetuje timer.
+- Puste rankingi (np. "Bossy" — na tym serwerze jeszcze nikt nie zabił bossa) pokazują teraz w karuzeli "Brak danych", zamiast całkowicie niewidocznego, pustego slajdu.
+- Dodano ranking "Skuteczność ulepszeń" (% udanych ulepszeń, minimum 20 prób żeby jednorazowy szczęśliwy strzał nie lądował na #1) — w `/rankings/` i w karuzeli dashboardu.
+- Naprawiono wiersze w `/rankings/`, które "rozjeżdżały się" wysokością, gdy niektóre boty nie mają danego przedmiotu (brak ikonki = niższy wiersz).
+
+## 2026-09-14 22:42 CEST · 1.44.1
+
+- Zakładki stron magazynu (Strona I/II/III) i obramówka siatki magazynu mają teraz kolor aktywnego motywu, zamiast sztywnego niebieskiego.
+
+## 2026-09-14 22:26 CEST · 1.44.0
+
+- Tooltipy ekwipunku pokazywały złe wartości bazowe: obrona/atak nie uwzględniały bonusu z ulepszenia, więc np. Różowa Szata+9 pokazywała 29 obrony zamiast rzeczywistych 83. Naprawione dla broni i zbroi (ciało, głowa, tarcza, buty).
+- Wiele etykiet bonusów na przedmiotach było przesuniętych o jeden numer w tabeli tłumaczeń (np. "Silny przeciw mistykom" zamiast "Silny przeciw nieumarłym", "Odporność na dzwony" zamiast "na wachlarze") — cała tabela zweryfikowana krzyżowo z panelem Tieru i poprawiona. Znany, niepoprawiony wyjątek: jeden rzadki bonus (odbicie strzał) nadal pokazuje się jako "Odporność na sury" — ten sam brak jest też w źródle Tieru, wymaga dalszego śledztwa.
+
+## 2026-09-14 22:04 CEST · 1.43.0
+
+- `/player/`: magazyn ma teraz strony (I/II/III) jak w grze i uwzględnia rozmiar przedmiotu (2-3 sloty wysokości) — przedmioty nie nakładają się już na siebie.
+- `/player/`: nagłówek postaci pokazuje teraz czas gry, ostatnie logowanie, Smocze Monety, małżeństwo i gildię jako osobne znaczniki; usunięto zbędną sekcję "Smocze Monety i VIP" (te wartości są teraz w nagłówku).
+- `/player/`: naprawiono ikonki umiejętności — panel próbował je ładować z `127.0.0.1:7788`, adresu, który w przeglądarce operatora wskazuje na jego własny komputer, nie na serwer. Ikony są teraz hostowane lokalnie w naszym panelu.
+- `/player/`: umiejętności wyświetlają się teraz jak przedmioty w ekwipunku — ranga nałożona na ikonę, pełna nazwa w tooltipie po najechaniu, bez osobnego tekstu obok. Dodano też listę umiejętności pasywnych bez ikon (Górnictwo, Kowalstwo, Polimorfia, Dowodzenie, Combo, języki, jazda konna).
+
+## 2026-09-14 20:09 CEST · 1.42.0
+
+- Zaktualizowano rdzeń Playerbots do wydania Tieru 2.0.46; przełączniki bez skrzyni ucznia i bez szkatułek blasku księżyca przetrwały bez ingerencji.
+- Dashboard i `/economy/`: konta testowe instalatora (Admin, AdminNinja, AdminSura, AdminSzaman — 2 mld sztucznego yang) nie liczą się już do "yang w obiegu".
+- Dashboard: liczba w segmencie "Boty na mapach" nie chowa się już za paskiem przewijania; segment rośnie i wypełnia cały wolny sidebar.
+- `/player/`: nowa sekcja "Sklep offline" — co bot aktualnie sprzedaje, za ile i gdzie stoi stragan (nazwa, mapa, współrzędne), dociągane bezpośrednio z tabel IkarusShop.
+- `/player/`: przycisk "Teleportuj moją postać w grze (1 klik)" — jak w panelu Tieru, przez tę samą kolejkę questa co nadania przedmiotów.
+- `/player/`: "Historia ekwipunku" zamiast surowego logu — czytelne zdarzenia (Sprzedane handlarzowi, Założone, Ulepszenie udane, Spalone przy ulepszaniu itd.) z nazwą przedmiotu, jak w panelu Tieru.
+
 ## 2026-09-14 18:02 CEST · 1.41.0
 
 - Sklepy offline: tooltip Księgi Umiejętności w profilu bota nie pokazuje już losowych bonusów innego przedmiotu.

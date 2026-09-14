@@ -981,11 +981,29 @@ namespace
 		LPCHARACTER leader = party->GetLeaderCharacter();
 		if (!leader || leader->IsDead() || leader == ch)
 			return false;
-		// A leader on another map is a leader this bot cannot walk to: the map
-		// change is somebody else's decision and a bot has no client to follow
-		// a warp with.
+		// A leader on another map is followed there. A warp takes a player by
+		// telling the client to reconnect, and a bot has no client, so the move
+		// is the one the AI makes for every map change - TransitionPlayerBotMap,
+		// onto the leader's own spot - once the leader stands on the new map (a
+		// character still warping is on the old one). What stays out of reach:
+		// a map this core does not host, a dungeon instance (no navigation grid
+		// and no way out a bot knows, and the Demon Tower is one), and a spider
+		// map whose desert crossing is already under way, which the transition
+		// would otherwise restart from the desert's doorstep on every retry.
 		if (leader->GetMapIndex() != ch->GetMapIndex())
-			return false;
+		{
+			const long leaderMap = leader->GetMapIndex();
+			if (leaderMap >= PLAYERBOT_INSTANCE_MAP_INDEX_MIN || leader->IsWarping() ||
+					!leader->GetSectree() || !IsPlayerBotMapHostedHere(leaderMap) ||
+					state.lDesertCrossingTo == leaderMap)
+				return false;
+			s_mapPlayerBotFollowNext[ch->GetPlayerID()] = dwNow + PLAYERBOT_PARTY_WARP_FOLLOW_RETRY;
+			if (!TransitionPlayerBotMap(ch, state, leaderMap, leader->GetX(), leader->GetY(),
+					dwNow, "follow_leader"))
+				return false;
+			SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
+			return true;
+		}
 		// Fighting something is not standing about.
 		if (ch->GetVictim() && !ch->GetVictim()->IsDead())
 			return false;
@@ -999,6 +1017,93 @@ namespace
 			return false;
 		SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
 		return true;
+	}
+
+	// A Shaman in a player's party keeps the player's buffs up, as a Shaman in
+	// a party of people would. CHARACTER::UseSkill hands a buff that is not
+	// SELFONLY to ComputeSkill on the character it is aimed at, and the affect
+	// it adds carries the skill's own vnum, so this is the self-buff pass
+	// pointed at somebody else: the build's own buff list, what the player has
+	// not already got, one cast per tick, and before the bot's own buffs -
+	// whose copy of the skill then waits out the cooldown, which is the price a
+	// player's Shaman pays as well. Cure is a heal and goes to a player under
+	// PLAYERBOT_PARTY_LEADER_CURE_HP_PERCENT. A buff reaches 800 to 1000 and
+	// the follow pass leaves a bot anywhere inside
+	// PLAYERBOT_PARTY_FOLLOW_DISTANCE, so a bot out of reach and not fighting
+	// walks up first, and one on a transport horse climbs down first, because
+	// the engine refuses every other skill from that saddle. "Nigdy zaden
+	// szaman nie uzyl swoich buffow na mnie gdy bylismy w PT" (sizowski,
+	// 14 September).
+	bool ManagePlayerBotBuffHumanLeader(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotLeaderBuffNext;
+		if (!ch || ch->IsDead() || ch->GetJob() != JOB_SHAMAN || ch->GetSkillGroup() == 0)
+			return false;
+		LPPARTY party = ch->GetParty();
+		if (!party || !IsPlayerBotHumanLedParty(party))
+			return false;
+		DWORD& next = s_mapPlayerBotLeaderBuffNext[ch->GetPlayerID()];
+		if (dwNow < next)
+			return false;
+		next = dwNow + PLAYERBOT_PARTY_LEADER_BUFF_INTERVAL;
+		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
+				state.bRecoveringAfterDeath || state.bTacticalRetreat ||
+				state.bMultiPullActive || state.bFishingSession || ch->GetMyShop())
+			return false;
+		LPCHARACTER leader = party->GetLeaderCharacter();
+		if (!leader || leader == ch || leader->IsDead() || leader->GetMapIndex() != ch->GetMapIndex())
+			return false;
+		const bool fighting = ch->GetVictim() && !ch->GetVictim()->IsDead();
+		const bool hunting = fighting || state.dwTargetVID != 0 ||
+				(state.dwLastCombatActionTime != 0 &&
+				 dwNow - state.dwLastCombatActionTime < PLAYERBOT_BUFF_COMBAT_WINDOW);
+		const int dist = DISTANCE_APPROX(ch->GetX() - leader->GetX(), ch->GetY() - leader->GetY());
+		const TJobSkillBuild build = GetPlayerBotSkillBuild(ch->GetJob(), ch->GetSkillGroup(), ch->GetPlayerID());
+		for (size_t i = 0; i < sizeof(build.dwBuffSkills) / sizeof(build.dwBuffSkills[0]); ++i)
+		{
+			const DWORD vnum = build.dwBuffSkills[i];
+			if (vnum == 0 || ch->GetSkillLevel(vnum) == 0)
+				continue;
+			if (!hunting && !IsPlayerBotOutOfCombatBuff(vnum))
+				continue;
+			if (vnum == 109) // Cure / Heal
+			{
+				if (leader->GetMaxHP() <= 0 ||
+						(long long)leader->GetHP() * 100 / leader->GetMaxHP() > PLAYERBOT_PARTY_LEADER_CURE_HP_PERCENT)
+					continue;
+			}
+			else if (IsPlayerBotBuffAffectOn(leader, vnum))
+				continue;
+			CSkillProto* proto = CSkillManager::instance().Get(vnum);
+			if (!proto || IS_SET(proto->dwFlag, SKILL_FLAG_SELFONLY))
+				continue;
+			if (proto->dwTargetRange != 0 && dist > (int)proto->dwTargetRange)
+			{
+				if (fighting)
+					continue;
+				if (!MovePlayerBot(ch, leader->GetX(), leader->GetY(), dwNow, 8, true, false, false, false))
+					continue;
+				next = dwNow + PLAYERBOT_PARTY_FOLLOW_INTERVAL;
+				SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
+				return true;
+			}
+			if (ch->IsRiding() && !CanPlayerBotEverFightOnHorse(ch))
+			{
+				SetPlayerBotRidingForTravel(ch, state, false, dwNow, "leader_buff");
+				next = dwNow + PLAYERBOT_BUFF_RECHECK_FAST;
+				return true;
+			}
+			if (!ch->UseSkill(vnum, leader))
+				continue;
+			SendPlayerBotSkillPacket(ch, vnum);
+			state.dwLastBotSkillTime = dwNow;
+			state.dwNextAttackTime = dwNow + PLAYERBOT_SKILL_ANIMATION_LOCK;
+			next = dwNow + PLAYERBOT_BUFF_RECHECK_FAST;
+			sys_log(0, "PLAYERBOT_AI: buffed party leader pid=%u name=%s leader=%s vnum=%u",
+					ch->GetPlayerID(), ch->GetName(), leader->GetName(), vnum);
+			return true;
+		}
+		return false;
 	}
 
 	void ManagePlayerBotParty(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
@@ -3095,6 +3200,9 @@ void CPlayerBotManager::Update()
 
 		// A buff is a complete action for this AI update.  Continuing into the
 		// attack code used to emit a second skill packet in the very same tick.
+		// A player's Shaman buffs the player before itself.
+		if (ManagePlayerBotBuffHumanLeader(ch, state, dwNow))
+			continue;
 		if (ManagePlayerBotCombatBuffs(ch, state, dwNow))
 			continue;
 		if (HandlePlayerBotMultiPull(ch, state, dwNow))

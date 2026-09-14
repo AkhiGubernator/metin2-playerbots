@@ -830,6 +830,17 @@ namespace
 	// a bot that is always a screen behind.
 	const int PLAYERBOT_PARTY_FOLLOW_DISTANCE = 1500;
 	const DWORD PLAYERBOT_PARTY_FOLLOW_INTERVAL = 2000;
+	// A bot that could not follow its player onto another map tries again this
+	// much later; TransitionPlayerBotMap already says why, once a minute.
+	const DWORD PLAYERBOT_PARTY_WARP_FOLLOW_RETRY = 10000;
+	// Map indexes from here up are dungeon instances - the map's own index
+	// times ten thousand plus a serial, a copy made for one party - with no
+	// navigation grid a bot could plan on and no way out the AI knows.
+	const long PLAYERBOT_INSTANCE_MAP_INDEX_MIN = 10000;
+	// How often a Shaman in a player's party looks at the player's buffs, and
+	// the health under which it heals the player instead.
+	const DWORD PLAYERBOT_PARTY_LEADER_BUFF_INTERVAL = 3000;
+	const int PLAYERBOT_PARTY_LEADER_CURE_HP_PERCENT = 60;
 	// A duel: three seconds between the challenge and the first blow, because
 	// that is what the operator asked for and because agreeing on the same tick
 	// reads like a script rather than an opponent.

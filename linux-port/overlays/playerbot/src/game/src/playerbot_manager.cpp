@@ -264,9 +264,29 @@ namespace
 		if (!party)
 			return false;
 		LPCHARACTER leader = party->GetLeaderCharacter();
-		if (!leader)
+		if (leader)
+			return !leader->GetDesc() || !leader->GetDesc()->IsBot();
+		// No character is not no leader. A player's warp is a logout and a
+		// login, and for those seconds the party holds only the pid - long
+		// enough for the party pass to take a player's party for a bot party
+		// and put the cohort rule to it. The engine's own party lines have a
+		// bot in sizowski's party at 13:42:40, his character logging in again
+		// at 13:42:54 and the bot gone at 13:42:56 (14 September). Every bot
+		// is in the registry, so a leader pid it does not know is a person.
+		const DWORD leaderPid = party->GetLeaderPID();
+		return leaderPid != 0 && !CPlayerBotManager::instance().IsRegisteredBotPID(leaderPid);
+	}
+
+	// On the leader's map and inside the distance the follow pass leaves a bot
+	// at: where a bot keeping a player company stands on purpose.
+	bool IsPlayerBotBesideHumanLeader(LPCHARACTER ch)
+	{
+		if (!ch || !IsPlayerBotHumanLedParty(ch->GetParty()))
 			return false;
-		return !leader->GetDesc() || !leader->GetDesc()->IsBot();
+		LPCHARACTER leader = ch->GetParty()->GetLeaderCharacter();
+		return leader && leader != ch && leader->GetMapIndex() == ch->GetMapIndex() &&
+				DISTANCE_APPROX(ch->GetX() - leader->GetX(), ch->GetY() - leader->GetY()) <=
+						PLAYERBOT_PARTY_FOLLOW_DISTANCE;
 	}
 
 	// Answering a player's invitation.
@@ -1637,10 +1657,15 @@ namespace
 		// An angler stands still on purpose: a single cast can wait 40 s for the
 		// bite alone, so stillness at the bank is the activity, not a symptom.
 		// A bot resting in town stands still on purpose, exactly like an angler
-		// waiting for a bite - stillness is the activity, not a symptom.
+		// waiting for a bite - stillness is the activity, not a symptom. So does
+		// a bot beside the player whose party it is: the follow pass only moves
+		// it past PLAYERBOT_PARTY_FOLLOW_DISTANCE, and a reset after ninety
+		// seconds next to an idle player took it out of the party below -
+		// "dodaje boty do PT, a po chwili z niego wychodza" (sizowski, 14
+		// September).
 		if (moved || foughtRecently || castRecently || state.bFishingSession ||
 				IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow) ||
-				state.dwTownLingerUntil != 0)
+				state.dwTownLingerUntil != 0 || IsPlayerBotBesideHumanLeader(ch))
 		{
 			state.dwLastMeaningfulActivityTime = dwNow;
 			state.lLastX = ch->GetX();
@@ -1693,7 +1718,8 @@ namespace
 		// select the same idle party state again.  Break only a party which has
 		// already tripped the 90-second inactivity watchdog, then keep this bot
 		// solo briefly so it can acquire an independent destination/target.
-		if (ch->GetParty())
+		// A player's party is not one of those: the player ends it.
+		if (ch->GetParty() && !IsPlayerBotHumanLedParty(ch->GetParty()))
 		{
 			ch->GetParty()->Quit(ch->GetPlayerID());
 			state.dwPartyExpireTime = 0;

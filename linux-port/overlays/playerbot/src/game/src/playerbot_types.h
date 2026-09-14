@@ -2860,10 +2860,18 @@ namespace
 	// number: two copies of it are how a bounce would come back.
 	const DWORD PLAYERBOT_MONKEY_CHAMBER_DWELL = playerbot_monkey::kChamberDwellMs;
 	// How long the walk to the first room's chosen door may take before the
-	// bot gives it up and hunts where it stands. A chamber is a few thousand
-	// units across; a walk that has not arrived in this long is not arriving,
-	// and a bot left walking would be a bot out of the fight for nothing.
-	const DWORD PLAYERBOT_MONKEY_SPREAD_WALK_MS = 40000;
+	// bot gives it up and hunts where it stands - the walking alone, with the
+	// time a fight or a retreat held it up left out. The entrance room is not a
+	// few thousand units across: one door of the hard dungeon stands seventeen
+	// and a half thousand from the arrival point, some twenty-three seconds in
+	// the saddle, and a clock that ran through the fights on the way gave up
+	// four walks in six that were going the right way. A walk that has had a
+	// minute of walking and not arrived is not arriving.
+	const DWORD PLAYERBOT_MONKEY_SPREAD_WALK_MS = 60000;
+	// And the bound on the intent itself, in wall time, for a bot the corridor's
+	// monkeys never let walk: it fights where it stands either way, and after
+	// this long it hunts there on its own account.
+	const DWORD PLAYERBOT_MONKEY_SPREAD_MAX_MS = 180000;
 	// Every kingdom has an easy dungeon of its own and they are three separate
 	// maps: metin2_map_monkey_dungeon_11 (5), _12 (25) and _13 (45), at three
 	// base positions 76800 apart. Only Chunjo's was ever listed here, so a

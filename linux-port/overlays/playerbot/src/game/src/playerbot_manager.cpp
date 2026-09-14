@@ -510,17 +510,30 @@ namespace
 	// So a bot in its first room of a visit rolls, by pid and weighted by how
 	// many spawns each room holds, whether to stay or which door to take, and
 	// walks there before it hunts. It yields to anything actually hitting it -
-	// the walk is no reason to be killed - and resumes when that is over. One
-	// door only: a second would meet the engine's door block and the AI's own
-	// dwell, which are what keep a bot from being bounced back, and past the
-	// first room the ordinary rotation carries it on. A bot the engine has just
-	// moved through a door is not sent to another: it would only stand there.
+	// the walk is no reason to be killed - and to its own retreat, and resumes
+	// when that is over. One door only: a second would meet the engine's door
+	// block and the AI's own dwell, which are what keep a bot from being bounced
+	// back, and past the first room the ordinary rotation carries it on. A bot
+	// the engine has just moved through a door is not sent to another: it would
+	// only stand there.
+	//
+	// The walk has a budget, and the budget is the walking. The entrance room is
+	// a long corridor of aggressive monkeys: the first version gave the walk
+	// forty seconds of wall time, and of the first six walks two crossed - both
+	// at thirty-eight seconds - while the four that gave up had been going the
+	// right way and stopping for whatever caught them, one of them fighting for
+	// all forty. The time a fight holds the walk up does not count against it,
+	// and a wall-clock bound far above that ends an intent the fights never let
+	// go of.
 	struct TPlayerBotMonkeySpread
 	{
 		long lMap;
 		int iDoor;
 		BYTE bFromChamber;
-		DWORD dwDeadline;
+		DWORD dwAssigned;
+		// Held-up time already closed, and when the hold now running began.
+		DWORD dwHeld;
+		DWORD dwHeldSince;
 	};
 
 	bool ManagePlayerBotMonkeySpread(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
@@ -557,7 +570,9 @@ namespace
 			spread.lMap = mapIndex;
 			spread.iDoor = -1;
 			spread.bFromChamber = state.bMonkeyChamber;
-			spread.dwDeadline = dwNow + PLAYERBOT_MONKEY_SPREAD_WALK_MS;
+			spread.dwAssigned = dwNow;
+			spread.dwHeld = 0;
+			spread.dwHeldSince = 0;
 			int exitChambers[8];
 			int exitDoors[8];
 			const int exits = playerbot_monkey::IsGotoCrossingBlocked(pid, dwNow)
@@ -581,30 +596,50 @@ namespace
 				}
 				roll -= weight;
 			}
+			long doorX = 0, doorY = 0;
+			const int distance = spread.iDoor >= 0 &&
+					GetPlayerBotMonkeyDoorPosition(mapIndex, spread.iDoor, doorX, doorY)
+					? DISTANCE_APPROX(ch->GetX() - doorX, ch->GetY() - doorY) : -1;
 			it = s_mapSpread.insert(std::make_pair(pid, spread)).first;
-			sys_log(0, "PLAYERBOT_MONKEY: spread pid=%u name=%s map=%ld from=%d to=%d door=%d exits=%d",
-					pid, ch->GetName(), mapIndex, chamber, toChamber, spread.iDoor, exits);
+			sys_log(0, "PLAYERBOT_MONKEY: spread pid=%u name=%s map=%ld from=%d to=%d door=%d exits=%d dist=%d",
+					pid, ch->GetName(), mapIndex, chamber, toChamber, spread.iDoor, exits, distance);
 		}
 
 		TPlayerBotMonkeySpread& spread = it->second;
 		if (spread.iDoor < 0)
 			return false;
+		const DWORD elapsed = dwNow - spread.dwAssigned;
+		const DWORD held = spread.dwHeld +
+				(spread.dwHeldSince != 0 ? dwNow - spread.dwHeldSince : 0);
+		const DWORD walked = elapsed > held ? elapsed - held : 0;
 		if (state.bMonkeyChamber != spread.bFromChamber)
 		{
-			sys_log(0, "PLAYERBOT_MONKEY: spread crossed pid=%u name=%s map=%ld from=%d to=%d",
-					pid, ch->GetName(), mapIndex, (int)spread.bFromChamber, (int)state.bMonkeyChamber);
+			sys_log(0, "PLAYERBOT_MONKEY: spread crossed pid=%u name=%s map=%ld from=%d to=%d walked=%u elapsed=%u",
+					pid, ch->GetName(), mapIndex, (int)spread.bFromChamber, (int)state.bMonkeyChamber,
+					(unsigned int)walked, (unsigned int)elapsed);
 			spread.iDoor = -1;
 			return false;
 		}
-		if (dwNow > spread.dwDeadline)
+		if (walked >= PLAYERBOT_MONKEY_SPREAD_WALK_MS || elapsed >= PLAYERBOT_MONKEY_SPREAD_MAX_MS)
 		{
-			sys_log(0, "PLAYERBOT_MONKEY: spread gave up pid=%u name=%s map=%ld door=%d",
-					pid, ch->GetName(), mapIndex, spread.iDoor);
+			sys_log(0, "PLAYERBOT_MONKEY: spread gave up pid=%u name=%s map=%ld door=%d walked=%u elapsed=%u nav_out=%u",
+					pid, ch->GetName(), mapIndex, spread.iDoor,
+					(unsigned int)walked, (unsigned int)elapsed, (unsigned int)state.bLastNavOutcome);
 			spread.iDoor = -1;
 			return false;
 		}
-		if (FindPlayerBotEngagedTarget(ch))
+		// A fight or a retreat holds the walk up, and stops its clock.
+		if (state.bTacticalRetreat || FindPlayerBotEngagedTarget(ch))
+		{
+			if (spread.dwHeldSince == 0)
+				spread.dwHeldSince = dwNow;
 			return false;
+		}
+		if (spread.dwHeldSince != 0)
+		{
+			spread.dwHeld += dwNow - spread.dwHeldSince;
+			spread.dwHeldSince = 0;
+		}
 
 		long doorX = 0, doorY = 0;
 		if (!GetPlayerBotMonkeyDoorPosition(mapIndex, spread.iDoor, doorX, doorY))

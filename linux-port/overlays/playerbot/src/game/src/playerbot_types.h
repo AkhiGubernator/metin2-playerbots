@@ -907,7 +907,14 @@ namespace
 	// party is already fighting over, and it never takes a monster somebody
 	// else has claimed.
 	const int PLAYERBOT_LURE_MIN_PACK_DISTANCE = 1100;
-	const int PLAYERBOT_LURE_MAX_PACK_DISTANCE = 3000;
+	// Four thousand, derived rather than guessed. Once the range counter was
+	// split into its two halves the answer was one-sided: two courses on the
+	// Spider Dungeon read too_close=0 too_far=33 and too_close=0 too_far=62, so
+	// every pack the Archer refused was beyond the window, never inside it.
+	// The bound that matters is PLAYERBOT_LURE_MAX_COURSE_RANGE - the Archer
+	// walks out to the pack and drags it back to the anchor - so the window
+	// stays under it with room for the return leg.
+	const int PLAYERBOT_LURE_MAX_PACK_DISTANCE = 4000;
 	const int PLAYERBOT_LURE_ANCHOR_CLEARANCE = 900;
 	const int PLAYERBOT_LURE_GROUP_SEPARATION = 700;
 	// Above this over the Archer's own level a pack is not brought home, it is

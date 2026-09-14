@@ -480,9 +480,17 @@ namespace
 						(forGear ? gear : other).insert(recipe->materials[m].vnum);
 			}
 			for (std::set<DWORD>::const_iterator it = other.begin(); it != other.end(); ++it)
-				if (gear.find(*it) == gear.end())
+			{
+				// ITEM_MATERIAL only. The walk also finds items of other types that
+				// feed nothing but such recipes - 29 of the 47 it found on the first
+				// live run: the eleven ores of the pickaxe, the seventeen fish and the
+				// shrimp of the rod. Those have rules of their own (the ore trade, the
+				// grill) that this one must not overrule.
+				const TItemTable* proto = ITEM_MANAGER::instance().GetTable(*it);
+				if (gear.find(*it) == gear.end() && proto && proto->bType == ITEM_MATERIAL)
 					s_nonGear.insert(*it);
-			sys_log(0, "PLAYERBOT_ECONOMY: %u materials feed no weapon or armour recipe",
+			}
+			sys_log(0, "PLAYERBOT_ECONOMY: %u ITEM_MATERIAL items feed no weapon or armour recipe",
 					(unsigned int)s_nonGear.size());
 		}
 		return s_nonGear.find(vnum) != s_nonGear.end();

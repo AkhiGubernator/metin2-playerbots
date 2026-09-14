@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-14T11:38:20Z",
-  "statusMessage": "2.0.42: **klasyczny panel pokazuje Las, Czerwony Las i Wieżę Demonów na mapie na żywo.** Od 2.0.39 boty tam polują, a panel znał tylko nazwy i granice tych map — nie było ich w filtrze „Mapa” i nie miały tła, więc nie dało się ich wybrać. Teraz są w filtrze, a tło każdej jest narysowane z plików terenu, po których chodzą boty. Panel zaawansowany zostaje bez zmian. W tym samym ciągu co 2.0.41: pojedynki botów nie psują już rangi, boty idą w głąb lochów małp, a zwój chroni założony przedmiot. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-14T13:19:59Z",
+  "statusMessage": "2.0.43: **suwak w panelu ustawia, od jakiego plusa boty używają Zwojów Błogosławieństwa i Boga Smoków.** Pojedynek kończy się w chwili śmierci bota i znika z silnika, a bot zsiada ze zwykłego konia do walki. Boty zakładają grupy tylko we własnym królestwie, łączą stosy w magazynie, a zamożne boty nie biegną już po tanie mikstury i stary sprzęt. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.42",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.42/metin2-server-update-2.0.42.zip",
-    "sha256": "F714C488A686607FCCD02985188873D426732D1CAA8F211D0A1909FFBAD2B0F5"
+    "version": "2.0.43",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.43/metin2-server-update-2.0.43.zip",
+    "sha256": "C3DEE7E91A8DF95D2A2B13AA384AFF5A1C77525A76CFE4F0E39CB138770BF269"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

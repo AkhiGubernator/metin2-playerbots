@@ -17,6 +17,125 @@ every version here.
 
 ---
 
+## 2.0.48 — 2026-09-14
+
+Serwer (AI botów, silnik gry, questy, baza logów i panel zaawansowany),
+launcher i klient 2.0.6 z nowym ekranem logowania.
+
+### Nowy klient 2.0.6
+
+Nowy ekran logowania od ĹŌŞƬĒĶ: animowane tło, nowe logo i przycisk
+Discorda. Klient pokazuje też status gry na Discordzie (Discord Rich
+Presence). Launcher zaproponuje aktualizację klienta przy starcie. Paczka
+podmienia w folderze klienta `pack/root`, `pack/locale` i `metin2client.exe`,
+więc przed aktualizacją zamknij grę.
+
+### Mniej taniego sprzętu na straganach
+
+Boty zasypywały sklepy sprzętem +4 i +5 z niskich poziomów (9, 18, 26).
+Na serwerze testowym było tego ponad 2400 linii, a jedna zbroja leżała
+naraz w 348 sklepach. Teraz sprzęt poniżej 30 poziomu trafia na stragan
+dopiero od +6, i najwyżej dwie takie rzeczy w jednym sklepie. Słabszy sprzęt
+z tych poziomów, którego bot już nie potrzebuje, idzie do handlarza.
+
+Sklepy, które już stoją, pozbywają się takich przedmiotów same: przy każdej
+wizycie bot zdejmuje z lady jedną niepasującą rzecz.
+
+### Nazwy sklepów od Iwakury
+
+Boty nazywają sklepy tylko nazwami z listy Iwakury i dobierają je do towaru:
+sklep z zębami orka nazywa się inaczej niż sklep z księgami klątw, a rybny
+ma nazwę rybną. Sklep z przedmiotem +7, +8 lub +9 nosi nazwę tego przedmiotu
+z plusem, najlepszym bonusem, dopiskiem „KD” i „TANIO” albo „OKAZJA”.
+Kamienie duszy dają nazwę najcenniejszego kamienia, a sprzęt +0 do +3 –
+nazwę z kategorii „do spalenia”. Co trzeci sklep dostaje losową nazwę
+neutralną, bez względu na towar.
+
+Znikają dawne przedrostki („Tanio:”, „Okazja:”, „Sprzedam”, „Wyprzedaz:”)
+i napisy „Bron 30:”. Stojące sklepy dostają nową nazwę przy odnowieniu.
+
+Dziewięć nazw z listy gra by odrzuciła: osiem jest dłuższych niż 32 znaki,
+a „Nauka czytania dla opornych” zawiera zakazane słowo („porn” w środku).
+Na razie ich nie ma; wystarczy je skrócić na liście.
+
+### GM gra jak zwykły gracz
+
+Postać GM kupuje w sklepach botów i graczy, otwiera własny sklep bez
+nabijania 800 potworów, a jej poziom widać obok nicku. Nie dostaje już
+wymuszonej ochrony PvP – obowiązują zwykłe zasady, z ochroną niskich
+poziomów. Znaczek GM zostaje.
+
+### Kostiumów nie da się założyć
+
+Kostium założony na postać nie dawał się zdjąć, a postać było widać jako
+samą broń. Teraz gra nie pozwala założyć kostiumu i odpowiada na czacie
+„Kostiumy sa na tym serwerze wylaczone.”. Kostium, który ktoś ma już na
+sobie, zostaje na postaci; żaden przedmiot nie jest usuwany.
+
+### Pierścień Teleportacji działa
+
+Użycie Pierścienia Teleportacji otwiera tę samą listę co Teleporter: w mieście
+mapy wyjazdowe, poza miastem powrót do wiosek. Opłata jak u Teleportera.
+Wcześniej pierścień nic nie robił, bo w paczce nie było questa, który
+obsługuje jego użycie.
+
+### Boty w Twojej grupie zostają przy Tobie
+
+Bot w grupie gracza nie rusza już we własne podróże (Hwang, Sohan, pustynia,
+targ w Joan, wizyta przy własnym sklepie). Wcześniej odlatywał, po sekundzie
+wracał do gracza teleportem i po chwili odlatywał znowu, więc szaman prawie
+nie miał kiedy rzucić wzmocnień.
+
+### Hełmy i zbroje botów
+
+Boty kupowały u handlarza hełmy innej klasy: sura dostawał hełm wojownika,
+nie mógł go założyć i chodził bez hełmu. Na serwerze testowym 120 z 198 botów
+bez hełmu miało w torbie cudzy. Teraz kupują hełm swojej klasy. Bot na
+wysokim poziomie wybiera też zbroję z wyższego progu, zamiast nosić starą
++6 z pierwszego poziomu.
+
+### Karta Wędkarska nie wyrzuca bota z gry
+
+Wędkujący bot zakładał Kartę Wędkarską, przegląd ekwipunku zaraz zamieniał
+ją na lepszy przedmiot do tego samego miejsca (Maskę Sabaha), a wędkowanie
+zakładało kartę z powrotem. Zamiana co sekundę lub dwie uruchamiała w grze
+ochronę przed zbyt szybką zmianą ekwipunku, która wyrzucała bota z gry co dwie
+minuty (19 razy w ciągu 36 minut na serwerze testowym). Teraz karta, o którą
+poprosiło wędkowanie, zostaje na postaci przez 10 minut.
+
+### Kowal nie zdejmuje przedmiotu, którego nie ulepszy
+
+Bot u kowala zdejmował założony przedmiot do ulepszenia, zanim sprawdził,
+czy ma na nie materiały i yang. Kowal odmawiał, bot zakładał przedmiot
+z powrotem, a po trzech sekundach znowu go zdejmował – i tak przez całą
+wizytę. Na serwerze testowym boty zakładały w ten sposób zbroję około 3000
+razy na godzinę. Teraz bot zdejmuje przedmiot tylko wtedy, gdy ma wszystko,
+czego wymaga ulepszenie.
+
+### Panel zaawansowany zaraz po aktualizacji
+
+Kolektor panelu Sebana ponawia połączenie z bazą po kilku sekundach, a nie po
+5 minutach, więc strona główna i strona sklepów nie zwracają już błędu 500
+zaraz po aktualizacji.
+
+### Launcher
+
+Linia z wersją klienta nie jest ucinana, gdy launcher pokazuje informację
+o nowej wersji.
+
+### Ulepszanie u kowala
+
+Wpis bota o ulepszeniu w logach pokazuje, jakich materiałów wymagała
+receptura i ile bot ich miał tuż przed próbą.
+
+### Dziennik podejrzanych zachowań
+
+Tabela `log.hack_log`, do której serwer zapisuje wykryte podejrzane zachowania
+(na przykład zbyt szybką zmianę ekwipunku), nie miała dwóch kolumn: loginu
+i adresu IP. Każdy taki zapis kończył się błędem w syserr, a tabela zostawała
+pusta. Aktualizacja dodaje brakujące kolumny przy starcie serwera i poszerza
+kolumnę z nazwą postaci do 24 znaków. Istniejące dane zostają bez zmian.
+
 ## 2.0.47 — 2026-09-14
 
 Serwer (AI, silnik gry, questy i panel zaawansowany). Nowy cennik Iwakury dla

@@ -361,6 +361,59 @@ namespace
 		return ch && victim && victim->IsPC() && battle_is_attackable(ch, victim);
 	}
 
+	// A duel ends for both of its sides at once, and the engine's half with it.
+	//
+	// CPVP::Win keeps the pair after a fight is decided: the loser may take a
+	// revenge, and until it does the winner's client will not attack it
+	// (PVP_MODE_REVENGE - "nie moge mu oddac", Drip). A bot takes no revenge,
+	// so a player who beat one could neither hit it nor challenge it again
+	// until CPVPManager::Process dropped the pair ten minutes later; and a
+	// player beaten by a bot could take a revenge on a bot that no longer
+	// counted itself in a duel, and so never hit back. Deleting the pair with
+	// the engine's own NONE packet puts both clients back where they stood
+	// before the challenge. When the other side is a bot its memory of the
+	// duel goes too, or it would first be refused its blows for
+	// PLAYERBOT_PVP_REFUSED_GIVE_UP.
+	void EndPlayerBotDuel(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow, const char* szReason)
+	{
+		if (!ch)
+			return;
+		const DWORD pid = ch->GetPlayerID();
+		const DWORD foePid = (DWORD)playerbot_pvp::GetDuelOpponent(pid, dwNow);
+		playerbot_pvp::EndDuel(pid);
+		if (foePid == 0)
+			return;
+		LPCHARACTER foe = CHARACTER_MANAGER::instance().FindByPID(foePid);
+		CPVP key(pid, foePid);
+		CPVP* pair = CPVPManager::instance().Find(key.GetCRC());
+		const bool pairRemoved = pair != NULL;
+		if (pair)
+		{
+			pair->Packet(true);
+			CPVPManager::instance().Delete(pair);
+		}
+		if (foe)
+		{
+			if (ch->GetVictim() == foe)
+				ch->SetVictim(NULL);
+			if (state.dwTargetVID == (DWORD)foe->GetVID())
+				state.dwTargetVID = 0;
+			if ((DWORD)playerbot_pvp::GetDuelOpponent(foePid, dwNow) == pid)
+			{
+				playerbot_pvp::EndDuel(foePid);
+				if (foe->GetVictim() == ch)
+					foe->SetVictim(NULL);
+				TPlayerBotAIStateMap::iterator foeState = s_mapPlayerBotAIStates.find(foePid);
+				if (foeState != s_mapPlayerBotAIStates.end() &&
+						foeState->second.dwTargetVID == (DWORD)ch->GetVID())
+					foeState->second.dwTargetVID = 0;
+			}
+		}
+		sys_log(0, "PLAYERBOT_PVP: duel over pid=%u name=%s foe_pid=%u foe=%s reason=%s level=%u foe_level=%u pair_removed=%d",
+				pid, ch->GetName(), foePid, foe ? foe->GetName() : "-", szReason,
+				(unsigned int)ch->GetLevel(), foe ? (unsigned int)foe->GetLevel() : 0U, pairRemoved ? 1 : 0);
+	}
+
 	bool ExecutePlayerBotAttackSkill(LPCHARACTER ch, LPCHARACTER target, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		// Under a polymorph marble the engine refuses every skill - five

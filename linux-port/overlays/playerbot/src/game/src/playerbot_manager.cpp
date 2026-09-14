@@ -484,6 +484,7 @@ namespace
 		if (playerbot_pvp::GetDuelOpponent(pid, dwNow) == 0)
 		{
 			s_mapPlayerBotDuelRefusedSince.erase(pid);
+			s_mapPlayerBotDuelLogged.erase(pid);
 			return false;
 		}
 		LPCHARACTER foe = FindPlayerBotDuelOpponent(ch, dwNow);
@@ -493,7 +494,9 @@ namespace
 			// over either way, and a duel still remembered is only a potion ban
 			// with nobody to fight. Nothing ended one before this - EndDuel had
 			// no caller, so every duel ran its whole bound.
-			playerbot_pvp::EndDuel(pid);
+			LPCHARACTER fallen = CHARACTER_MANAGER::instance().FindByPID(
+					(DWORD)playerbot_pvp::GetDuelOpponent(pid, dwNow));
+			EndPlayerBotDuel(ch, state, dwNow, fallen && fallen->IsDead() ? "foe_fell" : "foe_gone");
 			s_mapPlayerBotDuelRefusedSince.erase(pid);
 			s_mapPlayerBotDuelLogged.erase(pid);
 			return false;
@@ -503,6 +506,15 @@ namespace
 		// seconds before the other side agrees; past PLAYERBOT_PVP_REFUSED_GIVE_UP
 		// it is a fight already won (CPVP::Win takes the loser's agreement
 		// back), one under PK_PROTECT_LEVEL, or one standing in a safe zone.
+		// A duel is not fought from a transport saddle. CPVPManager::CanAttack
+		// refuses every blow from a horse under grade two, and the tick's own
+		// dismount waits for a target - which a refused duel never sets - so a
+		// bot that agreed in the saddle stayed there, was refused, and gave the
+		// duel up to PLAYERBOT_PVP_REFUSED_GIVE_UP without a blow. Before 2.0.41
+		// the same blows landed from the saddle anyway ("bocik nawalal hitami z
+		// konia ... a ma zwyklego konia", Drip).
+		if (ch->IsRiding() && !CanPlayerBotEverFightOnHorse(ch))
+			SetPlayerBotRidingForTravel(ch, state, false, dwNow, "duel");
 		const bool bSafe = IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
 				IsPlayerBotSafeZone(foe->GetMapIndex(), foe->GetX(), foe->GetY());
 		if (bSafe || !CanPlayerBotStrikeCharacter(ch, foe))
@@ -512,17 +524,9 @@ namespace
 				s_mapPlayerBotDuelRefusedSince[pid] = dwNow;
 			else if (dwNow - refused->second >= PLAYERBOT_PVP_REFUSED_GIVE_UP)
 			{
-				sys_log(0, "PLAYERBOT_PVP: duel over pid=%u name=%s foe_pid=%u foe=%s reason=%s level=%u foe_level=%u",
-						pid, ch->GetName(), foe->GetPlayerID(), foe->GetName(),
-						bSafe ? "safe_zone" : "engine_refuses",
-						(unsigned int)ch->GetLevel(), (unsigned int)foe->GetLevel());
-				playerbot_pvp::EndDuel(pid);
+				EndPlayerBotDuel(ch, state, dwNow, bSafe ? "safe_zone" : "engine_refuses");
 				s_mapPlayerBotDuelRefusedSince.erase(refused);
 				s_mapPlayerBotDuelLogged.erase(pid);
-				if (ch->GetVictim() == foe)
-					ch->SetVictim(NULL);
-				if (state.dwTargetVID == (DWORD)foe->GetVID())
-					state.dwTargetVID = 0;
 			}
 			return false;
 		}

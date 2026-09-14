@@ -245,6 +245,8 @@ namespace
 	// would only be deposited again on the next trip, so the door opens a
 	// crack rather than all the way.
 	const int PLAYERBOT_SAFEBOX_WITHDRAW_MAX = 6;
+	// Split stacks in the box poured together per visit (MergePlayerBotSafeboxStacks).
+	const int PLAYERBOT_SAFEBOX_STACK_MERGES_PER_VISIT = 16;
 	// Two stacks of one thing in two cells is what a partial purchase, a
 	// partial sale and a pick-up into a full stack all leave behind, and the
 	// engine only merges when a hand drags one onto the other - which a bot

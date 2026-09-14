@@ -17,6 +17,103 @@ every version here.
 
 ---
 
+## 2.0.40 — 2026-09-14
+
+Serwer. Boty biją się wreszcie w pojedynkach, na które się zgodziły, nie marnują
+umiejętności pod marmurem polimorfii, a łucznik wabi już przy trzech osobach w
+drużynie zamiast pięciu. Do tego wydanie pilnuje teraz własnego manifestu — bo
+2.0.38 nie dotarło do nikogo i nikt się o tym nie dowiedział. Klient bez zmian
+(zostaje 2.0.5).
+
+### Pojedynek, w którym padają ciosy
+
+Bot przyjmował wyzwanie i wracał do swoich potworów. Przyczyny były dwie i obie
+po naszej stronie.
+
+Pierwsza: wybór przeciwnika siedział w sekcji celu, a nad nią kilkanaście
+przebiegów kończy turę bota — zakupy, kowal, wizyta w mieście. Bot, który
+właśnie zgodził się na pojedynek, prawie zawsze jest w środku któregoś z nich i
+do wyboru przeciwnika nigdy nie docierał. Zmierzone sześć sekund po zgodzie, na
+tej samej mapie, **siedemdziesiąt jednostek od siebie**: jeden szedł do
+handlarza bronią, drugi szukał potwora, obaj na pełnym życiu.
+
+Druga wyszła dopiero po naprawieniu pierwszej. Funkcja, która zamienia zamach w
+obrażenia, zaczynała od odrzucenia wszystkiego, co nie jest potworem ani
+metinem. Boty schodziły się więc na dwadzieścia trzy jednostki, odgrywały całe
+kombo — bo wysyłanie animacji to osobna rzecz — i nie zadawały sobie nic.
+**Jedenastu pojedynkujących się, ani jednego zadrapania.**
+
+Po poprawce, na ustabilizowanym świecie: **4440 punktów życia wymienionych
+między pięcioma z dwudziestu trzech walczących**, wobec zera zawsze i bez
+wyjątku wcześniej. Pojedynek ma teraz własną linię w logu
+(`PLAYERBOT_PVP: fighting the duel`), bo bez niej nie dało się tego sprawdzić —
+sąsiednia linia o wyborze celu jest poziomu, którego ten rdzeń nie zapisuje.
+
+Bot w pojedynku nadal nie pije mikstur życia; to działało już wcześniej.
+
+### Pod marmurem nie rzuca się umiejętności
+
+Silnik odmawia rzucenia czegokolwiek postaci pod marmurem polimorfii — w pięciu
+osobnych miejscach. Bot o tym nie wiedział i przepalał całą rotację na
+odmowach, zamiast bić, a marmur zakłada się właśnie po to, żeby zwykły atak
+bolał bardziej.
+
+### Wabienie: próg trzech osób i dalsza paczka
+
+Łucznik wymagał pięcioosobowej drużyny. Zmierzone na własnym świecie: drużyny
+chodzą po jednej–dwóch osobach (18 botów w 15 drużynach), pięcioosobowe nie
+powstają praktycznie nigdy, a ostatni kurs w logach miał dwa dni. Próg to teraz
+trzy — tyle, ile wynosi sens pociągnięcia paczki na czekających.
+
+Po obniżeniu progu kursy ruszyły i od razu pokazały następną przeszkodę: ze 120
+widzianych potworów 114 odrzucano „po zasięgu". Licznik nie rozróżniał jednak
+„za blisko" od „za daleko", a to dwie przeciwne poprawki, więc najpierw został
+rozbity na pół. Odpowiedź okazała się jednostronna — `za blisko=0`,
+`za daleko=33` i `za daleko=62` — czyli sufit trzech tysięcy jednostek był tym,
+co wyłączało rolę. Okno sięga teraz czterech tysięcy, z zapasem na drogę
+powrotną wewnątrz budżetu kursu.
+
+Uczciwie: samo poszerzenie okna nie zdążyło jeszcze doczekać się kursu na
+żywym świecie. Rozbity licznik jest w logu i następny kurs to rozstrzygnie.
+
+### Zaproszenie do drużyny: log powie, co odrzuciło
+
+Bot **nadal nie dołącza** do drużyny gracza i nie umiem powiedzieć dlaczego —
+w stu dwóch plikach logów nie ma ani jednego przyjęcia, odkąd ta funkcja
+istnieje. Żadna z czterech bramek silnika tego nie tłumaczy: królestwo się
+zgadza, różnica poziomów dopuszcza 2153 z 2500 botów, a we własnych drużynach
+siedzi ledwie czternaście procent.
+
+Każda odmowa kończy się komunikatem na czacie zapraszającego i cichym
+powrotem, więc log milczał. Teraz nazwie przyczynę numerem. Jedno zaproszenie
+wystarczy, żeby zamknąć temat w następnym wydaniu.
+
+### Dlaczego 2.0.38 nie dotarło do nikogo
+
+Wydanie 2.0.38 wyszło na GitHuba i nie zainstalował go ani jeden gracz.
+Manifest — jedyny plik, z którego launcher czyta, co pobrać — został zmieniony
+lokalnie i nigdy wysłany, a następne wydanie go nadpisało. Historia idzie więc
+2.0.37 → 2.0.39, bez niczego pomiędzy.
+
+Awaria była cicha po obu stronach: u nas wydanie wyglądało na opublikowane, a u
+gracza launcher uczciwie porównywał 2.0.37 z 2.0.37 i odpowiadał „masz
+najnowszą wersję". W logu zgłaszającego stoi to siedem razy z rzędu, bez
+jednego pobrania i bez jednego błędu.
+
+Od tego wydania osobna bramka odmawia publikacji, gdy manifest wciąż wskazuje
+poprzednią wersję. Sprawdzona na prawdziwym przypadku: przepuszcza 2.0.39 i
+odrzuca 2.0.38.
+
+### Drobne
+
+Pakiet diagnostyczny niesie teraz konfigurację launchera (przepuszczoną przez
+ten sam filtr co logi). Bez niej nie da się odczytać, z którego manifestu czyta
+launcher gracza, a linie 1.x i mt2009 mają osobne — przez co dwie zupełnie
+różne przyczyny wyglądają w logu identycznie.
+
+Domyślny numer wersji w panelu zaawansowanym stał na 2.0.23 i szedł własnym
+kanałem, którego nikt nie podbijał. Idzie teraz za wersją wydania.
+
 ## 2.0.39 — 2026-09-14
 
 Serwer. Pojedynki, dwie nowe mapy do polowania, Wieża Demonów, koń militarny,

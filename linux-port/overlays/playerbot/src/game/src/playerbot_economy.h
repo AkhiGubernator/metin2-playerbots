@@ -1394,14 +1394,22 @@ namespace
 			const TRefineTable* stepRecipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
 			const bool wornStepCanBurn = wearCell != 255 && stepRecipe &&
 					stepRecipe->prob <= PLAYERBOT_WORN_SCROLL_MAX_PROB;
-			if (plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item) || wornStepCanBurn)
+			// Every rule above gives way to the operator's floor: under
+			// SCROLL_FROM no scroll goes on the step, whatever the piece.
+			const bool scrollStepAllowed = IsPlayerBotScrollStepAllowed(plusLevel);
+			if (scrollStepAllowed &&
+					(plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item) || wornStepCanBurn))
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel);
 			// No scroll, a roll that can fail, and a weapon worth more than the
 			// next plus: leave it. The blacksmith burns what he fails.
 			// A level-30 weapon from +6 on goes only under a scroll, prize lines
 			// or not - a burnt Full Moon Sword +7 is a week of somebody's
 			// hunting, and the Moonlight chests keep the scrolls coming.
-			if (scrollCell < 0 && (IsPlayerBotPrizeItem(item) ||
+			// Only where a scroll may go at all: a piece held for a scroll the
+			// floor forbids is held for good, the shape of the deadlock that
+			// once parked 451 weapons on +4. Under SCROLL_FROM it takes the
+			// plain anvil's odds like everything else, which is the setting.
+			if (scrollCell < 0 && scrollStepAllowed && (IsPlayerBotPrizeItem(item) ||
 					(IsPlayerBotSpecialLevel30Weapon(item) && plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS)))
 			{
 				const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
@@ -1455,7 +1463,8 @@ namespace
 	// does not wait for its next town visit to put it to use. In a quiet
 	// moment it takes the lowest worn piece at +6 or better, pays the table's
 	// fee and materials, and refines it under the scroll: on failure the piece
-	// comes back one level down instead of not at all.
+	// comes back one level down instead of not at all. Never on a step under
+	// the operator's SCROLL_FROM (playerbot_config.h).
 	bool ManagePlayerBotScrollRefine(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !ch->IsItemLoaded() || dwNow < state.dwNextScrollRefineTime)
@@ -1483,7 +1492,8 @@ namespace
 			const BYTE plus = item->GetRefineLevel();
 			// The target is PLAYERBOT_SCROLL_REFINE_MAX_PLUS here by construction:
 			// this pass only runs with a scroll in the bag.
-			if (plus < PLAYERBOT_SCROLL_REFINE_MIN_PLUS || plus >= GetPlayerBotRefineTarget(ch, item))
+			if (plus < PLAYERBOT_SCROLL_REFINE_MIN_PLUS || !IsPlayerBotScrollStepAllowed(plus) ||
+					plus >= GetPlayerBotRefineTarget(ch, item))
 				continue;
 			if (!IsPlayerBotWearableAtLevel(ch, item->GetRefinedVnum()))
 				continue;
@@ -1506,6 +1516,12 @@ namespace
 			}
 		}
 		if (!best)
+			return false;
+		// The scroll the blacksmith pass would put on the same step - the
+		// Dragon God from PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS - rather than
+		// whichever scroll happened to lie first in the bag.
+		scrollCell = FindPlayerBotRefineScrollCell(ch, best->GetRefineLevel());
+		if (scrollCell < 0)
 			return false;
 
 		// Off, refined, and back on: the engine will not touch a worn piece, and

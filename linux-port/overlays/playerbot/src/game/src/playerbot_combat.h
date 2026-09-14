@@ -402,7 +402,7 @@ namespace
 						 : PLAYERBOT_SKILL_ATTACK_INTERVAL);
 				state.dwNextAttackTime = dwNow + PLAYERBOT_SKILL_ANIMATION_LOCK;
 				sys_log(0, "PLAYERBOT_AI: used attack skill pid=%u name=%s vnum=%u target_vid=%u",
-						ch->GetPlayerID(), ch->GetName(), skillVnum, target->GetVID());
+						ch->GetPlayerID(), ch->GetName(), skillVnum, (DWORD)target->GetVID());
 				return true;
 			}
 		}

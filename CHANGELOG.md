@@ -17,6 +17,136 @@ every version here.
 
 ---
 
+## 2.0.41 — 2026-09-14
+
+Serwer. Pojedynki botów przestały się liczyć jako morderstwa, więc ranga
+wraca do zera i już nie spada. Boty wchodzą w głąb lochów małp zamiast stać
+w pierwszym korytarzu, zwój błogosławieństwa chroni przedmiot, który bot ma
+na sobie, a zioła i Dłonie przestają zapychać plecaki. Po starcie serwera
+właściciele sklepów offline nie wychodzą już wszyscy naraz z lochów i z
+frontu. Klient bez zmian (zostaje 2.0.5).
+
+### Pojedynki: cios pada tylko tam, gdzie silnik na niego pozwala
+
+Boty z siódmego czy dziewiątego poziomu chodziły jako „Agresywny” i
+„Złośliwy”, a pojedynki poniżej piętnastego poziomu i w mieście trwały bez
+końca, z samymi animacjami umiejętności (nerrvous_s, djariczek). Przyczyna
+była jedna i siedziała w naszym kodzie.
+
+Zwykły cios bota zadawał obrażenia wprost, a silnik przy takim wywołaniu nie
+pyta o nic: ani o zgodę na pojedynek, ani o ochronę poniżej piętnastego
+poziomu, ani o strefę bezpieczną. Wyzywający uderzał więc, zanim drugi bot
+się zgodził, a zwycięzca bił dalej przeciwnika po jego odrodzeniu, choć
+silnik uznał już pojedynek za zakończony. Dla silnika każde takie zabójstwo
+było morderstwem we własnym królestwie: **minus dwadzieścia tysięcy rangi**,
+rozdzielone między członków drużyny zabijającego. Stąd ujemna ranga u botów,
+które same nikogo nie zabiły. Na naszym świecie takich botów było **105,
+najniższa ranga −149 547**, a do południa silnik rozdzielił na drużyny 47
+takich kar. Umiejętności szły drogą, która o zgodę pyta, dlatego tam, gdzie
+cios nie mógł paść, zostawały same animacje.
+
+Teraz każdy cios i każda umiejętność w postać przechodzi przez tę samą
+kontrolę silnika. Pojedynek, w którym silnik odmawia ciosu przez piętnaście
+sekund, bot uznaje za skończony. Wcześniej żaden pojedynek się nie kończył,
+tylko wygasał po trzech minutach. Bot nie wyzywa i nie przyjmuje pojedynku
+poniżej piętnastego poziomu ani w strefie bezpiecznej, a gracz dostaje na
+czacie informację, dlaczego.
+
+Ranga zepsuta przez ten błąd jest zerowana przy starcie serwera, zanim
+rdzeń wczyta boty. U nas: **105 botów, po migracji 0**.
+
+W pierwszych dziesięciu minutach po wdrożeniu: 9 wyzwań, 5 zgód, 4 odmowy w
+strefie bezpiecznej i 8 pojedynków zakończonych (6, bo silnik nie pozwalał
+już zadać ciosu, 2 w strefie bezpiecznej). **Ani jednej kary rangi**, a w
+bazie nadal zero botów z ujemną rangą.
+
+### Lochy małp: boty idą w głąb
+
+„Boty biegają w jednym miejscu, a nie po całym lochu” (bierzyn, uxietoszef).
+Loch to jedenaście komór połączonych drzwiami, które przenoszą każdego, kto
+podejdzie na trzysta jednostek. Były tu dwa błędy i jeden brak.
+
+Pierwszy: bot, który przeszedł przez drzwi, lądował obok drzwi prowadzących z
+powrotem i wracał nimi, bo stanął tam do walki albo trasa do starego celu
+prowadziła przez te same drzwi. Z 87 szybkich powrotów do komory wejściowej
+52 zrobił silnik, a 35 nasza nawigacja. Teraz drzwi nie przenoszą bota
+przez 45 sekund od ostatniego przejścia, a nawigacja w tym czasie nie
+planuje trasy przez drzwi i zapomina cel z poprzedniej komory.
+
+Brak: komora wejściowa ma 6–7% miejsc odrodzenia potworów, a gościła prawie
+wszystkich odwiedzających. Teraz bot przy wejściu losuje, zależnie od
+liczby potworów w komorach, czy zostaje, czy idzie do jednych z drzwi. Po
+drodze broni się przed tym, co go atakuje.
+
+Drugi błąd wyszedł w pierwszym pomiarze: marsz miał czterdzieści sekund
+liczonych razem z walką, a korytarz wejściowy ma do drzwi 18–21 tysięcy
+jednostek i jest pełen agresywnych małp. Doszły dwa marsze z sześciu.
+Teraz liczy się sam marsz, do minuty, z górnym limitem trzech minut.
+Zmierzone po poprawce: **9 z 9 dokończonych marszów przeszło do innej
+komory, żaden się nie poddał**, a stary limit zawróciłby 7 z tych 9.
+
+Uczciwie: na mapie 108 boty często znajdują medal i wychodzą z lochu, zanim
+dojdą do drzwi. Idą wtedy korytarzem, a nie stoją przy wejściu, ale do
+innej komory nie docierają.
+
+### Zwój błogosławieństwa chroni założony przedmiot
+
+„Boty biegają do kowala, palą swój główny przedmiot, kupują nowy i robią to
+samo, zamiast ulepszać zwojem” (uxietoszef). Zwój w plecaku podnosił cel
+ulepszania do +9, ale sam zwój był używany dopiero od +6. Kroki z +4 i z +5,
+czyli 80 i 60 procent szansy, szły do zwykłego kowala, który przy porażce
+niszczy przedmiot. Teraz przedmiot, który bot ma na sobie, idzie pod zwój
+przy każdym kroku o szansie 80% lub mniejszej, jeśli bot ma zwój. Zapasowe
+przedmioty z plecaka zostają przy starej zasadzie od +6, żeby nie
+przepalać zwojów, których na rynku brakuje.
+
+Uczciwie: na naszym świecie zwojów jest mało (98 sztuk w 20 plecakach),
+więc w dziesięć minut widać tu ledwie pojedyncze kroki poniżej +6 pod
+zwojem. Efekt pokażą światy, na których zwojów jest dużo.
+
+### Zioła i Dłonie nie zapychają plecaków
+
+Zioła (Pokrzywa, Kwiat Brzoskwini, Korzeń Gango, Kwiat Kaki i reszta do
+Jaskiniowego Grzyba) oraz dwa wywary służą w tym świecie wyłącznie do
+ulepszania Nożyka Zielarza. Żaden przepis na broń ani zbroję ich nie
+potrzebuje. Boty trzymały je jako materiały, na naszym świecie w **850
+plecakach i 400 magazynach**. Teraz sprzedają je handlarzowi, a te leżące w
+magazynie wyjmują przy wizycie u magazyniera: **413 wyjęć w pierwszych
+dziesięciu minutach**. Lista nie jest wpisana na sztywno: bot odczytuje ją z
+tabel przedmiotów i przepisów, więc świat z innymi przepisami dostanie
+własną odpowiedź. Rudy do Kilofa i ryby do Wędki, które też nie idą na broń
+ani zbroję, zostają przy swoich zasadach z górnictwa i wędkowania.
+
+Dłoni Krytyka i Przebicia nie da się ani sprzedać, ani wystawić na straganie,
+a przy wysokich szansach na szkatułki zajmowały po trzy pełne stosy (uxietoszef).
+Bot zatrzymuje teraz sto sztuk każdej, a resztę wyrzuca przy wizycie u
+handlarza.
+
+### Po starcie serwera sklepy nie wyciągają wszystkich naraz
+
+Pierwsza wizyta właściciela w sklepie offline miała być rozłożona na minutę,
+ale wszystkie numery postaci są na tyle małe, że rozrzut wynosił dwie i pół
+sekundy. Po restarcie **560 botów poszło do sklepów w medianie 33 sekund**,
+451 zmian mapy w dwie minuty. Każdy właściciel sklepu, który wystartował w
+lochu albo na froncie, był z niego wyciągany po pół minucie, a fala wracała
+co 10–15 minut. Teraz pierwsza wizyta wypada między pół minuty a dziesięć
+i pół minuty: zmierzone **od 90 do 585 sekund (10.–90. percentyl),
+najwyżej 67 wizyt na minutę zamiast 230**.
+
+### Już działało, zgłoszone ponownie
+
+- Omdlenie działa na boty od 2.0.39. Zgłoszenie (cyfrowy_mat) przyszło
+  kilka godzin przed tym wydaniem.
+- Boty wyjmują rzeczy z magazynu od 2.0.39 (akhigubernator): książki, do
+  których dorosły, i materiały, na które jest popyt.
+
+### Drobne
+
+Log `used attack skill` podawał dla każdego bota ten sam `target_vid`
+(4294758416), bo w miejsce numeru trafiał adres. Teraz podaje prawdziwy
+numer celu. Marsz w lochu zapisuje odległość do drzwi, czas marszu i czas
+od przydziału.
+
 ## 2.0.40 — 2026-09-14
 
 Serwer. Boty biją się wreszcie w pojedynkach, na które się zgodziły, nie marnują

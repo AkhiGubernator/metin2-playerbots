@@ -59,9 +59,24 @@ def init(cur):
     # own machine (Tieru, 13 September). Skip the wizard for installs seeded
     # before this; an operator can still turn auth on from the panel.
     cur.execute("UPDATE player.web_seban_settings SET value='1' WHERE name='setup_complete' AND value='0'")
+    # socket0 added 2026-09-13 so a generic Skill Book (vnum 50300 -- the
+    # actual skill lives only in socket0, see resolve_item_display_name in
+    # app.py) shows up as distinct rows instead of one lump sum. Disposable
+    # monitoring history, not player data, so a schema change here drops and
+    # recreates rather than an in-place ALTER of the primary key.
+    # SHOW COLUMNS on a table that is not there is an error (1146), not an
+    # empty answer, and web_seban_shop_item_snapshot is new in 1.41.0: on
+    # every install that never had it the check threw before the CREATE, the
+    # table was never made and /economy/shops answered 500. information_schema
+    # counts zero for a missing table instead (Playerbots 2.0.47).
+    cur.execute("""SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='player'
+      AND table_name='web_seban_item_snapshot' AND column_name='socket0'""")
+    if cur.fetchone()[0] == 0:
+        cur.execute("DROP TABLE IF EXISTS player.web_seban_item_snapshot")
     cur.execute("""CREATE TABLE IF NOT EXISTS player.web_seban_item_snapshot (
-      captured_at DATETIME NOT NULL, vnum INT UNSIGNED NOT NULL, amount BIGINT UNSIGNED NOT NULL,
-      PRIMARY KEY(captured_at,vnum), KEY(vnum,captured_at)) ENGINE=InnoDB""")
+      captured_at DATETIME NOT NULL, vnum INT UNSIGNED NOT NULL, socket0 INT NOT NULL DEFAULT 0,
+      amount BIGINT UNSIGNED NOT NULL,
+      PRIMARY KEY(captured_at,vnum,socket0), KEY(vnum,captured_at)) ENGINE=InnoDB""")
     cur.execute("""CREATE TABLE IF NOT EXISTS player.web_seban_map_snapshot (
       captured_at DATETIME NOT NULL, map_index INT UNSIGNED NOT NULL, character_count INT UNSIGNED NOT NULL,
       PRIMARY KEY(captured_at,map_index), KEY(map_index,captured_at)) ENGINE=InnoDB""")
@@ -79,6 +94,31 @@ def init(cur):
     cur.execute("""CREATE TABLE IF NOT EXISTS player.web_seban_bot_position_snapshot (
       captured_at DATETIME NOT NULL, pid INT UNSIGNED NOT NULL, map_index INT UNSIGNED NOT NULL,
       x INT NOT NULL, y INT NOT NULL, PRIMARY KEY(captured_at,pid), KEY(pid,captured_at)) ENGINE=InnoDB""")
+    # Offline shops (IkarusShop "stragany"): player.ikashop_offlineshop is one
+    # row per open shop, player.item WHERE window='IKASHOP_OFFLINESHOP' is one
+    # row per listed offer, and the offer's price for its whole stack (not
+    # per unit) lives in that item's own ikashop_data JSON column
+    # ({"yang":N,...}) -- there is no separate price/listing table for this
+    # engine's offline shops, confirmed against a live test shop.
+    cur.execute("""CREATE TABLE IF NOT EXISTS player.web_seban_shop_snapshot (
+      captured_at DATETIME NOT NULL, map_index INT UNSIGNED NOT NULL, empire TINYINT UNSIGNED NOT NULL,
+      shop_count INT UNSIGNED NOT NULL, offer_count INT UNSIGNED NOT NULL,
+      item_count BIGINT UNSIGNED NOT NULL, total_value BIGINT UNSIGNED NOT NULL,
+      PRIMARY KEY(captured_at,map_index), KEY(map_index,captured_at)) ENGINE=InnoDB""")
+    # Per-vnum history of what is offered in shops, so the shop page can show
+    # a price/quantity trend and answer "was this item ever on the market"
+    # for items with zero active offers right now -- web_seban_shop_snapshot
+    # above only keeps the per-map/empire rollup, not individual vnums.
+    # socket0 added 2026-09-13, same reason and same drop/recreate approach
+    # as web_seban_item_snapshot above.
+    cur.execute("""SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='player'
+      AND table_name='web_seban_shop_item_snapshot' AND column_name='socket0'""")
+    if cur.fetchone()[0] == 0:
+        cur.execute("DROP TABLE IF EXISTS player.web_seban_shop_item_snapshot")
+    cur.execute("""CREATE TABLE IF NOT EXISTS player.web_seban_shop_item_snapshot (
+      captured_at DATETIME NOT NULL, vnum INT UNSIGNED NOT NULL, socket0 INT NOT NULL DEFAULT 0,
+      offers INT UNSIGNED NOT NULL, total_units BIGINT UNSIGNED NOT NULL, total_value BIGINT UNSIGNED NOT NULL,
+      PRIMARY KEY(captured_at,vnum,socket0), KEY(vnum,captured_at)) ENGINE=InnoDB""")
 
 
 def live_positions():
@@ -121,8 +161,28 @@ def collect(con, previous):
             cur.execute("INSERT IGNORE INTO player.web_seban_map_snapshot VALUES (%s,%s,%s)", (now, map_index, count))
         for pid, (map_index, x, y) in live_positions().items():
             cur.execute("INSERT IGNORE INTO player.web_seban_bot_position_snapshot VALUES (%s,%s,%s,%s,%s)", (now, pid, map_index, x, y))
-        cur.execute("""INSERT IGNORE INTO player.web_seban_item_snapshot (captured_at,vnum,amount)
-          SELECT %s, vnum, SUM(count) FROM player.item GROUP BY vnum""", (now,))
+        # Split by socket0 only for vnum 50300 (the generic Skill Book -- see
+        # resolve_item_display_name in app.py): splitting every socketed
+        # item this way would fragment ordinary equipment into one row per
+        # gem combination for no reason, since only 50300's socket0 changes
+        # what the item actually *is*.
+        cur.execute("""INSERT IGNORE INTO player.web_seban_item_snapshot (captured_at,vnum,socket0,amount)
+          SELECT %s, vnum, IF(vnum=50300, socket0, 0), SUM(count)
+          FROM player.item GROUP BY vnum, IF(vnum=50300, socket0, 0)""", (now,))
+        cur.execute("""INSERT IGNORE INTO player.web_seban_shop_snapshot
+          (captured_at, map_index, empire, shop_count, offer_count, item_count, total_value)
+          SELECT %s, o.map, pi.empire, COUNT(DISTINCT o.owner), COUNT(i.id),
+                 COALESCE(SUM(i.count),0),
+                 COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(i.ikashop_data,'$.yang')) AS UNSIGNED)),0)
+          FROM player.ikashop_offlineshop o
+          JOIN player.player p ON p.id = o.owner
+          JOIN player.player_index pi ON pi.id = p.account_id
+          LEFT JOIN player.item i ON i.owner_id = o.owner AND i.window = 'IKASHOP_OFFLINESHOP'
+          GROUP BY o.map, pi.empire""", (now,))
+        cur.execute("""INSERT IGNORE INTO player.web_seban_shop_item_snapshot (captured_at, vnum, socket0, offers, total_units, total_value)
+          SELECT %s, vnum, IF(vnum=50300, socket0, 0), COUNT(*), SUM(count),
+                 COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(ikashop_data,'$.yang')) AS UNSIGNED)),0)
+          FROM player.item WHERE window = 'IKASHOP_OFFLINESHOP' GROUP BY vnum, IF(vnum=50300, socket0, 0)""", (now,))
         cur.execute("SELECT COALESCE(SUM(gold),0) FROM player.player WHERE name NOT IN ('[SA]Admin','Test')")
         yang = cur.fetchone()[0]
         cur.execute("INSERT IGNORE INTO player.web_seban_metric_snapshot VALUES (%s,'total_yang',%s)", (now, yang))

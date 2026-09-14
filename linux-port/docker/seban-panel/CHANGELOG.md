@@ -1,4 +1,14 @@
 # Zmiany
+## 2026-09-14 18:02 CEST · 1.41.0
+
+- Sklepy offline: tooltip Księgi Umiejętności w profilu bota nie pokazuje już losowych bonusów innego przedmiotu.
+- Sklepy offline: ranking najlepiej sprzedających się przedmiotów rozpoznaje teraz konkretną umiejętność Księgi (dociągana z socketu sprzedanego przedmiotu), zamiast jednej generycznej pozycji; dodano osobny panel z top księgami.
+- Sklepy offline: nowy live-feed ostatnich sprzedaży ze straganów (ikona, sprzedawca, królestwo, mapa, cena) i wykres tempa sprzedaży z trendem ceny.
+- Dashboard: kafelek "Boty według map" przełącza się automatycznie co 8s na wykres słupkowy "Sklepy według map" (jak w Sklepach offline, w mniejszej wersji).
+- Dashboard: lista "Boty na mapach" w panelu bocznym jest teraz przewijana i nie wyjeżdża poza swój segment po dodaniu nowych map.
+- Dodano trzy nowe mapy botów: Las, Czerwony Las i Wieża Demonów (heatmapa zdarzeń); Wieża Demonów nie pojawia się na mapie na żywo z kropkami botów, bo to prywatne instancje dungeonu.
+- Naprawiono nakładające się linki w rozwijanym menu "Gospodarka" (bug Safari/WebKit z display:contents w grid).
+
 ## 2026-09-09 18:10 CEST · 1.40.0
 
 - Dodano zwijany poradnik uruchomienia aktualizatora Tieru na VPS bezpośrednio w Zarządzaniu.
@@ -92,6 +102,18 @@
 - Synchronizacja nazw i numerów umiejętności z aktualnym Panelem Tieru: ikona i podpis używają tego samego VNUM; nieużywane pozycje nie są już wyświetlane.
 - Zarządzanie zachowaniem obsługuje przełącznik szybkich ksiąg (`BOOKS`) oraz szanse szkatułek (`CHEST`, `CHEST_STONE`).
 - Zapis wag zachowuje przyszłe klucze silnika, których panel jeszcze nie zna.
+
+## Wcześniejsze funkcje (przed prowadzeniem changeloga)
+
+- Prawdziwe podkłady map wyciągnięte z folderu `/pack/` klienta gry (nie zastępcze grafiki) wpięte do wszystkich widoków z mapą.
+- Prawdziwe ikony przedmiotów z klienta gry w całym panelu: ekwipunek, ekonomia, baza przedmiotów, sklepy.
+- Karta postaci: nadawanie VIP oraz Smoczych Monet bez wychodzenia z profilu bota.
+- Karta postaci: możliwość usunięcia postaci.
+- Karta postaci: zmiana nicku postaci.
+- `/manage`: usunięto sekcje, które i tak nie działały.
+- `/economy/`: kliknięcie w przedmiot otwiera wykres "Stan w gospodarce · ostatnie 14 dni".
+- `/player/`: statystyki postaci — te same, które gracz widzi w grze pod klawiszem Y.
+- Wiadomości ze świata poprawnie wyświetlają polskie znaki.
 
 ## 1.34.0
 

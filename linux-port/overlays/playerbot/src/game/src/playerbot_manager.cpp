@@ -432,6 +432,69 @@ namespace
 				ch->GetPlayerID(), ch->GetName(), challengerPid, challenger->GetName());
 	}
 
+	// An agreed duel, fought before anything else can claim the tick.
+	//
+	// Choosing the opponent in the target section is the natural place for "who
+	// am I hitting", and that is where this was done first - but that section
+	// sits below a dozen passes which each end the tick with continue, and a bot
+	// that has just agreed to a duel is usually in the middle of one of them.
+	// Measured six seconds after an agreement: one of the pair was walking to
+	// the weapon merchant and the other looking for a monster, seventy units
+	// apart, both at full health. A duel is a commitment to another character,
+	// so it belongs where the stun gate belongs - at the top, above the errands.
+	//
+	// It logs once per opponent rather than per tick: a duel runs for minutes
+	// and this pass fires every other second. Without a line of its own the
+	// change could not be verified at all - the target log beside it is
+	// sys_log level 1, and this core writes none of those.
+	bool ManagePlayerBotDuelCombat(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotDuelLogged;
+		if (!ch || ch->IsDead())
+			return false;
+		LPCHARACTER foe = FindPlayerBotDuelOpponent(ch, dwNow);
+		if (!foe)
+			return false;
+		if (IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
+				IsPlayerBotSafeZone(foe->GetMapIndex(), foe->GetX(), foe->GetY()))
+			return false;
+		const int distance = DISTANCE_APPROX(ch->GetX() - foe->GetX(),
+				ch->GetY() - foe->GetY());
+		// Further than the bot can see is no longer the fight that was agreed.
+		if (distance > PLAYERBOT_SEARCH_RANGE)
+			return false;
+
+		state.dwTargetVID = (DWORD)foe->GetVID();
+		ch->SetVictim(foe);
+		SetPlayerBotAction(state, BOT_ACTION_FIGHT, dwNow);
+		ch->SetRotationToXY(foe->GetX(), foe->GetY());
+
+		const DWORD foePid = foe->GetPlayerID();
+		if (s_mapPlayerBotDuelLogged[ch->GetPlayerID()] != foePid)
+		{
+			s_mapPlayerBotDuelLogged[ch->GetPlayerID()] = foePid;
+			sys_log(0, "PLAYERBOT_PVP: fighting the duel pid=%u name=%s foe_pid=%u foe=%s dist=%d hp=%d/%d",
+					ch->GetPlayerID(), ch->GetName(), foePid, foe->GetName(),
+					distance, ch->GetHP(), ch->GetMaxHP());
+		}
+
+		LPITEM weapon = ch->GetWear(WEAR_WEAPON);
+		const bool isBow = (weapon && weapon->GetType() == ITEM_WEAPON &&
+				weapon->GetSubType() == WEAPON_BOW);
+		const int combatRange = isBow ? 800 : 280;
+		if (distance > combatRange)
+		{
+			MovePlayerBot(ch, foe->GetX(), foe->GetY(), dwNow, 4, false, false);
+			return true;
+		}
+		if (ch->IsStateMove())
+			ch->Stop();
+		ch->SetPosition(POS_FIGHTING);
+		if (!ExecutePlayerBotAttackSkill(ch, foe, state, dwNow))
+			ExecutePlayerBotBasicAttack(ch, foe, state, dwNow);
+		return true;
+	}
+
 	// Bots challenging one another.
 	//
 	// Rare on purpose: a duel is something that happens in a world, not the
@@ -2220,6 +2283,13 @@ void CPlayerBotManager::Update()
 		}
 
 		if (!d->IsPhase(PHASE_GAME))
+			continue;
+
+		// The duel the bot agreed to, ahead of every errand. A challenge is
+		// answered within three seconds and then fought; a bot that walks off
+		// to the blacksmith instead is what "bot zaakceptowal PvP ale mnie nie
+		// bije" was.
+		if (ManagePlayerBotDuelCombat(ch, state, dwNow))
 			continue;
 
 		// Before anything that can claim the tick. An open stall is engine state

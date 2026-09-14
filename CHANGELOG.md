@@ -17,6 +17,69 @@ every version here.
 
 ---
 
+## 2.0.43 — 2026-09-14
+
+Serwer (AI, panel i launcher). Suwak zwojów w panelu, pojedynki kończące
+się tam, gdzie się rozstrzygnęły, grupy botów w obrębie królestwa, porządek
+w magazynach i boty, które nie rzucają się już na każdą miksturę. Klient bez
+zmian (zostaje 2.0.5).
+
+### Od jakiego plusa boty używają zwojów
+
+W klasycznym panelu, w zachowaniu botów, jest nowy suwak „Zwoje
+Błogosławieństwa i Boga Smoków” od +1 do +9. Ustawia najniższe ulepszenie,
+na które bot użyje takiego zwoju. Przy +7 zwój idzie tylko na ulepszenia na
++7, +8 i +9, a każde niższe bot robi u kowala bez zwoju, jak gracz, który
+zwojów nie ma — więc przedmiot może spłonąć. Przy +1 (domyślnie) nic się nie
+zmienia. Działa w pięć sekund, bez restartu, a panel zaawansowany zachowuje
+to ustawienie przy zapisie swoich suwaków.
+
+Sprawdzone na naszym świecie z progiem +8: przez 23 minuty 24 ulepszenia pod
+zwojem na +8, 3 na +9 i ani jednego na +7 lub niżej. Przy okazji Zwój Boga
+Smoków od +7 działa teraz także przy ulepszaniu poza kowalem, tak jak u
+kowala.
+
+### Pojedynek kończy się tam, gdzie się rozstrzygnął
+
+Bot, który padł w pojedynku, kończy go w tej samej chwili. Wcześniej wstawał
+i jeszcze kilkanaście sekund „walczył”, a przed 2.0.41 potrafił wtedy bić
+zwycięzcę, który nie mógł mu oddać (Drip). Pojedynek znika też z silnika:
+dotąd po wygranej z botem gracz przez dziesięć minut nie mógł go ani
+uderzyć, ani wyzwać ponownie. Bot na zwykłym koniu zsiada do pojedynku —
+silnik nie pozwala bić z takiego konia, więc taki bot w ogóle nie walczył.
+
+Sprawdzone: 30 pojedynków, każdy zakończony razem z parą w silniku, każda
+przegrana w sekundzie śmierci bota, 5 zejść z konia i zero kar rangi.
+
+### Grupy tylko w obrębie królestwa
+
+Boty zakładały grupy z botami innych królestw, czego gracz zrobić nie może
+(l0st3k). Teraz dobierają się tylko we własnym królestwie, tak jak wymaga
+silnik. Sprawdzone: 385 nowych grup, żadna mieszana.
+
+### Magazyn bez rozsypanych stosów
+
+Magazyn w tym silniku nie łączy stosów, a bot odkładał każdy stos na nowe
+pole, więc magazyny zapełniały się osobnymi paczkami tych samych
+materiałów (jaksiezabic). Teraz bot dokłada do stosu, który już leży w
+magazynie, a przy każdej wizycie scala stosy rozsypane wcześniej. Na naszym
+świecie w 16 minut rozsypanych stosów ubyło z 357 do 234.
+
+### Tanie łupy zostają na ziemi
+
+Bot od 40 poziomu, który ma co najmniej 500 tys. yang, nie biegnie już po
+mikstury, sprzęt co najmniej 10 poziomów poniżej swojego (do +3, bez cennych
+bonusów) ani zioła, jeśli są warte u handlarza mniej niż 40 tys. yang
+(sizowski, próg od Tieru). Materiały do ulepszeń, księgi, zwoje, szkatułki,
+kamienie, sprzęt, który mógłby założyć, i yang zbiera jak dotąd, a młode i
+biedne boty zbierają wszystko.
+
+### Paczka diagnostyczna
+
+ZBIERZ LOGI zbiera teraz także linie pojedynków, łupów i teleportów z panelu
+GM (F9), a panel zapisuje w logu każde użycie „Teleportuj mnie” — żeby
+zgłoszenie „nagle mnie przeniosło” dało się sprawdzić w logach.
+
 ## 2.0.42 — 2026-09-14
 
 Serwer (panel). Klasyczny panel pokazuje wreszcie Las, Czerwony Las i Wieżę

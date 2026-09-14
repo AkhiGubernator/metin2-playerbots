@@ -2195,6 +2195,27 @@ void CPlayerBotManager::Update()
 		if (HandleDeath(ch, state, dwNow))
 			continue;
 
+		// Stunned is stunned, for a bot as much as for anybody.
+		//
+		// The engine puts AFFECT_STUN on a playerbot exactly as on a player -
+		// battle.cpp's AttackAffect and the Charge branch of char_skill.cpp,
+		// both through IMMUNE_STUN and neither of them asking whether the
+		// descriptor IsBot - and CHARACTER::CanAttack refuses anyone whose
+		// IsStun() is true. This tick simply never asked: the bot kept walking,
+		// kept swinging and kept planning through the whole thing, so a player
+		// who landed a Charge saw nothing happen at all ("bot po sekundzie juz
+		// biegnie dalej", cyfrowy_mat on the Discord). Stop where it stands and
+		// let the engine's own stun event be the thing that ends it.
+		//
+		// No watchdog exemption is needed with it: a stun is seconds and the
+		// inactivity reset is ninety of them.
+		if (ch->IsStun())
+		{
+			if (ch->IsStateMove())
+				ch->Stop();
+			continue;
+		}
+
 		if (!d->IsPhase(PHASE_GAME))
 			continue;
 

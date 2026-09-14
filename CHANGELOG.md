@@ -17,6 +17,51 @@ every version here.
 
 ---
 
+## 2.0.44 — 2026-09-14
+
+Serwer (AI). Automatyczne mikstury bez pętli, która obciążała serwer, boty,
+które nie przenoszą już graczy do Wieży Demonów, i boty, które zostają w
+grupie gracza, dopóki gracz jej nie rozwiąże. Klient bez zmian (zostaje
+2.0.5).
+
+### Koniec pętli Eliksiru Księżyca
+
+Boty brały Eliksir Słońca i Eliksir Księżyca — automatyczne mikstury HP i
+PE — za eliksir doświadczenia i próbowały go użyć przy każdym przebiegu.
+Prawie każdy bot nosi pusty Eliksir Księżyca ze skrzyni ucznia, więc silnik
+raz za razem odpowiadał, że mikstura jest pusta: na naszym świecie około
+580 tysięcy wpisów w logu na godzinę i praca rdzenia na nic. Teraz bot
+włącza pełną automatyczną miksturę raz i zostawia ją włączoną, a pustą
+sprzedaje u handlarza. Sprawdzone: log rdzenia gry zmalał o 60%, a pustych
+eliksirów w torbach botów ubyło w kwadrans z 992 do 457.
+
+### Boty nie przenoszą już graczy do Wieży Demonów
+
+Zniszczenie Metinu Twardości w Wieży Demonów uruchamia quest, który po
+sześciu sekundach przenosi do nowej Wieży wszystkie postacie z mapy, na
+której stoi wtedy ten, kto kamień zniszczył. Boty rozbijały ten kamień jak
+każdy inny Metin, a gdy bot zdążył w tych sześciu sekundach zmienić mapę,
+do Wieży trafiali wszyscy z mapy, na którą przeszedł. Tak sizowski, stojący
+pod Lochem Małp w Bokjung, znalazł się nagle na piętrze Wieży. Boty nie
+atakują już kamieni questowych Wieży (8015–8019) i nie ranią ich
+uderzeniem obszarowym. Na naszym świecie jedno zabicie tego kamienia
+przeniosło naraz 10 postaci; od poprawki nie było ani jednego takiego
+przeniesienia.
+
+### Bot zostaje w grupie gracza
+
+Bot zaproszony przez gracza wypadał z grupy po chwili, a wyrzucały go z niej
+trzy rzeczy. Reset po półtorej minuty stania — a bot przy stojącym graczu
+stoi właśnie dlatego, że idzie za nim. Każde przeniesienie bota na inną
+mapę, także powrót na nogi po przeniesieniu do Wieży Demonów, stąd gracz
+zostawał sam w swojej grupie. I kilka sekund teleportu samego gracza, w
+których grupa nie widzi jego postaci, a bot brał ją wtedy za grupę botów:
+w logach sizowskiego bot jest w jego grupie o 15:42:40, o 15:42:54 postać
+gracza wchodzi do gry na nowo (tak wygląda każdy teleport), a o 15:42:56
+bota w grupie już nie ma. Teraz o końcu grupy decyduje tylko gracz. Na naszym świecie nie da się tego sprawdzić bez
+drugiego gracza — jeśli bot nadal wyjdzie z Twojej grupy, wciśnij ZBIERZ
+LOGI i napisz, o której to było.
+
 ## 2.0.43 — 2026-09-14
 
 Serwer (AI, panel i launcher). Suwak zwojów w panelu, pojedynki kończące

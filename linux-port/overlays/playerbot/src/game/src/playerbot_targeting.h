@@ -1464,7 +1464,16 @@ namespace
 		if (!ch || !primary || !ch->GetSectree())
 			return 0;
 
-		const bool bIsTargetValid = (primary->IsMonster() || primary->IsStone());
+		// A duel opponent is a character, and this is the one place where a swing
+		// becomes damage. Opening the guard in ExecutePlayerBotBasicAttack was
+		// half the job: eleven duellists closed to between twenty-three and
+		// ninety-two units of one another, played the whole combo animation -
+		// which is all SendPlayerBotAttackPacket does - and not one of them lost
+		// a single point of health, because this function returned zero before
+		// Damage was ever called.
+		const bool bIsDuel = !primary->IsMonster() && !primary->IsStone() &&
+				IsPlayerBotDuelOpponent(ch, primary, get_dword_time());
+		const bool bIsTargetValid = (primary->IsMonster() || primary->IsStone() || bIsDuel);
 		if (!bIsTargetValid || primary->IsDead())
 			return 0;
 
@@ -1486,7 +1495,11 @@ namespace
 		if (!primary->IsDead() && primary->CanBeginFight())
 			primary->BeginFight(ch);
 
-		if (!isBow)
+		// The sweep stays off a duel: it is a fight between two characters, and
+		// the monsters standing round them are nobody's business here - the
+		// collector keeps them out by itself, but sweeping at all would let a
+		// duel drag bystanders in the moment that ever changed.
+		if (!isBow && !bIsDuel)
 		{
 			CCollectPlayerBotMeleeTargets collector(ch, primary->GetVID());
 			ch->GetSectree()->ForEachAround(collector);

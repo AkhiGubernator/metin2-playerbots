@@ -1309,6 +1309,20 @@ namespace
 		if (!ch || state.bVisitingShop || state.bVisitingBiologist ||
 				state.bVisitingStable || state.bRecoveringAfterDeath || state.bTacticalRetreat)
 			return false;
+		// A bot in a player's party goes where the player goes
+		// (ManagePlayerBotFollowHumanLeader), not where its own plans send it.
+		// The follow pass leaves the bot to the rest of the tick once it stands
+		// near the player, and this pass then sent it off: three shamans in
+		// sizowski's party paid the Teleporter for Hwang, Sohan and the desert,
+		// were warped back to him a second later, and set off again - six round
+		// trips in two minutes, and a buff landed once (14 September). Every
+		// departure waits for the party to end; a crossing that was under way
+		// is dropped rather than resumed from wherever the player has led.
+		if (ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty()))
+		{
+			state.lDesertCrossingTo = 0;
+			return false;
+		}
 
 		const long mapIndex = ch->GetMapIndex();
 		const bool hasMedal = ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) > 0;

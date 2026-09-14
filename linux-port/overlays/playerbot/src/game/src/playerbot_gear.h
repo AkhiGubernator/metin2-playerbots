@@ -454,13 +454,22 @@ namespace
 			// refines that - a level-41 shield at +4 beats a level-21 one at +6.
 			// The penalty is a share of the defence figure alone: the bonus lines
 			// are added below and are worth what they are worth at any level.
+			//
+			// Compounded, not subtracted to nothing. At five percent a level up
+			// to all of it, every armour twenty levels outgrown scored the same
+			// single point, and at level 74 that is every body armour a merchant
+			// sells: a sura wore a level-1 plate +6 with the level-34 one +4 in
+			// its bag, then put the level-34 one on its counter (NaCoPaczysz,
+			// 14 September). Each level past the threshold keeps ninety-five
+			// percent of what the level before kept - at 74 a level-34 +4 keeps
+			// 36%, a level-26 +6 24%, a level-1 +6 6% - so the higher tier wins.
 			if (ch && (int)ch->GetLevel() - item->GetLevelLimit() > PLAYERBOT_ARMOR_OUTGROWN_LEVELS)
 			{
-				const long long outgrown = (int)ch->GetLevel() - item->GetLevelLimit() -
-						PLAYERBOT_ARMOR_OUTGROWN_LEVELS;
-				const long long percent = std::min<long long>(100,
-						outgrown * PLAYERBOT_ARMOR_OUTGROWN_PERCENT_PER_LEVEL);
-				score -= (score - 1) * percent / 100;
+				int outgrown = (int)ch->GetLevel() - item->GetLevelLimit() - PLAYERBOT_ARMOR_OUTGROWN_LEVELS;
+				long long defence = score - 1;
+				for (; outgrown > 0 && defence > 0; --outgrown)
+					defence = defence * (100 - PLAYERBOT_ARMOR_OUTGROWN_PERCENT_PER_LEVEL) / 100;
+				score = 1 + defence;
 			}
 		}
 
@@ -771,6 +780,13 @@ namespace
 			LPITEM oldItem = ch->GetWear(wearCell);
 			if (oldItem && IS_SET(oldItem->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 				continue;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+			// A fishing pass the fishing asked for a moment ago stays on; see
+			// IsPlayerBotFishingPassHeld for the loop that taking it off made.
+			if (oldItem && oldItem->GetVnum() == UNIQUE_ITEM_FISHING_PASS &&
+					IsPlayerBotFishingPassHeld(ch->GetPlayerID(), dwNow))
+				continue;
+#endif
 
 			if (!PlayerBotCanEquipNow(ch, item, TItemPos(INVENTORY, cell)))
 				continue;
@@ -1573,6 +1589,28 @@ namespace
 	// world in an empty slot: a quarter of the cohort had no body armour
 	// (Tieru, 13 September). This finds the highest stocked piece the bot
 	// qualifies for, so the slot is filled and the blacksmith can raise it.
+	// Whether this character's class and sex may wear a proto at all: the
+	// anti-flag half of CItem::CanUsedBy and IsPlayerBotEquipmentCandidate, for
+	// a piece the bot does not hold yet.
+	bool IsPlayerBotProtoForCharacter(LPCHARACTER ch, const TItemTable* proto)
+	{
+		if (!ch || !proto)
+			return false;
+		DWORD classFlag = 0;
+		switch (ch->GetJob())
+		{
+			case JOB_WARRIOR:  classFlag = ITEM_ANTIFLAG_WARRIOR; break;
+			case JOB_ASSASSIN: classFlag = ITEM_ANTIFLAG_ASSASSIN; break;
+			case JOB_SURA:     classFlag = ITEM_ANTIFLAG_SURA; break;
+			case JOB_SHAMAN:   classFlag = ITEM_ANTIFLAG_SHAMAN; break;
+			default: break;
+		}
+		if (classFlag != 0 && IS_SET(proto->dwAntiFlags, classFlag))
+			return false;
+		return !IS_SET(proto->dwAntiFlags,
+				GET_SEX(ch) == SEX_MALE ? ITEM_ANTIFLAG_MALE : ITEM_ANTIFLAG_FEMALE);
+	}
+
 	DWORD FindPlayerBotBestMerchantSlotVnum(LPCHARACTER ch, int wearCell)
 	{
 		if (!ch)
@@ -1603,6 +1641,12 @@ namespace
 					continue;
 				TItemTable* proto = ITEM_MANAGER::instance().GetTable(vnum);
 				if (!proto || proto->bType != ITEM_ARMOR || proto->bSubType != subtype)
+					continue;
+				// A merchant's helmets are every class's at once, told apart only
+				// by the anti-flags. A sura was sold the warrior's Tradycyjny Helm,
+				// could never wear it, and went without a helmet to level 74
+				// (NaCoPaczysz, 14 September).
+				if (!IsPlayerBotProtoForCharacter(ch, proto))
 					continue;
 				const int reqLevel = GetPlayerBotProtoLevelLimit(proto);
 				if (reqLevel > (int)ch->GetLevel())

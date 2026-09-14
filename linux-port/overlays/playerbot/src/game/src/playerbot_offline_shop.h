@@ -17,7 +17,10 @@ namespace {
             (ch->GetVictim() && !ch->GetVictim()->IsDead()) ||
             state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
             state.bRecoveringAfterDeath || state.bTacticalRetreat || state.bMultiPullActive ||
-            state.bFishingSession;
+            state.bFishingSession ||
+            // A bot in a player's party does not warp off to its counter every
+            // ten minutes; the stand keeps selling until the party ends.
+            (ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty()));
     }
     void BotOfflineFinishVisit(LPCHARACTER ch, TPlayerBotAIState& state, DWORD now) {
         auto& o = state.offlineShop;
@@ -133,8 +136,8 @@ namespace {
         state.offlineShop.nextService = now + number(600000, 900000);
         ClearPlayerBotRoute(state, true);
         state.vecShopOffers.clear(); // native ownership, not the old inventory mirror
-        sys_log(0, "PLAYERBOT_OFFLINE: create pid=%u sent=%d lines=%u map=%ld",
-            ch->GetPlayerID(), sent, unsigned(count), ch->GetMapIndex());
+        sys_log(0, "PLAYERBOT_OFFLINE: create pid=%u sent=%d lines=%u map=%ld sign=\"%s\"",
+            ch->GetPlayerID(), sent, unsigned(count), ch->GetMapIndex(), sign);
         if (!sent) {
             // OpenMyShop refuses silently - a chat line to a descriptor nobody
             // reads - and refuses the whole shop over one condition, so name
@@ -196,6 +199,59 @@ namespace {
             if (haveListing) o.listed.erase(known);
         }
         playerbot_offline::sold.erase(it);
+    }
+    // The first line this counter would not take today: gear under level thirty
+    // below PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE, or past the
+    // PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES of it one counter carries. lowGear is
+    // what stays of that gear, for the add that follows. An item the operator
+    // put on "stall" is never second-guessed.
+    DWORD BotOfflineUnwantedLine(NativeShop shop, int& lowGear) {
+        lowGear = 0;
+        DWORD unwanted = 0;
+        if (!shop) return 0;
+        for (const auto& [id, line] : shop->GetItems()) {
+            if (!line) continue;
+            LPITEM preview = BotOfflinePreview(*line);
+            if (!preview) continue;
+            if (IsPlayerBotLowLevelGear(preview) &&
+                    GetPlayerBotItemPolicy(preview) != PLAYERBOT_ITEM_POLICY_STALL) {
+                if (preview->GetRefineLevel() < PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE ||
+                        lowGear >= PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES) {
+                    if (!unwanted) unwanted = id;
+                } else {
+                    ++lowGear;
+                }
+            }
+            M2_DELETE(preview);
+        }
+        return unwanted;
+    }
+    // One line back into the owner's bag, through the journal like every other
+    // mutation. A bag with no room refuses it synchronously and the next visit
+    // asks again. True when the request reached the DB core.
+    bool BotOfflineTakeOff(LPCHARACTER ch, TPlayerBotAIState& state, DWORD itemid, int lowGear, DWORD now) {
+        using namespace playerbot_offline;
+        if (!Begin(ch->GetPlayerID(), Remove, itemid, now)) return false;
+        ikashop::GetManager().RecvShopRemoveItemClientPacket(ch, itemid);
+        if (!EndCall(ch->GetPlayerID())) return false;
+        state.offlineShop.listed.erase(itemid);
+        sys_log(0, "PLAYERBOT_OFFLINE: took off pid=%u name=%s item=%u low_gear_kept=%d",
+            ch->GetPlayerID(), ch->GetName(), itemid, lowGear);
+        return true;
+    }
+    // A name for what the shop holds now, by Iwakura's rules over previews of
+    // its own lines.
+    bool BotOfflineNameForGoods(LPCHARACTER ch, NativeShop shop, char* out, size_t outSize, const char** how) {
+        std::vector<LPITEM> goods;
+        if (shop)
+            for (const auto& [id, line] : shop->GetItems())
+                if (line)
+                    if (LPITEM preview = BotOfflinePreview(*line))
+                        goods.push_back(preview);
+        const bool named = ChoosePlayerBotShopName(ch, goods, out, outSize, how);
+        for (LPITEM preview : goods)
+            M2_DELETE(preview);
+        return named;
     }
     bool ManagePlayerBotOfflineService(LPCHARACTER ch, TPlayerBotAIState& state, DWORD now) {
         using namespace playerbot_offline;
@@ -279,6 +335,14 @@ namespace {
         if (box && box->GetValutes().yang > 0) manager.RecvShopSafeboxGetValutesClientPacket(ch);
         manager.RecvShopSafeboxCloseClientPacket(ch);
         if (shop->GetDuration() == 0) {
+            // An expired stand needs no edit mode to give a line back, and one
+            // it would no longer take comes off before the stand is renewed.
+            int lowGear = 0;
+            const DWORD unwanted = BotOfflineUnwantedLine(shop, lowGear);
+            if (unwanted && BotOfflineTakeOff(ch, state, unwanted, lowGear, now)) {
+                BotOfflineFinishVisit(ch, state, now);
+                return false;
+            }
             // The operator moved the TRADE slider while this stand was up. An
             // eight-hour offline stand is not worth closing early - the fee is
             // paid and the goods are with the entity - but it is not renewed
@@ -290,8 +354,17 @@ namespace {
             if (stillWanted && !shop->GetItems().empty() &&
                     ch->GetGold() - aOfflineShopTime[1].price >= GetPlayerBotReservedGold(ch) &&
                     Begin(ch->GetPlayerID(), Create, 0, now)) {
-                manager.RecvShopReopenClientPacket(ch, shop->GetName(), 1);
-                EndCall(ch->GetPlayerID());
+                // Renamed for what it holds now - eight hours of service visits
+                // have added to it - by the same rules as a new stand. A name
+                // from before those rules is not renewed either.
+                char sign[SHOP_SIGN_MAX_LEN + 1];
+                const char* how = "kept";
+                if (!BotOfflineNameForGoods(ch, shop, sign, sizeof(sign), &how))
+                    strlcpy(sign, shop->GetName(), sizeof(sign));
+                manager.RecvShopReopenClientPacket(ch, sign, 1);
+                if (EndCall(ch->GetPlayerID()))
+                    sys_log(0, "PLAYERBOT_OFFLINE: reopen pid=%u name=%s lines=%u sign=\"%s\" how=%s",
+                        ch->GetPlayerID(), ch->GetName(), unsigned(shop->GetItems().size()), sign, how);
             }
             BotOfflineFinishVisit(ch, state, now);
             return false;
@@ -310,8 +383,20 @@ namespace {
             BotOfflineFinishVisit(ch, state, now);
             return false;
         }
+        // A line the counter would not take today comes off before anything
+        // goes on - that is the operation of this visit. The stands already up
+        // when the rule arrived held 2 409 such lines between them; a bag with
+        // no room for the piece refuses, and then the visit adds instead.
+        int lowGearOnCounter = 0;
+        {
+            const DWORD unwanted = BotOfflineUnwantedLine(shop, lowGearOnCounter);
+            if (unwanted && BotOfflineTakeOff(ch, state, unwanted, lowGearOnCounter, now)) {
+                BotOfflineFinishVisit(ch, state, now);
+                return false;
+            }
+        }
         std::vector<std::pair<int, WORD> > scored;
-        CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state));
+        CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state), lowGearOnCounter);
         bool sent = false;
         for (auto [score, cell] : scored) {
             auto item = ch->GetInventoryItem(cell);

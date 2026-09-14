@@ -611,9 +611,12 @@ namespace
 		// Only for a bot whose place is Bokjung: one that is leaving for the
 		// frontier, or is held back from it by an errand, shops in reach and
 		// goes - the same line the stall's walk to Joan draws.
+		// Not a bot in a player's party either: the walk to the Joan gate is a
+		// map change the follow pass undoes a second later.
 		if (!haveStallInReach && stallsInJoan && IsPlayerBotM2Map(ch->GetMapIndex()) &&
 				dwNow >= state.dwMarketM2AllowedUntil &&
-				state.lDepartureMap == 0 && GetPlayerBotFrontierMapForLevel(ch) == 0)
+				state.lDepartureMap == 0 && GetPlayerBotFrontierMapForLevel(ch) == 0 &&
+				!(ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty())))
 		{
 			state.bMarketTrip = true;
 			state.bMarketToJoan = true;

@@ -20,6 +20,9 @@ namespace
 	// the town. Refining announces a good result the moment it happens, so it
 	// cannot wait for that file.
 	void BroadcastPlayerBotRefineSuccess(LPCHARACTER ch, LPITEM item, int newPlus);
+	// Defined beside HasPlayerBotRefineOpportunity; the blacksmith pass asks it
+	// before taking a worn piece off for the anvil.
+	bool CanPlayerBotAttemptRefineItem(LPCHARACTER ch, LPITEM item);
 
 	PIXEL_POSITION GetPlayerBotGeneralStorePos(long mapIndex)
 	{
@@ -663,6 +666,15 @@ namespace
 		return true;
 	}
 
+	// Gear under PLAYERBOT_SHOP_MIN_GEAR_LEVEL: what a counter carries only at
+	// PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE and only a little of, and what the
+	// merchant takes below that.
+	bool IsPlayerBotLowLevelGear(LPITEM item)
+	{
+		return item && (item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+				item->GetLevelLimit() < PLAYERBOT_SHOP_MIN_GEAR_LEVEL;
+	}
+
 	bool IsPlayerBotJunkItem(LPCHARACTER ch, LPITEM item)
 	{
 		if (!ch || !item || item->IsEquipped() || item->isLocked())
@@ -760,6 +772,17 @@ namespace
 				!IsPlayerBotUpgradeForSelf(ch, item))
 			return true;
 
+		// Gear under level thirty below +6 is not counter goods any more (see
+		// PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE), so once the bot has no use for it
+		// the merchant takes it, +4 and +5 included. Kept, it would ride in the
+		// bag for good: the counter it used to be kept for no longer takes it,
+		// and the unsold-stands rule above only counts what went up.
+		if (IsPlayerBotLowLevelGear(item) &&
+				item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE &&
+				item->GetRefineLevel() < PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE &&
+				!IsPlayerBotUpgradeForSelf(ch, item) && !IsPlayerBotHigherTierSpare(ch, item))
+			return true;
+
 		// Whatever else it is, a +5 or better is not something to hand an NPC for
 		// a fifth of the shop price. The reserve rule below keeps one spare per
 		// slot and sold the rest; that is how a Riba +9 went to a merchant
@@ -775,7 +798,9 @@ namespace
 		// A scrap keeper's low refines are its stock, not its junk - until the
 		// bag runs short, and then the merchant gets them like anyone else's.
 
+		// Not gear under level thirty, which no counter takes below +6 now.
 		if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
+				!IsPlayerBotLowLevelGear(item) &&
 				IsPlayerBotScrapKeeper(ch->GetPlayerID()) &&
 				CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_SCRAP_KEEP_FREE_CELLS)
 			return false;
@@ -1244,6 +1269,15 @@ namespace
 			const bool coreProgression = IsPlayerBotCoreProgressionItem(ch, item);
 			if (plusLevel >= GetPlayerBotRefineTarget(ch, item))
 				continue;
+			// A worn piece is taken off for the anvil below, so a step the bag
+			// cannot pay for - a material short, or the fee - is not queued at
+			// all. It was: the engine refused the attempt after the unequip, the
+			// equipment pass put the piece back, and the next blacksmith tick
+			// took it off again, every three seconds for the whole visit
+			// ("refine SKIPPED ... materials=30057:2/21,27799:1/0" beside
+			// "equipped upgrade wear=0 old_vnum=0", bandyciaras, 14 September).
+			if (!CanPlayerBotAttemptRefineItem(ch, item))
+				continue;
 
 			TRefineCandidate cand;
 			cand.wearCell = wearSlots[i];
@@ -1362,6 +1396,11 @@ namespace
 			// location captured when the list was built.
 			if (item->IsEquipped())
 			{
+				// Asked again at the unequip, not only when the list was built:
+				// the step before this one may have spent the fee or the
+				// material this one counted on.
+				if (!CanPlayerBotAttemptRefineItem(ch, item))
+					continue;
 				int emptyCell = ch->GetEmptyInventory(item->GetSize());
 				if (emptyCell < 0)
 					continue;
@@ -1374,6 +1413,20 @@ namespace
 			// normal success/failure roll.  The return value only says that an attempt
 			// was performed, so compare the result item count to log its real outcome.
 			const int resultCountBefore = ch->CountSpecifyItem(nextVnum);
+			// What the recipe asks and what the bag holds, taken before the
+			// attempt takes it. "The bot refined to +8 without Orkowe Jadra" was
+			// read off a bag after the refine had consumed them (jaksiezabic,
+			// 14 September), and nothing in the log could say otherwise: need/have
+			// by vnum, "none" for a step whose recipe names no material.
+			char materials[128] = "none";
+			if (const TRefineTable* recipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet()))
+			{
+				size_t used = 0;
+				for (int m = 0; m < recipe->material_count && used + 24 < sizeof(materials); ++m)
+					used += snprintf(materials + used, sizeof(materials) - used, "%s%u:%d/%d",
+							m ? "," : "", (unsigned int)recipe->materials[m].vnum, (int)recipe->materials[m].count,
+							(int)ch->CountSpecifyItem(recipe->materials[m].vnum));
+			}
 			// With a Blessing Scroll in the bag and a level worth protecting, go
 			// the scroll's way: the engine reads the scroll from the cell set by
 			// SetRefineMode, spends it, and on failure hands back the item one
@@ -1441,15 +1494,16 @@ namespace
 			{
 				const bool success = ch->CountSpecifyItem(nextVnum) > resultCountBefore;
 				BroadcastPlayerBotRefineSuccess(ch, item, (int)plusLevel + 1);
-				sys_log(0, "PLAYERBOT_AI: refine %s pid=%u name=%s old_vnum=%u new_vnum=%u plus=%u scroll=%d",
+				sys_log(0, "PLAYERBOT_AI: refine %s pid=%u name=%s old_vnum=%u new_vnum=%u plus=%u scroll=%d materials=%s",
 						success ? "SUCCESS" : (scrollCell >= 0 ? "FAILED_DOWNGRADED" : "FAILED_BURNED"),
-						ch->GetPlayerID(), ch->GetName(), oldVnum, nextVnum, plusLevel + 1, scrollCell >= 0 ? 1 : 0);
+						ch->GetPlayerID(), ch->GetName(), oldVnum, nextVnum, plusLevel + 1, scrollCell >= 0 ? 1 : 0,
+						materials);
 				++refinedCount;
 			}
 			else
 			{
-				sys_log(0, "PLAYERBOT_AI: refine SKIPPED pid=%u name=%s vnum=%u plus=%u (requirements/state)",
-						ch->GetPlayerID(), ch->GetName(), oldVnum, plusLevel);
+				sys_log(0, "PLAYERBOT_AI: refine SKIPPED pid=%u name=%s vnum=%u plus=%u materials=%s (requirements/state)",
+						ch->GetPlayerID(), ch->GetName(), oldVnum, plusLevel, materials);
 			}
 
 			// Do not equip the result again between consecutive + levels.  Keep it

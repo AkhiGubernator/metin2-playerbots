@@ -93,8 +93,13 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_travel.h"
 #include "playerbot_planner.h"
 #include "playerbot_guild.h"
-#include "playerbot_shop_signs.h"
+// Iwakura's names for a counter and the rules that pick one - pure, and asked
+// by the town for a stand's name - then, after the town, what a real counter's
+// lines are in their terms: what heads a +7..+9 piece or a soul stone is its
+// asking price.
+#include "playerbot_shop_name_rules.h"
 #include "playerbot_town.h"
+#include "playerbot_shop_signs.h"
 #include "playerbot_offline_shop.h"
 #include "playerbot_market.h"
 #include "playerbot_offline_market.h"

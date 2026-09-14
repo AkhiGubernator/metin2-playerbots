@@ -505,13 +505,27 @@ namespace
 	// each of them one tier behind what its owner is already wearing and worth
 	// nothing to anybody who might walk past. The gear a player crosses a market
 	// for starts at level 30.
+	//
+	// That rule was written and never ran: the precious-refine branch of
+	// ScorePlayerBotShopStock returned first for anything at +4, so the level
+	// test only ever saw +0 to +3, which it refused anyway. On 14 September the
+	// counters of the test world carried 4 802 lines of gear under level thirty,
+	// 2 409 of them at +4 and +5 - Czer. Ubranie Mrowki+5 on 348 lines, Lwia
+	// Zbroja Plytowa+5 on 341 - and a player on the Discord asked whether every
+	// server had "takie janusze biznesu". The operator's line: such a piece goes
+	// on a counter at +6 or better, once the bot is done with it, and never a
+	// counter full of it ("zeby nie robili takiej masowki"). Below +6 it is the
+	// merchant's (IsPlayerBotJunkItem) - the eleventh of September's "nothing
+	// above +4 to the merchant" still holds for the gear from level thirty.
 	const int PLAYERBOT_SHOP_MIN_GEAR_LEVEL = 30;
-	// Two slots have nothing at all between the starter tier and level 41:
-	// shields and helmets go 0 -> 21 -> 41. The level-21 piece is therefore the
-	// best anyone under 41 can wear, which is why it is worth real money on a
-	// counter while a level-26 body armour - one tier below the level-34 a bot
-	// of that age is already wearing - is not.
-	const int PLAYERBOT_SHOP_TOP_SLOT_GEAR_LEVEL = 21;
+	const BYTE PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE = 6;
+	// How many lines of it one counter carries, counting what an offline shop
+	// already holds; the service visit takes any more off, one a visit.
+	const int PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES = 2;
+	// Where it ranks: after the materials and the chests, before a scrap
+	// keeper's fodder - and under PLAYERBOT_SHOP_PRIZE_SCORE, so it never
+	// carries a stall on its own.
+	const int PLAYERBOT_SHOP_LOW_GEAR_SCORE = 300;
 	// How many lines a counter needs before it is worth a sign. One is not a
 	// market stall: a player walks past, opens it, and finds a single spare.
 	// Eighteen of the thirty-four stalls this world opened in the fourteen
@@ -1989,10 +2003,14 @@ namespace
 	// loses this much score per level past that, so a tier-appropriate piece
 	// at a low refine displaces the starter piece at +6 and gets refined.
 	const int PLAYERBOT_ARMOR_OUTGROWN_LEVELS = 20;
-	// ...as a share of its defence figure per level past that, up to all of
-	// it. It was a flat fifteen hundred a level, which took the bonus lines
-	// with it: a level-18 plate rolled with fifteen hundred health lost at
-	// fifty to a dragon armour with seven more defence and nothing else.
+	// ...as a share of its defence figure per level past that, compounded:
+	// each level keeps this much less of what the level before kept, so no
+	// piece drops to nothing and a higher tier keeps more. It was a flat
+	// fifteen hundred a level, which took the bonus lines with it: a level-18
+	// plate rolled with fifteen hundred health lost at fifty to a dragon armour
+	// with seven more defence and nothing else. Then it was this much a level
+	// up to all of it, and a bot of seventy-four found every armour of level
+	// thirty-four and below worth the same single point.
 	const long long PLAYERBOT_ARMOR_OUTGROWN_PERCENT_PER_LEVEL = 5;
 	const DWORD PLAYERBOT_SKILL_FORGET_SCROLL_VNUM = 70037;
 	// Moving a point from a skill the priority list ranks lower to the one it
@@ -2499,6 +2517,23 @@ namespace
 	// talk through, so it is created for the price of a rod and a bundle of
 	// wood together. Unused on r40250, which has no pass.
 	const DWORD PLAYERBOT_FISHING_PASS_PRICE = 50000;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+	// When the fishing last asked for its pass (EnsurePlayerBotFishingPass), by
+	// pid, and how long the equipment pass leaves a worn pass alone after that.
+	// The equipment pass put a better unique item into the pass's slot, the
+	// fishing put the pass back on its next tick, and the two took turns every
+	// second or two: seventy swaps in eleven minutes, and the engine's
+	// FAST_ITEM_SWAP check threw the bot out of the game every two minutes
+	// (KimTyJestes, Karta Wedkarska against Maska Sabaha, 14 September).
+	const DWORD PLAYERBOT_FISHING_PASS_HOLD_MS = 600000;
+	std::map<DWORD, DWORD> s_mapPlayerBotFishingPassAskedAt;
+	bool IsPlayerBotFishingPassHeld(DWORD dwPID, DWORD dwNow)
+	{
+		std::map<DWORD, DWORD>::const_iterator it = s_mapPlayerBotFishingPassAskedAt.find(dwPID);
+		return it != s_mapPlayerBotFishingPassAskedAt.end() &&
+				dwNow - it->second < PLAYERBOT_FISHING_PASS_HOLD_MS;
+	}
+#endif
 	// The level a bot may start fishing at. The mt2009 engine's own
 	// CHARACTER::fishing() refused under fifty, and the two gates here refused
 	// with it so that nobody walked to a bank it would turn away; the operator

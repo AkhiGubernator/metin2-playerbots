@@ -903,6 +903,11 @@ namespace
 				continue;
 			if (item->GetRefineLevel() < PLAYERBOT_SHOP_SPARE_MIN_REFINE)
 				continue;
+			// Gear under level thirty ranks under the prize score and is capped
+			// on a counter, so it cannot carry a stall on its own - a reason to
+			// open for it would walk the bot to town for a stand that refuses.
+			if (IsPlayerBotLowLevelGear(item))
+				continue;
 			if (IsPlayerBotWearableUpgrade(ch, item, cell))
 				continue;
 			const int wearCell = item->FindEquipCell(ch);
@@ -1546,21 +1551,6 @@ namespace
 		return false;
 	}
 
-	// The two slots where a piece below level 30 is still the best a bot can get.
-	// Shields and helmets go straight from the starter tier to level 41, so the
-	// level-21 one is what everybody between 21 and 40 wears - which is why it
-	// sells, and why it is the exception to the rule below it. Every other slot
-	// has a tier in the twenties that is merely one step behind the thirties.
-	bool IsPlayerBotTopSlotLowLevelGear(LPITEM item)
-	{
-		if (!item || item->GetType() != ITEM_ARMOR)
-			return false;
-		const BYTE sub = item->GetSubType();
-		if (sub != ARMOR_SHIELD && sub != ARMOR_HEAD)
-			return false;
-		return item->GetLevelLimit() >= PLAYERBOT_SHOP_TOP_SLOT_GEAR_LEVEL;
-	}
-
 	// Horse medals are the one thing a bot farms for itself for hours. A trader
 	// has no such errand - it does not go to the Monkey Dungeon at all - and a
 	// bot whose horse is already at the level cap has nothing left to spend them
@@ -1671,6 +1661,14 @@ namespace
 		// worth a counter slot at any refine at all, unrefined included.
 		if (IsPlayerBotSpecialLevel30Weapon(item))
 			return 2000;
+		// Gear under level thirty goes up at +6 or better and ranks under the
+		// materials whatever is rolled on it, and one counter carries only
+		// PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES of it (CollectPlayerBotShopItems).
+		// Asked before the bonus and the precious refine below, both of which
+		// used to wave a +4 armour for level 26 through to the top of the list.
+		if (IsPlayerBotLowLevelGear(item))
+			return item->GetRefineLevel() >= PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE
+					? PLAYERBOT_SHOP_LOW_GEAR_SCORE + item->GetRefineLevel() : -1;
 		// Then anything rolled with a bonus a player would go looking for.
 		if (HasPlayerBotValuableBonus(item))
 			return 1500;
@@ -1769,21 +1767,13 @@ namespace
 		if (type == ITEM_WEAPON || type == ITEM_ARMOR)
 		{
 			// A scrap keeper puts the low refines out too, last in line after
-			// everything worth more: fodder for a player's blacksmith runs.
+			// everything worth more: fodder for a player's blacksmith runs. From
+			// level thirty only - the gear under it never gets this far (see the
+			// top of this function), and nothing at +4 does either.
 			if (IsPlayerBotScrapKeeper(ch->GetPlayerID()) &&
 					item->GetRefineLevel() < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
 				return 100 + item->GetRefineLevel();
-			if (item->GetRefineLevel() < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
-				return -1;
-			// The refine floor alone let the whole of the twenties through, and
-			// the twenties are what a bot has just stopped wearing: 272 of the
-			// 487 spares at +4 or +5 in this world are for level 29 or below.
-			// A +4 body armour for level 26, offered to a market whose customers
-			// are level 30 and up, is junk at any refine.
-			if (item->GetLevelLimit() < PLAYERBOT_SHOP_MIN_GEAR_LEVEL &&
-					!IsPlayerBotTopSlotLowLevelGear(item))
-				return -1;
-			return 100;
+			return -1;
 		}
 
 		// An unopened box. Ranked between the materials and the spare gear: it
@@ -1892,12 +1882,20 @@ namespace
 				bestScore >= PLAYERBOT_SHOP_PRIZE_SCORE;
 	}
 
+	// Iwakura's name for a counter of these goods (playerbot_shop_signs.h, which
+	// comes after this file because what heads a +7..+9 piece is its price).
+	bool ChoosePlayerBotShopName(LPCHARACTER ch, const std::vector<LPITEM>& goods,
+			char* out, size_t outSize, const char** how);
+
 	// Everything this bot can legitimately part with, best first. OpenMyShop
 	// refuses equipped, locked and ANTI_GIVE/ANTI_MYSHOP items outright - and it
 	// refuses the *whole* shop over one bad line, not just that line - so the
 	// same rules are applied here rather than letting the call fail silently.
+	// lowGearOnCounter is how many lines of gear under level thirty the counter
+	// already holds - an offline shop's own - so the cap counts both.
 	void CollectPlayerBotShopItems(LPCHARACTER ch,
-			std::vector<std::pair<int, WORD> >& outScored, bool merchant)
+			std::vector<std::pair<int, WORD> >& outScored, bool merchant,
+			int lowGearOnCounter = 0)
 	{
 		outScored.clear();
 		if (!ch || !ch->IsItemLoaded())
@@ -1958,6 +1956,28 @@ namespace
 		// worth walking across town for.
 		std::sort(outScored.begin(), outScored.end(),
 				std::greater<std::pair<int, WORD> >());
+		// No counter full of gear under level thirty: the best
+		// PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES of it, less what the counter already
+		// holds, and the rest stays in the bag for a later stand. What the
+		// operator put on "stall" does not count against it.
+		{
+			int lowRoom = std::max(0, PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES - lowGearOnCounter);
+			std::vector<std::pair<int, WORD> > kept;
+			kept.reserve(outScored.size());
+			for (size_t i = 0; i < outScored.size(); ++i)
+			{
+				LPITEM item = ch->GetInventoryItem(outScored[i].second);
+				if (IsPlayerBotLowLevelGear(item) &&
+						GetPlayerBotItemPolicy(item) != PLAYERBOT_ITEM_POLICY_STALL)
+				{
+					if (lowRoom <= 0)
+						continue;
+					--lowRoom;
+				}
+				kept.push_back(outScored[i]);
+			}
+			outScored.swap(kept);
+		}
 		const size_t limit = merchant
 				? (size_t)PLAYERBOT_SHOP_MERCHANT_ITEMS
 				: (size_t)PLAYERBOT_SHOP_MAX_ITEMS;
@@ -2724,28 +2744,11 @@ namespace
 				? PLAYERBOT_SHOP_MERCHANT_ITEMS : PLAYERBOT_SHOP_MAX_ITEMS;
 		BYTE tableCount = 0;
 		int bestScore = 0;
-		// What the sign will say. The counter is sorted best first, so the first
-		// line is the headline; the rest decides the wording.
+		// What the sign will be about: every line that makes the counter, for
+		// Iwakura's rules (playerbot_shop_signs.h), and the best line's name for
+		// the world channel. The counter is sorted best first.
 		const char* pszBestName = NULL;
-		const char* pszWeapon30 = NULL;
-		const char* pszPrecious = NULL;
-		BYTE bPreciousRefine = 0;
-		const char* apszMaterials[2] = { NULL, NULL };
-		int iMaterials = 0;
-		const char* pszBook = NULL;
-		int iBooks = 0;
-		int iScrap = 0;
-		// The rest of what a sign can be about (playerbot_shop_signs.h): the
-		// fish line's unit price for the "Malze po %C" names, the best gear
-		// line's name for the "%I" ones.
-		int iFish = 0;
-		int iGear = 0;
-		int iMedals = 0;
-		int iScrolls = 0;
-		int iStones = 0;
-		DWORD dwFishUnitPrice = 0;
-		const char* pszGear = NULL;
-		BYTE bGearRefine = 0;
+		std::vector<LPITEM> signGoods;
 		bool grid[PLAYERBOT_SHOP_GRID_CELLS];
 		memset(grid, 0, sizeof(grid));
 		// What qualified and still stayed in the bag, by reason - the audit's
@@ -2838,57 +2841,9 @@ namespace
 				bestScore = scored[i].first;
 			++tableCount;
 
-			const char* pszName = proto->szLocaleName;
 			if (!pszBestName)
-				pszBestName = pszName;
-			if (IsPlayerBotSpecialLevel30Weapon(item))
-				pszWeapon30 = pszWeapon30 ? pszWeapon30 : pszName;
-			else if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)
-			{
-				if (!pszPrecious || item->GetRefineLevel() > bPreciousRefine)
-				{
-					pszPrecious = pszName;
-					bPreciousRefine = item->GetRefineLevel();
-				}
-			}
-			else if (item->GetType() == ITEM_FISH || item->GetVnum() == PLAYERBOT_SHELLFISH_VNUM ||
-					(item->GetVnum() >= 27992 && item->GetVnum() <= 27994)) // the three pearls
-			{
-				// Asked before the material test: a shellfish and the pearls are
-				// refine materials too, and a fish counter is not a smith's supplier.
-				if (item->GetVnum() == PLAYERBOT_SHELLFISH_VNUM && item->GetCount() > 0)
-					dwFishUnitPrice = price / item->GetCount();
-				++iFish;
-			}
-			else if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM)
-				++iMedals;
-			else if (item->GetVnum() == PLAYERBOT_BLESSING_SCROLL_VNUM)
-				++iScrolls;
-			else if (item->GetType() == ITEM_METIN)
-				++iStones;
-			else if (IsPlayerBotTradeableMaterial(item))
-			{
-				if (iMaterials < 2)
-					apszMaterials[iMaterials] = pszName;
-				++iMaterials;
-			}
-			else if (item->GetType() == ITEM_SKILLBOOK)
-			{
-				pszBook = pszBook ? pszBook : pszName;
-				++iBooks;
-			}
-			else if ((item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR) &&
-					item->GetRefineLevel() < PLAYERBOT_SHOP_MIN_GEAR_REFINE)
-				++iScrap;
-			else if (item->GetType() == ITEM_WEAPON || item->GetType() == ITEM_ARMOR)
-			{
-				if (!pszGear || item->GetRefineLevel() > bGearRefine)
-				{
-					pszGear = pszName;
-					bGearRefine = item->GetRefineLevel();
-				}
-				++iGear;
-			}
+				pszBestName = proto->szLocaleName;
+			signGoods.push_back(item);
 		}
 		// Asked again here rather than trusting the scan above: the inventory
 		// moves between the two - a town errand happens in between - and a stall
@@ -2901,97 +2856,19 @@ namespace
 			return false;
 		}
 
-		// The sign says what is on the counter - a market of forty stalls all
-		// signed with account names read as a wall of nothing, and a themed
-		// phrase drawn at random read as the same wall in fancy dress. The
-		// headline is the best line; the wording says what kind of counter it
-		// is; a short prefix by pid keeps neighbours from matching word for word.
+		// The sign says what is on the counter, by Iwakura's rules over his
+		// names (playerbot_shop_signs.h): a +7..+9 piece names it, otherwise the
+		// kind most of its lines are, and a third of the time a neutral name
+		// whatever the goods. Nothing else goes over a counter any more - no
+		// "Tanio: " before an item's name, no "Wyprzedaz: " over a poor keeper's
+		// counter - because "boty powinny uzywac nazw sklepow TYLKO z tej listy".
+		// The clearance discount itself stays; only its word is gone.
 		char sign[SHOP_SIGN_MAX_LEN + 1];
-		{
-			// Named for what is on the counter, in words a player reads at a
-			// glance - "przejrzyste nazwy sklepow", the Discord's request. A
-			// counter that is mostly books is a bookshop and says so; mostly
-			// materials, a smith's supplier; a mixed one takes a market cry
-			// drawn by pid ("zobacz kotku co mam w srodku, aka 2009 gameplay").
-			// The item-name signs stay for the goods people cross a market for:
-			// a level-30 weapon, a big refine. A poor keeper's counter is a
-			// clearance sale and the sign says that first.
-			// The draw moves with the stand, so a keeper reopening on the same
-			// pitch is not reading the same line for an hour.
-			const DWORD draw = PlayerBotNavHash(ch->GetPlayerID() ^ 0x5349474eU ^ ((DWORD)state.bShopStandsInRow * 0x9E3779B9U));
-			static const char* const s_apszPrefixes[] = { "", "Tanio: ", "Okazja: ", "Sprzedam " };
-			static const char* const s_apszBookShops[] = {
-				"Ksiegi umiejetnosci", "KU dla kazdej klasy", "Biblioteka - ksiegi", "Ksiegi: %s i inne" };
-			static const char* const s_apszMaterialShops[] = {
-				"Ulepki z %s", "Materialy do kowala", "Skory, zeby i kly", "Ulepszacze, tanio" };
-			static const char* const s_apszMarketCries[] = {
-				"Zobacz kotku co mam w srodku", "Zaczynam gre, kup cos", "%s - najnizsze ceny",
-				"Wszystko za grosze", "Tanio jak barszcz", "Rozne rozczne, zapraszam",
-				"Czego szukasz, to mam", "Sprzedam, bez targow" };
-			const char* pszPrefix = bPoor ? "Wyprzedaz: "
-					: s_apszPrefixes[(ch->GetPlayerID() * 2654435761U >> 8) % 4U];
-			char body[SHOP_SIGN_MAX_LEN * 2 + 1];
-			const char* pszTemplate = NULL;
-			const char* pszArg = "";
-			// What kind of counter this is, by the majority of its lines; the
-			// community's names for that kind come first (playerbot_shop_signs.h),
-			// the older wording only when none of them fits.
-			EPlayerBotSignKind signKind = SIGN_UNIVERSAL;
-			bool bSignByKind = tableCount > 0 && !pszWeapon30 && !pszPrecious;
-			if (bSignByKind)
-			{
-				if (iFish > 0 && iFish * 2 >= (int)tableCount) signKind = SIGN_FISH;
-				else if (iBooks > 0 && iBooks * 2 >= (int)tableCount) signKind = SIGN_BOOKS;
-				else if (iMaterials > 0 && iMaterials * 2 >= (int)tableCount) signKind = SIGN_MATERIALS;
-				else if (iGear > 0 && iGear * 2 >= (int)tableCount) signKind = SIGN_GEAR;
-				else if (iMedals > 0 && iMedals * 2 >= (int)tableCount) signKind = SIGN_MEDALS;
-				else if (iScrolls > 0 && iScrolls * 2 >= (int)tableCount) signKind = SIGN_SCROLLS;
-				else if (iStones > 0 && iStones * 2 >= (int)tableCount) signKind = SIGN_STONES;
-				else if (iScrap > 0 && iScrap >= (int)tableCount / 2) bSignByKind = false; // "Zlom do palenia" below
-				else if (tableCount == 1) bSignByKind = false; // one line: its own name
-			}
-			if (bSignByKind && PickPlayerBotShopSign(body, sizeof(body), signKind, draw,
-					ch->GetName(), dwFishUnitPrice, pszGear))
-				; // chosen
-			else if (pszWeapon30)
-				snprintf(body, sizeof(body), "Bron 30: %s", pszWeapon30);
-			else if (pszPrecious)
-				snprintf(body, sizeof(body), "%s", pszPrecious); // the name carries its +N
-			else if (iBooks > 0 && iBooks * 2 >= (int)tableCount)
-			{
-				pszTemplate = s_apszBookShops[draw % 4U];
-				pszArg = pszBook ? pszBook : "";
-			}
-			else if (iMaterials > 0 && iMaterials * 2 >= (int)tableCount)
-			{
-				pszTemplate = s_apszMaterialShops[draw % 4U];
-				pszArg = IsPlayerBotM1Map(ch->GetMapIndex()) ? "M1" : "M2";
-			}
-			else if (iScrap > 0 && iScrap >= (int)tableCount / 2)
-				snprintf(body, sizeof(body), "Zlom do palenia +0..+3");
-			else if (pszBestName && tableCount > 1 && (draw & 8U) != 0)
-				snprintf(body, sizeof(body), "%s i inne", pszBestName);
-			else if (tableCount > 1)
-			{
-				pszTemplate = s_apszMarketCries[draw % 8U];
-				pszArg = ch->GetName();
-			}
-			else
-				snprintf(body, sizeof(body), "%s", pszBestName ? pszBestName : ch->GetName());
-			if (pszTemplate)
-			{
-				if (strstr(pszTemplate, "%s"))
-					snprintf(body, sizeof(body), pszTemplate, pszArg);
-				else
-					snprintf(body, sizeof(body), "%s", pszTemplate);
-			}
-			// The prefix goes only where the whole line still fits: the goods are
-			// the point, the flourish is not.
-			if (strlen(pszPrefix) + strlen(body) <= SHOP_SIGN_MAX_LEN)
-				snprintf(sign, sizeof(sign), "%s%s", pszPrefix, body);
-			else
-				snprintf(sign, sizeof(sign), "%s", body);
-		}
+		const char* pszSignHow = "none";
+		if (!ChoosePlayerBotShopName(ch, signGoods, sign, sizeof(sign), &pszSignHow))
+			strlcpy(sign, playerbot_shop_names::SIGN_NAMES[0].szName, sizeof(sign));
+		sys_log(0, "PLAYERBOT_SHOP: sign pid=%u name=%s lines=%u how=%s sign=\"%s\"",
+				ch->GetPlayerID(), ch->GetName(), (unsigned int)tableCount, pszSignHow, sign);
 
 		// Opening a stall costs a shop bundle, exactly as it does for a player:
 		// OpenMyShop consumes one 50200 and refuses outright without it. The other

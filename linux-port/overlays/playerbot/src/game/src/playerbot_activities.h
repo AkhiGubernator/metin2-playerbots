@@ -989,6 +989,9 @@ namespace
 	{
 		if (!ch)
 			return false;
+		// Asked for now: the equipment pass leaves a worn pass alone for a while
+		// (IsPlayerBotFishingPassHeld).
+		s_mapPlayerBotFishingPassAskedAt[ch->GetPlayerID()] = dwNow;
 		if (ch->IsEquipUniqueItem(UNIQUE_ITEM_FISHING_PASS))
 			return true;
 		LPITEM pass = NULL;

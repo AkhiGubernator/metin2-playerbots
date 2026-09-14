@@ -6,6 +6,8 @@ from pathlib import Path
 import pymysql
 
 INTERVAL = int(os.environ.get("SEBAN_COLLECTOR_INTERVAL", "300"))
+# First retry after a failed snapshot, in seconds; doubled up to INTERVAL.
+RETRY_MIN = 5
 STATUS_GLOB = os.environ.get("PLAYERBOTS_STATUS_GLOB", "/opt/metin2/var/channel1/*/playerbot_status.tsv")
 
 
@@ -191,13 +193,25 @@ def collect(con, previous):
 
 def main():
     previous = None
+    retry = RETRY_MIN
     while True:
         try:
             with connect() as con:
                 previous = collect(con, previous)
                 print("[seban-collector] snapshot complete", flush=True)
         except Exception as exc:
-            print(f"[seban-collector] {exc}", flush=True)
+            # An update recreates this container and the database together,
+            # and the database is often a few seconds behind: the first
+            # attempt meets "Connection refused". Waiting the whole interval
+            # after that left the panel without the tables the first snapshot
+            # creates - a 500 on the front page for five minutes after every
+            # update. A failure is retried in seconds, doubling up to the
+            # interval.
+            print(f"[seban-collector] {exc} (retry in {retry}s)", flush=True)
+            time.sleep(retry)
+            retry = min(INTERVAL, retry * 2)
+            continue
+        retry = RETRY_MIN
         time.sleep(INTERVAL)
 
 

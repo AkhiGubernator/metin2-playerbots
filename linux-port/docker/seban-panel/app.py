@@ -1441,7 +1441,12 @@ def dashboard():
     # Same per-(map,empire) shape as economy_shops()'s by_map, so the exact
     # same flag+map-code bar chart plugin can be reused here, just smaller.
     shop_map_rows = []
-    shop_snapshot_latest = one("SELECT MAX(captured_at) AS captured_at FROM player.web_seban_shop_snapshot").get("captured_at")
+    # Created by the collector's first snapshot too, so the same "not yet"
+    # applies: a missing table is an empty chart, never a 500.
+    try:
+        shop_snapshot_latest = one("SELECT MAX(captured_at) AS captured_at FROM player.web_seban_shop_snapshot").get("captured_at")
+    except pymysql.MySQLError:
+        shop_snapshot_latest = None
     if shop_snapshot_latest:
         raw_shop_map = rows("""SELECT map_index, empire, shop_count FROM player.web_seban_shop_snapshot
           WHERE captured_at=%s ORDER BY empire, shop_count DESC""", (shop_snapshot_latest,))
@@ -2075,7 +2080,12 @@ def recent_shop_sales(limit=10):
 @app.route("/economy/shops")
 @login_required
 def economy_shops():
-    latest = one("SELECT MAX(captured_at) AS captured_at FROM player.web_seban_shop_snapshot").get("captured_at")
+    # The collector's first snapshot creates the table; before it this page is
+    # empty, like the dashboard's chart, not a 500.
+    try:
+        latest = one("SELECT MAX(captured_at) AS captured_at FROM player.web_seban_shop_snapshot").get("captured_at")
+    except pymysql.MySQLError:
+        latest = None
     by_map = []
     empire_totals = {empire: {"shops": 0, "offers": 0, "items": 0, "value": 0} for empire in EMPIRES}
     if latest:

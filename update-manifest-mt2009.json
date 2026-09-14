@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-14T11:09:17Z",
-  "statusMessage": "2.0.41: **pojedynki botów przestały być morderstwami.** Cios bota zadawał obrażenia bez pytania silnika o zgodę na walkę, więc wyzywający uderzał, zanim drugi się zgodził, a zwycięzca bił przeciwnika po odrodzeniu. Silnik liczył każde takie zabójstwo jako morderstwo we własnym królestwie (−20 000 rangi, rozdzielone na drużynę). Stąd ujemna ranga u botów z niskim poziomem i nieskończone pojedynki poniżej 15 poziomu i w mieście. Teraz każdy cios i każda umiejętność idą przez kontrolę silnika, bot nie przyjmuje pojedynku poniżej 15 poziomu ani w strefie bezpiecznej, a zepsuta ranga botów jest zerowana przy starcie serwera. Do tego **boty idą w głąb lochów małp** (9 z 9 dokończonych marszów doszło do innej komory), **zwój błogosławieństwa chroni założony przedmiot** już od +4, zioła i Dłonie przestają zapychać plecaki, a po starcie serwera właściciele sklepów offline nie wychodzą wszyscy naraz z lochów i z frontu. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-14T11:38:20Z",
+  "statusMessage": "2.0.42: **klasyczny panel pokazuje Las, Czerwony Las i Wieżę Demonów na mapie na żywo.** Od 2.0.39 boty tam polują, a panel znał tylko nazwy i granice tych map — nie było ich w filtrze „Mapa” i nie miały tła, więc nie dało się ich wybrać. Teraz są w filtrze, a tło każdej jest narysowane z plików terenu, po których chodzą boty. Panel zaawansowany zostaje bez zmian. W tym samym ciągu co 2.0.41: pojedynki botów nie psują już rangi, boty idą w głąb lochów małp, a zwój chroni założony przedmiot. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.41",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.41/metin2-server-update-2.0.41.zip",
-    "sha256": "2A1AD3B2DC8CC9553736802E891226BCA13339CE750745A3C90645272EB171D3"
+    "version": "2.0.42",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.42/metin2-server-update-2.0.42.zip",
+    "sha256": "F714C488A686607FCCD02985188873D426732D1CAA8F211D0A1909FFBAD2B0F5"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

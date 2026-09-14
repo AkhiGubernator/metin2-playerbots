@@ -17,6 +17,37 @@ every version here.
 
 ---
 
+## 2.0.45 — 2026-09-14
+
+Serwer (AI i launcher). Bot w grupie gracza idzie za nim przez teleport, a
+szaman z grupy buffuje gracza. Klient bez zmian (zostaje 2.0.5).
+
+### Bot idzie za graczem przez teleport
+
+Bot zaproszony do grupy szedł za graczem tylko po tej samej mapie. Gdy gracz
+przechodził przez portal, korzystał z Teleportera albo z pierścienia, bot
+zostawał tam, gdzie był. Teraz, kiedy gracz stanie na nowej mapie, bot z jego
+grupy przenosi się w to samo miejsce. Nie wejdzie za graczem do lochu z
+osobną instancją, takiego jak Wieża Demonów, ani na mapę, na której boty tego
+serwera nie mogą stanąć. Do Lochu Pająków dochodzi jak zawsze, przez pustynię.
+
+### Szaman buffuje gracza
+
+Szaman w grupie gracza rzuca swoje wzmocnienia najpierw na gracza, a dopiero
+potem na siebie, i leczy gracza, który ma mniej niż 60% życia. Jeśli stoi za
+daleko, podchodzi bliżej, a ze zwykłego konia zsiada, bo z niego nie da się
+rzucać umiejętności. Wzmocnień bojowych używa w walce, a szybkości i leczenia
+także poza nią.
+
+### Paczka logów
+
+ZBIERZ LOGI zbiera teraz także przyjęcia zaproszeń do grupy, więc z paczki
+widać, kiedy bot do niej wszedł.
+
+Na naszym świecie nie da się tego sprawdzić bez drugiego gracza — jeśli bot
+nie pójdzie za Tobą albo szaman Cię nie buffuje, wciśnij ZBIERZ LOGI i napisz,
+o której to było.
+
 ## 2.0.44 — 2026-09-14
 
 Serwer (AI). Automatyczne mikstury bez pętli, która obciążała serwer, boty,

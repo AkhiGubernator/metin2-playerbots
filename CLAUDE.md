@@ -1662,9 +1662,9 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   engine's timed stat buff: value1 the apply, value2 the amount, value3 the
   seconds) or USE_ABILITY_UP; `FindPlayerBotBonusStoneCellLike` matches
   type+subtype of the vnum it is given; the junk rule exempts ITEM_USE of
-  those kinds plus the exp elixirs (`PLAYERBOT_EXP_ELIXIR_VNUMS`, USE_SPECIAL
-  whose special group is experience - `ManagePlayerBotExpElixir` drinks them
-  on sight) and the Metin detector (counter goods). USE_AFFECT value0 512/513
+  those kinds plus an auto potion with something left in it (see "Eliksir
+  Slonca and Eliksir Ksiezyca are auto potions" below) and the Metin
+  detector (counter goods). USE_AFFECT value0 512/513
   are not buffs (Rada Pustelnika, Zwój Egzorcyzmu removes affects) - the 510
   test is what keeps a bot from drinking an exorcism scroll.
 - **A bot's stall on the 2.x line is a real ikashop offline shop (2.0.26).**
@@ -3070,6 +3070,76 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   last 40 000 matching lines and some tags would crowd out everything else -
   `PLAYERBOT_PARTY: assist` alone writes about a hundred lines a minute at a
   thousand bots. Adding a tag is a decision about that budget, not a formality.
+- **Eliksir Slonca and Eliksir Ksiezyca are auto potions, and a use is a
+  switch.** 72723-72726, 76021, 76022 and 79012 (HP) and 72727-72730, 76004,
+  76005 and 79013 (SP) are `ITEM_AUTO_*_RECOVERY_*` on both engines. The
+  USE_SPECIAL case in `char_item.cpp` adds `AFFECT_AUTO_HP_RECOVERY` or
+  `_SP_` (534/535, `dwFlag` the item id) when none is running, takes it off
+  when this item's is, and for an empty one (socket 1 equal to socket 2)
+  says `AUTOPOTION_IS_EMPTY` and `break`s - so `UseItem` returns true for a
+  use that did nothing. `PLAYERBOT_EXP_ELIXIR_VNUMS` filed the SP half under
+  experience and `ManagePlayerBotExpElixir` used every one in the bag on
+  every booster pass; 991 of the 992 in bot bags on the test world were
+  empty, so the pass went on for ever: some 580 000 `exp elixir` lines an
+  hour on game1, a hundred and sixty a second, and not a point of experience
+  - while the one with anything left in it was switched on and off by turns.
+  `ManagePlayerBotAutoPotions` switches a potion on only when its affect is
+  absent and the potion is not empty, once a minute per bot, and logs only
+  when the affect appears; the junk rule keeps one with something left and
+  lets an empty one go. 39037-39042 share the names and no use path in
+  either engine handles them. Before writing "drink it" for a vnum, read the
+  case in `char_item.cpp` that handles it.
+- **A Demon Tower stone is a warp for every character on its killer's map.**
+  `deviltower_zone` answers a kill of 8015 (Metin Twardosci, level 50,
+  167 850 hp, the only one of 8015-8019 in `metin2_map_deviltower1/regen.txt`)
+  on map 66 with a six-second player timer and `d.new_jump_all(66, ...)`: a
+  new instance, and `CDungeon::JumpAll` `WarpSet`s every PC on the map the
+  killer stands on when the timer fires, with no bot test anywhere on the
+  way. On the test world a warrior of fifty-seven took it as an ordinary
+  Metin (`IsPlayerBotMetinWorthFighting` admits ten levels under to nine
+  over), and on 14 September at 14:17:11 ten characters on map 66 went into
+  instance 660000 and straight back out through the sectree rescue. A killer
+  that changed map inside the six seconds takes that map instead, and that is
+  "stalem afk pod lochem malp w m2, gdy nagle przeteleportowalo mnie do DT"
+  (sizowski, the same day): his bundle has him leaving the game at 12:27:18
+  and six bots on map 23 rescued for want of a sectree within the minute
+  after (`sectree_rescue from=23 to=23`) - JumpAll run on Bokjung. Its bot
+  syslog began five seconds too late to name the killer.
+  `IsPlayerBotDungeonTriggerStone` keeps 8015-8019 out of the Metin registry,
+  out of `IsPlayerBotMetinWorthFighting` (the collector, the party focus and
+  the crossing's stone finder all ask it) and out of the melee sweep, which
+  hits any stone within `PLAYERBOT_MELEE_SPLASH_RANGE` of its target. The
+  engine's skill splash is still open (`FuncSplashDamage` asks only
+  `battle_is_attackable`), so a bot fighting beside the stone can still land
+  the last blow; at that health it is slow, not impossible. Any stone whose
+  kill runs `d.new_jump_all` or `d.jump_all` belongs on that list.
+- **A player's party is the player's, and three passes had to be told.**
+  2.0.38 taught the party pass (`ManagePlayerBotParty`) that a party whose
+  leader has no bot descriptor (`IsPlayerBotHumanLedParty`) is outside the
+  cohort, rotation and straggler rules, and gave it
+  `ManagePlayerBotFollowHumanLeader`. Two other paths went on quitting any
+  party: the inactivity watchdog's reset, written for bot parties stuck in
+  PARTY_ASSEMBLE, and `TransitionPlayerBotMap`, because a bot party is one
+  camp and ends with the map. A bot standing beside an idle player - which
+  is exactly where the follow pass leaves it, inside
+  `PLAYERBOT_PARTY_FOLLOW_DISTANCE` - tripped the watchdog after ninety
+  seconds and was out ("dodaje boty do PT, a po chwili z niego wychodza",
+  sizowski, 14 September), and the sectree rescue after a Demon Tower warp,
+  a same-map transition, took every bot out of the party he had just made.
+  And the test itself asked for the leader's character, which a player has
+  not got for the seconds of a warp - a logout and a login - so the party
+  pass took his party for a bot party then and put the cohort rule to it:
+  the engine's `PARTY P2PSetMemberLevel` lines (the bundle's login files)
+  have bot 970 in his party at 13:42:40 and gone at 13:42:56, two seconds
+  after his character logged in again. A leader with no character on this
+  core is judged by pid now (`CPlayerBotManager::IsRegisteredBotPID`).
+  `IsPlayerBotBesideHumanLeader` is legitimate stillness to the watchdog
+  now, and neither the reset nor a map change quits a player's party. Grep
+  every `->Quit(` before writing a rule about who stays in a party. Not
+  built: following a leader through a warp (a bot has no client to reconnect
+  with, so it would be `TransitionPlayerBotMap` onto the leader's map when
+  this core hosts it) and a Shaman's buffs on the player - every buff in
+  `ManagePlayerBotCombatBuffs` is `UseSkill(vnum, ch)` on the bot itself.
 
 ## Engine facts worth not re-deriving
 

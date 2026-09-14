@@ -57,6 +57,13 @@ namespace
 	const DWORD PLAYERBOT_LOOT_THREAT_SCAN_INTERVAL_MIN = 900;
 	const DWORD PLAYERBOT_LOOT_THREAT_SCAN_INTERVAL_MAX = 1300;
 	const DWORD PLAYERBOT_LOOT_CLEANUP_INTERVAL = 10000;
+	// Who leaves merchant fodder on the ground, and what fodder is worth - see
+	// IsPlayerBotLootBeneathBot. Yang is long long on the 2.x line, so the
+	// purse bound is too.
+	const int PLAYERBOT_LOOT_CHOOSY_MIN_LEVEL = 40;
+	const long long PLAYERBOT_LOOT_CHOOSY_MIN_GOLD = 500000LL;
+	const long long PLAYERBOT_LOOT_CHOOSY_MAX_VALUE = 40000LL;
+	const int PLAYERBOT_LOOT_OUTGROWN_GEAR_LEVELS = 10;
 	const DWORD PLAYERBOT_INVENTORY_MAINTENANCE_MIN = 30000;
 	const DWORD PLAYERBOT_INVENTORY_MAINTENANCE_MAX = 60000;
 	const int PLAYERBOT_POTION_HP_PERCENT = 65;

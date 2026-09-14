@@ -38,6 +38,44 @@ poziomów i przy pełnym życiu obu stron.
 użyć, bo na jednej linii siedzi pod `ENABLE_NEWSTUFF`, a na drugiej nie istnieje
 w ogóle — więc bot pamięta swój pojedynek sam.
 
+**Czego to jeszcze nie robi, i mówię wprost:** bot przyjmuje wyzwanie i na tym
+koniec — **nie atakuje przeciwnika**. Cała ścieżka wybierania celu była pisana o
+potworach i metinach i odrzuca postacie graczy, więc pojedynek kończy się
+uściskiem dłoni. Zmierzone na żywym świecie: dwadzieścia zgód na pojedynek,
+zero walk. Walka w pojedynkach to osobna robota i wchodzi w następnym wydaniu —
+dotyczy to także wrogości między królestwami niżej.
+
+I jedna rzecz, która nie jest naszym błędem, a wygląda jak nasz: **jadąc na
+koniu nie zadaje się obrażeń w PvP**. Silnikowe `CanAttack` odrzuca atak
+jeźdźca, którego koń ma grade poniżej 2, a grade to `(poziom konia − 1) / 10 + 1`
+— czyli każdy koń do dziesiątego poziomu włącznie. Dotyczy gracza tak samo jak
+bota, więc jeśli obaj jesteście na koniach, nie trafi żaden z was. Zsiądź.
+
+### Magazyn u Dozorcy działa w obie strony
+
+Magazyn był składem bez drzwi — istniało wyłącznie wkładanie, a komentarz w
+kodzie mówił to wprost: „rzeczy włożone nigdy nie są wyjmowane". Zgłosił to
+**akhigubernator** na Discordzie i miał rację: strona w końcu zapełni się do
+końca i nigdy nie zostanie zwolniona, rzecz bezużyteczna godzinę temu może mieć
+popyt teraz, a bot potrafi siedzieć na księgach, w które sam już dorósł.
+
+Bot wyjmuje teraz dokładnie to, czego trzy reguły wkładania **przestały**
+uznawać za nadwyżkę: księgę, która nie jest już zbędna (umiejętność doszła do
+Mistrza albo bot wreszcie ma grupę umiejętności), oraz materiał, którego sam
+potrzebuje przy kowadle lub na który jest popyt i bot może go wystawić.
+Wyjmowanie biegnie **po** wkładaniu, na tej samej otwartej skrzyni — najpierw
+zwalniają się komórki plecaka, dopiero potem bot zabiera to, po co przyszedł.
+Ograniczone na wizytę i wielkością plecaka, bo wyjęcie pełnego plecaka
+skończyłoby się odwiezieniem wszystkiego z powrotem następnym razem.
+
+**I druga rzecz, znaleziona przy okazji: opłacona strona nigdy się nie
+zapisywała.** `SetSafeboxSize` przyjmuje **liczbę stron** i odrzuca wszystko od
+trzech wzwyż, a my podawaliśmy `SAFEBOX_PAGE_SIZE` — czyli 45 komórek. Funkcja
+wychodziła bez zrobienia czegokolwiek, za każdym razem. To jest prawdziwa
+przyczyna gałęzi „strona magazynu jeszcze nie gotowa", a nie wolna odpowiedź
+bazy. Teraz i pakiet do bazy, i rozmiar w pamięci mówią **dwie strony** — tyle,
+ile pokazuje okno Dozorcy.
+
 ### Kilof, żyły rud i wytapianie ebonitu
 
 Kopanie siedzi w silniku od zawsze — `mining.cpp` ma tabelę rud, szanse i event
@@ -95,6 +133,66 @@ tej linii nikt nigdy nie łowił. Tabela ma teraz kształt, który ten silnik
 faktycznie zapisuje; stara jest przebudowywana przy starcie, ale tylko wtedy, gdy
 ma ten zły kształt — historii, jeśli kiedyś powstanie, nic nie rusza.
 
+### Ulepszanie wędki u Rybaka
+
+Silnik ma ten mechanizm w dwóch połowach, a boty robiły tylko jedną. Przy każdym
+połowie wędka losuje punkt do socketu (dla +0 jeden na pięć), aż do swojego
+pułapu — i dopiero wtedy wolno ją ulepszyć. Nikt o to nigdy nie prosił, bo
+ulepszenie wywołuje wyłącznie komenda GM i dialog questa, którego bot nie
+otworzy. Zmierzone przed poprawką: **62 z 64 wędek w świecie stały na równo
+dziesięciu punktach — pełne, na zawsze**.
+
+Liczby są wędki, nie moje: **+0 → +1 to 100% i porażka nie istnieje**, dalej
+robi się ryzykownie (88%, 77%, 66%, 55%), a nieudane ulepszenie zabiera stopień.
+Po godzinie działania: 62 wędki na +1.
+
+### Ognisko i pieczone ryby
+
+Ognisko miało **dwa** błędy. Drewno kupowane jest u Rybaka po drodze nad wodę, a
+warunek zakupu wymagał pięciu martwych ryb — które pojawiają się dopiero w
+trakcie sesji. Pętla nie do domknięcia: 27 sesji skończyło się ścieżką
+rozpalającą, dwa boty w całym świecie miały kiedykolwiek drewno, ogień nie
+zapłonął ani razu.
+
+Drugi błąd siedział w silniku i trzeba go było przeczytać, bo w logu nie było po
+nim śladu: `ITEM_CAMPFIRE` sprawdza kafelek **sto jednostek przed postacią** i
+odrzuca wodę. A wędkarz stoi obrócony twarzą do rzeki. Każde drewno leciało do
+wody, a silnik tłumaczył się klientowi, którego bot nie ma. Teraz bot odwraca się
+tyłem do wody przed zapaleniem.
+
+Przy okazji: zakres pieczonych ryb kończył się na 27876, a rodzina sięga 27883 —
+więc **siedem najlepszych szło do handlarza za grosze**, w tym karp dający
+**+20 prędkości ruchu na 600 sekund** i złoty karaś z bonusem na 1800 sekund.
+
+### Stajenny w drugiej wiosce Jinno
+
+Noga marszu do Stajennego używała zwykłego marszu, a nie marszu miejskiego —
+czyli **nigdy nie pytała o osiągalność** i nie przesuwała celu na grunt
+połączony z botem. Stajenny w Bakrze stoi na kawałku terenu odciętym od placu:
+**600 odmów trasy, wszystkie na mapie 43**, podczas gdy stajnie pozostałych
+królestw obsłużyły 193 wizyty i przyjęły 82 medale. Po poprawce: **zero**.
+
+### Omdlenie działa na boty
+
+Zgłosił **cyfrowy_mat**: „omdlenie szarżą nie działa na botach z innego
+królestwa, bot po sekundzie już biegnie dalej". Miał rację i to był nasz błąd,
+nie silnika — silnik nakłada omdlenie botowi dokładnie tak jak graczowi, przez
+tę samą odporność, i nigdzie nie pyta, czy to bot. To **nasza pętla nigdy nie
+sprawdzała**, czy bot jest ogłuszony: szedł dalej, bił dalej i planował dalej.
+Jedyne takie sprawdzenie w całym kodzie botów pilnowało otwierania sklepu
+offline.
+
+Teraz brama stoi na samej górze pętli, obok sprawdzenia śmierci, więc obejmuje
+ruch, walkę i wszystkie podsystemy naraz.
+
+### Wabienie tam, gdzie są watahy
+
+Łucznik z drużyny planował wabienie **gdziekolwiek** poza strefą bezpieczną — nie
+było żadnej reguły mapy. Zmierzone w Yongan: drużyna sześciu, pięciu odbiorców
+gotowych i „brak watahy" sekundę później, bo w pierwszej wiosce nie ma czego
+przyciągać. Teraz tylko mapy frontieru, a maksimum grup zeszło z czterech na
+trzy, zgodnie z regułą „aggro 1–3 boty z drużyny".
+
 ### Las, Czerwony Las i Wieża Demonów
 
 Trzy mapy, które istniały w plikach, ale hostował je rdzeń bez botów — czyli
@@ -130,13 +228,23 @@ bot traktował je jak zwykły łup, choć Eliksiry Księżyca znał od dawna.
 
 ---
 
-Sprawdzone na żywym świecie po podniesieniu stawek: **pojedynki** (cztery
-wyzwania i cztery zgody, pierwsza para `NoSiemaNie` → `xLowieRybkix`),
-**blokada expa dropperów** (`ZwojPowrotu` i `vladnerq`, obaj dropperzy medali,
-obaj zatrzymani dokładnie na swoim progu 33) i **marmury polimorfii** (bot
-`Shanks` przemienił się na Bestialskiego Kapitana, poziom 42, ranga bossa).
-Czego nie dało się jeszcze zobaczyć: łowienia od trzydziestki, gildii i ruchu na
-nowe mapy — najwyższy bot ma 36 poziom, a progi to 40, 57 i 62.
+Sprawdzone na żywym świecie, po podniesieniu stawek do 100× i doprowadzeniu
+populacji do 340 botów powyżej 34 poziomu (najwyższy 90):
+
+- **górnictwo** — dwadzieścia żył postawionych i utrzymywanych, `spawned=20
+  refused=0`, ruda w torbach, pierwsze wytopienie (Ruda Miedzi → Miedź);
+- **ulepszanie wędki** — 62 wędki przeszły na +1 w pierwszej godzinie;
+- **łowienie od 30** — wędki w rękach botów na poziomach 30, 31, 33, 35 i 36,
+  czego przy limicie pięćdziesiątki nie dało się w ogóle zrobić;
+- **magazyn w obie strony** — pierwsze wyjęcia po kilku minutach, po godzinie 66;
+- **Stajenny** — z 600 odmów tras na mapie 43 zrobiło się zero;
+- **pojedynki** — zgody działają (dwadzieścia), walki jeszcze nie ma;
+- **wrogość królestw** — zero zaczepek, bo suwak stoi na zerze, tak jak ma stać.
+
+Czego nie dało się potwierdzić w grze: **ognisko** (poprawka wdrożona, ale w
+oknie testu żadna sesja wędkarska nie doszła do końca właściwą ścieżką) i
+**omdlenie** (wymaga gracza, który trafi szarżą). Tick przy 350 botach: 1,7–2,8 s
+z 60 000, watchdog zero.
 
 ## 2.0.38 — 2026-09-14
 

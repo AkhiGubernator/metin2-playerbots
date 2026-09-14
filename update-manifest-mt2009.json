@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-14T13:19:59Z",
-  "statusMessage": "2.0.43: **suwak w panelu ustawia, od jakiego plusa boty używają Zwojów Błogosławieństwa i Boga Smoków.** Pojedynek kończy się w chwili śmierci bota i znika z silnika, a bot zsiada ze zwykłego konia do walki. Boty zakładają grupy tylko we własnym królestwie, łączą stosy w magazynie, a zamożne boty nie biegną już po tanie mikstury i stary sprzęt. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-14T15:32:28Z",
+  "statusMessage": "2.0.44: **koniec pętli automatycznych mikstur, która obciążała serwer.** Boty nie rozbijają już kamieni Wieży Demonów, więc nikt nie zostaje nagle przeniesiony do Wieży, a bot zaproszony do grupy zostaje w niej, dopóki gracz jej nie rozwiąże. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.43",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.43/metin2-server-update-2.0.43.zip",
-    "sha256": "C3DEE7E91A8DF95D2A2B13AA384AFF5A1C77525A76CFE4F0E39CB138770BF269"
+    "version": "2.0.44",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.44/metin2-server-update-2.0.44.zip",
+    "sha256": "A674A6DB07B2B8C286454E0A4364D1DD1856B65600D4A4EDAD4E2060811B5338"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

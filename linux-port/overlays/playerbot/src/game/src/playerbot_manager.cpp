@@ -426,7 +426,8 @@ namespace
 				challenger->GetMapIndex() != ch->GetMapIndex())
 			return;
 		CPVPManager::instance().Insert(ch, challenger);
-		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
+		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), challengerPid,
+				dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
 		sys_log(0, "PLAYERBOT_PVP: agreed to a duel pid=%u name=%s challenger_pid=%u challenger=%s",
 				ch->GetPlayerID(), ch->GetName(), challengerPid, challenger->GetName());
 	}
@@ -509,7 +510,8 @@ namespace
 		// The challenge itself. The other bot's tick agrees three seconds later
 		// through the same journal a player's challenge goes through.
 		CPVPManager::instance().Insert(ch, finder.m_pFound);
-		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
+		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(),
+				finder.m_pFound->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
 		sys_log(0, "PLAYERBOT_PVP: challenged another bot pid=%u name=%s target_pid=%u target=%s",
 				ch->GetPlayerID(), ch->GetName(), finder.m_pFound->GetPlayerID(),
 				finder.m_pFound->GetName());
@@ -617,7 +619,8 @@ namespace
 		if (!finder.m_pFound)
 			return;
 		CPVPManager::instance().Insert(ch, finder.m_pFound);
-		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
+		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(),
+				finder.m_pFound->GetPlayerID(), dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
 		sys_log(0, "PLAYERBOT_PVP: kingdom quarrel pid=%u name=%s empire=%d target_pid=%u target=%s target_empire=%d map=%ld",
 				ch->GetPlayerID(), ch->GetName(), (int)ch->GetEmpire(),
 				finder.m_pFound->GetPlayerID(), finder.m_pFound->GetName(),
@@ -2786,6 +2789,20 @@ void CPlayerBotManager::Update()
 					target->GetLevel(), partyStrength.iReadyMembers,
 					partyStrength.iTotalLevels, partyStrength.iChallengeMaxLevel);
 		}
+		// An agreed duel outranks whatever this bot was hunting, the party's
+		// focus included: it is a commitment to another character, and it is
+		// bounded by construction - PLAYERBOT_PVP_DUEL_ASSUMED, or the moment
+		// one of the two falls. Without this the bot agreed and then went back
+		// to its monsters, which is what a player sees as being ignored.
+		LPCHARACTER duelFoe = FindPlayerBotDuelOpponent(ch, dwNow);
+		if (duelFoe && duelFoe != target &&
+				!IsPlayerBotSafeZone(ch->GetMapIndex(), duelFoe->GetX(), duelFoe->GetY()))
+		{
+			target = duelFoe;
+			state.dwTargetVID = (DWORD)target->GetVID();
+			ClearPlayerBotRoute(state, true);
+		}
+		const bool bTargetIsDuelFoe = (target != NULL && target == duelFoe);
 		const bool bTargetIsStone = (target && target->IsStone());
 		const bool bTargetIsMonster = (target && target->IsMonster());
 		const bool bTargetNeedsParty = bTargetIsMonster &&
@@ -2800,7 +2817,8 @@ void CPlayerBotManager::Update()
 				(target && target->GetVictim() == ch) ||
 				CanPlayerBotPartyChallenge(ch, target, dwNow, NULL);
 
-		if (!target || target->IsDead() || (!bTargetIsMonster && !bTargetIsStone) ||
+		if (!target || target->IsDead() ||
+			(!bTargetIsMonster && !bTargetIsStone && !bTargetIsDuelFoe) ||
 			(bTargetIsStone && !IsPlayerBotMetinWorthFighting(ch, target)) ||
 			// And the same question for an ordinary monster, on a clock: the
 			// errand that justified this fight may have finished since it began.

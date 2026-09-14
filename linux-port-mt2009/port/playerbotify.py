@@ -1712,6 +1712,24 @@ def apply_playerbot_party_invites(game):
          '\tTPacketGCPartyInvite p;\n'
          '\tp.header = HEADER_GC_PARTY_INVITE;\n',
          marker='playerbot_party::NoteInvite(')
+    # Dlaczego bot nie odpowiedzial na zaproszenie, musi powiedziec log.
+    #
+    # Kazda odmowa ponizej konczy sie ChatPacket do zapraszajacego i return, a
+    # gracz, ktory tej linii nie przeczyta, zglasza tylko "bot mnie
+    # zignorowal". W 102 plikach syslog nie ma ani jednego przyjecia
+    # zaproszenia, a zadna z bramek silnika nie tlumaczy stu procent - wiec
+    # zamiast kolejnej hipotezy niech nastepny test poda powod.
+    edit(os.path.join(game, 'char.cpp'),
+         'void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)\n{\n',
+         'void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)\n{\n'
+         '\tif (pchInvitee && pchInvitee->GetDesc() && pchInvitee->GetDesc()->IsBot())\n'
+         '\t\tsys_log(0, "PLAYERBOT_PARTY: invite pid=%u name=%s bot_pid=%u bot=%s '
+         'errcode=%d my_party=%d bot_party=%d my_level=%d bot_level=%d",\n'
+         '\t\t\t\tGetPlayerID(), GetName(), pchInvitee->GetPlayerID(), pchInvitee->GetName(),\n'
+         '\t\t\t\t(int) IsPartyJoinableCondition(this, pchInvitee),\n'
+         '\t\t\t\tGetParty() ? 1 : 0, pchInvitee->GetParty() ? 1 : 0,\n'
+         '\t\t\t\t(int) GetLevel(), (int) pchInvitee->GetLevel());\n',
+         marker='PLAYERBOT_PARTY: invite pid=')
 
 
 def apply_gm_panel(game):

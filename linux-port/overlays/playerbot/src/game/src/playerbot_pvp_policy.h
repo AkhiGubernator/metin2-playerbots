@@ -74,30 +74,62 @@ inline void Forget(uint32_t botPid)
 // for a fact the bot can simply remember. Set when the bot agrees, cleared when
 // it dies or the bound runs out; read by the health-potion pass, because the
 // operator's rule is that a duel is fought without drinking.
-inline std::map<uint32_t, uint32_t> duelUntil;
-
-inline void NoteDuelStarted(uint32_t botPid, uint32_t until)
+struct Duel
 {
-	if (botPid)
-		duelUntil[botPid] = until;
+	uint32_t opponentPid;
+	uint32_t until;
+};
+
+inline std::map<uint32_t, Duel> duels;
+
+inline void NoteDuelStarted(uint32_t botPid, uint32_t opponentPid, uint32_t until)
+{
+	if (!botPid)
+		return;
+	Duel& duel = duels[botPid];
+	duel.opponentPid = opponentPid;
+	duel.until = until;
 }
 
 inline bool IsInDuel(uint32_t botPid, uint32_t now)
 {
-	std::map<uint32_t, uint32_t>::iterator it = duelUntil.find(botPid);
-	if (it == duelUntil.end())
+	std::map<uint32_t, Duel>::iterator it = duels.find(botPid);
+	if (it == duels.end())
 		return false;
-	if (now >= it->second)
+	if (now >= it->second.until)
 	{
-		duelUntil.erase(it);
+		duels.erase(it);
 		return false;
 	}
 	return true;
 }
 
+// Who this bot agreed to fight, or zero.
+//
+// Knowing that a duel is on was enough while the only thing the AI did about
+// one was stop drinking. It is not enough to fight: every road to a target -
+// the collector, the engaged finder, the party focus, the held target - asks
+// for IsMonster() or IsStone(), so a bot that had just agreed to a duel had
+// nobody it was allowed to hit and stood there. Measured on our own world:
+// twenty agreements, zero blows, and a player reporting that the bot accepted
+// and then ignored him. The opponent is therefore remembered with the
+// deadline, and the tick makes it the target the way a monster would be.
+inline uint32_t GetDuelOpponent(uint32_t botPid, uint32_t now)
+{
+	std::map<uint32_t, Duel>::iterator it = duels.find(botPid);
+	if (it == duels.end())
+		return 0;
+	if (now >= it->second.until)
+	{
+		duels.erase(it);
+		return 0;
+	}
+	return it->second.opponentPid;
+}
+
 inline void EndDuel(uint32_t botPid)
 {
-	duelUntil.erase(botPid);
+	duels.erase(botPid);
 }
 
 } // namespace playerbot_pvp

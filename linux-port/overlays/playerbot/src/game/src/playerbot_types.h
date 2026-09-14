@@ -837,7 +837,14 @@ namespace
 	const int PLAYERBOT_PVP_MIN_HP_PERCENT = 80;
 	const int PLAYERBOT_PARTY_DESIRED_MAX = 6;
 	const int PLAYERBOT_PARTY_COHESION_RADIUS = 2800;
-	const int PLAYERBOT_ARCHER_LURE_MIN_PARTY_MEMBERS = 5;
+	// Three, not five. A course needs somebody to pull for, and the operator's
+	// rule is "aggro 1-3 party bots waiting nearer the middle" - so three is
+	// what a pull is actually for. Five was a guess, and it was a guess that
+	// switched the whole role off: measured on our own world, parties run at
+	// one or two members (census: 18 bots in 15 parties), five-member ones
+	// essentially never form, and the last lure session in the logs was two
+	// days old and ended "no_pack".
+	const int PLAYERBOT_ARCHER_LURE_MIN_PARTY_MEMBERS = 3;
 	// The Archer's luring course, as a party role rather than an extra shot.
 	//
 	// A course is: walk out, tag a pack with one ordinary arrow, read whether it

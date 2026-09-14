@@ -1596,7 +1596,12 @@ namespace
 	{
 		if (!ch || !target || ch->IsDead() || target->IsDead() ||
 				state.bVisitingShop || state.bRecoveringAfterDeath ||
-				(!target->IsMonster() && !target->IsStone()) ||
+				// A duel opponent is the one character a bot may swing at. Every
+				// other road to a target asks for a monster or a stone, which is
+				// exactly why an agreed duel used to end in the two of them
+				// standing and looking at one another.
+				(!target->IsMonster() && !target->IsStone() &&
+					!IsPlayerBotDuelOpponent(ch, target, dwNow)) ||
 				ch->GetMapIndex() != target->GetMapIndex() ||
 				IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
 				IsPlayerBotSafeZone(target->GetMapIndex(), target->GetX(), target->GetY()))

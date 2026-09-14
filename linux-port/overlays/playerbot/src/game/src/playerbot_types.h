@@ -2232,6 +2232,17 @@ namespace
 	{
 		return race >= PLAYERBOT_DEVIL_TOWER_STONE_FIRST && race <= PLAYERBOT_DEVIL_TOWER_STONE_LAST;
 	}
+	// How far round a splash skill's caster and its target a Demon Tower stone
+	// is looked for before the skill is cast: the skill's own splash range when
+	// it has one, this when it does not, plus a margin for a stone at the edge
+	// of the blow.
+	const int PLAYERBOT_SPLASH_STONE_DEFAULT_RANGE = 1000;
+	const int PLAYERBOT_SPLASH_STONE_MARGIN = 500;
+	// How far outside its own map a walk may still be asked for before it is
+	// taken for another map's coordinates and refused: a random step or a
+	// snapped goal a little past the edge still reaches ClampWorld, a point in
+	// Orc Valley asked for in Bokjung does not.
+	const long PLAYERBOT_NAV_OFF_MAP_MARGIN = 6400;
 	// Wykrywacz Kamieni Metin: useless to a bot (it draws on a client), wanted
 	// by players - counter goods, never merchant scrap.
 	const DWORD PLAYERBOT_METIN_DETECTOR_VNUMS[] = { 27989, 76006 };

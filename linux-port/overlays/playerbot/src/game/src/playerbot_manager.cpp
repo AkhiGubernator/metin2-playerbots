@@ -721,7 +721,7 @@ namespace
 			return false;
 		}
 		// A fight or a retreat holds the walk up, and stops its clock.
-		if (state.bTacticalRetreat || FindPlayerBotEngagedTarget(ch))
+		if (state.bTacticalRetreat || FindPlayerBotEngagedTarget(ch, &state, dwNow))
 		{
 			if (spread.dwHeldSince == 0)
 				spread.dwHeldSince = dwNow;
@@ -3307,7 +3307,7 @@ void CPlayerBotManager::Update()
 			{
 				TPlayerBotLoadTimer targetTimer(s_uPlayerBotLoadTargetUs);
 				++s_uPlayerBotLoadTargetSearches;
-				target = FindPlayerBotEngagedTarget(ch);
+				target = FindPlayerBotEngagedTarget(ch, &state, dwNow);
 				// An engaged monster is usually self-defence and passes, but the
 				// finder also returns what is fighting the party from across the
 				// field - so it goes through the same filter as everything else

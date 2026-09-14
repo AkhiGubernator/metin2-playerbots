@@ -3279,6 +3279,197 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   messages; char_item.cpp ships staged because of it. The branch logs nothing
   and the test world has no player to stand in a bot's party, so this was
   compiled and read, not watched.
+- **The package's `log.hack_log` could not take a single line.** Its dump
+  defines time, name, server and why; `LogManager::HackLog` inserts login and
+  ip as well, so every hack line failed with "Unknown column 'login' in
+  'INSERT INTO'" - 262 in one day on the test world, each a bot's
+  FAST_ITEM_SWAP - and the table held nothing on any 2.x world. It is the
+  loginlog2 hwid shape again: `CREATE TABLE IF NOT EXISTS` never mends a table
+  that exists, so logschemify.py appends `ADD COLUMN IF NOT EXISTS` for login
+  and ip (where r40250's table has them) and widens name to
+  CHARACTER_NAME_MAX_LEN; the migrator applies it on every start and initdb on
+  a fresh world. Checked by running the migrator twice over the test world:
+  the columns are there once and the second run changes nothing. After the migrator the error stopped - 16 lines in the half hour before, none in the twelve minutes after - and the table took its first six lines, every one of them FAST_ITEM_SWAP from the same bot two minutes apart, which is what the table is now there to show.
+- **Gear under level thirty goes on a counter at +6 or not at all, and two
+  lines of it at most.** `PLAYERBOT_SHOP_MIN_GEAR_LEVEL` had said since 1.x
+  that such a piece was junk at any refine, and never ran: the precious-refine
+  branch of `ScorePlayerBotShopStock` returned first for everything at +4, so
+  the level test only ever saw +0 to +3. On 14 September the counters of the
+  test world held 4 802 lines of it, 2 409 at +4 and +5 - Czer. Ubranie
+  Mrowki+5 on 348 of them - and a player asked the Discord whether every
+  server had "takie janusze biznesu". The operator's rule is
+  `PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE` and `PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES`,
+  asked before the bonus and the precious refine; the cap lives in
+  `CollectPlayerBotShopItems` and counts what an offline shop already holds.
+  Below +6 such a piece is the merchant's (`IsPlayerBotJunkItem`) - for this
+  gear only, the eleventh of September's "nothing above +4 to the merchant"
+  stands for the rest - or it would ride in the bag for good, because the
+  unsold-stands rule only counts what went up. The shops already standing are
+  cleaned by the service visit, one line a visit: `RecvShopRemoveItemClientPacket`
+  through the journal's `Remove`, which needs edit mode on a running stand and
+  none on an expired one, and which a bag with no cell refuses synchronously. Twenty-five minutes after it went live on the test world: 786 lines taken off the standing shops, gear under thirty at +4 and +5 down from 2 409 to 1 844 on the counters and from 487 to 253 in the bags, 67 names chosen - 31 from a list, 26 neutral rolls, 9 material names, 7 top-gear headlines - and no core died.
+- **A shop's name is Iwakura's list, rendered, and the engine decides what can
+  be on it.** `data/iwakura_nazwy_sklepow.txt` is his list of 14 September -
+  seven categories and the rules at its head - rendered by
+  `tools/generate_shop_names.py` into `playerbot_shop_names.h`;
+  `playerbot_shop_name_rules.h` is those rules as pure code
+  (`tests/playerbot_shop_name_rules_test.cpp`), and `playerbot_shop_signs.h`
+  describes a real counter in their terms. A name that mentions goods ("ZEBY
+  ORKA TANIO") has a binding in the generator's POWIAZANIA and is drawn only
+  over a counter holding them; the generator refuses a binding to an item
+  item_proto does not know or to a name no longer on the list, and reads the
+  33%, the x1.5 and the x1.4 out of his wording. `ikashop::CShopManager::ParseShopName`
+  runs a name through `EscapeString`, cuts the escaped string to 32
+  (`SHOP_SIGN_MAX_LEN`, `OFFLINE_SHOP_NAME_MAX_LEN`), and refuses it on
+  `has_proper_characters` (printable ASCII and the eighteen Polish CP1250
+  letters, `common/utils.h`) and on any `world.banword` as a substring after
+  ASCII lower-casing - so "Nauka czytania dla opornych" is refused for "porn".
+  The shop keeps the escaped string, so a backslash shows doubled unless the
+  cut lands on it. The generator trims decoration off both ends when that is
+  enough, drops the rest and lists both in the header. A standing shop cannot
+  be renamed by a bot - `RecvShopChangeNameClientPacket` wants `PREMIUM_SHOP` -
+  so it is renamed when it is renewed (`RecvShopReopenClientPacket` takes a
+  name). His names keep their diacritics, CP1250 like an item name: the
+  ASCII-only convention is for our own strings, and
+  `ikashop_offlineshop.name` is `cp1250_polish_ci`.
+- **A merchant's helmets are every class's at once.** The ladder
+  (`GetPlayerBotProgressionHelmetVnum`) was class-based, and the purchase that
+  fills a slot from 9001-9003 (`FindPlayerBotBestMerchantSlotVnum`) took the
+  highest-level helmet in stock whoever it was for: a sura of 74 was sold the
+  warrior's Tradycyjny Helm, could not wear it, and went bareheaded
+  (NaCoPaczysz, 14 September). On the test world 198 of 669 bots of fifty and
+  up wore no helmet, 120 of them with another class's in the bag.
+  `IsPlayerBotProtoForCharacter` is the anti-flag half of `CanUsedBy`, for a
+  proto the bot does not hold yet. In the seventeen minutes after the change the test world bought 173 helmets, each of the buyer's class - 147 bots once, 13 twice, none more - against a shaman that had bought and sold back the warrior's helmet 99 times in the sixteen minutes before it; helmetless bots of fifty and up went from 198 to 164, and those carrying another class's helmet from 120 to 48.
+- **Outgrown armour compounds towards nothing and never reaches it.** The
+  penalty was five percent of the defence figure per level past
+  `PLAYERBOT_ARMOR_OUTGROWN_LEVELS`, capped at all of it, so every armour
+  twenty levels outgrown scored the same single point and the bonus lines
+  alone decided: the same sura wore a level-1 plate +6 with a level-34 one +4
+  in its bag, then put the level-34 one on its counter. Each level past the
+  threshold now keeps ninety-five percent of the level before, so a higher
+  tier keeps more of its defence at any level.
+- **A bot in a player's party makes no plan of its own that changes map.**
+  `ManagePlayerBotFollowHumanLeader` leaves the bot to the rest of the tick once
+  it stands near the player, and the rest of the tick sent it away: in
+  sizowski's bundle of 14 September three shamans went `m1_direct_to_hwang`,
+  `m1_direct_to_sohan` and `desert_crossing_to_v1` through the Teleporter and
+  came back by `follow_leader` a second later, six round trips in two minutes,
+  and a buff landed once. `ManagePlayerBotWorldTravel` (both call sites), the
+  offline shop's service visit (`BotOfflineBusy`) and the Joan-first market
+  trip stand down for `IsPlayerBotHumanLedParty`; a desert crossing under way
+  is dropped, not resumed from wherever the player has led. Compiled and
+  deployed; the test world has no player to stand in a party.
+- **The package's Teleport Ring had no quest.** 70058 drops from monsters and
+  chests (mob_drop_item.txt, special_item_group.txt) and nothing in the
+  compiled quests answered its use, so the ring did nothing.
+  `linux-port-mt2009/docker/game/quest/teleport_ring.quest` is
+  map_warp.quest's list, level floor and fee behind `when 70058.use`, compiled
+  in the Dockerfile loop (object/70058/use in the image). qc checks only the
+  dotted engine functions against quest_functions: the questlib helpers
+  map_warp uses (say_split, select_table, parse_number, get_player_map1_index)
+  compile without being listed. Compiled, not used in game yet.
+- **A GM on this line is its owner playing.** `apply_gm_gameplay` in
+  playerbotify.py, from an audit of 14 September (gm_gameplayify.py): Ikarus's
+  `CheckGMLevel` refused every shop operation above GM_PLAYER,
+  `IsLevelViewable` hid a GM's level, `SetLevel` and the login block both forced
+  PK_MODE_PROTECT, and `CanOpenShop` asked a GM for the kill count. The badge
+  (AFF_YMIR) and every other check stay. Compiled and deployed; never tried in
+  game, because the admin account's GM characters are not for testing.
+- **The seban collector's first snapshot creates the tables the dashboard
+  reads.** It slept its whole interval after a failure, and an update
+  recreates it beside a database that is still starting, so the first attempt
+  met "Connection refused" and the front page answered 500 for five minutes
+  ("po 5 minutach zaczal dzialac", 14 September). A failure is retried after
+  five seconds, doubling up to the interval, and the two pages that read
+  `web_seban_shop_snapshot` treat a missing table as no data yet. Measured
+  after a recreate: 200 on both pages within seconds.
+- **playerbotify.py has to match the staged tree, comments and all.** The
+  fishing edit's marker was a Polish comment and the staged char.cpp carries
+  the English one, so the script found neither and stopped before every later
+  edit - found only because the GM edits after it never ran. And mt2009's
+  char.cpp is not pure CP949 (the stock `MonsterLog` lines are UTF-8 Korean),
+  so the cp949 check from the r40250 note says nothing about it.
+- **A refine line says what the recipe wanted.** `PLAYERBOT_AI: refine ...
+  materials=vnum:need/have`, counted before the attempt takes them - "the bot
+  refined to +8 without Orkowe Jadra" was read off a bag after the refine had
+  consumed them. Both engine paths check and remove the materials
+  (`DoRefine(false)`, `DoRefineWithScroll`); only a REFINE_BONUS_SCROLL with
+  TUNING_FLAG_NO_ITEM (Gwarancja Rzemiosla, 25051-25054) skips them, and no
+  bot uses one.
+- **A pass the fishing just asked for is not the equipment pass's to trade.**
+  `EnsurePlayerBotFishingPass` wears Karta Wedkarska (27620) in a unique slot
+  and `ManagePlayerBotEquipment` scored Maska Sabaha (72735) above it for the
+  same slot, so the two took turns every second or two: `equipped upgrade
+  wear=8 old_vnum=27620` 83 to 1274 times an hour on the test world between
+  14:00 and 20:00 on 14 September, and the engine's FAST_ITEM_SWAP check threw
+  KimTyJestes out of the game nineteen times in thirty-six minutes - the first
+  rows `log.hack_log` ever held. The fishing stamps
+  `s_mapPlayerBotFishingPassAskedAt` and the equipment pass leaves a worn pass
+  alone for `PLAYERBOT_FISHING_PASS_HOLD_MS`; none in the first twelve minutes
+  after the deploy (eleven in the hour before it, so that alone is thin; the
+  better proof is that KimTyJestes and Tryhard1337 were still wearing the pass
+  with a Maska Sabaha in the bag, the exact shape of the loop). It is the
+  pickaxe's lesson again: an activity that puts an item into a slot needs its
+  own guard in the equipment pass. Unrelated and older: every restart is
+  followed by a burst of `fishing pass bought` (58 in two minutes at 21:02, 41
+  at 20:16) against one or two a minute otherwise.
+- **Ask the anvil before taking the piece off.** `ManagePlayerBotRefining`
+  unequipped a worn candidate and only then let `DoRefine` find the material
+  or the fee missing (`refine SKIPPED ... materials=30057:2/21,27799:1/0`); the
+  equipment pass put the piece back and the next blacksmith tick took it off
+  again three seconds later, for the whole visit - about 3 000 `equipped
+  upgrade wear=0 old_vnum=0` and 30 000 `refine SKIPPED` an hour on the test
+  world. The worn-candidate loop and the unequip itself ask
+  `CanPlayerBotAttemptRefineItem`, which `HasPlayerBotRefineOpportunity` already
+  asked: "the planner and the pass that acts must ask one function", sprung
+  from the other side. Twelve minutes after the deploy: 11 armour re-equips,
+  each a different bot, and `refine SKIPPED` at a quarter of its old rate (the
+  rest are bag pieces, which nothing unequips). The refine lines carry
+  `materials=vnum:need/have` taken before the attempt, and the first hour of
+  them is the answer to "refined to +8 without Orkowe Jadra" until a log says
+  otherwise: 419 successful refines on recipes with materials, 87 of them +7
+  to +8, every one with the materials in the bag.
+- **Costumes are refused, not removed.** A costume once put on could not come
+  off again and left the character drawn as a bare weapon; the operator's call
+  was to stop them being worn. `apply_costume_block` (playerbotify.py) refuses
+  `ITEM_COSTUME` at the top of `CanEquipNow` with a chat line, before the
+  `ItemEquip` pulse is counted - EquipItem, a drag onto a costume slot and the
+  item's use all pass there. A costume already worn stays worn and nothing is
+  deleted; unequipping them at login would belong beside that edit. Compiled
+  and found in the shipped binary, not tried in a client.
+- **A playerbotify edit whose marker is its whole replacement fails the
+  second run once a later edit writes inside it.** `apply_gm_gameplay` puts
+  the GM's lines at the top of `CanOpenShop`, above the bot's lines from an
+  older edit whose marker was its entire new text, so the next run on the
+  staged tree found neither that text nor the stock anchor and stopped before
+  `apply_costume_block`. Give an edit a `marker=` of one sentence no later edit
+  will split.
+- **A client package can carry the executable, under the name the launchers
+  run.** Client 2.0.6 (ĹŌŞƬĒĶ's animated login screen and Discord Rich
+  Presence) came as `pack/{root,locale}.{index,data}` and `Metin2
+  SinglePlayer.exe`. Every launcher starts `clientExecutable` from its config
+  or finds `Klient\metin2client.exe` (`Find-ClientExecutable`,
+  `Get-M2SiblingClientExecutable`), so under the new name every player would
+  have kept the old exe with the new packs; it ships as `metin2client.exe`,
+  listed in `launcher/client-update-files.mt2009.txt`, and the same bytes had
+  already run on the test machine as `metin2client2richpresence.exe`.
+  `Test-M2ProtectedPath` guards only the launcher's own files, so the exe is
+  applied like any other file. `linux-port-mt2009/client-root` and
+  `client-locale` hold what changed against 2.0.5's packs (the login scripts,
+  three login images, logo.tga and 76 files under `ui/animated`: 32 DDS
+  frames the animation plays, the 32 JPG frames the first build played -
+  frame 01 still opens the window - and 12 loading-logo PNGs), and
+  `CLIENT_VERSION` had stayed at 2.0.3 through the 2.0.4 and 2.0.5 client
+  releases; it only matters to a full package. The first build of this
+  client loaded all 32 full-HD JPG frames synchronously as the login window
+  opened, a delay anyone could see; the one that shipped loads DDS frames two
+  a tick from `OnUpdate` (ĹŌŞƬĒĶ, the same evening, while the release was
+  being packed). `intrologo.py` plays `loading.avi` instead of the two stock
+  logo videos and goes straight to the login while that file is absent (the
+  video is to come in a later client patch), and it appends a few lines to
+  `login_preload.log` in the client folder on every start. The
+  static-background switch asked of ĹŌŞƬĒĶ is not in this build.
 
 ## Engine facts worth not re-deriving
 

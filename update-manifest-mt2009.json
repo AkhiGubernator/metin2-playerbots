@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-14T18:32:40Z",
-  "statusMessage": "2.0.47: **boty wyceniają stragany według cennika Iwakury v1.0 (biżuteria, buty, tarcze, rudy, jedna tabela skalowania), quest „Zbadaj przeklęte zwierzęta” liczy wszystkie cztery niedźwiedzie, a panel zaawansowany to wersja 1.41.0 Sebana.** Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-14T21:32:23Z",
+  "statusMessage": "2.0.48: **nowy klient 2.0.6 z animowanym ekranem logowania, nowym logo i Discord Rich Presence od ĹŌŞƬĒĶ; boty nazywają sklepy według listy Iwakury, GM gra jak zwykły gracz, a kostiumów nie da się już założyć.** Serwer i klient — zaktualizuj oba, przed aktualizacją klienta zamknij grę.",
   "server": {
-    "version": "2.0.47",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.47/metin2-server-update-2.0.47.zip",
-    "sha256": "70ADDFFC7CE861049E2DA1098429444B61E838FD9103BFD69C728C2E4CE01F68"
+    "version": "2.0.48",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.48/metin2-server-update-2.0.48.zip",
+    "sha256": "26436E7F60C3DB83213FDA4DB4A0675969B8C5AF42507F6FCC6DD3CC928CB186"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.5",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.34/metin2-client-update-2.0.5.zip",
-    "sha256": "7EBBBBC3DD3E6337F75FB74DE4613732CB6EB9A36131BDFC3ED2AA69909B8119"
+    "version": "2.0.6",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.48/metin2-client-update-2.0.6.zip",
+    "sha256": "6435A6C27A1770F22D4901DDC7C1E7AF7F5238427FEAC1AA052FB7403B0E71AF"
   }
 }

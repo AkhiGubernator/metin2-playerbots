@@ -1095,6 +1095,16 @@ namespace
 							!IsPlayerBotPartyEligible(candidate, stateIt->second))
 						return true;
 
+					// The engine's first rule of a party, and the one a bot's own
+					// Join never asked: CHARACTER::IsPartyJoinableCondition refuses
+					// another kingdom before anything else, so a player cannot group
+					// across kingdoms and a bot must not either. On the shared maps
+					// the bots of all three stand side by side, and they grouped
+					// there as if they were one ("boty z roznych krolestw expia w
+					// jednym PT", l0st3k).
+					if (candidate->GetEmpire() != m_me->GetEmpire())
+						return true;
+
 					if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) > 3)
 						return true;
 
@@ -1182,8 +1192,10 @@ namespace
 			finder.m_pTargetParty->Link(ch);
 			finder.m_pTargetParty->SetParameter(PARTY_EXP_DISTRIBUTION_PARITY);
 			state.dwPartyExpireTime = dwNow + number(300000, 900000); // 5 to 15 mins
-			sys_log(0, "PLAYERBOT_AI: joined party pid=%u name=%s members=%d",
-					ch->GetPlayerID(), ch->GetName(), finder.m_pTargetParty->GetMemberCount());
+			LPCHARACTER joinedLeader = finder.m_pTargetParty->GetLeaderCharacter();
+			sys_log(0, "PLAYERBOT_AI: joined party pid=%u name=%s members=%d empire=%u leader_empire=%u",
+					ch->GetPlayerID(), ch->GetName(), finder.m_pTargetParty->GetMemberCount(),
+					(unsigned int)ch->GetEmpire(), joinedLeader ? (unsigned int)joinedLeader->GetEmpire() : 0U);
 		}
 		else if (finder.m_pSoloCandidate)
 		{
@@ -1197,10 +1209,11 @@ namespace
 				state.dwPartyExpireTime = dwNow + number(300000, 900000); // 5 to 15 mins
 				RememberPlayerBotEncounter(ch, finder.m_pSoloCandidate,
 						PLAYERBOT_FRIEND_PARTY_POINTS, dwNow);
-				sys_log(0, "PLAYERBOT_AI: created party pid=%u name=%s partner_pid=%u affinity=%d",
+				sys_log(0, "PLAYERBOT_AI: created party pid=%u name=%s partner_pid=%u affinity=%d empire=%u partner_empire=%u",
 						ch->GetPlayerID(), ch->GetName(),
 						finder.m_pSoloCandidate->GetPlayerID(),
-						GetPlayerBotAffinity(state, finder.m_pSoloCandidate->GetPlayerID()));
+						GetPlayerBotAffinity(state, finder.m_pSoloCandidate->GetPlayerID()),
+						(unsigned int)ch->GetEmpire(), (unsigned int)finder.m_pSoloCandidate->GetEmpire());
 			}
 		}
 	}

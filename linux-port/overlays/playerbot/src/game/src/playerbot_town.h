@@ -194,6 +194,10 @@ namespace
 				wanted = PlayerBotNeedsRefineMaterial(ch, item->GetVnum()) ||
 						(GetPlayerBotLedgerDemand(item->GetVnum()) > 0 &&
 							PlayerBotCanOpenShop(ch));
+			else if (item->GetType() == ITEM_MATERIAL && IsPlayerBotNonGearMaterial(item->GetVnum()))
+				// The herbs an older version put down as materials: out, and to
+				// the merchant on the next visit (IsPlayerBotNonGearMaterial).
+				wanted = true;
 			if (!wanted)
 				continue;
 

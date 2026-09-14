@@ -448,6 +448,46 @@ namespace
 		return s_materials;
 	}
 
+	// The materials no weapon or armour recipe asks for. Every one of them in
+	// this world feeds only the Herbalist's Knife (item type 35): the herbs of
+	// 50721-50736 and the two brews 30341 and 30342, measured on refine_proto
+	// against item_proto. No bot carries that knife, so to a bot they are not
+	// materials at all - and the rules that keep a material for the anvil, the
+	// counter and the storekeeper kept these in 850 bags and 400 safeboxes of
+	// our own world ("skladniki na mikstury, ktorych boty nie craftuja,
+	// blokuja eq", uxietoszef). They are merchant scrap. Asked of the tables
+	// rather than listed, so a world whose recipes differ gets its own answer.
+	bool IsPlayerBotNonGearMaterial(DWORD vnum)
+	{
+		static std::set<DWORD> s_nonGear;
+		static bool s_loaded = false;
+		if (!s_loaded)
+		{
+			s_loaded = true;
+			std::set<DWORD> gear, other;
+			const std::vector<TItemTable>& protos = ITEM_MANAGER::instance().GetTable();
+			for (size_t i = 0; i < protos.size(); ++i)
+			{
+				if (protos[i].wRefineSet == 0)
+					continue;
+				const TRefineTable* recipe =
+						CRefineManager::instance().GetRefineRecipe(protos[i].wRefineSet);
+				if (!recipe)
+					continue;
+				const bool forGear = protos[i].bType == ITEM_WEAPON || protos[i].bType == ITEM_ARMOR;
+				for (int m = 0; m < recipe->material_count; ++m)
+					if (recipe->materials[m].vnum != 0)
+						(forGear ? gear : other).insert(recipe->materials[m].vnum);
+			}
+			for (std::set<DWORD>::const_iterator it = other.begin(); it != other.end(); ++it)
+				if (gear.find(*it) == gear.end())
+					s_nonGear.insert(*it);
+			sys_log(0, "PLAYERBOT_ECONOMY: %u materials feed no weapon or armour recipe",
+					(unsigned int)s_nonGear.size());
+		}
+		return s_nonGear.find(vnum) != s_nonGear.end();
+	}
+
 	// The fisherman's keepsakes: kept whatever else is true, because they are
 	// the entire point of a fishing trip and the road to +7 and beyond. They are
 	// counted here so the stock cap below does not spend its eight cells on them.
@@ -468,7 +508,8 @@ namespace
 		if (!item)
 			return false;
 		const std::set<DWORD>& materials = GetPlayerBotRefineMaterialVnums();
-		return materials.find(item->GetVnum()) != materials.end();
+		return materials.find(item->GetVnum()) != materials.end() &&
+				!IsPlayerBotNonGearMaterial(item->GetVnum());
 	}
 
 	// Junk goes to the general-goods merchant on the next town visit, and for a
@@ -639,6 +680,11 @@ namespace
 		// Tooth is a refine material and takes the material branch below.
 		if (vnum >= 50701 && vnum <= 50706 && !IsPlayerBotTradeableMaterial(item) &&
 				IsPlayerBotBiologistSpecimenSurplus(ch, vnum))
+			return true;
+
+		// A material only the Herbalist's Knife consumes is nothing to a bot:
+		// see IsPlayerBotNonGearMaterial.
+		if (item->GetType() == ITEM_MATERIAL && IsPlayerBotNonGearMaterial(vnum))
 			return true;
 
 		if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_SELL))
@@ -999,11 +1045,40 @@ namespace
 		return count;
 	}
 
+	// Boosters nobody but their holder can use, past PLAYERBOT_BOOSTER_KEEP_PER_VNUM,
+	// thrown away at the merchant visit. Only the ones that may neither be sold
+	// nor put on a counter: an ItemShop copy without ANTI_SELL is the operator's
+	// gift and stays. The first stacks are kept and whole stacks go after them,
+	// so a bot is left with at most one stack over the keep.
+	void DiscardPlayerBotSurplusBoosters(LPCHARACTER ch)
+	{
+		std::map<DWORD, int> kept;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->GetCell() != cell || item->IsEquipped() || item->isLocked() ||
+					!IsPlayerBotBoosterItem(item) ||
+					!IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_SELL) ||
+					!IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_MYSHOP))
+				continue;
+			int& held = kept[item->GetVnum()];
+			if (held < PLAYERBOT_BOOSTER_KEEP_PER_VNUM)
+			{
+				held += (int)item->GetCount();
+				continue;
+			}
+			sys_log(0, "PLAYERBOT_CHEST: discarded surplus booster pid=%u name=%s vnum=%u count=%u kept=%d",
+					ch->GetPlayerID(), ch->GetName(), item->GetVnum(), (unsigned int)item->GetCount(), held);
+			ITEM_MANAGER::instance().RemoveItem(item, "PLAYERBOT_DISCARD_BOOSTER");
+		}
+	}
+
 	bool SellPlayerBotJunkAtMerchant(LPCHARACTER ch, EPlayerBotMerchantCategory category,
 			const char* merchantName)
 	{
 		if (!ch || !ch->IsItemLoaded())
 			return false;
+		DiscardPlayerBotSurplusBoosters(ch);
 
 		size_t soldCount = 0;
 		long long totalSoldGold = 0;
@@ -1300,7 +1375,18 @@ namespace
 			// stands, and without this it was refused a scroll below +6 and
 			// then held for want of one - the deadlock that parked 451 weapons
 			// on +4.
-			if (plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item))
+			// And the piece in the bot's hands, at a step that can burn it, goes
+			// under a scroll whatever its plus. GetPlayerBotRefineTarget reads a
+			// scroll in the bag as a ladder to +9, and then the +4 and +5 steps -
+			// eighty and sixty percent - went to the plain anvil and burned the
+			// worn weapon: "biegaja do kowala, pala swoj glowny item" with 55 000
+			// Blessing Scrolls in the bags of 1100 bots (uxietoszef). A spare in
+			// the bag keeps the +6 rule: its burn is the price of not spending a
+			// scarce scroll on it.
+			const TRefineTable* stepRecipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+			const bool wornStepCanBurn = wearCell != 255 && stepRecipe &&
+					stepRecipe->prob <= PLAYERBOT_WORN_SCROLL_MAX_PROB;
+			if (plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item) || wornStepCanBurn)
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel);
 			// No scroll, a roll that can fail, and a weapon worth more than the
 			// next plus: leave it. The blacksmith burns what he fails.

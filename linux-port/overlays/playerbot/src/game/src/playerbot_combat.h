@@ -342,6 +342,25 @@ namespace
 		return FindPlayerBotDuelOpponent(ch, dwNow) == target;
 	}
 
+	// Whether the engine will let a blow land on this character.
+	//
+	// CHARACTER::Damage asks nothing - not the agreement, not the protection
+	// under PK_PROTECT_LEVEL, not the safe zone. battle_melee_attack and the
+	// skill path ask battle_is_attackable first; the bots' own swing did not.
+	// So from 2.0.39 a duellist's blow landed wherever the AI believed a duel
+	// was on: a challenger struck before the other side had agreed, and a
+	// winner went on striking the respawned loser after CPVP::Win had closed
+	// the fight. To the engine each such kill was a murder in the killer's own
+	// kingdom - minus twenty thousand alignment, shared over its party, which
+	// is how bots of level nine came to wear "Zlosliwy" (nerrvous_s) and how 98
+	// bots of our own world reached -151002. The skill path did ask, so the
+	// same duel under level fifteen, or in a town, was an animation that never
+	// hurt anybody and never ended (djariczek).
+	bool CanPlayerBotStrikeCharacter(LPCHARACTER ch, LPCHARACTER victim)
+	{
+		return ch && victim && victim->IsPC() && battle_is_attackable(ch, victim);
+	}
+
 	bool ExecutePlayerBotAttackSkill(LPCHARACTER ch, LPCHARACTER target, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		// Under a polymorph marble the engine refuses every skill - five
@@ -353,6 +372,10 @@ namespace
 		// uzywa sie skilli", Tieru).
 		if (!ch || !target || ch->GetSkillGroup() == 0 || ch->IsPolymorphed() ||
 				dwNow < state.dwNextSkillCastTime)
+			return false;
+		// A character is struck through the same gate as a swing, or the cast
+		// animation plays at somebody nothing can hurt.
+		if (target->IsPC() && !CanPlayerBotStrikeCharacter(ch, target))
 			return false;
 		LPITEM archerBow = NULL;
 		LPITEM archerArrow = NULL;

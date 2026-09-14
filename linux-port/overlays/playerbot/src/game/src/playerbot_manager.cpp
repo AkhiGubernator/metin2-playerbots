@@ -404,9 +404,12 @@ namespace
 	// this waits the agreed three seconds and then agrees, which is what makes
 	// the fight start.
 	//
-	// A bot never refuses. What it will not do is agree from the floor: a
-	// challenge taken at a sliver of health is a free kill, not a duel, and the
-	// engine has no rule against it.
+	// A bot refuses only a fight that cannot happen: under PK_PROTECT_LEVEL on
+	// either side, or in a safe zone, the engine refuses every blow, so an
+	// agreement there was a duel nobody could fight or end ("bot przyjmuje pvp
+	// ponizej 15 lvl", "nieskonczone pvp", djariczek). What it will not do
+	// either is agree from the floor: a challenge taken at a sliver of health
+	// is a free kill, not a duel, and the engine has no rule against it.
 	void AcceptPlayerBotPvpChallenge(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch)
@@ -426,6 +429,28 @@ namespace
 		if (!challenger || challenger->IsDead() ||
 				challenger->GetMapIndex() != ch->GetMapIndex())
 			return;
+		const char* refusal = NULL;
+		if (ch->GetLevel() < PK_PROTECT_LEVEL || challenger->GetLevel() < PK_PROTECT_LEVEL)
+			refusal = "level";
+		else if (IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
+				IsPlayerBotSafeZone(challenger->GetMapIndex(), challenger->GetX(), challenger->GetY()))
+			refusal = "safe_zone";
+		if (refusal)
+		{
+			sys_log(0, "PLAYERBOT_PVP: declined a duel pid=%u name=%s challenger_pid=%u challenger=%s reason=%s level=%u challenger_level=%u",
+					ch->GetPlayerID(), ch->GetName(), challengerPid, challenger->GetName(), refusal,
+					(unsigned int)ch->GetLevel(), (unsigned int)challenger->GetLevel());
+			// A person is told why; a bot has nobody to read it.
+			if (challenger->GetDesc() && !challenger->GetDesc()->IsBot())
+			{
+				if (refusal[0] == 'l')
+					challenger->ChatPacket(CHAT_TYPE_INFO, "%s nie przyjmie pojedynku ponizej %d poziomu.",
+							ch->GetName(), (int)PK_PROTECT_LEVEL);
+				else
+					challenger->ChatPacket(CHAT_TYPE_INFO, "%s nie walczy w strefie bezpiecznej.", ch->GetName());
+			}
+			return;
+		}
 		CPVPManager::instance().Insert(ch, challenger);
 		playerbot_pvp::NoteDuelStarted(ch->GetPlayerID(), challengerPid,
 				dwNow + PLAYERBOT_PVP_DUEL_ASSUMED);
@@ -451,14 +476,57 @@ namespace
 	bool ManagePlayerBotDuelCombat(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		static std::map<DWORD, DWORD> s_mapPlayerBotDuelLogged;
+		// When the engine first refused this bot a blow at its foe.
+		static std::map<DWORD, DWORD> s_mapPlayerBotDuelRefusedSince;
 		if (!ch || ch->IsDead())
 			return false;
+		const DWORD pid = ch->GetPlayerID();
+		if (playerbot_pvp::GetDuelOpponent(pid, dwNow) == 0)
+		{
+			s_mapPlayerBotDuelRefusedSince.erase(pid);
+			return false;
+		}
 		LPCHARACTER foe = FindPlayerBotDuelOpponent(ch, dwNow);
 		if (!foe)
+		{
+			// Fallen, gone, or on another map: the fight the engine agreed to is
+			// over either way, and a duel still remembered is only a potion ban
+			// with nobody to fight. Nothing ended one before this - EndDuel had
+			// no caller, so every duel ran its whole bound.
+			playerbot_pvp::EndDuel(pid);
+			s_mapPlayerBotDuelRefusedSince.erase(pid);
+			s_mapPlayerBotDuelLogged.erase(pid);
 			return false;
-		if (IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
-				IsPlayerBotSafeZone(foe->GetMapIndex(), foe->GetX(), foe->GetY()))
+		}
+		// The duel ends where the engine says it cannot be fought, not where
+		// PLAYERBOT_PVP_DUEL_ASSUMED runs out. A refusal is normal for the
+		// seconds before the other side agrees; past PLAYERBOT_PVP_REFUSED_GIVE_UP
+		// it is a fight already won (CPVP::Win takes the loser's agreement
+		// back), one under PK_PROTECT_LEVEL, or one standing in a safe zone.
+		const bool bSafe = IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
+				IsPlayerBotSafeZone(foe->GetMapIndex(), foe->GetX(), foe->GetY());
+		if (bSafe || !CanPlayerBotStrikeCharacter(ch, foe))
+		{
+			std::map<DWORD, DWORD>::iterator refused = s_mapPlayerBotDuelRefusedSince.find(pid);
+			if (refused == s_mapPlayerBotDuelRefusedSince.end())
+				s_mapPlayerBotDuelRefusedSince[pid] = dwNow;
+			else if (dwNow - refused->second >= PLAYERBOT_PVP_REFUSED_GIVE_UP)
+			{
+				sys_log(0, "PLAYERBOT_PVP: duel over pid=%u name=%s foe_pid=%u foe=%s reason=%s level=%u foe_level=%u",
+						pid, ch->GetName(), foe->GetPlayerID(), foe->GetName(),
+						bSafe ? "safe_zone" : "engine_refuses",
+						(unsigned int)ch->GetLevel(), (unsigned int)foe->GetLevel());
+				playerbot_pvp::EndDuel(pid);
+				s_mapPlayerBotDuelRefusedSince.erase(refused);
+				s_mapPlayerBotDuelLogged.erase(pid);
+				if (ch->GetVictim() == foe)
+					ch->SetVictim(NULL);
+				if (state.dwTargetVID == (DWORD)foe->GetVID())
+					state.dwTargetVID = 0;
+			}
 			return false;
+		}
+		s_mapPlayerBotDuelRefusedSince.erase(pid);
 		const int distance = DISTANCE_APPROX(ch->GetX() - foe->GetX(),
 				ch->GetY() - foe->GetY());
 		// Further than the bot can see is no longer the fight that was agreed.
@@ -671,6 +739,10 @@ namespace
 			return;
 		if (playerbot_pvp::IsInDuel(ch->GetPlayerID(), dwNow))
 			return;
+		// Under PK_PROTECT_LEVEL the engine refuses every blow on the kingdom's own
+		// maps: a challenge from there is a duel nobody can fight or end.
+		if (ch->GetLevel() < PK_PROTECT_LEVEL)
+			return;
 		// Anything the bot is actually doing outranks picking a fight.
 		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
 				state.bMarketTrip || state.bFishingSession || state.bTacticalRetreat ||
@@ -709,6 +781,9 @@ namespace
 					return false;
 				if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) >
 						PLAYERBOT_PVP_CHALLENGE_LEVEL_DELTA)
+					return false;
+				if (candidate->GetLevel() < PK_PROTECT_LEVEL ||
+						IsPlayerBotSafeZone(candidate->GetMapIndex(), candidate->GetX(), candidate->GetY()))
 					return false;
 				if (candidate->GetMaxHP() <= 0 ||
 						(candidate->GetHP() * 100) / candidate->GetMaxHP() <
@@ -771,6 +846,10 @@ namespace
 			return;
 		if (playerbot_pvp::IsInDuel(ch->GetPlayerID(), dwNow))
 			return;
+		// The protection under PK_PROTECT_LEVEL holds across kingdoms too
+		// (CPVPManager::CanAttack), so the same duel would never land a blow.
+		if (ch->GetLevel() < PK_PROTECT_LEVEL)
+			return;
 		// Who is aggressive is decided by pid, not rolled: a kingdom then has a
 		// character rather than a mood, the same bots pick the fights after
 		// every restart, and the rest are left alone to hunt - which is what
@@ -817,6 +896,9 @@ namespace
 					return false;
 				if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) >
 						PLAYERBOT_KINGDOM_PVP_LEVEL_DELTA)
+					return false;
+				if (candidate->GetLevel() < PK_PROTECT_LEVEL ||
+						IsPlayerBotSafeZone(candidate->GetMapIndex(), candidate->GetX(), candidate->GetY()))
 					return false;
 				// A bot on its knees is not a fight. This is also what keeps the
 				// loser out of a second quarrel while it walks away from the
@@ -3028,6 +3110,11 @@ void CPlayerBotManager::Update()
 		// one of the two falls. Without this the bot agreed and then went back
 		// to its monsters, which is what a player sees as being ignored.
 		LPCHARACTER duelFoe = FindPlayerBotDuelOpponent(ch, dwNow);
+		// Only a foe the engine will let this bot strike - see
+		// CanPlayerBotStrikeCharacter and the refusal clock in
+		// ManagePlayerBotDuelCombat.
+		if (duelFoe && !CanPlayerBotStrikeCharacter(ch, duelFoe))
+			duelFoe = NULL;
 		if (duelFoe && duelFoe != target &&
 				!IsPlayerBotSafeZone(ch->GetMapIndex(), duelFoe->GetX(), duelFoe->GetY()))
 		{

@@ -234,6 +234,17 @@ namespace
 	const char* const PLAYERBOT_SAFEBOX_PAID_FLAG = "playerbot.safebox_paid";
 	const DWORD PLAYERBOT_SAFEBOX_LOAD_WAIT_MS = 8000;
 	const int PLAYERBOT_SAFEBOX_BOOK_KEEP = 12;
+	// A page COUNT, not a cell count - and that distinction was a live bug.
+	// CHARACTER::SetSafeboxSize refuses anything at or above SAFEBOX_PAGE_COUNT
+	// (three), so the old call passing SAFEBOX_PAGE_SIZE - our own compat macro
+	// for WIDTH * HEIGHT, forty-five - was rejected outright and the page the
+	// bot had just paid for never registered in memory. The window the
+	// storekeeper opens has two tabs, which is the real capacity: ninety cells.
+	const int PLAYERBOT_SAFEBOX_PAGES = 2;
+	// How much one visit may take back out. A withdrawal that filled the bag
+	// would only be deposited again on the next trip, so the door opens a
+	// crack rather than all the way.
+	const int PLAYERBOT_SAFEBOX_WITHDRAW_MAX = 6;
 	// Two stacks of one thing in two cells is what a partial purchase, a
 	// partial sale and a pick-up into a full stack all leave behind, and the
 	// engine only merges when a hand drags one onto the other - which a bot

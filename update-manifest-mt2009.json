@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-14T05:55:00Z",
-  "statusMessage": "2.0.39: **górnictwo wchodzi do gry** — kopanie siedziało w silniku od zawsze, ale ten świat nie stawiał ani jednej żyły rudy (sprawdzone na wszystkich 109 mapach). Dwadzieścia żył stoi teraz na Dolinie Orków, pustyni i Górze Sohan; bot od 30 poziomu kupuje kilof, tłucze rudę, a sto sztuk to jedno wytopienie — Ruda Ebonitu na Ebonit. Do tego **boty ulepszają wędkę u Rybaka** (62 z 64 wędek stały na komplecie punktów i nigdy ich nie używały), **łowienie od 30 poziomu** wreszcie działa (sama wędka miała ukryty limit 50), a **magazyn u Dozorcy działa w obie strony** — dotąd był składem bez drzwi (zgłosił akhigubernator) i miał dwie strony, z których zapisywała się zero. **Omdlenie działa na boty** (zgłosił cyfrowy_mat): silnik je nakładał, tylko nasza pętla nigdy nie sprawdzała, czy bot jest ogłuszony. Naprawiony też Stajenny w drugiej wiosce Jinno (600 odmów trasy → zero) i zapisywanie połowów, które w całości szły do kosza. Czego jeszcze nie ma: bot przyjmuje pojedynek, ale nie atakuje — to wchodzi w następnym wydaniu. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-14T07:35:00Z",
+  "statusMessage": "2.0.40: **pojedynki, w których wreszcie padają ciosy.** Bot przyjmował wyzwanie i wracał do swoich potworów — przyczyny były dwie i obie nasze. Wybór przeciwnika siedział pod kilkunastoma przebiegami, które wcześniej kończą turę bota (zakupy, kowal, miasto), więc bot w środku sprawunku nigdy do niego nie docierał: zmierzone sześć sekund po zgodzie, siedemdziesiąt jednostek od siebie, obaj na pełnym życiu. A funkcja zamieniająca zamach w obrażenia odrzucała wszystko, co nie jest potworem ani metinem — boty schodziły się na dwadzieścia trzy jednostki, odgrywały całe kombo i nie zadawały sobie nic. Po poprawce: **4440 punktów życia wymienionych między pięcioma z dwudziestu trzech walczących**, wobec zera zawsze wcześniej. Do tego bot nie rzuca umiejętności pod **marmurem polimorfii** (silnik i tak je odrzucał, więc przepalał całą rotację), a **wabienie zaczyna się przy trzech osobach** w drużynie zamiast pięciu — pięcioosobowe nie powstawały praktycznie nigdy. Czego nadal nie ma: bot **nie dołącza** do drużyny gracza, ale to wydanie zapisze wreszcie w logu powód odmowy. I sprawa dla wszystkich, którzy nie mogli zainstalować 2.0.38: to wydanie nie dotarło do nikogo, bo manifest nigdy nie został przestawiony — launcher uczciwie mówił „masz najnowszą wersję\". Od teraz osobna bramka odmawia publikacji, gdy manifest wskazuje poprzednią wersję. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.39",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.39/metin2-server-update-2.0.39.zip",
-    "sha256": "9C2FF9D67B63742F4EF50AF488E84DB998ACDF4E526A341313AD10D97B515B71"
+    "version": "2.0.40",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.40/metin2-server-update-2.0.40.zip",
+    "sha256": "AF39413CA82258709EAAAE647B068FBA9D7EC01429EEF7AA3E13C1F2F0259E6E"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

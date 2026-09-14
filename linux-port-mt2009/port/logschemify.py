@@ -215,6 +215,18 @@ def main():
     # "Unknown column 'hwid' in 'INSERT INTO'" on every login of such a world.
     parts.append("ALTER TABLE `loginlog2` ADD COLUMN IF NOT EXISTS `hwid` varchar(255) DEFAULT NULL;")
     parts.append('')
+    # hack_log came with the package's dump as time, name, server and why,
+    # while LogManager::HackLog writes login and ip as well - so every line it
+    # tried failed with "Unknown column 'login' in 'INSERT INTO'" and the
+    # table never held a row (a few hundred a day on the test world, each a
+    # bot's FAST_ITEM_SWAP). The two columns go where r40250's table has them,
+    # and name widens to CHARACTER_NAME_MAX_LEN, which the dump's sixteen bytes
+    # were short of. ADD COLUMN IF NOT EXISTS for a world made before this;
+    # the MODIFY is a no-op on a table already that wide.
+    parts.append("ALTER TABLE `hack_log` ADD COLUMN IF NOT EXISTS `login` varbinary(30) DEFAULT NULL AFTER `time`;")
+    parts.append("ALTER TABLE `hack_log` ADD COLUMN IF NOT EXISTS `ip` varbinary(20) DEFAULT NULL AFTER `name`;")
+    parts.append("ALTER TABLE `hack_log` MODIFY COLUMN IF EXISTS `name` varbinary(24) DEFAULT NULL;")
+    parts.append('')
     for t, ddl in OWN.items():
         parts.append(ddl)
         parts.append('')

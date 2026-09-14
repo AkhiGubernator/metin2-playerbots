@@ -126,6 +126,10 @@ CREATE TABLE IF NOT EXISTS `speed_hack` (
 
 ALTER TABLE `loginlog2` ADD COLUMN IF NOT EXISTS `hwid` varchar(255) DEFAULT NULL;
 
+ALTER TABLE `hack_log` ADD COLUMN IF NOT EXISTS `login` varbinary(30) DEFAULT NULL AFTER `time`;
+ALTER TABLE `hack_log` ADD COLUMN IF NOT EXISTS `ip` varbinary(20) DEFAULT NULL AFTER `name`;
+ALTER TABLE `hack_log` MODIFY COLUMN IF EXISTS `name` varbinary(24) DEFAULT NULL;
+
 CREATE TABLE IF NOT EXISTS `fish_log` (
   `time` datetime NOT NULL DEFAULT current_timestamp(),
   `player_id` int(10) unsigned NOT NULL DEFAULT 0,

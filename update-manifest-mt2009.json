@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-14T17:18:45Z",
-  "statusMessage": "2.0.46: **boty nie stoją nad łupem, który nie mieści się w torbie, nie szukają Kapitana Bestii z cudzej wioski, a godzina w panelu i w logach to godzina komputera.** W Wieży Demonów bez umiejętności obszarowych przy kamieniu. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-14T18:32:40Z",
+  "statusMessage": "2.0.47: **boty wyceniają stragany według cennika Iwakury v1.0 (biżuteria, buty, tarcze, rudy, jedna tabela skalowania), quest „Zbadaj przeklęte zwierzęta” liczy wszystkie cztery niedźwiedzie, a panel zaawansowany to wersja 1.41.0 Sebana.** Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.46",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.46/metin2-server-update-2.0.46.zip",
-    "sha256": "B785BA60BC66AF36F54E87436BEE25E527DBC8BF129CCAA3989A1AE495AF1292"
+    "version": "2.0.47",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.47/metin2-server-update-2.0.47.zip",
+    "sha256": "70ADDFFC7CE861049E2DA1098429444B61E838FD9103BFD69C728C2E4CE01F68"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

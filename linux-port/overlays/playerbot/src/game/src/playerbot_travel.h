@@ -683,6 +683,11 @@ namespace
 			return false;
 		// The medal dropper goes for the medals themselves, whatever its own horse
 		// needs, in whichever dungeon its level earns them.
+		// Nobody past PLAYERBOT_MONKEY_MEDAL_MAX_LEVEL farms medals, the dropper
+		// included: the rolls there are worth a few percent of a medal, and such
+		// a bot buys its medal from a counter instead.
+		if (ch->GetLevel() > PLAYERBOT_MONKEY_MEDAL_MAX_LEVEL)
+			return false;
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_MEDAL_DROPPER)
 			return GetPlayerBotMonkeyMapFor(ch) != 0;
 		if (!CanPlayerBotAdvanceHorse(ch))
@@ -731,11 +736,16 @@ namespace
 				chance = hasCombatHorse ? 6 : (ch->GetHorseLevel() == 0 ? 15 : 10);
 				break;
 		}
+		// Twice as often before the battle horse: the chances above sent 17 of
+		// 999 bots into a dungeon (PLAYERBOT_HORSE_EXPEDITION_NO_COMBAT_HORSE_MULT).
+		if (!hasCombatHorse)
+			chance = (BYTE)std::min<int>(PLAYERBOT_HORSE_EXPEDITION_MAX_CHANCE,
+					chance * PLAYERBOT_HORSE_EXPEDITION_NO_COMBAT_HORSE_MULT);
 		TPlayerBotAIStateMap::const_iterator stateIt =
 				s_mapPlayerBotAIStates.find(ch->GetPlayerID());
 		if (stateIt != s_mapPlayerBotAIStates.end() &&
 				stateIt->second.bAmbition == BOT_AMBITION_HORSE && !hasCombatHorse)
-			chance = std::min<BYTE>(55, chance + 15);
+			chance = (BYTE)std::min<int>(PLAYERBOT_HORSE_EXPEDITION_MAX_CHANCE, chance + 15);
 
 		const DWORD window = dwNow / (30U * 60U * 1000U);
 		const DWORD seed = ch->GetPlayerID() ^ (window * 0x9e3779b9U) ^

@@ -36,7 +36,11 @@ namespace {
                     if (++checked > 64) break;
                     if (!line) continue;
                     const auto price = line->GetPrice().GetTotalYangAmount();
-                    const long long cap = (long long)GetPlayerBotMarketMedianWallet() * PLAYERBOT_MARKET_STACK_WALLET_PERCENT / 100;
+                    // A level-30 weapon, a medal or a scroll is saved up for: the
+                    // bot's own budget caps it, not the median wallet.
+                    const long long cap = IsPlayerBotStrategicPurchase(line->GetInfo().vnum)
+                            ? budget * PLAYERBOT_STRATEGIC_BUDGET_PERCENT / 100
+                            : (long long)GetPlayerBotMarketMedianWallet() * PLAYERBOT_MARKET_STACK_WALLET_PERCENT / 100;
                     if (price <= 0 || price > budget || (cap > 0 && price > cap)) continue;
                     auto preview = BotOfflinePreview(*line);
                     if (!preview) continue;
@@ -68,6 +72,9 @@ namespace {
             return false;
         }
         if (!BotOfflineBudget(now)) return true;
+        // Read before the request: the log line below must not touch the shop
+        // line once the purchase is in the engine's hands.
+        const DWORD boughtVnum = line->GetInfo().vnum;
         if (Begin(ch->GetPlayerID(), Buy, o.buyItem, now)) {
             auto& request = requests.at(ch->GetPlayerID());
             request.vnum = line->GetInfo().vnum;
@@ -82,8 +89,8 @@ namespace {
             manager.RecvShopBuyItemClientPacket(ch, o.buyOwner, o.buyItem, false, price);
             const bool sent = EndCall(ch->GetPlayerID());
             manager.RecvCloseShopGuestClientPacket(ch);
-            sys_log(0, "PLAYERBOT_OFFLINE: purchase_requested buyer=%u owner=%u item=%u sent=%d",
-                ch->GetPlayerID(), o.buyOwner, o.buyItem, sent);
+            sys_log(0, "PLAYERBOT_OFFLINE: purchase_requested buyer=%u owner=%u item=%u vnum=%u price=%lld sent=%d",
+                ch->GetPlayerID(), o.buyOwner, o.buyItem, (unsigned int)boughtVnum, (long long)price, sent);
         }
         o.buyOwner = 0;
         ClearPlayerBotRoute(state, true);

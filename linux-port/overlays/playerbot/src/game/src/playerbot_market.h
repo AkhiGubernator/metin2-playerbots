@@ -71,6 +71,42 @@ namespace
 			int m_maxDistance;
 	};
 
+	// What a bot saves up for rather than buys on a whim: see
+	// PLAYERBOT_STRATEGIC_BUDGET_PERCENT.
+	bool IsPlayerBotStrategicPurchase(DWORD vnum)
+	{
+		return IsPlayerBotSpecialLevel30WeaponVnum(vnum) || vnum == PLAYERBOT_HORSE_MEDAL_VNUM ||
+				IsPlayerBotSafeRefineScroll(vnum);
+	}
+
+	// The most a strategic purchase may cost this bot: a share of what it can
+	// spend above the reserve and the shopping floor.
+	long long GetPlayerBotStrategicPurchaseCap(LPCHARACTER ch)
+	{
+		if (!ch)
+			return 0;
+		const long long spare = (long long)ch->GetGold() - GetPlayerBotReservedGold(ch) -
+				(long long)PLAYERBOT_SHOPPING_GOLD_FLOOR;
+		return spare > 0 ? spare * PLAYERBOT_STRATEGIC_BUDGET_PERCENT / 100 : 0;
+	}
+
+	// A bot with a weapon that goes to the anvil under scrolls - one it may
+	// refine no other way, a level-30 weapon in its hand, or the one it is
+	// grinding - buys a few, up to PLAYERBOT_LEVEL30_SCROLL_WANT.
+	bool PlayerBotNeedsScrollForWeapon(LPCHARACTER ch)
+	{
+		if (!ch || !ch->IsItemLoaded() ||
+				CountPlayerBotSafeRefineScrolls(ch) >= PLAYERBOT_LEVEL30_SCROLL_WANT)
+			return false;
+		LPITEM worn = ch->GetWear(WEAR_WEAPON);
+		if (worn && worn->GetRefinedVnum() != 0 &&
+				(IsPlayerBotScrollOnlyWeapon(worn) || IsPlayerBotSpecialLevel30Weapon(worn)))
+			return true;
+		TPlayerBotLevel30View view;
+		ReadPlayerBotLevel30View(ch, view);
+		return view.project != NULL && view.project->GetRefinedVnum() != 0;
+	}
+
 	// Would this bot rather have the item than the money?
 	bool WantsPlayerBotStallItem(LPCHARACTER ch, LPITEM offer)
 	{
@@ -124,12 +160,17 @@ namespace
 		if (offer->GetType() == ITEM_METIN)
 			return WantsPlayerBotSoulStone(ch, offer->GetVnum(), (DWORD)offer->GetValue(5));
 
-		// A level-30 weapon of its own class, when it has none. This is the item
-		// bots cross the world to farm; buying one off a counter is the whole
-		// point of there being a market.
-		if (IsPlayerBotSpecialLevel30Weapon(offer) && IsPlayerBotWeapon(ch, offer) &&
-				offer->GetLevelLimit() <= ch->GetLevel() &&
-				!HasPlayerBotSpecialLevel30Weapon(ch, false))
+		// A level-30 weapon of its own class. This is the item bots cross the
+		// world to farm; buying one off a counter is the whole point of there
+		// being a market. It used to be "when it has none", so a bot holding any
+		// level-30 weapon at all - a +0 with no line in the bag - never looked
+		// at a better one. Now it is the damage model's answer: the offer's blow
+		// at PLAYERBOT_LEVEL30_PROJECT_PLUS against the best the bot has, its
+		// own project included (IsPlayerBotBetterLevel30Offer).
+		if (IsPlayerBotSpecialLevel30Weapon(offer))
+			return IsPlayerBotBetterLevel30Offer(ch, offer);
+		// And a refine scroll, for a weapon that is refined under one.
+		if (IsPlayerBotSafeRefineScroll(offer->GetVnum()) && PlayerBotNeedsScrollForWeapon(ch))
 			return true;
 
 		// Gear only when it is genuinely better than what is worn. A bot that
@@ -204,8 +245,16 @@ namespace
 				NeedsPlayerBotProgressionBoots(ch) || NeedsPlayerBotProgressionWrist(ch) ||
 				NeedsPlayerBotProgressionNecklace(ch) || NeedsPlayerBotProgressionEarring(ch))
 			return true;
-		// And the level-30 weapon it would otherwise cross the world to farm.
-		return ch->GetLevel() >= 30 && !HasPlayerBotSpecialLevel30Weapon(ch, false);
+		// A scroll for a weapon that is refined under one.
+		if (PlayerBotNeedsScrollForWeapon(ch))
+			return true;
+		// And the level-30 weapon it would otherwise cross the world to farm -
+		// unless it is grinding one already, wears a finished one, no such
+		// weapon could beat what it has (PlayerBotCouldUseLevel30Weapon), or it
+		// could not pay for one.
+		return PlayerBotCouldUseLevel30Weapon(ch) &&
+				GetPlayerBotStrategicPurchaseCap(ch) >=
+					(long long)ScalePlayerBotIwakuraPrice(PLAYERBOT_LEVEL30_BASE_PRICE);
 	}
 
 	// One line of one counter: what a buyer decided it wants, where it is, and
@@ -266,7 +315,9 @@ namespace
 				{
 					const CShop::SHOP_ITEM& line = lines[k];
 					if (!line.pkItem || line.vnum == 0 || line.price <= 0 ||
-							(cap != 0 && (DWORD)line.price > cap))
+							(cap != 0 && (DWORD)line.price > cap &&
+								!(IsPlayerBotStrategicPurchase(line.vnum) &&
+									(long long)line.price <= GetPlayerBotStrategicPurchaseCap(ch))))
 						continue;
 					TPlayerBotShopOffer offer;
 					offer.dwVnum = line.vnum;

@@ -322,6 +322,41 @@ namespace
 	// worn weapon in five, where the ninety-percent steps below it are not worth
 	// a scroll the market is short of.
 	const int PLAYERBOT_WORN_SCROLL_MAX_PROB = 80;
+	// The level-30 weapons (Tieru, 15 September): "taka bron +6/7 z srednimi
+	// 25% jest znacznie lepsza niz krwawy miecz +5/6", the bots should want
+	// them and grind them "nawet do +9", and from 37% average "tylko bodziami
+	// lub zwojami, nigdy u kowala". A weapon at or above either line is refined
+	// under a scroll at every step or not at all (IsPlayerBotScrollOnlyWeapon).
+	const long PLAYERBOT_WEAPON_SCROLL_ONLY_AVERAGE = 37;
+	const long PLAYERBOT_WEAPON_SCROLL_ONLY_SKILL = 15;
+	// A level-30 weapon is judged at what it will be, not at what it is: its
+	// blow at this plus (the family adds 48 attack by +7, nothing at +0)
+	// against the best weapon the bot has, by a margin, so a draw is no reason
+	// to spend a week's yang (ReadPlayerBotLevel30View).
+	const BYTE PLAYERBOT_LEVEL30_PROJECT_PLUS = 7;
+	const int PLAYERBOT_LEVEL30_PROJECT_MARGIN_PERCENT = 10;
+	// The average line a hoped-for level-30 weapon is given when a bot asks
+	// whether one could beat its own before it walks to a market.
+	const long PLAYERBOT_LEVEL30_HOPED_AVERAGE = 20;
+	// The things a bot saves up for rather than buys on a whim - a level-30
+	// weapon, a horse medal, a refine scroll - may cost this share of what it
+	// can spend; everything else stops at PLAYERBOT_MARKET_STACK_WALLET_PERCENT
+	// of the median wallet. At mob_gold 3000 such a weapon asks millions and
+	// that cap passed none of them: 2315 level-30 weapons stood on the test
+	// world's counters on 15 September, 2295 of them at +0..+3, and 23 bots
+	// wore one.
+	const int PLAYERBOT_STRATEGIC_BUDGET_PERCENT = 80;
+	// Iwakura's base for an unrefined level-30 weapon, scaled by the yang rate:
+	// a bot that cannot spend that does not walk to a market for one.
+	const DWORD PLAYERBOT_LEVEL30_BASE_PRICE = 500000;
+	// How many safe scrolls a bot refining a weapon under them buys up to.
+	const int PLAYERBOT_LEVEL30_SCROLL_WANT = 3;
+	// The monster a blow is modelled against: the bot's own level, its defence
+	// about fifteen over that on this proto (GetPlayerBotWeaponHitDamageAt).
+	const int PLAYERBOT_MONSTER_DEFENCE_OVER_LEVEL = 15;
+	// The Magic Stone keeps the level on a failure, so it is saved for the
+	// steps at or under this chance (FindPlayerBotRefineScrollCell, mt2009).
+	const int PLAYERBOT_NO_REDUCTION_SCROLL_MAX_PROB = 45;
 
 	const int PLAYERBOT_STACK_MERGES_PER_PASS = 4;
 	const int PLAYERBOT_STACK_MAX = 200;
@@ -1253,7 +1288,9 @@ namespace
 	// every service visit instead, until its whole counter has been walked.
 	// 3: Iwakura's price list v1.0 (14 September) - jewellery, boots, shields,
 	// ores and the mt2009 materials, one scaling curve for everything.
-	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 3;
+	// 4: the stamp carries the yang rate as well (GetPlayerBotPriceGeneration),
+	// so a rate moved in the panel reprices every stand, not only a new table.
+	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 4;
 	// Iwakura's upgrade-material prices ("ULEPSZACZE") and the goods he prices
 	// by name are generated into playerbot_price_tables.h from his sheet. A name
 	// is not an item: where the game has two vnums under one name (Nieznany
@@ -2260,6 +2297,14 @@ namespace
 			case 25040: case 25041: case 39001: case 39007: case 39014:
 			case 39022: case 70039: case 71021: case 71032: case 76009:
 				return true;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+			// mt2009's own set (world.item_proto, USE_TUNING): Magiczny Kamien
+			// 25042, Podrecznik Kowala 25043, Zwoj Wojny 25044, Zwoj Boga Smokow
+			// 25045 and the four Gwarancje 25051-25054.
+			case 25042: case 25043: case 25044: case 25045:
+			case 25051: case 25052: case 25053: case 25054:
+				return true;
+#endif
 			default:
 				return false;
 		}
@@ -2306,6 +2351,15 @@ namespace
 	{
 		if (vnum == PLAYERBOT_BLESSING_SCROLL_VNUM)
 			return true;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// On mt2009 only the Gwarancja (REFINE_BONUS_SCROLL) burns what it
+		// fails. 25041 is a second Blessing Scroll there (value0 0), 25042 the
+		// Magic Stone that keeps the level (value0 1), 25043/70039 and 25045 a
+		// Blessing with fifteen and ten percent on top (value1). The War God
+		// scroll stops at +4 and this count is a ladder to +9, so it is not here.
+		if (vnum == 25041 || vnum == 25042 || vnum == 25043 || vnum == 25045 || vnum == 70039)
+			return true;
+#endif
 		for (size_t i = 0; i < sizeof(PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS) / sizeof(PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[0]); ++i)
 			if (vnum == PLAYERBOT_DRAGON_GOD_SCROLL_VNUMS[i])
 				return true;
@@ -2845,6 +2899,20 @@ namespace
 	// aiPercentByDeltaLev has bottomed out by fifteen levels over the monster,
 	// and the easy dungeon's monkeys stop at thirty. Past this, no dungeon.
 	const BYTE PLAYERBOT_MONKEY_EASY_FALLBACK_MAX_LEVEL = 40;
+	// Past this no bot farms medals in a dungeon at all, the dropper included:
+	// the hard dungeon's monkeys run 45 to 54, and ten levels over its generals
+	// aiPercentByDeltaLev pays half a roll and fifteen over its soldiers one
+	// percent. Such a bot buys its medal from a counter instead - the medal is
+	// one of the strategic purchases (PLAYERBOT_STRATEGIC_BUDGET_PERCENT).
+	const BYTE PLAYERBOT_MONKEY_MEDAL_MAX_LEVEL = 64;
+	// How much more often a bot still short of its battle horse rolls the
+	// medal errand, and the most any chance may reach. Measured on the test
+	// world on 15 September: 17 of 999 bots in a Monkey Dungeon and none in
+	// the medium one, one medal handed in that hour, and of 1177 bots of 35 and
+	// up 415 on no horse at all and 8 past horse level ten ("boty nie maja 11
+	// poziomu konia, za rzadko chodza na sredni i trudny loch malp").
+	const int PLAYERBOT_HORSE_EXPEDITION_NO_COMBAT_HORSE_MULT = 2;
+	const int PLAYERBOT_HORSE_EXPEDITION_MAX_CHANCE = 70;
 	const DWORD PLAYERBOT_M3_MAX_VISIT_TIME = 1200000;
 	const DWORD PLAYERBOT_MONKEY_REVERSE_PORTAL_BLOCK_TIME = 10000;
 	// The third hand. Worn in a unique slot it makes CHARACTER::RewardGold hand
@@ -3145,6 +3213,16 @@ namespace
 	// what the Discord saw: a Sura of forty-two with "Korzen Gango 0/5" as its
 	// stated goal, hitting Orcs, for ever.
 	const int PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS = 10;
+	// From this row up a specimen is a refine material too - the Orc Tooth,
+	// the Curse Book, the Demon Souvenir - and a bot of any level may carry
+	// one. Such a row is taken for a hand-in whatever the bot has outgrown,
+	// and what the Biologist is still owed stays off the anvil
+	// (GetPlayerBotBiologistReserve): "w pierwszej kolejnosci te przedmioty
+	// maja trafiac do biologa, dopiero pozniej na sklep lub jako ulepszacz"
+	// (Tieru, 15 September). Measured that day on the test world: 978 bots in
+	// the Orc Tooth row and not one finished, while 358 bots carried 1484
+	// teeth - past forty the row was outgrown and the teeth stayed in the bag.
+	const int PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL = 30;
 	// The key item, the monster that drops it, the affect and the casket used
 	// to be four constants named after the Orc Tooth, read by four different
 	// files. They are columns of the table now, so a row carries its own

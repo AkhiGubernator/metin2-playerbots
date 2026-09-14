@@ -100,13 +100,18 @@ namespace
 	// handed in. Those used to stay in the bag for good ("niech dadza sklepik
 	// z zebami jesli maja nadmiar"); now they are goods. A key item is never
 	// surplus - it is what the second half of its own row is waiting for.
+	bool IsPlayerBotBiologistKeyPhase(LPCHARACTER ch, size_t missionIndex);
+
 	bool IsPlayerBotBiologistSpecimenSurplus(LPCHARACTER ch, DWORD vnum)
 	{
 		if (!ch || IsPlayerBotBiologistKeyItem(vnum))
 			return false;
+		// So is one whose row waits in key_item: the Biologist has every
+		// specimen he wanted and asks only for the key now.
 		for (size_t i = 0; i < PLAYERBOT_BIOLOGIST_MISSION_COUNT; ++i)
 			if (PLAYERBOT_BIOLOGIST_MISSIONS[i].itemVnum == vnum)
-				return IsPlayerBotBiologistMissionComplete(ch, i);
+				return IsPlayerBotBiologistMissionComplete(ch, i) ||
+						IsPlayerBotBiologistKeyPhase(ch, i);
 		return false;
 	}
 
@@ -123,6 +128,37 @@ namespace
 		const int keyState = GetPlayerBotBiologistStateIndex(missionIndex, "key_item");
 		return keyState != PLAYERBOT_QUEST_STATE_UNKNOWN && ch->GetQuestFlag(GetPlayerBotBiologistFlag(
 				PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex], "__status")) == keyState;
+	}
+
+	// How many of a specimen the Biologist is still owed: for every row that
+	// collects it, that the bot is old enough for and has neither finished
+	// nor filled (a row in key_item wants the key), the rest of its count over
+	// the accept roll - ten teeth at sixty percent is seventeen. Only rows from
+	// PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL, whose specimens are refine
+	// materials; a herb is nobody's material. The anvil leaves this many alone
+	// (CanPlayerBotAttemptRefineItem).
+	int GetPlayerBotBiologistReserve(LPCHARACTER ch, DWORD vnum)
+	{
+		if (!ch || vnum == 0)
+			return 0;
+		int reserve = 0;
+		for (size_t i = 0; i < PLAYERBOT_BIOLOGIST_MISSION_COUNT; ++i)
+		{
+			const TPlayerBotBiologistMission& mission = PLAYERBOT_BIOLOGIST_MISSIONS[i];
+			if (mission.itemVnum != vnum ||
+					mission.requiredLevel < PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL ||
+					ch->GetLevel() < mission.requiredLevel ||
+					!IsPlayerBotHuntingMobHosted(mission.mobVnum) ||
+					IsPlayerBotBiologistMissionComplete(ch, i) ||
+					IsPlayerBotBiologistKeyPhase(ch, i))
+				continue;
+			const int accepted = std::max(0, ch->GetQuestFlag(
+					GetPlayerBotBiologistFlag(mission, "collect_count")));
+			const int remaining = std::max(0, (int)mission.requiredCount - accepted);
+			const int percent = std::max(1, (int)mission.acceptPercent);
+			reserve += (remaining * 100 + percent - 1) / percent;
+		}
+		return reserve;
 	}
 
 	// What the mission wants carried right now, and how many: the collection
@@ -202,7 +238,12 @@ namespace
 			// the whole hand-in; a row the bot has not outgrown keeps the old
 			// rule, because there it will hunt the rest.
 			const int held = ch->CountSpecifyItem(wanted);
-			if (carrying < 0 && held > 0 && (!outgrown || held >= required))
+			// From PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL up any specimen counts:
+			// it is a refine material as well, and the hand-in comes before the
+			// counter and the anvil (Tieru, 15 September) - 358 bots were carrying
+			// 1484 Orc Teeth past a row they had outgrown, handing in none.
+			if (carrying < 0 && held > 0 && (!outgrown || held >= required ||
+					mission.requiredLevel >= PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL))
 				carrying = (int)i;
 			if (here < 0 && !outgrown &&
 					IsPlayerBotHuntingMobHosted(mission.mobVnum, ch->GetMapIndex()))

@@ -1175,10 +1175,51 @@ namespace
 	// Scroll. Both are read by DoRefineWithScroll from the cell SetRefineMode
 	// names, no blacksmith needed - which is also why the scroll pass runs
 	// wherever the bot stands. plusLevel 0 means "any scroll that is here".
-	int FindPlayerBotRefineScrollCell(LPCHARACTER ch, BYTE plusLevel)
+	int FindPlayerBotRefineScrollCell(LPCHARACTER ch, BYTE plusLevel, int stepProb = 100)
 	{
 		if (!ch)
 			return -1;
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		// mt2009 knows a scroll by what DoRefineWithScroll reads off it, not by
+		// vnum: value0 the kind, value1 the percent added to the step. The War
+		// God scroll (UP_TO_3TH_LEVEL) makes a step under +4 certain; a plain
+		// scroll hands the piece back a level down on failure, the more value1
+		// the better; the Magic Stone (NO_REDUCTION_WHEN_FAIL) keeps the level
+		// and is saved for steps at PLAYERBOT_NO_REDUCTION_SCROLL_MAX_PROB and
+		// under; the Gwarancja (REFINE_BONUS) burns what it fails and is never
+		// taken. By vnum only 25040 and 71032 were ever used, and every other
+		// kind a bot found was goods to it. plusLevel 0 is "any scroll here".
+		int bestCell = -1, bestRank = 0;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM scroll = ch->GetInventoryItem(cell);
+			if (!scroll || scroll->GetCell() != cell || scroll->GetType() != ITEM_USE ||
+					scroll->GetSubType() != USE_TUNING)
+				continue;
+			int rank = 0;
+			switch (scroll->GetValue(0))
+			{
+				case UP_TO_3TH_LEVEL_SCROLL:
+					rank = plusLevel < 4 ? 1000 : 0;
+					break;
+				case NO_REDUCTION_WHEN_FAIL_SCROLL:
+					rank = stepProb <= PLAYERBOT_NO_REDUCTION_SCROLL_MAX_PROB ? 900 : 100;
+					break;
+				case NORMAL_REFINE_SCROLL:
+					rank = 200 + std::max<int>(0, (int)scroll->GetValue(1));
+					break;
+				default:
+					break;
+			}
+			if (rank > bestRank)
+			{
+				bestRank = rank;
+				bestCell = cell;
+			}
+		}
+		return bestCell;
+#else
+		(void)stepProb;
 		int blessing = -1, dragonGod = -1;
 		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
@@ -1195,6 +1236,7 @@ namespace
 		if (dragonGod >= 0 && (plusLevel >= PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS || blessing < 0))
 			return dragonGod;
 		return blessing;
+#endif
 	}
 
 	// Whether a piece lying in the bag is one this bot would actually raise.
@@ -1232,6 +1274,10 @@ namespace
 		// wearable upgrade nor a higher-tier spare - yet it must reach +4 to break
 		// stones at all (Tieru). Refine it in the bag like a worn piece.
 		if (IsPlayerBotArcherStoneWeapon(ch, item))
+			return item->GetRefineLevel() < GetPlayerBotRefineTarget(ch, item);
+		// And the level-30 weapon it is grinding: not worn yet because it is not
+		// yet better, and not better until it is refined.
+		if (IsPlayerBotLevel30Project(ch, item))
 			return item->GetRefineLevel() < GetPlayerBotRefineTarget(ch, item);
 		return IsPlayerBotHigherTierSpare(ch, item) ||
 				IsPlayerBotWearableUpgrade(ch, item, item->GetCell());
@@ -1391,16 +1437,17 @@ namespace
 			if (plusLevel == 4 && !hasBackup && number(1, 100) > 75)
 				continue;
 
+			// Asked of every piece at the attempt, worn or not: the step before
+			// this one may have spent the fee or the material this one counted
+			// on, and a specimen the Biologist is still owed is no material at
+			// all (GetPlayerBotBiologistReserve) - DoRefine would take it anyway.
+			if (!CanPlayerBotAttemptRefineItem(ch, item))
+				continue;
 			// Equipment management after an earlier attempt may have equipped another
 			// queued candidate, so inspect its live position instead of trusting the
 			// location captured when the list was built.
 			if (item->IsEquipped())
 			{
-				// Asked again at the unequip, not only when the list was built:
-				// the step before this one may have spent the fee or the
-				// material this one counted on.
-				if (!CanPlayerBotAttemptRefineItem(ch, item))
-					continue;
 				int emptyCell = ch->GetEmptyInventory(item->GetSize());
 				if (emptyCell < 0)
 					continue;
@@ -1452,20 +1499,41 @@ namespace
 			// Every rule above gives way to the operator's floor: under
 			// SCROLL_FROM no scroll goes on the step, whatever the piece.
 			const bool scrollStepAllowed = IsPlayerBotScrollStepAllowed(plusLevel);
-			if (scrollStepAllowed &&
+			const int stepProb = stepRecipe ? (int)stepRecipe->prob : 100;
+			// The level-30 weapons (Tieru, 15 September). From
+			// PLAYERBOT_WEAPON_SCROLL_ONLY_AVERAGE a weapon goes under a scroll at
+			// every step and never to the plain anvil - past the operator's floor
+			// too, or under SCROLL_FROM it could never be refined at all. A
+			// level-30 weapon under that line is ground towards +9 at the anvil,
+			// under a scroll only where the step is a real risk.
+			const bool scrollOnly = IsPlayerBotScrollOnlyWeapon(item);
+			const bool level30Grind = !scrollOnly && IsPlayerBotSpecialLevel30Weapon(item);
+			if (scrollOnly)
+				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
+			else if (level30Grind)
+			{
+				if (scrollStepAllowed && stepProb <= PLAYERBOT_WORN_SCROLL_MAX_PROB)
+					scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
+			}
+			else if (scrollStepAllowed &&
 					(plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item) || wornStepCanBurn))
-				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel);
+				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
+			if (scrollCell < 0 && scrollOnly)
+			{
+				PlayerBotLogThrottled("refine_scroll_only", dwNow,
+						"PLAYERBOT_AI: refine held, scroll-only weapon and no scroll pid=%u name=%s vnum=%u plus=%u prob=%d",
+						ch->GetPlayerID(), ch->GetName(), oldVnum, (unsigned int)plusLevel, stepProb);
+				continue;
+			}
 			// No scroll, a roll that can fail, and a weapon worth more than the
-			// next plus: leave it. The blacksmith burns what he fails.
-			// A level-30 weapon from +6 on goes only under a scroll, prize lines
-			// or not - a burnt Full Moon Sword +7 is a week of somebody's
-			// hunting, and the Moonlight chests keep the scrolls coming.
+			// next plus: leave it. The blacksmith burns what he fails. A level-30
+			// weapon under the scroll-only line is not held any more: grinding it
+			// at the anvil and buying the next one is what the operator asked for.
 			// Only where a scroll may go at all: a piece held for a scroll the
 			// floor forbids is held for good, the shape of the deadlock that
 			// once parked 451 weapons on +4. Under SCROLL_FROM it takes the
 			// plain anvil's odds like everything else, which is the setting.
-			if (scrollCell < 0 && scrollStepAllowed && (IsPlayerBotPrizeItem(item) ||
-					(IsPlayerBotSpecialLevel30Weapon(item) && plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS)))
+			if (scrollCell < 0 && scrollStepAllowed && !level30Grind && IsPlayerBotPrizeItem(item))
 			{
 				const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
 				// Hold only where a failure really costs something. Ninety and
@@ -1547,8 +1615,11 @@ namespace
 				continue;
 			const BYTE plus = item->GetRefineLevel();
 			// The target is PLAYERBOT_SCROLL_REFINE_MAX_PLUS here by construction:
-			// this pass only runs with a scroll in the bag.
-			if (plus < PLAYERBOT_SCROLL_REFINE_MIN_PLUS || !IsPlayerBotScrollStepAllowed(plus) ||
+			// this pass only runs with a scroll in the bag. A scroll-only weapon
+			// (IsPlayerBotScrollOnlyWeapon) is taken at any plus and past the
+			// floor, since it is never raised any other way.
+			const bool scrollOnly = IsPlayerBotScrollOnlyWeapon(item);
+			if ((!scrollOnly && (plus < PLAYERBOT_SCROLL_REFINE_MIN_PLUS || !IsPlayerBotScrollStepAllowed(plus))) ||
 					plus >= GetPlayerBotRefineTarget(ch, item))
 				continue;
 			if (!IsPlayerBotWearableAtLevel(ch, item->GetRefinedVnum()))
@@ -1556,14 +1627,13 @@ namespace
 			const TRefineTable* recipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
 			if (!recipe)
 				continue;
-			if (ch->GetGold() - GetPlayerBotReservedGold(ch) < (int)recipe->cost)
+			// A scroll this step can go under, not merely one in the bag: the War
+			// God scroll stops at +4.
+			if (FindPlayerBotRefineScrollCell(ch, plus, (int)recipe->prob) < 0)
 				continue;
-			bool materials = true;
-			for (int m = 0; m < recipe->material_count && materials; ++m)
-				if (recipe->materials[m].vnum != 0 &&
-						ch->CountSpecifyItem(recipe->materials[m].vnum) < recipe->materials[m].count)
-					materials = false;
-			if (!materials)
+			// The fee, the materials and the Biologist's reserve, as the blacksmith
+			// pass asks them.
+			if (!CanPlayerBotAttemptRefineItem(ch, item))
 				continue;
 			if (!best || plus < best->GetRefineLevel())
 			{
@@ -1576,7 +1646,11 @@ namespace
 		// The scroll the blacksmith pass would put on the same step - the
 		// Dragon God from PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS - rather than
 		// whichever scroll happened to lie first in the bag.
-		scrollCell = FindPlayerBotRefineScrollCell(ch, best->GetRefineLevel());
+		{
+			const TRefineTable* bestRecipe = CRefineManager::instance().GetRefineRecipe(best->GetRefineSet());
+			scrollCell = FindPlayerBotRefineScrollCell(ch, best->GetRefineLevel(),
+					bestRecipe ? (int)bestRecipe->prob : 100);
+		}
 		if (scrollCell < 0)
 			return false;
 
@@ -1822,9 +1896,17 @@ namespace
 
 		for (int i = 0; i < recipe->material_count; ++i)
 		{
-			if (ch->CountSpecifyItem(recipe->materials[i].vnum) < recipe->materials[i].count)
+			// What the Biologist is still owed is not the anvil's: an Orc Tooth
+			// goes to him first and into a recipe after (Tieru, 15 September).
+			if (ch->CountSpecifyItem(recipe->materials[i].vnum) -
+					GetPlayerBotBiologistReserve(ch, recipe->materials[i].vnum) < recipe->materials[i].count)
 				return false;
 		}
+		// A weapon refined only under a scroll is no errand without one: the
+		// planner asks this before it sends a bot to the blacksmith.
+		if (IsPlayerBotScrollOnlyWeapon(item) &&
+				FindPlayerBotRefineScrollCell(ch, item->GetRefineLevel(), (int)recipe->prob) < 0)
+			return false;
 		return true;
 	}
 

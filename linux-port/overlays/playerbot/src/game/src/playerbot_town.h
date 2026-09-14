@@ -910,6 +910,9 @@ namespace
 				continue;
 			if (IsPlayerBotWearableUpgrade(ch, item, cell))
 				continue;
+			// Nor the level-30 weapon it is grinding: no counter takes that.
+			if (IsPlayerBotLevel30Project(ch, item))
+				continue;
 			const int wearCell = item->FindEquipCell(ch);
 			if (wearCell < 0 || ch->GetWear((BYTE)wearCell) == NULL)
 				continue;
@@ -1091,6 +1094,15 @@ namespace
 		const unsigned long long scaled = (unsigned long long)base *
 				(unsigned long long)std::max(1LL, pct) / 100ULL;
 		return scaled > 0xFFFFFFFFULL ? 0xFFFFFFFFUL : (DWORD)scaled;
+	}
+
+	// What a counter's prices were set under: the table version and the yang
+	// rate. The offline service reprices a stand whose stamp differs, so a
+	// moved rate reaches every counter within one service round.
+	DWORD GetPlayerBotPriceGeneration()
+	{
+		const int rate = std::max(1, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL));
+		return PLAYERBOT_PRICE_TABLE_VERSION * 1000000UL + (DWORD)std::min(rate, 999999);
 	}
 
 	// Iwakura's base for a book, at this world's yang rate. The rate is the
@@ -1296,6 +1308,9 @@ namespace
 	{
 		if (!item)
 			return 1;
+		// The sale memory is read below before the step limiter would notice a
+		// new yang rate, so the rate is checked here first as well.
+		ForgetPlayerBotPricesOnRateChange();
 		// What is rolled on this particular piece, worked out once and applied to
 		// every way out of this function. The three refine prices below are flat
 		// by design - a +7 has no merchant price to scale - and returning them
@@ -1658,9 +1673,10 @@ namespace
 		if (IsPlayerBotMerchantOnlyForgetScroll(item))
 			return merchant ? 400 : -1;
 		// A weapon from the level-30 set is the prize of this whole market. It is
-		// worth a counter slot at any refine at all, unrefined included.
+		// worth a counter slot at any refine at all, unrefined included - except
+		// the one its keeper is grinding towards +9 itself.
 		if (IsPlayerBotSpecialLevel30Weapon(item))
-			return 2000;
+			return IsPlayerBotLevel30Project(ch, item) ? -1 : 2000;
 		// Gear under level thirty goes up at +6 or better and ranks under the
 		// materials whatever is rolled on it, and one counter carries only
 		// PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES of it (CollectPlayerBotShopItems).

@@ -445,8 +445,9 @@ namespace {
             // A counter priced against an older table is walked at the pace of the
             // service visit (10-15 min), not one line an hour; the stamp is set
             // only once the rotation has come round, so every line was seen.
-            if (o.priceGeneration != PLAYERBOT_PRICE_TABLE_VERSION) {
-                if (wrapped) o.priceGeneration = PLAYERBOT_PRICE_TABLE_VERSION;
+            // The stamp carries the yang rate too (GetPlayerBotPriceGeneration).
+            if (o.priceGeneration != GetPlayerBotPriceGeneration()) {
+                if (wrapped) o.priceGeneration = GetPlayerBotPriceGeneration();
                 o.nextReprice = now;
             } else {
                 o.nextReprice = now + 3600000;

@@ -3151,6 +3151,72 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   skill's own vnum, so `IsPlayerBotBuffAffectOn` - the affect half of
   `IsPlayerBotBuffActive` - reads a player as well as a bot. Neither has been
   watched with a person in the party yet: the test world has none.
+- **A drop is loot only if the engine's pickup would take it.**
+  `CCollectPlayerBotLoot` skipped a drop only when the bag had no free cell
+  at all, and a bag with single holes and no free column cannot take a sword
+  or a breastplate: `PickupItem` wrote "No empty inventory pid ... size 2"
+  7736 times in two hours from 320 bots on the test world, the pass marked
+  the drop failed for five seconds, came back to it, and the bot stood over
+  it until the inactivity watchdog moved it - three of the four "arrived and
+  stood" resets after one restart were `action=3`. `PlayerBotBagTakesDrop`
+  asks the engine's own question after the stack merge and yang:
+  `GetEmptyInventoryEx(item)` on mt2009, the item's size on r40250.
+- **A mark nobody reads is no mark.** The attack pass gives up on a monster
+  it cannot reach after three refused plans and puts the VID in
+  `mapFailedTargets` for thirty seconds; `FindPlayerBotEngagedTarget` - what
+  the tick, the pull and the Monkey Dungeon's spread ask for "what is
+  fighting me" - never looked at that map and handed the same monster
+  straight back. Pokonany stood under a ranged monkey on a ledge for thirteen
+  minutes: 373 unreachable plans to one point seven hundred units away and
+  eight watchdog resets. The finder takes the state now and every caller
+  passes it.
+- **A splash lands on stones too.** `FuncSplashDamage` asks
+  `battle_is_attackable` and nothing else, so the last open road to a bot
+  breaking a Demon Tower stone was an area skill cast at a monster beside
+  it. `IsPlayerBotSplashNearTriggerStone` looks round the caster and the
+  target on map 66 (the skill's `iSplashRange` plus
+  `PLAYERBOT_SPLASH_STONE_MARGIN`) and the rotation skips the splash skill
+  there; the scan is paid on that map alone.
+- **The containers' clock is the operator's, set once.** Every service in
+  compose takes `TZ` from `M2_TZ`, and `.env.example` said UTC, so a Polish
+  panel showed times two hours behind its own machine and the logs were
+  named by UTC hours ("czas jest cofniety o dwie godziny", hunmar, 14
+  September). All four images carry zoneinfo. `Assert-TimezoneDefault` in
+  `start-server.ps1` turns the example's UTC into the Windows zone exactly
+  once (`Get-M2HostTimeZoneName`: a table of Windows ids, else a fixed
+  `Etc/GMT-N`) and sets `M2_TZ_DEFAULTED`; `migrate_timezone` in
+  `linux-port-mt2009/tools/update.sh` does the same from `timedatectl`,
+  `/etc/timezone` or the `/etc/localtime` link when run on a host, and
+  nothing inside the updater container, which cannot see the host's zone.
+  Once a world has migrated, its syslog, syserr, crash stamps and support
+  bundles are in local time: the UTC times in older notes here are UTC.
+- **A walk to another map's coordinates is refused before the clamp.**
+  `MovePlayerBot` hands its goal to `CPlayerBotNavigation::ClampWorld`, which
+  pulls any point onto the map's last cell; in Bokjung that is
+  (204750,307150), and bots on the town square planned it 1615 times in a
+  day, each a far plan answered "unreachable". The obvious sources all check
+  the map - the frontier hub tables, the 222 village ground points, the
+  known-Metin registry, the walk back after a death - so the guard refuses a
+  point more than `PLAYERBOT_NAV_OFF_MAP_MARGIN` outside the map and writes
+  `PLAYERBOT_NAV: destination off the map` with the point as asked, the
+  bot's errands and `caller=` (the return address, one line a minute per
+  caller) to syserr. The shipped game binary is a stripped 32-bit PIE, and
+  the address still names the call: subtract the core's load base (the
+  first line of `/proc/<pid>/maps` for the `game` whose cwd is that core,
+  read as the metin2 user) and disassemble the image's own binary there
+  with `objdump -d --start-address`; the constants pushed round the call
+  give it away. The first one found was the Bestial Captain's detour in the
+  M2 wander branch (`0x43415054`, "CAPT", two instructions above it):
+  `IsPlayerBotBossAlive` kept its answer by race alone, the Captain (591)
+  stands in all three second villages, and a bot in Bokjung was sent to
+  Jayang's Captain for the thirty seconds the answer was trusted - close to
+  four thousand refused walks a minute while he stood. The answer is kept
+  by map and race now; the raid roster and the guild call are still by
+  race, which holds while every boss hub is the boss of one map.
+- **`ManagePlayerBotCombatBuffs` has had a party branch all along**, and it
+  runs only when the bot's own cast of that buff has just failed - which is
+  why no player was ever buffed by it and why the Shaman's pass for the
+  player (`ManagePlayerBotBuffHumanLeader`, above) is a pass of its own.
 
 ## Engine facts worth not re-deriving
 

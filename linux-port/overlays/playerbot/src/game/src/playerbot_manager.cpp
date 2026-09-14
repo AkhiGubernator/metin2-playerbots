@@ -496,6 +496,129 @@ namespace
 		return true;
 	}
 
+	// Spreading the visitors of a Monkey Dungeon over its rooms on the way in.
+	//
+	// The entrance chamber holds 6-7% of a dungeon's spawns - 16 of 234 on map
+	// 108, 16 of 256 on 109, 16 of 231 on 25 - and nearly every visiting bot,
+	// because a visit is spent there: a bot leaves the moment its medal drops,
+	// a median of 41 s, and the wander pass that chooses a door only runs on a
+	// tick with nothing to hit. Every monkey of a dungeon carries the medal's
+	// kill group, so the odds do not depend on the room. What the pile cost was
+	// monsters - roughly fifteen times fewer per bot than the dungeon holds -
+	// and the "whole dungeon in one line" players reported.
+	//
+	// So a bot in its first room of a visit rolls, by pid and weighted by how
+	// many spawns each room holds, whether to stay or which door to take, and
+	// walks there before it hunts. It yields to anything actually hitting it -
+	// the walk is no reason to be killed - and resumes when that is over. One
+	// door only: a second would meet the engine's door block and the AI's own
+	// dwell, which are what keep a bot from being bounced back, and past the
+	// first room the ordinary rotation carries it on. A bot the engine has just
+	// moved through a door is not sent to another: it would only stand there.
+	struct TPlayerBotMonkeySpread
+	{
+		long lMap;
+		int iDoor;
+		BYTE bFromChamber;
+		DWORD dwDeadline;
+	};
+
+	bool ManagePlayerBotMonkeySpread(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		static std::map<DWORD, TPlayerBotMonkeySpread> s_mapSpread;
+		if (!ch)
+			return false;
+		const DWORD pid = ch->GetPlayerID();
+		const long mapIndex = ch->GetMapIndex();
+		if (!IsPlayerBotMonkeyMap(mapIndex) || ch->IsDead())
+		{
+			s_mapSpread.erase(pid);
+			return false;
+		}
+		if (state.bMonkeyChamber == 255 ||
+				(int)state.bMonkeyChamber >= PLAYERBOT_MONKEY_CHAMBER_COUNT)
+			return false;
+
+		std::map<DWORD, TPlayerBotMonkeySpread>::iterator it = s_mapSpread.find(pid);
+		if (it != s_mapSpread.end() && it->second.lMap != mapIndex)
+		{
+			s_mapSpread.erase(it);
+			it = s_mapSpread.end();
+		}
+
+		if (it == s_mapSpread.end())
+		{
+			// Only in the first room of a visit: a bot that has crossed once has
+			// its way already, chosen here or by the rotation.
+			if (state.bMonkeyPrevChamber != 255)
+				return false;
+			const int chamber = (int)state.bMonkeyChamber;
+			TPlayerBotMonkeySpread spread;
+			spread.lMap = mapIndex;
+			spread.iDoor = -1;
+			spread.bFromChamber = state.bMonkeyChamber;
+			spread.dwDeadline = dwNow + PLAYERBOT_MONKEY_SPREAD_WALK_MS;
+			int exitChambers[8];
+			int exitDoors[8];
+			const int exits = playerbot_monkey::IsGotoCrossingBlocked(pid, dwNow)
+					? 0 : GetPlayerBotMonkeyChamberExits(mapIndex, chamber, exitChambers, exitDoors, 8);
+			const int stayWeight = (int)PLAYERBOT_MONKEY_CHAMBERS[chamber].bSpotCount;
+			int total = stayWeight;
+			for (int i = 0; i < exits; ++i)
+				total += (int)PLAYERBOT_MONKEY_CHAMBERS[exitChambers[i]].bSpotCount;
+			int roll = total > 0
+					? (int)(PlayerBotNavHash(pid ^ 0x53505244U ^ (DWORD)mapIndex) % (DWORD)total)
+					: 0;
+			int toChamber = chamber;
+			roll -= stayWeight;
+			for (int i = 0; i < exits && roll >= 0; ++i)
+			{
+				const int weight = (int)PLAYERBOT_MONKEY_CHAMBERS[exitChambers[i]].bSpotCount;
+				if (roll < weight)
+				{
+					spread.iDoor = exitDoors[i];
+					toChamber = exitChambers[i];
+				}
+				roll -= weight;
+			}
+			it = s_mapSpread.insert(std::make_pair(pid, spread)).first;
+			sys_log(0, "PLAYERBOT_MONKEY: spread pid=%u name=%s map=%ld from=%d to=%d door=%d exits=%d",
+					pid, ch->GetName(), mapIndex, chamber, toChamber, spread.iDoor, exits);
+		}
+
+		TPlayerBotMonkeySpread& spread = it->second;
+		if (spread.iDoor < 0)
+			return false;
+		if (state.bMonkeyChamber != spread.bFromChamber)
+		{
+			sys_log(0, "PLAYERBOT_MONKEY: spread crossed pid=%u name=%s map=%ld from=%d to=%d",
+					pid, ch->GetName(), mapIndex, (int)spread.bFromChamber, (int)state.bMonkeyChamber);
+			spread.iDoor = -1;
+			return false;
+		}
+		if (dwNow > spread.dwDeadline)
+		{
+			sys_log(0, "PLAYERBOT_MONKEY: spread gave up pid=%u name=%s map=%ld door=%d",
+					pid, ch->GetName(), mapIndex, spread.iDoor);
+			spread.iDoor = -1;
+			return false;
+		}
+		if (FindPlayerBotEngagedTarget(ch))
+			return false;
+
+		long doorX = 0, doorY = 0;
+		if (!GetPlayerBotMonkeyDoorPosition(mapIndex, spread.iDoor, doorX, doorY))
+		{
+			spread.iDoor = -1;
+			return false;
+		}
+		state.dwTargetVID = 0;
+		ch->SetVictim(NULL);
+		SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
+		MovePlayerBot(ch, doorX, doorY, dwNow, 32, true, true);
+		return true;
+	}
+
 	// Bots challenging one another.
 	//
 	// Rare on purpose: a duel is something that happens in a world, not the
@@ -2390,6 +2513,10 @@ void CPlayerBotManager::Update()
 		// Before anything may claim the tick: which Monkey Dungeon chamber this
 		// bot is in now, since a portal it walked past has already moved it.
 		UpdatePlayerBotMonkeyChamber(ch, state, dwNow);
+		// And, on the way into a dungeon, which room to hunt in - before the
+		// target section can pin the bot to the entrance's handful of monkeys.
+		if (ManagePlayerBotMonkeySpread(ch, state, dwNow))
+			continue;
 
 		if (s_bPlayerBotM2CensusPass)
 			NotePlayerBotPartyCensus(ch, state);

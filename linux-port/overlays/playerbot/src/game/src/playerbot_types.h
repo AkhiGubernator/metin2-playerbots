@@ -2859,6 +2859,11 @@ namespace
 	// live in playerbot_monkey_policy.h, because char.cpp has to read the same
 	// number: two copies of it are how a bounce would come back.
 	const DWORD PLAYERBOT_MONKEY_CHAMBER_DWELL = playerbot_monkey::kChamberDwellMs;
+	// How long the walk to the first room's chosen door may take before the
+	// bot gives it up and hunts where it stands. A chamber is a few thousand
+	// units across; a walk that has not arrived in this long is not arriving,
+	// and a bot left walking would be a bot out of the fight for nothing.
+	const DWORD PLAYERBOT_MONKEY_SPREAD_WALK_MS = 40000;
 	// Every kingdom has an easy dungeon of its own and they are three separate
 	// maps: metin2_map_monkey_dungeon_11 (5), _12 (25) and _13 (45), at three
 	// base positions 76800 apart. Only Chunjo's was ever listed here, so a

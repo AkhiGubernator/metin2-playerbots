@@ -654,18 +654,56 @@ namespace
 		// session's catch and not for a single fish.
 		if (!ch || CountPlayerBotDeadFish(ch) < PLAYERBOT_BAKE_MIN_FISH)
 			return false;
+
+		// Turn your back on the river before striking a light.
+		//
+		// char_item.cpp's ITEM_CAMPFIRE measures the tile a hundred units ahead
+		// of the character's own rotation - GetDeltaByDegree(GetRotation(), 100)
+		// - and refuses ATTR_WATER outright ("You cannot build a campfire under
+		// water"). An angler is pointed straight at the water by the session
+		// that has just ended, so every log went into the river: 23 bought on
+		// this world and not one fire lit, with the refusal invisible because
+		// the engine explains it to a client the bot does not have.
+		//
+		// The mirror of the water point across the bot is the bank it is
+		// standing on, which is dry by construction. waterY of zero means the
+		// bank table had no row for this stand, and the session reads that as
+		// "keep your own Y"; mirroring has to read it the same way.
+		long waterX = 0, waterY = 0;
+		GetPlayerBotFishingFacing(ch->GetPlayerID(), ch->GetMapIndex(), waterX, waterY);
+		if (waterX != 0 || waterY != 0)
+			ch->SetRotationToXY(2 * ch->GetX() - waterX,
+					waterY != 0 ? 2 * ch->GetY() - waterY : ch->GetY());
+
 		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
 			LPITEM item = ch->GetInventoryItem(cell);
 			if (!item || item->GetVnum() != PLAYERBOT_CAMPFIRE_VNUM)
 				continue;
 			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
+			{
+				// This function used to speak only on success, so a refusal was
+				// indistinguishable from never having been called: nine logs in
+				// the world, a bot holding one beside eight dead fish, and no
+				// fire. Name the refusal - it is what found the bait purchase in
+				// two minutes.
+				PlayerBotLogThrottled("campfire_refused", dwNow,
+						"PLAYERBOT_FISHING: campfire refused pid=%u name=%s cell=%u riding=%d fish=%d",
+						ch->GetPlayerID(), ch->GetName(), (unsigned int)cell,
+						ch->IsRiding() ? 1 : 0, CountPlayerBotDeadFish(ch));
 				return false;
+			}
 			state.dwBakeUntil = dwNow + PLAYERBOT_BAKE_WINDOW;
 			sys_log(0, "PLAYERBOT_FISHING: campfire lit pid=%u name=%s dead_fish=%d",
 					ch->GetPlayerID(), ch->GetName(), CountPlayerBotDeadFish(ch));
 			return true;
 		}
+		// Enough fish to be worth a fire and no log in the bag. Said once a
+		// minute for the whole population, because the answer is a purchase the
+		// restock makes on the next trip to the Fisherman, not a fault.
+		PlayerBotLogThrottled("campfire_no_wood", dwNow,
+				"PLAYERBOT_FISHING: no campfire wood pid=%u name=%s fish=%d",
+				ch->GetPlayerID(), ch->GetName(), CountPlayerBotDeadFish(ch));
 		return false;
 	}
 

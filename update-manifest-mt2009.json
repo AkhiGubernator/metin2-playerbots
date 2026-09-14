@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-13T20:35:00Z",
-  "statusMessage": "2.0.37: Biolog nie kończy się już na Zębie Orka. Quest lv30 sam uruchamia następny, a boty tego nie umiały i stały na „7/7\" do końca świata — teraz dochodzi **Księga Klątw**: piętnaście okazów po 60% przyjęcia, potem Świątynny Kamień Duszy (jeden na pięćset zabić), a na koniec nagroda questa: **+5 szybkości ataku na stałe** i szkatuła. Okaz i klucz noszą Dręczyciele z centralnej wyspy Doliny Orków, więc etap da się zrobić tam, gdzie boty i tak polują. Przy okazji nagrody idą teraz dokładnie tą samą drogą co u gracza: dotąd nowa nagroda mogła **skasować poprzednią**, bo silnik szukał efektu po samym typie. Kolejny etap (Pamiątka Po Demonie) jest w tabeli, ale celowo pomijany — jego potwory stoją wyłącznie w Wieży Demona, której rdzeń z botami nie hostuje, więc bot utknąłby na „0/15\" na zawsze; panel liczy osiem etapów. W launcherze stopka **mruga na czerwono**, kiedy jest nowa wersja serwera lub klienta. Tylko serwer — klient zostaje 2.0.5.",
+  "publishedAt": "2026-09-14T05:55:00Z",
+  "statusMessage": "2.0.39: **górnictwo wchodzi do gry** — kopanie siedziało w silniku od zawsze, ale ten świat nie stawiał ani jednej żyły rudy (sprawdzone na wszystkich 109 mapach). Dwadzieścia żył stoi teraz na Dolinie Orków, pustyni i Górze Sohan; bot od 30 poziomu kupuje kilof, tłucze rudę, a sto sztuk to jedno wytopienie — Ruda Ebonitu na Ebonit. Do tego **boty ulepszają wędkę u Rybaka** (62 z 64 wędek stały na komplecie punktów i nigdy ich nie używały), **łowienie od 30 poziomu** wreszcie działa (sama wędka miała ukryty limit 50), a **magazyn u Dozorcy działa w obie strony** — dotąd był składem bez drzwi (zgłosił akhigubernator) i miał dwie strony, z których zapisywała się zero. **Omdlenie działa na boty** (zgłosił cyfrowy_mat): silnik je nakładał, tylko nasza pętla nigdy nie sprawdzała, czy bot jest ogłuszony. Naprawiony też Stajenny w drugiej wiosce Jinno (600 odmów trasy → zero) i zapisywanie połowów, które w całości szły do kosza. Czego jeszcze nie ma: bot przyjmuje pojedynek, ale nie atakuje — to wchodzi w następnym wydaniu. Tylko serwer — klient zostaje 2.0.5.",
   "server": {
-    "version": "2.0.37",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.37/metin2-server-update-2.0.37.zip",
-    "sha256": "6379AEF5D49FC91AA55DFB18463156413FA1F6F58669AC008E9A504455CBD71A"
+    "version": "2.0.39",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.39/metin2-server-update-2.0.39.zip",
+    "sha256": "9C2FF9D67B63742F4EF50AF488E84DB998ACDF4E526A341313AD10D97B515B71"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

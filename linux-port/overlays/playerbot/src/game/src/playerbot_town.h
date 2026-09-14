@@ -1055,6 +1055,39 @@ namespace
 				(unsigned long long)(100 + delta) / 100ULL));
 	}
 
+	// Iwakura's scaling rule, from the top of his sheet: the yang drop rate
+	// (the mob_gold multiplier in percent, 100 when nothing set it, the same
+	// number the panel's rates page writes) against the multiplier it pays -
+	// 100% x1.0, 200% x2.2, 500% x5.0 and so up to 10000% x100 - read straight
+	// through between his points and proportionally outside them. Every price
+	// his sheet sets goes through it: books, materials, gear, soul stones,
+	// marbles and scrolls. Until v1.0 the books had a line of their own
+	// (x1.1 at 100%) and the materials the bare rate.
+	DWORD ScalePlayerBotIwakuraPrice(DWORD base)
+	{
+		if (base == 0)
+			return 0;
+		const long long rate = std::max(1, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL));
+		const size_t count = sizeof(PLAYERBOT_PRICE_RATE_POINTS) / sizeof(PLAYERBOT_PRICE_RATE_POINTS[0]);
+		const TPlayerBotPriceRatePoint& first = PLAYERBOT_PRICE_RATE_POINTS[0];
+		const TPlayerBotPriceRatePoint& last = PLAYERBOT_PRICE_RATE_POINTS[count - 1];
+		long long pct = (long long)last.iPct * rate / last.iRate;
+		if (rate <= first.iRate)
+			pct = (long long)first.iPct * rate / first.iRate;
+		else
+			for (size_t i = 1; i < count; ++i)
+				if (rate <= PLAYERBOT_PRICE_RATE_POINTS[i].iRate)
+				{
+					const TPlayerBotPriceRatePoint& lo = PLAYERBOT_PRICE_RATE_POINTS[i - 1];
+					const TPlayerBotPriceRatePoint& hi = PLAYERBOT_PRICE_RATE_POINTS[i];
+					pct = lo.iPct + (long long)(hi.iPct - lo.iPct) * (rate - lo.iRate) / (hi.iRate - lo.iRate);
+					break;
+				}
+		const unsigned long long scaled = (unsigned long long)base *
+				(unsigned long long)std::max(1LL, pct) / 100ULL;
+		return scaled > 0xFFFFFFFFULL ? 0xFFFFFFFFUL : (DWORD)scaled;
+	}
+
 	// Iwakura's base for a book, at this world's yang rate. The rate is the
 	// mob_gold multiplier in percent (100 when nothing set it), the same
 	// number the panel's rates page writes.
@@ -1067,19 +1100,11 @@ namespace
 				base = PLAYERBOT_BOOK_PRICES[i].dwPrice;
 				break;
 			}
-		// Iwakura's scale, not the bare rate: his table starts at x1.1 for a
-		// world at 100% and rises proportionally (rate * 11 / 1000). Before
-		// 2.0.31 this was the rate alone, so every book asked a tenth under the
-		// table it was meant to implement.
-		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
-		return (DWORD)((unsigned long long)base * (unsigned long long)std::max(1, rate) *
-				(unsigned long long)PLAYERBOT_BOOK_RATE_NUMERATOR /
-				(unsigned long long)PLAYERBOT_BOOK_RATE_DENOMINATOR);
+		return ScalePlayerBotIwakuraPrice(base);
 	}
 
-	// Iwakura's price for an upgrade material, or zero when he has not priced
-	// this one. His rule for this table is the bare yang rate - 100% is the
-	// base price, 200% doubles it - and not the books' x1.1 line.
+	// Iwakura's price for an upgrade material or anything else his sheet prices
+	// by name, or zero when he has not priced this one.
 	DWORD GetPlayerBotMaterialAskingBase(DWORD dwVnum)
 	{
 		DWORD base = 0;
@@ -1089,9 +1114,8 @@ namespace
 				base = PLAYERBOT_MATERIAL_PRICES[i].dwPrice;
 				break;
 			}
-		// His later sheets: the herbs, the Moonlight chest and the horse medal.
-		// Same rule, same scaling, a separate table only because a generator
-		// writes that one (playerbot_price_tables.h).
+		// Then the rest of what he prices by name: the Moonlight chest, the
+		// Blessing Scroll, the horse medal, herbs, guild materials and ores.
 		for (size_t i = 0; base == 0 &&
 				i < sizeof(PLAYERBOT_EXTRA_MATERIAL_PRICES) / sizeof(PLAYERBOT_EXTRA_MATERIAL_PRICES[0]); ++i)
 			if (PLAYERBOT_EXTRA_MATERIAL_PRICES[i].dwVnum == dwVnum)
@@ -1099,10 +1123,7 @@ namespace
 				base = PLAYERBOT_EXTRA_MATERIAL_PRICES[i].dwPrice;
 				break;
 			}
-		if (base == 0)
-			return 0;
-		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
-		return (DWORD)((unsigned long long)base * (unsigned long long)std::max(1, rate) / 100ULL);
+		return ScalePlayerBotIwakuraPrice(base);
 	}
 
 	// A round number, the way a person writes one. The step is the price's own
@@ -1124,18 +1145,6 @@ namespace
 		// A price that would overflow the type it came in keeps its old value:
 		// nothing on a counter is worth an arithmetic surprise.
 		return rounded > 0xFFFFFFFFULL ? price : (DWORD)rounded;
-	}
-
-	// Iwakura's own scaling rule, written at the top of both of his sheets:
-	// the base price times the yang drop rate over a hundred, so a world at
-	// 100% pays the table and one at 500% pays five times it, all the way to
-	// his stated ceiling of 10000%.
-	DWORD ScalePlayerBotIwakuraPrice(DWORD base)
-	{
-		if (base == 0)
-			return 0;
-		const int rate = CHARACTER_MANAGER::instance().GetMobGoldAmountRate(NULL);
-		return (DWORD)((unsigned long long)base * (unsigned long long)std::max(1, rate) / 100ULL);
 	}
 
 	// What the stones seated in a weapon or armour add to its price, in
@@ -1193,6 +1202,24 @@ namespace
 							(unsigned long long)GetPlayerBotSocketStonePercent(item) / 100ULL));
 			}
 		return 0;
+	}
+
+	// Is this piece at a refine his sheet marks "do handlarki" - the jewellery,
+	// the boots and the plain shield at +0 to +3? Such a piece keeps its
+	// merchant price and never takes a counter slot, like the seven Forgetting
+	// Scrolls he sends the same way.
+	bool IsPlayerBotMerchantOnlyGear(LPITEM item)
+	{
+		if (!item || (item->GetType() != ITEM_WEAPON && item->GetType() != ITEM_ARMOR))
+			return false;
+		const BYTE refine = item->GetRefineLevel();
+		if (refine > 9)
+			return false;
+		const DWORD baseVnum = item->GetVnum() - refine;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_GEAR_PRICES) / sizeof(PLAYERBOT_GEAR_PRICES[0]); ++i)
+			if (PLAYERBOT_GEAR_PRICES[i].dwBaseVnum == baseVnum)
+				return (PLAYERBOT_GEAR_PRICES[i].wMerchantMask & (1U << refine)) != 0;
+		return false;
 	}
 
 	// A soul stone by kind and grade. His table names every +4 one by one and
@@ -1647,6 +1674,10 @@ namespace
 		// Then anything rolled with a bonus a player would go looking for.
 		if (HasPlayerBotValuableBonus(item))
 			return 1500;
+		// Below that, a piece his sheet sends to the merchant stays off the
+		// counter: a bracelet +2 with no line worth having is not goods.
+		if (IsPlayerBotMerchantOnlyGear(item))
+			return merchant ? 400 : -1;
 		// A spare at +6 or better is worth walking across town for, and is the one
 		// thing that must never reach an NPC merchant for a fifth of its worth.
 		if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE)

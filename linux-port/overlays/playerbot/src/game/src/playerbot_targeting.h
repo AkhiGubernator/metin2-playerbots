@@ -1428,8 +1428,11 @@ namespace
 					return false;
 
 				LPCHARACTER candidate = static_cast<LPCHARACTER>(entity);
+				// A sweep that grazes a Demon Tower stone can break it, and the
+				// kill is the bot's: see PLAYERBOT_DEVIL_TOWER_STONE_FIRST.
 				if (candidate == m_owner || candidate->GetVID() == m_primaryVID ||
-						(!candidate->IsMonster() && !candidate->IsStone()) || candidate->IsDead())
+						(!candidate->IsMonster() && !candidate->IsStone()) || candidate->IsDead() ||
+						(candidate->IsStone() && IsPlayerBotDungeonTriggerStone(candidate->GetRaceNum())))
 					return false;
 
 				if (candidate->GetMapIndex() != m_owner->GetMapIndex() ||

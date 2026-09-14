@@ -543,7 +543,10 @@ namespace
 
 	void RememberPlayerBotMetin(LPCHARACTER stone, DWORD dwNow)
 	{
-		if (!stone || !stone->IsStone() || stone->IsDead())
+		// The Demon Tower's quest stones are nobody's hunting ground: see
+		// PLAYERBOT_DEVIL_TOWER_STONE_FIRST.
+		if (!stone || !stone->IsStone() || stone->IsDead() ||
+				IsPlayerBotDungeonTriggerStone(stone->GetRaceNum()))
 			return;
 		const bool bNewDiscovery = s_mapKnownPlayerBotMetins.find(stone->GetVID()) ==
 				s_mapKnownPlayerBotMetins.end();
@@ -580,6 +583,9 @@ namespace
 	bool IsPlayerBotMetinWorthFighting(LPCHARACTER ch, LPCHARACTER stone)
 	{
 		if (!ch || !stone || !stone->IsStone() || stone->IsDead())
+			return false;
+		// Breaking one warps every PC on the killer's map into a new tower.
+		if (IsPlayerBotDungeonTriggerStone(stone->GetRaceNum()))
 			return false;
 		// The server drop multiplier still has useful value at a ten-level
 		// advantage. Below that it collapses sharply (15% at -11 and 1% at -15),

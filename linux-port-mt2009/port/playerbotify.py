@@ -670,7 +670,10 @@ def main(root):
          '\tif (GetDesc() && GetDesc()->IsBot())\n'
          '\t\treturn true;\n'
          '\treturn GetLevel() >= 15 && GetSpecialFlag(PLAYER_STATS_MONSTER_FLAG) >= 800;\n'
-         '}\n')
+         '}\n',
+         # apply_gm_gameplay puts the GM's lines above these, so the whole
+         # block is no longer there on a second run; this sentence still is.
+         marker='A playerbot trades from the start')
 
     # ======================================================================
     # 2.0.16 the Metin stone's skill book stops fifteen levels above it.
@@ -1218,8 +1221,34 @@ def main(root):
     apply_playerbot_pvp_challenges(game)
     apply_playerbot_monkey_doors(game)
     apply_party_pickup_to_owner(game)
+    apply_gm_gameplay(game)
     apply_gm_panel(game)
+    apply_costume_block(game)
     print('playerbotify: done')
+
+
+def apply_costume_block(game):
+    """No costume goes on a character on this line.
+
+    Players handed one through the panels put it on and could not take it off
+    again, and the character showed as a bare weapon (reported to Tieru,
+    14 September); the operator's call was to switch costumes off rather than
+    delete them. EquipItem, a drag onto the costume slot and the item's own
+    use all pass through CanEquipNow, so the refusal sits at its top. A costume
+    already worn stays where it is, and nothing is deleted.
+    """
+    edit(os.path.join(game, 'char_item.cpp'),
+         'bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos& srcCell, const TItemPos& destCell) /*const*/\n'
+         '{\n',
+         'bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos& srcCell, const TItemPos& destCell) /*const*/\n'
+         '{\n'
+         '\t// playerbot: costumes are off on this line (playerbotify.py, apply_costume_block).\n'
+         '\tif (item && item->GetType() == ITEM_COSTUME)\n'
+         '\t{\n'
+         '\t\tChatPacket(CHAT_TYPE_INFO, "Kostiumy sa na tym serwerze wylaczone.");\n'
+         '\t\treturn false;\n'
+         '\t}\n',
+         marker='playerbotify.py, apply_costume_block).')
 
 
 BOT_COMMANDS = r'''ACMD(do_playerbot_spawn)
@@ -1672,11 +1701,13 @@ def apply_fishing_min_level(game):
     # prog przez PLAYERBOT_FISHING_MIN_LEVEL w dwoch miejscach (activities.h,
     # travel.h), zeby bot ponizej progu nie szedl nad wode, ktora i tak by go
     # odprawila; te dwie liczby musza sie zgadzac.
+    # The staged char.cpp carries this comment in English, as the engine edits
+    # all do; the Polish one here no longer matched it and stopped the script.
     edit(os.path.join(game, 'char.cpp'),
          '\tif (GetLevel() < 50)\n\t\treturn;\n',
-         '\t// Lowienie od 30 poziomu - patrz PLAYERBOT_FISHING_MIN_LEVEL.\n'
+         '\t// Fishing from thirty - see PLAYERBOT_FISHING_MIN_LEVEL.\n'
          '\tif (GetLevel() < 30)\n\t\treturn;\n',
-         marker='\t// Lowienie od 30 poziomu - patrz PLAYERBOT_FISHING_MIN_LEVEL.\n')
+         marker='\t// Fishing from thirty - see PLAYERBOT_FISHING_MIN_LEVEL.\n')
 
 
 def apply_playerbot_monkey_doors(game):
@@ -1773,6 +1804,63 @@ def apply_playerbot_party_invites(game):
          '\t\t\t\tGetParty() ? 1 : 0, pchInvitee->GetParty() ? 1 : 0,\n'
          '\t\t\t\t(int) GetLevel(), (int) pchInvitee->GetLevel());\n',
          marker='PLAYERBOT_PARTY: invite pid=')
+
+
+def apply_gm_gameplay(game):
+    """A GM character on this line is its owner playing the game.
+
+    The engine treats a GM as staff: Ikarus refuses every shop operation to
+    anybody above GM_PLAYER (CheckGMLevel), IsLevelViewable hides the level,
+    and both SetLevel and the login block force PK_MODE_PROTECT. On a
+    single-player world the GM characters of the admin account are the
+    player's own characters, so a GM could look at a bot's shop and not buy
+    from it, and nobody saw its level. The badge (AFF_YMIR) stays, and so does
+    every other check - money, room, anti-flags, the level protection below
+    PK_PROTECT_LEVEL. CanOpenShop waives the kill count for a GM as it does
+    for a bot. From the audit of 14 September (gm_gameplayify.py).
+    """
+    edit(os.path.join(game, 'ikarus_shop_manager.cpp'),
+         '#define ENABLE_IKASHOP_GM_PROTECTION\n'
+         'static bool CheckGMLevel(LPCHARACTER ch) \n'
+         '{\n'
+         '\treturn\n'
+         '#ifdef ENABLE_IKASHOP_GM_PROTECTION\n'
+         '\t\tch->GetGMLevel() == GM_PLAYER || test_server;\n'
+         '#else\n'
+         '\t\ttrue;\n'
+         '#endif\n'
+         '}',
+         '// playerbot: a GM plays the single-player world, and Ikarus serves it\n'
+         '// like anybody (playerbotify.py, apply_gm_gameplay).\n'
+         'static bool CheckGMLevel(LPCHARACTER ch)\n'
+         '{\n'
+         '\treturn ch != nullptr;\n'
+         '}')
+    edit(os.path.join(game, 'char.cpp'),
+         '\t\tif (!test_server && IsGM())\n'
+         '\t\t\treturn false;\n'
+         '\n'
+         '\t\treturn true;',
+         '\t\t// playerbot: a GM\'s level shows like anybody\'s.\n'
+         '\t\treturn true;')
+    edit(os.path.join(game, 'char.cpp'),
+         '\t\telse if (GetGMLevel() != GM_PLAYER)\n'
+         '\t\t\tSetPKMode(PK_MODE_PROTECT);\n',
+         '\t\t// playerbot: a GM is protected by its level like anybody, not by rank.\n')
+    edit(os.path.join(game, 'char.cpp'),
+         '\t\t\tm_afAffectFlag.Set(AFF_YMIR);\n'
+         '\t\t\tm_bPKMode = PK_MODE_PROTECT;',
+         '\t\t\tm_afAffectFlag.Set(AFF_YMIR);\n'
+         '\t\t\t// playerbot: the GM badge stays, the forced protection does not.')
+    edit(os.path.join(game, 'char_shop.cpp'),
+         'bool CHARACTER::CanOpenShop()\n'
+         '{\n',
+         'bool CHARACTER::CanOpenShop()\n'
+         '{\n'
+         '\t// playerbot: a GM opens a stall without the kill count.\n'
+         '\tif (GetGMLevel() > GM_PLAYER)\n'
+         '\t\treturn true;\n',
+         marker='a GM opens a stall without the kill count')
 
 
 def apply_party_pickup_to_owner(game):

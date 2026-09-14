@@ -213,7 +213,9 @@ RUN set -eux; \
     # completed: the stock group names 140 and 141 only, so the Cursed Bear
     # (139) and the Cursed Brown Bear (142) never counted towards the five
     # bear skins (Pabloo, from Dixdros' report, 2.0.47).
-    for q in web_admin speed_boost starter_chest pony_levelup gm_profile new_quest_lv19; do \
+    # teleport_ring answers the use of Pierscien Teleportacji (70058), which the
+    # package drops and no stock quest handled (2.0.48).
+    for q in web_admin speed_boost starter_chest pony_levelup gm_profile new_quest_lv19 teleport_ring; do \
       [ -f "/quest-add/$q.quest" ] || continue; \
       sed 's/\r$//' "/quest-add/$q.quest" > "/tmp/qc-work/$q.quest"; \
       ( cd /tmp/qc-work && /src/Server/game/src/quest/qc "$q.quest" ); \

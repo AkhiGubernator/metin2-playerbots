@@ -17,6 +17,63 @@ every version here.
 
 ---
 
+## 2.0.47 — 2026-09-14
+
+Serwer (AI, silnik gry, questy i panel zaawansowany). Nowy cennik Iwakury dla
+botów, poprawione podnoszenie przedmiotów w grupie, naprawiony quest „Zbadaj
+przeklęte zwierzęta” i panel Sebana w wersji 1.41.0. Klient bez zmian (zostaje
+2.0.5).
+
+### Cennik Iwakury v1.0
+
+Boty wyceniają towar na straganach według nowego, pełnego cennika Iwakury.
+Doszły ceny bransolet, naszyjników, kolczyków, butów i tarcz, rud i przetopów,
+materiałów gildii oraz ulepszaczy z mt2009, a ceny ksiąg, ulepszaczy i opasek
+zostały zaktualizowane.
+
+Wszystkie ceny rosną teraz z mnożnikiem dropu yang według jednej tabeli
+z cennika: 100% to x1, 200% to x2,2, 500% to x5 i tak dalej aż do 10000%, czyli
+x100. Wcześniej księgi i ulepszacze liczyły się każde po swojemu.
+
+Bransolety, naszyjniki, kolczyki, buty i najprostsza tarcza na +0 do +3 idą
+do handlarza, a nie na stragan, tak jak w cenniku. Mnożniki bonusów obejmują
+teraz buty, bransolety, naszyjniki, kolczyki i tarcze. Poprawione są trzy
+bonusy, które wcześniej nie podnosiły ceny: szansa na kradzież PE, punkty
+doświadczenia i odbicie ciosu na zbroi.
+
+Cena na straganie zmienia się stopniowo, o kilka procent co kilka minut.
+Po aktualizacji stragany dochodzą więc do nowych cen w ciągu kilku godzin.
+
+### Podnoszenie przedmiotów w grupie
+
+Gdy bot z Twojej grupy podnosił przedmiot, który wypadł dla Ciebie, przedmiot
+trafiał do Ciebie, ale czat pisał, że otrzymuje go bot. Przedmiot nie łączył
+się też z takim samym przedmiotem w Twoim ekwipunku, tylko zajmował nowe pole.
+Teraz komunikat podaje Ciebie, a przedmiot najpierw dokłada się do stosu, który
+już masz. Na nowe pole trafia tylko to, co się w stosie nie zmieści. Błąd
+zgłosił mkls6649, a przyczynę i poprawkę przygotował Kenny.
+
+### Quest „Zbadaj przeklęte zwierzęta” (19 poziom)
+
+Z czterech przeklętych niedźwiedzi quest liczył tylko dwa: Grizzly i Czarnego.
+Przeklęty Niedźwiedź i Przeklęty Brązowy Niedźwiedź nigdy nie dawały skóry.
+Teraz daje ją każdy z czterech, z tą samą szansą. Postać, która ma quest
+w toku, niczego nie traci. Przyczynę znalazł Pabloo po zgłoszeniu Dixdrosa.
+
+### Panel zaawansowany (Seban) 1.41.0
+
+Nowa wersja panelu od Sebana. W sklepach offline jest podgląd sprzedaży na
+żywo, ranking najlepiej sprzedających się ksiąg i wykres tempa sprzedaży.
+Doszły mapy Las, Czerwony Las i Wieża Demonów. W profilu postaci są nowe
+akcje: VIP, Smocze Monety, zmiana nicku, powrót do stolicy i usunięcie
+postaci.
+
+Trzy ustawienia z tej wersji, czyli docelowa liczba botów, respawny na mapach
+i wyłączanie skrzyni startowej, wymagają skryptów gry, których nasz serwer nie
+ma. Są więc ukryte, zamiast udawać, że działają. Poprawione są też granice map
+Las, Czerwony Las i Wieża Demonów oraz strona sklepów offline, która na
+świeżej instalacji kończyła się błędem.
+
 ## 2.0.46 — 2026-09-14
 
 Serwer (AI i launcher). Boty nie stoją już nad łupem, który nie mieści się

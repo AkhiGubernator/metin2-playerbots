@@ -36,13 +36,25 @@
 // shape as playerbot_party_policy.h and playerbot_pvp_policy.h.
 namespace playerbot_monkey {
 
-// Ninety seconds. The four minutes this replaces came from a model of a
-// thirty-minute visit that never happened: over 1294 measured visits the
-// median is 86 s and three quarters leave within 201 s, because a bot leaves
-// the moment its medal drops. At four minutes three visits in four never saw
-// a second chamber; at ninety seconds a three-minute visit crosses twice and a
-// long one walks most of the dungeon.
-const uint32_t kChamberDwellMs = 90000;
+// Forty-five seconds - and the one number here worth re-measuring before it
+// moves. It trades two things that pull opposite ways, counted over the 905
+// visits and the engine returns of 14 September before any of this. A bot
+// leaves the moment its medal drops, so the median visit is 75 s: a shorter
+// dwell lets more of that visit be spent crossing, a longer one blocks more
+// of the bounces.
+//
+//   dwell   visits with >=1 crossing   >=2    engine bounces caught
+//   30 s          79%                   56%          65%
+//   45 s          68%                   43%          80%
+//   90 s          43%                   19%          80%
+//   120 s         31%                   11%          80%
+//
+// Forty-five is the knee: every bounce ninety caught, and twice as many
+// visits reaching a second chamber. At ninety a twenty-minute window after the
+// engine half went in showed no crossing at all. The four minutes before that
+// assumed a thirty-minute visit that never happened. The bounce sample is
+// small - twenty returns with no route between - so read the 80% as a shape.
+const uint32_t kChamberDwellMs = 45000;
 
 inline std::map<uint32_t, uint32_t> gotoCrossedAt;
 

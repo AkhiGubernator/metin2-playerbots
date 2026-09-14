@@ -1217,6 +1217,7 @@ def main(root):
     apply_playerbot_party_invites(game)
     apply_playerbot_pvp_challenges(game)
     apply_playerbot_monkey_doors(game)
+    apply_party_pickup_to_owner(game)
     apply_gm_panel(game)
     print('playerbotify: done')
 
@@ -1772,6 +1773,47 @@ def apply_playerbot_party_invites(game):
          '\t\t\t\tGetParty() ? 1 : 0, pchInvitee->GetParty() ? 1 : 0,\n'
          '\t\t\t\t(int) GetLevel(), (int) pchInvitee->GetLevel());\n',
          marker='PLAYERBOT_PARTY: invite pid=')
+
+
+def apply_party_pickup_to_owner(game):
+    # CHARACTER::PickupItem's party branch - a party member picking up an item
+    # another member owns - put the item into the owner's bag with two faults
+    # of its own (Kenny, 2.0.47; reported by mkls6649). It went straight to an
+    # empty cell, where the owner's own pickup first calls AutoStackItem, so
+    # every potion a party member picked up for somebody took a slot of its
+    # own. And it told the owner that the member who picked it up "receives"
+    # it: GetName() there is the picker's, and with bots in a player's party
+    # the picker is nearly always a bot. The stack goes first now, exactly as
+    # in the owner's own branch, and whatever a full stack cannot take goes on
+    # to the empty cell as before; both messages name the owner.
+    edit(os.path.join(game, 'char_item.cpp'),
+         '\t\tint iEmptyCell = -1;\n'
+         '\t\tif (!(owner && (iEmptyCell = owner->GetEmptyInventoryEx(item)) != -1))\n',
+         '\t\t// A stackable the owner already carries joins that stack first, as the\n'
+         "\t\t// owner's own pickup above does: straight to an empty cell, every potion\n"
+         '\t\t// a party member picked up for somebody took a slot of its own. What a\n'
+         '\t\t// full stack cannot take goes on to the empty cell below.\n'
+         '\t\tauto finalItem = owner->AutoStackItem(item);\n'
+         '\t\tif (finalItem)\n'
+         '\t\t{\n'
+         '\t\t\tif (owner == this)\n'
+         '\t\t\t\tChatPacketRecieveItem(this, finalItem, 1);\n'
+         '\t\t\telse\n'
+         '\t\t\t{\n'
+         '\t\t\t\towner->ChatPacket(CHAT_TYPE_INFO, LC_TEXT("%s receives %s."), owner->GetName(), finalItem->GetName());\n'
+         '\t\t\t\tChatPacket(CHAT_TYPE_INFO, LC_TEXT("Item Trade: %s, %s"), owner->GetName(), finalItem->GetName());\n'
+         '\t\t\t}\n'
+         '\t\t\tif (finalItem->GetType() == ITEM_QUEST)\n'
+         '\t\t\t\tquest::CQuestManager::instance().PickupItem(owner->GetPlayerID(), finalItem);\n'
+         '\t\t\treturn true;\n'
+         '\t\t}\n'
+         '\n'
+         '\t\tint iEmptyCell = -1;\n'
+         '\t\tif (!(owner && (iEmptyCell = owner->GetEmptyInventoryEx(item)) != -1))\n',
+         marker='\t\tauto finalItem = owner->AutoStackItem(item);\n')
+    edit(os.path.join(game, 'char_item.cpp'),
+         '\t\t\towner->ChatPacket(CHAT_TYPE_INFO, LC_TEXT("%s receives %s."), GetName(), item->GetName());\n',
+         '\t\t\towner->ChatPacket(CHAT_TYPE_INFO, LC_TEXT("%s receives %s."), owner->GetName(), item->GetName());\n')
 
 
 def apply_gm_panel(game):

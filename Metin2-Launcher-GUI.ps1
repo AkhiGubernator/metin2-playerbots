@@ -1180,7 +1180,9 @@ $script:form.Controls.Add($footer)
 
 $script:versionLabel = [Windows.Forms.Label]::new()
 $script:versionLabel.Location = [Drawing.Point]::new(28, 666)
-$script:versionLabel.Size = [Drawing.Size]::new(700, 54)
+# Four lines when an update is waiting: the "!! NOWA WERSJA" notice goes above
+# the three version lines, and at 54 pixels the client line was cut off.
+$script:versionLabel.Size = [Drawing.Size]::new(700, 74)
 $script:versionLabel.ForeColor = [Drawing.Color]::Silver
 $script:versionLabel.Font = [Drawing.Font]::new('Segoe UI Semibold', 9)
 $script:form.Controls.Add($script:versionLabel)

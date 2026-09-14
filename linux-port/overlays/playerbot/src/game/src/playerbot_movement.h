@@ -1160,6 +1160,13 @@ namespace
 				}
 			}
 			state.bNavDeferredCount = 0;
+			// And the clock with it. Nothing ever cleared this, so `waited_ms`
+			// in the deferral line was the time since the bot's *first* refusal
+			// ever, not the wait of the request being reported: the live server
+			// printed waits of four to six hours, which is simply how long the
+			// bot had been alive. A number that cannot be wrong is worth more
+			// than a number that is usually enormous.
+			state.dwFirstNavDeferTime = 0;
 
 			state.uRouteIndex = resumedIndex;
 			state.lIssuedWaypointX = 0;

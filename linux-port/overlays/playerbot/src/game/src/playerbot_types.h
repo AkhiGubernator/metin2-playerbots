@@ -2176,10 +2176,18 @@ namespace
 	// drop of it has told the bot all it needs to know.
 	const int PLAYERBOT_SPOT_MATERIAL_BONUS_PERCENT = 50;
 	const DWORD PLAYERBOT_SPOT_MATERIAL_BARREN_FIGHTS = 200;
-	const int PLAYERBOT_BAKE_MIN_FISH = 30;
+	// Thirty was a batch no bot ever reached: the whole world held 39 dead fish
+	// between all its anglers, so the wood was never bought, no fire was ever
+	// lit and not one grilled fish existed. A session brings home a handful,
+	// and a fire takes any number of them.
+	const int PLAYERBOT_BAKE_MIN_FISH = 5;
 	const int PLAYERBOT_BAKE_RANGE = 700;
 	const DWORD PLAYERBOT_GRILLED_FISH_FIRST_VNUM = 27863;
-	const DWORD PLAYERBOT_GRILLED_FISH_LAST_VNUM = 27876;
+	// 27883, not 27876. The grilled fish run to Pieczony Zloty Karas, and the
+	// seven above the old ceiling are the good ones - the speed and dexterity
+	// buffs and the 1800-second Golden Crucian - so every one of them fell
+	// through to the junk rule's `return true` and was vendored for pennies.
+	const DWORD PLAYERBOT_GRILLED_FISH_LAST_VNUM = 27883;
 	// What a shellfish holds, from the engine's own table (char_item.cpp,
 	// case 27987): half a Stone Piece, thirty percent nothing, then a white,
 	// a blue or a blood pearl. Thousandths. Once the population has opened

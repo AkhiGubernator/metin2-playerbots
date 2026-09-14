@@ -14,6 +14,16 @@
 
 namespace
 {
+	// Defined in playerbot_town.h, which is included after this file - the same
+	// forward-declaration shape town.h itself uses for AnnouncePlayerBotStall.
+	// A town leg is not a walk: it asks CanReach first and finishes at the
+	// nearest cell of the bot's own walkable component, which is the only thing
+	// that gets a bot to an NPC standing on ground server_attr cuts off from
+	// the square. Its contract is "have I arrived", so it answers false for
+	// every tick of the walk itself.
+	bool MovePlayerBotTownLeg(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow,
+			long goalX, long goalY, int arrivalDistance);
+
 	BYTE GetPlayerBotNextHorseRequiredLevel(BYTE horseLevel)
 	{
 		if (horseLevel >= 21)
@@ -114,7 +124,17 @@ namespace
 				inM2 ? 0x4d324853U : 0x484f5253U, approachX, approachY);
 		if (DISTANCE_APPROX(ch->GetX() - approachX, ch->GetY() - approachY) > PLAYERBOT_STABLE_ARRIVE_DISTANCE)
 		{
-			if (!MovePlayerBot(ch, approachX, approachY, dwNow, PLAYERBOT_STABLE_SNAP_CELLS, true, true) &&
+			// A town leg, not a bare walk. The stable keeper of Jinno's second
+			// village stands on ground the square does not join, and a raw
+			// MovePlayerBot has no answer to that: it plans, is told
+			// "unreachable", and plans the identical route again. Measured on
+			// this world: 582 refusals, every one of them map=43, from six bots
+			// - two of which produced 554 between them while the other
+			// kingdoms' stables were served 185 times and handed over 82
+			// medals. The town leg moves the goal onto the bot's own component
+			// and keeps the rescue for the cases a component lookup cannot see.
+			if (!MovePlayerBotTownLeg(ch, state, dwNow, approachX, approachY,
+						PLAYERBOT_STABLE_ARRIVE_DISTANCE) &&
 					state.bStuckCounter >= 6)
 			{
 				state.bVisitingStable = false;
@@ -548,6 +568,70 @@ namespace
 		}
 	};
 
+	// Upgrading the rod, which on a human's server is the Fisherman's service.
+	//
+	// fishing.cpp has both halves and the bots only ever ran one: every catch
+	// rolls 1-in-`GetValue(1)` for a point in socket 0, up to `GetValue(2)`,
+	// and at that ceiling `fishing::RefinableRod` says the rod may be upgraded.
+	// Nothing ever asked. Measured before this: 62 of the world's 64 rods sat
+	// at exactly ten points - full, for ever - because `RealRefineRod` is
+	// reached only from a GM command and from a quest dialog a bot cannot open.
+	//
+	// Reimplemented rather than called, the way `CollectPlayerBotBattleHorse`
+	// reimplements the stable keeper's quest. The numbers are the item's own:
+	// `GetValue(3)` is the percentage and `GetValue(4)` is what a failure
+	// leaves behind. +0 is free - a hundred percent, and its failure row points
+	// back at itself - while +1 upwards is a real gamble (88, 77, 66, 55) that
+	// drops the rod a grade. That is the Fisherman's arithmetic and not ours to
+	// soften.
+	bool UpgradePlayerBotRod(LPCHARACTER ch)
+	{
+		if (!ch)
+			return false;
+		LPITEM rod = NULL;
+		// RefinableRod refuses a rod in the hand, so a worn one comes off first
+		// - and only when it is actually ready, or a session would be
+		// interrupted for nothing.
+		LPITEM worn = ch->GetWear(WEAR_WEAPON);
+		if (worn && worn->GetType() == ITEM_ROD && worn->GetRefinedVnum() > 0 &&
+				worn->GetSocket(0) >= worn->GetValue(2))
+		{
+			if (!ch->UnequipItem(worn))
+				return false;
+			rod = worn;
+		}
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS && !rod; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item && item->GetType() == ITEM_ROD && !item->IsEquipped() &&
+					item->GetRefinedVnum() > 0 &&
+					item->GetSocket(0) >= item->GetValue(2))
+				rod = item;
+		}
+		if (!rod)
+			return false;
+
+		const DWORD oldVnum = rod->GetVnum();
+		const BYTE bCell = rod->GetCell();
+		const int chance = rod->GetValue(3);
+		const DWORD nextVnum = number(1, 100) <= chance
+				? rod->GetRefinedVnum() : (DWORD)rod->GetValue(4);
+		if (nextVnum == 0)
+			return false;
+		LPITEM fresh = ITEM_MANAGER::instance().CreateItem(nextVnum, 1);
+		if (!fresh)
+			return false;
+		const bool won = nextVnum > oldVnum;
+		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
+		fresh->AddToCharacter(ch, TItemPos(INVENTORY, bCell));
+		LogManager::instance().ItemLog(ch, fresh,
+				won ? "REFINE FISH_ROD SUCCESS" : "REFINE FISH_ROD FAIL", fresh->GetName());
+		sys_log(0, "PLAYERBOT_FISHING: rod upgrade pid=%u name=%s %u -> %u chance=%d %s",
+				ch->GetPlayerID(), ch->GetName(), oldVnum, nextVnum, chance,
+				won ? "SUCCESS" : "FAIL");
+		return true;
+	}
+
 	int CountPlayerBotDeadFish(LPCHARACTER ch)
 	{
 		int count = 0;
@@ -565,7 +649,10 @@ namespace
 	// fire was lit.
 	bool LightPlayerBotCampfire(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
-		if (!ch || CountPlayerBotDeadFish(ch) == 0)
+		// The threshold moved here from the purchase, where it could never be
+		// met. One log grills any number of fish, so it is worth lighting for a
+		// session's catch and not for a single fish.
+		if (!ch || CountPlayerBotDeadFish(ch) < PLAYERBOT_BAKE_MIN_FISH)
 			return false;
 		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
@@ -924,8 +1011,15 @@ namespace
 		// counter: the dead fish get grilled instead of vendored. The wood costs
 		// twenty thousand and one fire takes any number of fish, so it is bought
 		// for a batch, not for the three fish of a short session.
-		if (ch->CountSpecifyItem(PLAYERBOT_CAMPFIRE_VNUM) <= 0 &&
-				CountPlayerBotDeadFish(ch) >= PLAYERBOT_BAKE_MIN_FISH)
+		// Bought before the fish exist, not after. The restock happens at the
+		// Fisherman on the way to the bank and the dead fish only appear during
+		// the session that follows, so asking the bot to be carrying them here
+		// was a circle it could never close: measured on this world, 27 sessions
+		// ended on the very path that lights a fire, two bots ever owned a log
+		// between them, and not one fire was ever lit. An angler on its way out
+		// buys one; thirty thousand yang against an angler's wallet is not a
+		// decision worth making twice.
+		if (ch->CountSpecifyItem(PLAYERBOT_CAMPFIRE_VNUM) <= 0)
 		{
 			TItemTable* proto = ITEM_MANAGER::instance().GetTable(PLAYERBOT_CAMPFIRE_VNUM);
 			if (proto)
@@ -954,6 +1048,11 @@ namespace
 			return true;
 		if (!ch || ch->IsDead())
 			return false;
+		// Between sessions, never during one: the upgrade needs the rod out of
+		// the hand, and EquipPlayerBotRod puts the new grade back on the next
+		// cast by itself - it always takes the highest vnum in the bag.
+		if (!state.bFishingSession)
+			UpgradePlayerBotRod(ch);
 		const TPlayerBotFishingBank* bank = GetPlayerBotFishingBank(ch->GetMapIndex());
 		if (bank == NULL)
 		{

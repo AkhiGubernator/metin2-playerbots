@@ -2877,17 +2877,35 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   reserve were off by the height of the gear. `PlayerBotBagTakesGroup`
   already laid items out by size; its r40250 fallback repeats the grid loop
   because consumables.h comes after gear.h in the include order.
-- **Prices are Iwakura's tables now, not taste.** `PLAYERBOT_BOOK_PRICES`
-  (44 skills, base at mob_gold 100, scaled by `GetMobGoldAmountRate(NULL)`,
-  jittered 80-125% per listing after the limiter, no wallet scaling) and
-  `PLAYERBOT_BONUS_PRICE_ROWS` in playerbot_bonus.h (per slot mask and
-  APPLY, a max-roll multiplier and an other-value multiplier, the three
-  animal/undead/orc races split at level 33, weapon damage lines by tiers).
+- **Prices are Iwakura's sheet, rendered, not typed.** `data/iwakura_ceny.txt`
+  is his price list v1.0 as he sent it (14 September), and
+  `tools/generate_iwakura_prices.py` renders all of it into
+  `playerbot_price_tables.h`: the yang-rate curve, gear by family and refine
+  (weapons, armour, boots, bracelets, necklaces, earrings and shields, his
+  "do handlarki" bands as a merchant mask that `IsPlayerBotMerchantOnlyGear`
+  keeps off a counter), upgrade materials, books, Forgetting Scrolls, soul
+  stones and their socket multipliers, marbles, herbs, guild materials, ores,
+  and the bonus multipliers with the two weapon damage tiers. The three tables
+  that were typed by hand into types.h and bonus.h are gone. Every price goes
+  through `ScalePlayerBotIwakuraPrice`, his curve (100% x1.0, 200% x2.2, 500%
+  x5.0 ... 10000% x100, straight between the points and proportional outside
+  them); the books' own x1.1 line and the materials' bare rate went with the
+  hand tables. The generator refuses a name it cannot bind to a vnum, a bonus
+  without an APPLY, and a bonus that world.item_attr says does not roll on the
+  slot he wrote it under - and that last check found three rows the hand table
+  had wrong: "Szansa na kradziez PE" is MANA_BURN_PCT (it was STEAL_SP),
+  "Punkty doswiadczenia +%" is MALL_EXPBONUS (EXP_DOUBLE_BONUS never rolls on
+  boots or a necklace), and "Szansa na dobicie ciosu" on body armour is
+  REFLECT_MELEE, because a critical line does not roll on armour. A name the
+  game gives two vnums prices both (Nieznany Talizman+, Zabie Udka, Nieznane
+  Lekarstwo, Ozdobna Spinka), except the two overrides the generator names.
   "Max roll" is `g_map_itemAttr[apply].lValues[bMaxLevelBySet[set] - 1]`
-  (constants.h extern, both engines). The product is capped at x100. On
-  mt2009 APPLY_* are the POINT_* aliases in playerbot_engine_compat.h - add
-  one there before using a new apply (STEAL_SP and POISON_REDUCE were
-  missing). His CENY KU.txt / MNOZNIK BONUSOW.txt are the source.
+  (constants.h extern, both engines), the bonus product is capped at x100, and
+  on mt2009 APPLY_* are the POINT_* aliases in playerbot_engine_compat.h: the
+  five the sheet needed are there, three of them mt2009-only and under an #if
+  in the table. A counter's price still moves through `LimitPlayerBotAskStep`,
+  so a changed table reaches the stalls over hours, and
+  `PLAYERBOT_PRICE_TABLE_VERSION` (3) is what makes every offline shop reprice.
 - **"±" for "ą" is the client, not the data.** Checked bytes in
   `world.mob_proto`/`item_proto`: "Handlarz Bronią" ends B9, "Różności" is
   F3 BF ... 9C - CP1250, correct - and there is no mob_names.txt on this
@@ -3217,6 +3235,50 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   runs only when the bot's own cast of that buff has just failed - which is
   why no player was ever buffed by it and why the Shaman's pass for the
   player (`ManagePlayerBotBuffHumanLeader`, above) is a pass of its own.
+- **A stock quest is fixed by compiling its pre_qc form, not its source.**
+  The package's quests carry `define` and `define group`, which its own
+  `precompile.py` expands into `quest/pre_qc/` before the FreeBSD qc runs; the
+  qc built in the image's quests stage does not read `define` and aborts on
+  line 1. `linux-port-mt2009/docker/game/quest/new_quest_lv19.quest` is the
+  pre_qc file with the bear group completed - the stock group named 140 and
+  141, so the Cursed Bear (139) and the Cursed Brown Bear (142) never counted
+  towards the five skins (Pabloo, from Dixdros' report) - compiled in the loop
+  beside pony_levelup, and its object files land over the stock ones.
+  Compared whitespace-blind with the stock objects, 27 of its 28 files are the
+  same and the kill handler is the one that differs, so a character already in
+  the quest keeps its state. The stock quests are gitignored serverfiles: the
+  fixed copy in the quest directory is the only part that ships.
+- **A release of Seban's panel carries none of our commits to it.** 1.41.0
+  put back the hunting ranking that 5d853df took out and the log.log hint
+  decoding that 2273c31 fixed, so a new zip is checked against our own commits
+  to `linux-port/docker/seban-panel` (how many of each commit's added lines it
+  still holds) before it lands. It also wires three controls to his own
+  game-side scripts - m2-botcount, m2-map-regens, and a `common.m2_switches`
+  row his starter-chest quest reads - and none of them is in this image: the
+  manage page queried the missing table and answered 500, and the bot count and
+  the respawns would have written requests nothing reads.
+  `SEBAN_GAME_INTEGRATION=1` in the panel's environment turns the three on for
+  an install that has his scripts; without it they are hidden and refused. Two
+  more things came in that zip: bounds for maps 66, 67 and 68 that are not this
+  world's (taken from each map's Setting.txt instead), and a collector that
+  asked `SHOW COLUMNS` of a table new in that release - an error, not an empty
+  answer, on every install that never had the table, so the table was never
+  made and /economy/shops answered 500 until the check asked
+  information_schema.
+- **A party member's pickup put the owner's item in the wrong cell under the
+  wrong name.** `CHARACTER::PickupItem` on mt2009 has a branch for an item
+  another member of the party owns. It put the item into the owner's bag at
+  an empty cell - the owner's own pickup calls `AutoStackItem` first - so
+  every potion a bot picked up for its player took a slot of its own, and it
+  told the owner that the picker "receives" it, because `GetName()` there is
+  the picker's. With bots in a player's party the picker is nearly always a
+  bot, which is how a branch few people ever reached became a report
+  (mkls6649; the analysis and the fix are Kenny's). `apply_party_pickup_to_owner`
+  in playerbotify.py stacks into the owner's bag first, sends only what a full
+  stack cannot take on to the empty cell, and names the owner in both
+  messages; char_item.cpp ships staged because of it. The branch logs nothing
+  and the test world has no player to stand in a bot's party, so this was
+  compiled and read, not watched.
 
 ## Engine facts worth not re-deriving
 

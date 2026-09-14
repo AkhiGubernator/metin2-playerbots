@@ -17,6 +17,27 @@ every version here.
 
 ---
 
+## 2.0.42 — 2026-09-14
+
+Serwer (panel). Klasyczny panel pokazuje wreszcie Las, Czerwony Las i Wieżę
+Demonów na mapie na żywo. Klient bez zmian (zostaje 2.0.5).
+
+### Trzy mapy, na których boty polują, a panel ich nie pokazywał
+
+Od 2.0.39 boty expią w Lesie i w Czerwonym Lesie i polują w Wieży Demonów,
+a klasyczny panel znał tylko nazwy i granice tych map. Nie było ich w
+filtrze „Mapa” i nie miały tła, więc nie dało się ich wybrać ani zobaczyć
+botów, które tam są (Mkls na Discordzie, o lesie).
+
+Teraz wszystkie trzy są w filtrze na stronie mapy, a tło każdej jest
+narysowane z tych samych plików terenu, po których chodzą boty. Wieża
+Demonów wygląda jak dziewięć okrągłych pięter, bo tak jest zbudowana.
+Sprawdzone na naszym świecie: 9 botów w Wieży Demonów i 1 w Lesie, każdy na
+swoim miejscu na tle.
+
+Panel zaawansowany (Sebana) zostaje bez zmian: tam mapy dodaje autor tego
+panelu.
+
 ## 2.0.41 — 2026-09-14
 
 Serwer. Pojedynki botów przestały się liczyć jako morderstwa, więc ranga

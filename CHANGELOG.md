@@ -17,6 +17,62 @@ every version here.
 
 ---
 
+## 2.0.46 — 2026-09-14
+
+Serwer (AI i launcher). Boty nie stoją już nad łupem, który nie mieści się
+w torbie, i nie szukają Kapitana Bestii z cudzej wioski. Godzina w panelu
+i w logach to teraz godzina Twojego komputera. Klient bez zmian (zostaje 2.0.5).
+
+### Łup, który nie mieści się w torbie
+
+Bot szedł po każdy przedmiot na ziemi, jeśli miał w torbie choć jedno wolne
+pole. Miecz albo zbroja zajmują jednak dwa lub trzy pola w jednej kolumnie,
+więc silnik odmawiał podniesienia, a bot co kilka sekund wracał do tego samego
+przedmiotu i stał nad nim, dopóki serwer go nie zresetował. Na naszym świecie
+było to około 56 odmów na minutę. Teraz bot przed wyjściem sprawdza, czy
+przedmiot się zmieści, i odmów jest zero.
+
+### Potwór, do którego nie da się dojść
+
+Gdy bot trzy razy nie znalazł drogi do potwora, odkładał go na pół minuty.
+Część AI, która sprawdza, kto go w tej chwili atakuje, od razu mu go jednak
+oddawała. Jeden z naszych botów stał tak 13 minut w Lochu Małp pod małpą
+strzelającą z półki skalnej. Teraz obie części pamiętają ten sam znacznik.
+
+### Wieża Demonów
+
+Od 2.0.44 boty nie celują w kamień Wieży i nie trafiają go zamachem. Kamień
+mogła jeszcze trafić umiejętność obszarowa rzucona w potwora obok. Na mapie
+Wieży bot nie używa już takiej umiejętności, jeśli w jej zasięgu stoi kamień.
+Nie rozbije go więc przypadkiem i nie przeniesie wszystkich z mapy do nowej
+Wieży.
+
+### Kapitan Bestii z innej wioski
+
+Boty od 35 poziomu w drugiej wiosce (Jayang, Bokjung, Bakra) idą na Kapitana
+Bestii, kiedy ten się pojawi. Gdy wszystkie królestwa działają na jednym
+rdzeniu (`M2_PLAYERBOT_WORLD_LAYOUT=unified`), serwer pamiętał tylko, że
+Kapitan stoi, ale nie w której wiosce. Boty z Bokjung próbowały więc dojść
+do Kapitana z Jayang albo z Bakry. Takiego punktu nie ma na ich mapie, więc
+nie mogły wyznaczyć drogi i zamiast polować stały w miejscu, dopóki Kapitan
+w innej wiosce nie padł. Teraz każda wioska ma własną odpowiedź. Bot nie idzie też do żadnego punktu spoza swojej mapy, a serwer
+zapisuje taki przypadek w logu błędów.
+
+### Godzina w panelu i w logach
+
+Kontenery serwera liczyły czas w UTC, bo tak było w przykładowym pliku
+ustawień. Dlatego panel i logi były o dwie godziny za zegarem komputera.
+Launcher na Windows ustawia teraz raz w `.env` strefę czasową komputera
+(`M2_TZ`), a kontenery przejmują ją przy starcie. Na Linuksie robi to
+`update.sh` uruchomiony na samej maszynie. Jeśli aktualizujesz serwer na
+Linuksie lub VPS przyciskiem w panelu, aktualizator nie widzi strefy maszyny.
+Wpisz ją wtedy sam, na przykład `M2_TZ=Europe/Warsaw`, i uruchom serwer
+ponownie.
+
+Strefy wpisanej wcześniej ręcznie nic nie nadpisuje. Kto chce zostać przy UTC,
+może po aktualizacji wpisać `M2_TZ=UTC`, a launcher nie zmieni tego drugi raz.
+Od tej chwili godziny w logach i w paczce ZBIERZ LOGI to czas lokalny.
+
 ## 2.0.45 — 2026-09-14
 
 Serwer (AI i launcher). Bot w grupie gracza idzie za nim przez teleport, a

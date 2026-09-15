@@ -92,6 +92,7 @@ dependency order at the top of `playerbot_manager.cpp`:
 | `playerbot_world_memory.h` | What the population has learned about the world, as opposed to about itself. |
 | `playerbot_movement.h` | Following a route: mounts, waypoints, portals, and the known-metin registry. |
 | `playerbot_gear.h` | What a bot wears and carries: equipment scoring, the progression ladder, arrows, potions. |
+| `playerbot_unique_slots.h` | The two unique slots: the uniques a bot never wears, and the rings and gloves on a clock it wears only while it hunts. |
 | `playerbot_activities.h` | The horse, and fishing. Each owns the whole tick while it runs. |
 | `playerbot_missions.h` | The Biologist's collections and the level-up hunt, driven without a quest dialog. |
 | `playerbot_skills.h` | The character sheet: stat points, the job's skill order, keeping buffs up. |
@@ -2740,7 +2741,13 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   m2-render-config` did not emit the token, so `g_iMoonlightChestPermille`
   stayed 0 and no Moonlight chest ever dropped on a 2.x world (zero in six
   hours on the test stack). A CONFIG token added to one line's renderer has
-  to be added to the other's; the two scripts are separate files.
+  to be added to the other's; the two scripts are separate files. And the
+  renderer only sees what compose hands the game service: the mt2009 compose
+  never passed `M2_MOONLIGHT_CHEST_*` or `M2_DRAGON_COIN_*`, so a value in
+  `.env` stayed in `.env` and CONFIG carried the defaults (seen on m2zip on 15
+  September: no such variable in the container, 10 and 300 in CONFIG). Both
+  compose files pass them since 2.0.52; edit `docker-compose.yml` and re-run
+  `port/composify.py`, which renders the deploy file.
 - **SE_LEVELUP_ON_14_FOR_GERMANY is an advert.** On the mt2009 client that
   effect id draws "Noch 1 Level-Up! ... siehe www.metin2.de" over the
   character; 2.0.15 hung it over every stall the finder found. Pick effects
@@ -3514,7 +3521,12 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   so the planner sends no bot to a blacksmith for it. A level-30 weapon under
   the line is ground at the anvil with no prize hold and no +6 hold, under a
   scroll only at steps of `PLAYERBOT_WORN_SCROLL_MAX_PROB` and below (the
-  family runs 90/85/75/65/55/45/35/25/20).
+  family runs 90/85/75/65/55/45/35/25/20) - and under
+  `PLAYERBOT_LEVEL30_SCROLL_LOW_AVERAGE` (30) not before the step to +5, however
+  low those odds: "do +4 u kowala, zwoje od +5" (Tieru, 15 September), after
+  CiosZKarpia spent ten of twelve scrolls in twenty minutes on the +3 and +4
+  steps of an Ostrze z Czerwonej Stali of one percent. A kept scroll logs
+  `level-30 weapon to the anvil, scroll kept for +5`.
 - **An mt2009 refine scroll is a kind, not a vnum.** `world.item_proto`,
   USE_TUNING: 25040 and 25041 plain (value0 0), 25042 NO_REDUCTION_WHEN_FAIL,
   25043/70039 plain +15 (value1), 25045/71032 plain +10, 25044/71021
@@ -3806,7 +3818,299 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   12:56). A REMOVE with a REFINE FAIL one grade lower beside it is skipped.
   This world's "Magiczny Metal" (39016/71026) is a bonus item, not a refine
   scroll; the no-reduction stone is Magiczny Kamień (25042).
+- **The Biologist ranking named the row at the position of the count.** "6/9 •
+  Grzyb Tue" was the sixth row of the table beside a count of six, read as
+  "done up to the Tue Mushroom" - but rows are not finished in order: an
+  outgrown row is stepped over, so bots whose fifth finished row was the Demon
+  Souvenir read "5/9 • Bez", and OddajKonto, six herbs done and the Orc Tooth
+  at 1/10, read as a mushroom collector (Tieru, 15 September: "nie rozumiem
+  statusu biologa"). The card and the ranking now ask one function,
+  `biologist_progress` in admin_panel.py, which picks the row the way
+  `GetActivePlayerBotBiologistMission` does - carrying, then the monster on the
+  live map, then the first not outgrown, then the highest left - reads the key
+  phase (`key_item` is -1726153001 in every quest, the state index being a hash
+  of its name) and counts the outgrown rows it skipped. The ranking says "6/9
+  ukończone • teraz: Ząb Orka 1/10"; the card adds "za niskie dla bota,
+  pominięte: 7", which is how a bot of seventy reads 1/9 beside the Demon
+  Souvenir.
+- **300 packets in one second close a player's connection.**
+  `CInputMain::Analyze` counts a PC's packets while they arrive within the same
+  second and at 300 logs `FLOOD_HEADER_<header>` to `log.hack_log` and sets
+  PHASE_CLOSE - the client is back at the login screen with nothing in its
+  own syserr. The inventory's auto-stack button sent a move (header 13) for
+  every pair of stacks of one item in a single frame, 300 for 25 stacks
+  (l0st3k, 15 September). `client-root/autostackpump.py` sends the same moves
+  six a tenth of a second. Anything a client script sends in a loop wants the
+  same pacing; commands are separately limited to five in half a second
+  (`ENABLE_ANTI_CMD_FLOOD`), and the ones over it are dropped silently.
+- **Auto Lowy is the client's walk with the server's eyes.** The player's
+  auto-hunt (Tieru, 15 September: free, no requirements, the official window's
+  features) is `client-root/uiautohunt.py`, run as one of game.py's
+  updateables. Python in this client has no list of the characters round the
+  player - the public scripts scan a million VIDs a frame and teleport with
+  `chr.SetPixelPosition` - so the hunt asks `/autohunt_target <range> <stones>
+  <x> <y>` under a second apart and `do_autohunt_target` (`apply_auto_hunt`,
+  playerbotify.py) answers `AutoHuntTarget <vid>` from `ForEachAround`:
+  monsters (stones on request) that `battle_is_attackable` allows, within the
+  range of the hunt's start, what hits the hunter first. The walk is
+  `chr.MoveToDestPosition` on the main instance, the swing is the attack key
+  and `chr.SetRotation`, a skill is `player.ClickSkillSlot`, a potion
+  `net.SendItemUsePacket`, standing up `/restart_here` (refused for ten
+  seconds after death). `tests/uiautohunt_test.py` drives the decisions against
+  stub modules on Python 2.7 and 3; the client itself was not run by us.
+- **A dropper is a drop character, and nothing else asks for its time.**
+  The operator's medal droppers of twenty-five were found doing everything but
+  their dungeon: none of 99 on a Monkey Dungeon map, thirty on the Biologist's
+  goal, ten resting on Yongan's square, and 118 of the 127 medal droppers in a
+  guild; one bot's log has the horse errand flip to the Biologist the second
+  its bag filled ("dropki medali ... robia rozne rzeczy jak biolog", "niech nie
+  dochodza do gildii, to tylko dropki", Tieru, 15 September; "latają po m2",
+  sizowski). `GetActivePlayerBotBiologistMission` answers NULL for every
+  `IsPlayerBotDropper` personality - the planner, the pass, the travel and the
+  status all ask it; `RollPlayerBotMetinExpedition` gives a medal, M2 or M3
+  dropper no expedition (the Metin dropper's table is the stones);
+  `MayPlayerBotRestInTown` refuses it; and `ManagePlayerBotGuild` neither
+  founds nor recruits one and takes one already inside out
+  (`LeavePlayerBotGuildAsDropper`: `RequestRemoveMember`, or for a master
+  `ChangeMasterTo` the strongest non-dropper bot of that guild in sight, or
+  `RequestDisband` for a guild of one). That was not the half of it: in the
+  first twenty-five minutes after that restart 116 of the medal droppers took
+  350 market trips (75 of them walks from the second village back to Joan), 68
+  service walks to their offline shops and 124 material errands, some went
+  fishing, and three reached a dungeon. None of it is a dropper's business any
+  more - `ManagePlayerBotShopping` returns for every `IsPlayerBotDropper`,
+  `IsPlayerBotAngler`, `IsPlayerBotMiner` and `StartPlayerBotMaterialHunt`
+  refuse one, its offline shop is served every
+  `PLAYERBOT_DROPPER_SHOP_SERVICE_MIN_MS` to `_MAX_MS` rather than every ten to
+  fifteen minutes, nobody's is served out of a Monkey Dungeon
+  (`BotOfflineBusy`), a medal dropper never leaves for the frontier
+  (`ShouldPlayerBotLeaveForFrontier`) and a medal in its bag holds it back
+  nowhere (`holdsMedalToHandIn`). Two gates were opened for every bot on its
+  way to a medal: the Joan-first market walk, whose gate is in the village the
+  walk leaves, and the soft half of `NeedsPlayerBotCriticalTownServices`, which
+  counts a bag at 45% as critical - and a keeper's bag holds fifty to seventy of
+  its ninety cells, twenty-four of them materials and nine potions. The next
+  fourteen minutes had 37 dungeon visits among the medal droppers, and 29 of
+  them ended as "horse complete" (the six looked at after 36 seconds to three
+  minutes): the medal dropper still left at `PLAYERBOT_BAG_FULL_PERCENT`, and
+  one holding five medals walked in and out in nine seconds against a stock of
+  five. It stays now while a medal has a cell
+  (`ShouldPlayerBotPursueHorseExpedition`), its stock is a full stack
+  (`PLAYERBOT_MEDAL_DROPPER_MEDAL_STOCK`), and `PLAYERBOT_MONKEY: exit` says
+  which gate closed a visit (`free_cells`, `medals`, `stock`, `visit_s`). Its
+  first run named the bag: 28 of 37 exits in fourteen minutes with no free
+  cell, the visits averaging 169 seconds - the dungeon's floor filled what the
+  counter's stock had left. So a medal dropper picks up only the medal, the
+  goods a player crafts further, a skill book and what pours into a stack it
+  already carries (`IsPlayerBotMedalDropperLoot`, in the loot collector), and
+  a dropper's first service visit after a spawn is spread over its long round
+  too, where the ten minutes had sent medal droppers to the first village 69
+  times in fourteen minutes.
+  Fourteen minutes after that: 93 of the 125 medal droppers stood in a Monkey
+  Dungeon (26 with the bag rule alone, 6 with the errands cleared alone, and
+  none of the 99 of level twenty-five before any of it), 111 with the horse
+  as their goal and the other 14 saving their skins; 83 visits began, all 18
+  that ended were restocks, and the fullest bag still had three cells free.
+  No market trip, errand, angler or miner, and two service walks. The restock
+  was not potions, which is what this note said first: `needsPotions` is
+  `NeedsPlayerBotEmergencyPotions` - under ten red, or eight blue for a
+  caster - and the bots that left carried hundreds of both. They were
+  archers: `NeedsPlayerBotArrows` sends one out under
+  `PLAYERBOT_ARROW_RESTOCK_THRESHOLD` (a hundred), and the merchant pass
+  bought arrows only while that need stood. A dropper archer fills up to
+  `PLAYERBOT_DROPPER_ARROW_STOCK` there now (`WantsPlayerBotArrowTopUp`, and
+  never with an emergency sale). In the fourteen minutes after that restart
+  109 of the 119 medal droppers stood in a dungeon, the 14 visits that ended
+  were restocks of 14 archers, and 85 purchases put 17 000 arrows into their
+  slots; twenty minutes on, the same fourteen held 650 to 915.
+  `PLAYERBOT_MONKEY: exit` does not say which need a restock was, and arrows
+  are worn: `EQUIPMENT` position 9 in `player.item`, so a query of `INVENTORY`
+  alone reads every archer as empty.
+- **The unique slots took whatever came to hand.** The equipment pass scores a
+  unique by its lines and an empty slot beats everything, so a unique with no
+  line on it was worn as readily as any other - Pierscien Niejawnosci (70007),
+  which hides the level (`IsLevelViewable`), was on eleven bots ("Bot Toty nie
+  ma widocznego lv, dlaczego?", Tieru, 15 September). `playerbot_unique_slots.h`
+  owns the slots now. 70007, Plaszcz Uciekiniera (70048, the alignment title)
+  and Maska Sabaha are taken off and never worn (`IsPlayerBotNeverWornUnique`,
+  also refused by `IsPlayerBotEquipmentCandidate`). The rings of experience
+  (group 10000 and 70005, half as much experience again) and the thief's gloves
+  (group 10002: 70043, 72004, 72005) go on only while the bot hunts: their
+  minutes run only while worn - value2 is 0 on all of them, so
+  `unique_expire_event` takes a minute a minute and stops at the unequip - so
+  the pass takes them off in a safe zone, on an errand, at the water or the
+  vein, behind a counter, in a duel and after `PLAYERBOT_TIMED_UNIQUE_IDLE_MS`
+  without a blow ("oby nie ubierali ich w miescie"). An exp-locked dropper
+  takes the glove and leaves the ring, and the equipment pass never displaces a
+  worn one. 72006 pays only against bosses and stones and 71016 is used rather
+  than worn, so neither is on the lists. The test world had one glove and no
+  ring in any bot's slot before this: the drops are rare.
+- **What a player crafts further is not merchant fodder.**
+  `IsPlayerBotPickupGoods` (gear.h) is the herbalist's Korzen Gango and Grzyb
+  Tue (50724, 50726 - not the Biologist's 50704/50706, which are quest items),
+  Krysztalowe Kolczyki (17160-17169), Zbroja Twarzy Ducha (11670-11679), every
+  weapon of level 65 (fourteen families, 140 to 7140), Fasolka Zen (70102) and
+  Pigulka Krwi (70014). The choosy looter walked past them - herbs at nine
+  yang and gear outgrown under +4 are exactly `IsPlayerBotLootBeneathBot`'s
+  fodder, and a bot of seventy-three left a Zbroja Twarzy Ducha+3 on a floor -
+  and the junk rule vendored the herbs as a non-gear material ("warto
+  podnosic, aby dalej przerabiac", Tieru, 15 September). The loot filter never
+  leaves them now, the junk rule lets the merchant have them only from a bag
+  under pressure with no counter, and the counter ranks them at
+  `PLAYERBOT_SHOP_PICKUP_GOODS_SCORE`, beside the materials. The rings and
+  gloves needed nothing here: they carry ANTI_SELL and were always picked up.
+- **A duel is not a hunt.** `ManagePlayerBotDuelCombat` claims the tick above
+  the buff pass, so a duellist never put its aura up; it swung from the hunt's
+  280 units, a monster's size; and its rotation ran on the hunt's clock - one
+  skill in a duel of twenty seconds (Tieru, 15 September: swords waved from
+  afar, Trzystronne Ciecie under no aura, no Szarza, no Wir Miecza). Inside
+  `PLAYERBOT_DUEL_BUFF_RANGE` it asks `ManagePlayerBotCombatBuffs(.., duel=true)`,
+  which skips the town and errand gates; it swings from
+  `PLAYERBOT_DUEL_MELEE_RANGE`, casts through `CastPlayerBotDuelSkill` on
+  `PLAYERBOT_DUEL_SKILL_INTERVAL`, lets a Shaman and a black-magic Sura cast
+  from `PLAYERBOT_DUEL_CASTER_RANGE`, and a warrior charges a foe 250-600 units
+  off (`TryPlayerBotDuelGapCloser`: Szarza for the body, Uderzenie Miecza for
+  the mind). "Boty w PvP uzywaja potki czerwonej" was the auto potion: the
+  potion ban stopped the drinking, but `AutoRecoveryItemProcess` heals by
+  itself whenever a switched-on auto potion runs. `SwitchOffPlayerBotAutoPotionsForDuel`
+  uses the running one again - the engine's own switch, the item found by the
+  id the affect carries in `dwFlag` - and `ManagePlayerBotAutoPotions` switches
+  none on during a duel; it puts them back within a minute of the end.
+- **Hwang has no curse, and the world no Maska Sabaha.** `CHARACTER::Damage`
+  turned every blow at a monster on map 65 into a DODGE unless `number(1, 100)`
+  beat 50 plus `POINT_BREAK_TEMPLE_CURSE`, which the mask's apply 146 lifts by
+  100 - a player without the mask missed half his blows there (NerrVoVy;
+  "bedziemy musieli usunac wymog i ten item", Tieru, 15 September).
+  `apply_hwang_curse_removed` (playerbotify) removes the block from the staged
+  `char_battle.cpp`. The share step `shareify.py` renders zeroes the mask's six
+  drop lines in `mob_drop_item.txt` and its line in the Hwang loot box (20706),
+  and takes it out of `reward_data.hwang_introduction` - a group stops reading
+  at the first index it lacks, so a line is zeroed, never deleted - and
+  `apply.sh` deletes it from `world.shop_item` (shop 16). The `sabaha` group
+  (10026) in special_item_group.txt is a unique-group membership list, not a
+  source, and stays. Nor does anybody keep one: `apply.sh` deletes every Maska
+  Sabaha from `player.item` on every start - bags, worn slots, safeboxes and
+  counters alike (Tieru, 15 September, "usun" to the masks players already
+  held) - so a mask an old core still held while an update ran the migrator
+  beside it goes on the next start. A bot sells one before that anyway
+  (`IsPlayerBotRetiredItem` is junk and never counter goods). The test world
+  held 138, 94 of them worn, and none were left for the delete by the time it
+  first ran there. Built and checked in the image (the step echoes `share:
+  Maska Sabaha removed`, the six lines read 0, the literal of the curse's debug
+  line is gone from the binary).
+- **A village's market stands on its guard.** `GetTownPitch` took the centroid
+  of the eight service NPCs for the Shinsoo and Jinno villages, which in Jayang
+  is the merchants' side of the square ("sklepy sa zle rozstawione, bardziej
+  przy handlarzach niz przy kole, straznik ... na kordach 457, 630", Tieru, 15
+  September) and ran Pyongmoo's ring half out of the safe zone. Each kingdom's
+  guard - 11000 Shinsoo, 11002 Chunjo, 11004 Jinno - stands in the middle of
+  its village's round square, and Chunjo's hand-made pitches were always on
+  11002. The four others are the cell under their guard now; measured on each
+  map's server_attr, the whole ring of 400 to 1700 round each is open ground
+  inside the safe zone (Jayang's old ring: 220 samples of 504 in it, Pyongmoo's
+  353). `tests/playerbot_empire_rules_test.cpp` pins the four. A moved pitch
+  moves no shop by itself: `OpenOfflineShop` takes the keeper's position, a
+  reopen included, and a keeper walks to its shop to serve it. `apply.sh`
+  carries each bot's shop of the old ring across by the distance between the
+  two pitches, which keeps the ring's shape and spacing, pulled in to 1650 of
+  the guard where it stood further out; a shop already inside the new ring and
+  outside the old one stays. Once, in one transaction with its marker
+  (`player.playerbot_migrations`, `pitch_on_guard_2052`); on every later start
+  only a bot's shop still within 2000 of an old pitch and more than 2000 from
+  the new one moves - a keeper that reopened on the old spot while update.sh
+  ran the migrator beside the old game. The db core writes a shop's position
+  only when a shop is opened or moved (`IkarusShopCache.cpp`), so an old core
+  cannot write the moved ones back. On the test world it carried 611 shops in
+  seven seconds, and the shops standing outside the safe zone on those four
+  maps went from 136 of 673 to 21 of 675, one of them put just past the edge by
+  the move; ten pairs now stand closer than fifty units, where none did - the
+  number server_attr gave before the run (`scratchpad/check_pitch_shops.py` is
+  the shape of that check). Moving only the shops outside the new ring was the
+  other candidate, and it put 37 pairs on top of each other.
 
+- **Poison is a boss's bane, so its line is worth more where the bosses are.**
+  `poison_event` (char_resist.cpp) takes `GetPoisonDamageRate` per mille of the
+  victim's maximum health ten times, three seconds apart; the rate is 25 for
+  `MOB_RANK_BOSS` and 1 for a king, and `IsImmune(IMMUNE_POISON)` is commented
+  out. One proc is therefore a quarter of the Orc Chief's, Nine Tails', the
+  Spider Queen's or the Yellow Tiger Spectre's health - all four rank 4, none
+  immune - and next to nothing against the Spider Baroness or the Elite Queen.
+  From `PLAYERBOT_POISON_BOSS_LEVEL` the reroll (`ScorePlayerBotBonusLine`) and
+  the equipment score count the line double ("przyda im sie w ekwipunku tez
+  bonus szansa na otrucie", Tieru, 15 September). The bots were hunting bosses
+  already - fifteen hours of the test world's syslog before this held 447 raid
+  departures (Yellow Tiger Spectre 218, Nine Tails 125, Bestial Captain 85, Orc
+  Chief 19), 173 guild calls and 108 marbles used on a boss (591 57, 792 25,
+  1901 12, 791 10, 691 4) - and the one boss hub nobody reaches is the Spider
+  Queen's in V1: one raid line in those fifteen hours.
+- **A bot gives nothing away; it trades.** `SharePlayerBotOldGearNearby`
+  handed a spare at +6 or better to a weaker bot of the same class and group
+  within 2200 units - after every upgrade and from the party-share pass, party
+  or not - and no counter ever saw it: a bot raised Srebrne Kolczyki from +1 to
+  +6 at 13:44 on 15 September and gave them to Igor94PL at 13:45 while it wore
+  copper earrings itself ("dobry samarytanin", AkhiGubernator; "niech handluja
+  ale nie daja za darmo", Tieru), and seven such gifts ran in the first three
+  minutes after that evening's restart. The function is gone; what comes off
+  stays in the bag for the junk rule and the counter. The party's share went
+  the same way (`SharePlayerBotUsefulItemWithParty`: a book of another class
+  and a material a member was short of, "usun", Tieru): a member buys either
+  off a counter like anybody else. The old `PLAYERBOT_GIFT_OUT/IN` rows stay
+  readable in the gear history.
+- **Kamien Duchowy is read, not sold.** 50513 is an ITEM_QUEST with antiflag 0
+  and nothing in the junk rule kept it, so the merchant bought every one for
+  194 yang ("Boty sprzedaja kamienie zamiast z nich korzystac", mateuszp211, 15
+  September) and the test world held none. It comes from boss chests (Nine
+  Tails', the Yellow Tiger's, the Fire King's, the Reaper's), the Bestial
+  Captain and the Orc mini-boss. `ManagePlayerBotGrandMasterTraining`
+  (playerbot_manager.cpp, beside the books) does what
+  `training_grandmaster_skill.quest` does behind its dialog: a skill of the
+  build at G1..G10 (the primary first, then the highest grade), twelve hours
+  between reads in the flag `training_grandmaster_skill.next_time` (waved away
+  like the books' wait while the BOOKS switch is on), the stone spent before
+  `LearnGrandMasterSkill` rolls (30%, 4% under the grade's minimum read count),
+  and the rank it costs - `1000 + 500 * (level - 30)` real alignment on a
+  success, a third to a half of that on a failure, doubled below zero. A bot
+  reads only while the full price leaves `GetRealAlignment()` at zero or above,
+  so it never carries a negative rank, which is what `ItemDropPenalty` makes a
+  character pay when a player kills it ("boty powinny unikac biegania z
+  negatywna ranga", Tieru). A monster within ten levels gives +2 a kill (+7
+  below zero), and the bots of forty and up held 1000 to over 20000 with none
+  below zero. The stone is never junk and never counter goods. Fasolka Zen
+  (70102) lifts a negative rank by up to its value0 of 5000 and the engine takes
+  it only then; `ManagePlayerBotZenBeans` eats one when the rank is below zero,
+  and a counter keeps the first `PLAYERBOT_ZEN_BEAN_KEEP` back
+  (`CountPlayerBotVnumUnitsAhead`). A rank that is below zero all the same keeps
+  its bot in the safe zone until a bean lifts it, and the bean is the only way
+  back (Tieru, 15 September): `KeepPlayerBotNegativeRankInTown`, in the tick
+  ahead of the loot, the errands, the travel and the fight, and never for a bot
+  in a player's party, holds a bot inside the ring with `dwTownLingerUntil`
+  (which the inactivity watchdog reads as a town linger), walks one on a
+  village map to its pitch and carries one on any other map home. The market
+  and bean passes both run above it, so a held bot still shops - a dropper
+  too, which otherwise buys nothing (`ManagePlayerBotShopping`) - and
+  `WantsPlayerBotStallItem` wants one bean while the rank is negative and the
+  bag holds none. Compiled and deployed; with no stone in any bag and no
+  negative rank on the test world, none of these passes has been watched
+  firing yet.
+- **Auto Lowy picks up by kind, and the server names the item.**
+  `player.PickCloseItem` takes the nearest item whatever it is, and the window
+  was asked for "nie podnos broni, zbroi" (Tieru, 15 September).
+  `/autohunt_loot <range> <kinds> <x> <y>` (`do_autohunt_loot`,
+  `apply_auto_hunt` in playerbotify.py) answers `AutoHuntLoot <vid> <x> <y>`:
+  the nearest item on the ground that `IsOwnership` lets this character take,
+  within the hunt's range, of a kind in the mask - `AutoHuntLootKind`: weapons
+  but not arrows, armour (body, helmet, shield), jewellery (the other armour
+  slots, rings, belts), potions (USE_POTION, _NODELAY, ABILITY_UP), books
+  (skill and forgetting), stones (ITEM_METIN), and the rest; yang goes with any
+  kind. The client walks there and sends `net.SendItemPickUpPacket`, which
+  `PickupItem` judges as it judges anybody's (`DistanceValid` allows 600 since
+  @fixme173, one pick-up every half second); an item it cannot reach in six
+  seconds is left alone for ten. The same change gave the window what the
+  official premium sells, for everybody: six skill slots, three items on a
+  clock, a revive delay field, and the kinds as `ui.ToggleButton`s (pressed
+  takes). `tests/uiautohunt_test.py` covers the mask, the walk and the pick-up,
+  the unreachable item, the sixth skill and the third item on Python 2.7 and 3;
+  the operator ran the first version in the client, not this one.
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

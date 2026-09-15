@@ -2598,6 +2598,7 @@ class GameWindow(ui.ScriptWindow):
 			"GMPanelAIWeightsResult"	: self.__GMPanelAIWeightsResult,
 			"GMPanelSetAIWeightResult"	: self.__GMPanelSetAIWeightResult,
 
+			"PlayerBotTitle"				: self.__PlayerBotTitle,
 			"OpenPlayerbotAdminWindow"			: self.__PlayerbotAdmin_Open,
 			"PlayerbotAdminStats"				: self.__PlayerbotAdmin_Stats,
 			"PlayerbotAdminBotRow"				: self.__PlayerbotAdmin_BotRow,
@@ -3355,6 +3356,14 @@ class GameWindow(ui.ScriptWindow):
 	def __PlayerbotAdmin_AchievementRow(self, id, pid, name):
 		if self.interface.wndPlayerbotAdmin:
 			self.interface.wndPlayerbotAdmin.OnAchievementRow(id, pid, name)
+
+	def __PlayerBotTitle(self, vid="0", personality="-1", *rest):
+		# A bot's personality where a player's alignment title stands
+		# (playerbot_status_tail.py; ManagePlayerBotPersonalityTitle on the server).
+		import playerbot_status_tail
+		if playerbot_status_tail.show_title(vid, personality) and not getattr(self, "playerbotTitleKeeper", None):
+			self.playerbotTitleKeeper = playerbot_status_tail.GetTitleKeeper()
+			self.RegisterUpdatable(self.playerbotTitleKeeper)
 
 	def __PlayerbotAdmin_AchievementsEnd(self):
 		if self.interface.wndPlayerbotAdmin:

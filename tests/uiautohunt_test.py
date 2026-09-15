@@ -112,6 +112,21 @@ class HelpersTest(unittest.TestCase):
 		self.assertEqual(loaded['range'], 1000)
 		self.assertEqual(uiautohunt.LootMask(loaded), 127)
 
+	def test_a_file_from_the_toggle_window_gets_the_pick_up_back(self):
+		old = 'range=3000\npickup=0\nloot_weapon=0\nloot_other=0\n'
+		loaded = uiautohunt.ConfigFromText(old)
+		self.assertEqual(loaded['range'], 3000)
+		self.assertEqual(loaded['pickup'], 1)
+		self.assertEqual(uiautohunt.LootMask(loaded), 127)
+		self.assertEqual(loaded['config_version'], uiautohunt.CONFIG_VERSION)
+
+	def test_a_current_file_keeps_the_pick_up_off(self):
+		config = uiautohunt.DefaultConfig()
+		config['pickup'] = 0
+		loaded = uiautohunt.ConfigFromText(uiautohunt.ConfigText(config))
+		self.assertEqual(loaded['pickup'], 0)
+		self.assertEqual(uiautohunt.LootMask(loaded), 0)
+
 	def test_target_vid(self):
 		self.assertEqual(uiautohunt.ParseTargetVid('123'), 123)
 		self.assertEqual(uiautohunt.ParseTargetVid('0'), 0)
@@ -292,6 +307,29 @@ class HuntTest(unittest.TestCase):
 		STATE['pos'] = (2000, 1000)
 		step(self.hunter)
 		self.assertEqual(STATE['walks'], [(1000, 1000)])
+
+	def test_fetches_drops_before_a_far_target(self):
+		STATE['where'][55] = (1500, 1000, 0)
+		STATE['distance'][55] = 500
+		self.hunter.OnServerTarget('55')
+		self.hunter.OnServerLoot('77', '1700', '1000')
+		step(self.hunter)
+		self.assertEqual(STATE['walks'][-1], (1700, 1000))
+		self.assertEqual(STATE['attack'], [])
+
+	def test_a_fight_in_reach_comes_before_drops(self):
+		STATE['where'][55] = (1100, 1000, 0)
+		STATE['distance'][55] = 100
+		self.hunter.OnServerTarget('55')
+		self.hunter.OnServerLoot('77', '1700', '1000')
+		step(self.hunter)
+		self.assertEqual(STATE['attack'], [True])
+		self.assertEqual(STATE['walks'], [])
+
+	def test_picks_up_from_four_hundred_and_fifty(self):
+		self.hunter.OnServerLoot('77', '1440', '1000')
+		step(self.hunter)
+		self.assertEqual(STATE['picked'], [77])
 
 	def test_destroy_stops_without_a_word(self):
 		messages = len(STATE['chat'])

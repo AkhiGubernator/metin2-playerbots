@@ -72,8 +72,13 @@ RETURN_MOVE_INTERVAL = 1.0
 FACE_INTERVAL = 0.5
 POTION_INTERVAL = 1.0
 # CHARACTER::PickupItem takes an item within 600 (DistanceValid) and one every
-# half second; the walk stops well inside the first.
-LOOT_PICK_DISTANCE = 250
+# half second; the pick-up is sent from well inside the first.
+LOOT_PICK_DISTANCE = 450
+# Between two fights an item this close is fetched before the next monster is
+# chased: the next target is named in under a second, and walking to it at once
+# left the drops of every fight where they fell ("autolowy nie podnosza
+# itemkow", NerrVoVy, 15 September).
+LOOT_FIRST_DISTANCE = 900
 LOOT_PICK_INTERVAL = 0.6
 LOOT_STUCK_SECONDS = 6.0
 LOOT_STUCK_PAUSE = 10.0
@@ -105,6 +110,13 @@ for _index in xrange(SKILL_SLOTS):
 	DEFAULTS.append(('skill%d_interval' % _index, 0))
 for _key, _label, _bit in LOOT_KINDS:
 	DEFAULTS.append((_key, 1))
+# A file saved by the window that drew these switches as toggle buttons has
+# no version: their pressed look read as "off", and one click on Podnos
+# turned the whole pick-up off (autohunt_Tieru.cfg, 15 September: pickup=0
+# and every kind 0, and "postac nic nie podnosi"). Such a file gets the
+# pick-up back once (ConfigFromText).
+CONFIG_VERSION = 2
+DEFAULTS.append(('config_version', CONFIG_VERSION))
 
 
 def DefaultConfig():
@@ -123,6 +135,18 @@ def ApplyConfigText(config, text):
 			config[key] = max(0, int(value.strip()))
 		except ValueError:
 			pass
+	return config
+
+
+def ConfigFromText(text):
+	"""A saved file read into the defaults, the pick-up switched back on for a
+	file older than CONFIG_VERSION."""
+	config = ApplyConfigText(DefaultConfig(), text)
+	if 'config_version=' not in text:
+		config['pickup'] = 1
+		for key, label, bit in LOOT_KINDS:
+			config[key] = 1
+	config['config_version'] = CONFIG_VERSION
 	return config
 
 
@@ -265,6 +289,8 @@ class Hunter(object):
 		self.anchor = (int(x), int(y))
 		self.running = True
 		chat.AppendChat(chat.CHAT_TYPE_INFO, 'Auto Lowy: start, zasieg %d.' % self.config['range'])
+		if not LootMask(self.config):
+			chat.AppendChat(chat.CHAT_TYPE_INFO, 'Auto Lowy: podnoszenie jest wylaczone (Podnos: nie).')
 
 	def Stop(self, quiet=False):
 		if not self.running:
@@ -358,6 +384,12 @@ class Hunter(object):
 
 		vid = self.targetVid
 		distance = player.GetCharacterDistance(vid) if vid else -1
+		# The drops before a monster out of reach (LOOT_FIRST_DISTANCE); a fight
+		# already in reach is finished first.
+		if (self.lootVid and (distance < 0 or distance > self.Reach()) and
+				self.LootDistance() <= LOOT_FIRST_DISTANCE and self.GoForLoot(now)):
+			self.ReleaseAttack()
+			return
 		if distance < 0:
 			# Nothing named, or the client no longer has it: it died and was
 			# removed, or it walked out of sight. Pick up what lies about, or
@@ -491,7 +523,7 @@ class Hunter(object):
 		self.config = DefaultConfig()
 		try:
 			with open(ConfigPath(name), 'r') as handle:
-				ApplyConfigText(self.config, handle.read())
+				self.config = ConfigFromText(handle.read())
 		except (IOError, OSError):
 			pass
 
@@ -547,12 +579,12 @@ class AutoHuntWindow(ui.BoardWithTitleBar):
 		self.MakeText(15, 96, 'Wstawaj po sekundach:')
 		self.MakeEdit('revive_after', 145, 94, 32, 3)
 
-		self.MakeText(15, 120, 'Podnoszenie (wcisniety = podnosi):')
-		self.MakeToggle(15, 138, 'Podnos', 'pickup')
+		self.MakeText(15, 120, 'Podnoszenie (kliknij, aby zmienic):')
+		self.MakeFlagButton(15, 138, 'Podnos', 'pickup')
 		for index, (key, label, bit) in enumerate(LOOT_KINDS):
 			column = (index + 1) % 4
 			row = (index + 1) // 4
-			self.MakeToggle(15 + column * step, 138 + row * 24, label, key)
+			self.MakeFlagButton(15 + column * step, 138 + row * 24, label, key)
 
 		self.MakeText(15, 192, 'Umiejetnosci z okna V, co ile sekund (PPM usuwa):')
 		self.skillSlots = self.MakeSlots(15, 210, SKILL_SLOTS, self.OnSkillSlot, self.OnClearSkillSlot)
@@ -589,19 +621,11 @@ class AutoHuntWindow(ui.BoardWithTitleBar):
 		self.widgets.append(button)
 		return button
 
-	def MakeToggle(self, x, y, text, key):
-		button = ui.ToggleButton()
-		button.SetParent(self)
-		button.SetPosition(x, y)
-		button.SetUpVisual('d:/ymir work/ui/public/middle_button_01.sub')
-		button.SetOverVisual('d:/ymir work/ui/public/middle_button_02.sub')
-		button.SetDownVisual('d:/ymir work/ui/public/middle_button_03.sub')
-		button.SetText(text)
-		button.SetToggleDownEvent(ui.__mem_func__(self.OnSetFlag), key, 1)
-		button.SetToggleUpEvent(ui.__mem_func__(self.OnSetFlag), key, 0)
-		button.Show()
-		self.widgets.append(button)
-		self.toggles[key] = button
+	def MakeFlagButton(self, x, y, label, key):
+		# A switch says what it is set to, like Metiny/Wstawaj/Wracaj: a toggle
+		# button's pressed look was read as off.
+		button = self.MakeButton('middle', x, y, '', self.OnToggle, key)
+		self.toggles[key] = (button, label)
 		return button
 
 	def MakeSlots(self, x, y, count, onSelect, onUnselect):
@@ -643,11 +667,8 @@ class AutoHuntWindow(ui.BoardWithTitleBar):
 		self.stonesButton.SetText('Metiny: %s' % YesNo(config['stones']))
 		self.reviveButton.SetText('Wstawaj: %s' % YesNo(config['revive']))
 		self.returnButton.SetText('Wracaj: %s' % YesNo(config['return']))
-		for key, button in self.toggles.items():
-			if config[key]:
-				button.Down()
-			else:
-				button.SetUp()
+		for key, (button, label) in self.toggles.items():
+			button.SetText('%s: %s' % (label, YesNo(config[key])))
 		for key, edit in self.edits.items():
 			edit.SetText(str(config[key]))
 		self.RefreshSlots()
@@ -719,10 +740,6 @@ class AutoHuntWindow(ui.BoardWithTitleBar):
 		self.ReadEdits()
 		self.hunter.config[key] = 0 if self.hunter.config[key] else 1
 		self.Refresh()
-
-	def OnSetFlag(self, key, value):
-		# The toggle has already drawn itself; only the setting changes.
-		self.hunter.config[key] = value
 
 	def OnSave(self):
 		self.ReadEdits()

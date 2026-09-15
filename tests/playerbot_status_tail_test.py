@@ -67,5 +67,59 @@ class StatusTailTest(unittest.TestCase):
                 sys.modules['textTail'] = old
 
 
+class TitleTest(unittest.TestCase):
+    def setUp(self):
+        self.calls = []
+        self.now = [100.0]
+        native = types.ModuleType('textTail')
+        native.AttachTitle = lambda vid, text, r, g, b: self.calls.append((vid, text))
+        clock = types.ModuleType('app')
+        clock.GetTime = lambda: self.now[0]
+        self.saved = dict((name, sys.modules.get(name)) for name in ('textTail', 'app'))
+        sys.modules['textTail'] = native
+        sys.modules['app'] = clock
+        status._keeper = None
+
+    def tearDown(self):
+        for name, module in self.saved.items():
+            if module is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+        status._keeper = None
+
+    def test_decoding(self):
+        self.assertEqual(status.decode_title('42', '3'), (42, 3))
+        self.assertEqual(status.decode_title('4294967295', '10'), (-1, 10))
+        for vid, personality in [('0', '1'), ('42', '11'), ('42', '-1'), ('x', '1'),
+                                 ('42', None), ('4294967296', '1')]:
+            self.assertIsNone(status.decode_title(vid, personality), (vid, personality))
+
+    def test_every_personality_has_a_title_and_a_colour(self):
+        self.assertEqual(sorted(status.PERSONALITY_TITLES), list(range(11)))
+        self.assertEqual(sorted(status.PERSONALITY_COLOURS), list(range(11)))
+
+    def test_attached_and_kept_for_a_minute(self):
+        self.assertTrue(status.show_title('42', '1'))
+        self.assertEqual(self.calls, [(42, status.PERSONALITY_TITLES[1])])
+        keeper = status.GetTitleKeeper()
+        self.assertTrue(keeper.CanUpdate())
+        self.now[0] += 1.5
+        keeper.OnUpdate()
+        self.assertEqual(len(self.calls), 2)
+        self.now[0] += 0.5
+        keeper.OnUpdate()
+        self.assertEqual(len(self.calls), 2)
+        self.now[0] += 61.0
+        keeper.OnUpdate()
+        self.assertEqual(len(self.calls), 2)
+        self.assertFalse(keeper.CanUpdate())
+
+    def test_a_client_without_attach_title_draws_nothing(self):
+        del sys.modules['textTail'].AttachTitle
+        self.assertFalse(status.show_title('42', '1'))
+        self.assertEqual(self.calls, [])
+
+
 if __name__ == '__main__':
     unittest.main()

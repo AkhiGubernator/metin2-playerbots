@@ -144,6 +144,34 @@ EDITS = {
          b'\t\tuiautohunt.OnServerLoot(vid, x, y)\r\n'
          b'\r\n'
          b'\tdef __ToggleSprint(self):\r\n'),
+        # A bot's personality in the place of its alignment title: the server's
+        # "PlayerBotTitle <vid> <personality>" (ManagePlayerBotPersonalityTitle)
+        # goes to playerbot_status_tail.py, and the keeper that puts the title
+        # back after an alignment refresh joins the updateables with the first
+        # one. The entry sits before the admin window's block and the handler
+        # before the achievements' end - places no other edit here touches, and
+        # each insertion splits its own anchor.
+        (b'\t\t\t"GMPanelSetAIWeightResult"\t: self.__GMPanelSetAIWeightResult,\r\n'
+         b'\r\n'
+         b'\t\t\t"OpenPlayerbotAdminWindow"\t\t\t: self.__PlayerbotAdmin_Open,\r\n',
+         b'\t\t\t"GMPanelSetAIWeightResult"\t: self.__GMPanelSetAIWeightResult,\r\n'
+         b'\r\n'
+         b'\t\t\t"PlayerBotTitle"\t\t\t\t: self.__PlayerBotTitle,\r\n'
+         b'\t\t\t"OpenPlayerbotAdminWindow"\t\t\t: self.__PlayerbotAdmin_Open,\r\n'),
+        (b'\t\t\tself.interface.wndPlayerbotAdmin.OnAchievementRow(id, pid, name)\r\n'
+         b'\r\n'
+         b'\tdef __PlayerbotAdmin_AchievementsEnd(self):\r\n',
+         b'\t\t\tself.interface.wndPlayerbotAdmin.OnAchievementRow(id, pid, name)\r\n'
+         b'\r\n'
+         b'\tdef __PlayerBotTitle(self, vid="0", personality="-1", *rest):\r\n'
+         b'\t\t# A bot\'s personality where a player\'s alignment title stands\r\n'
+         b'\t\t# (playerbot_status_tail.py; ManagePlayerBotPersonalityTitle on the server).\r\n'
+         b'\t\timport playerbot_status_tail\r\n'
+         b'\t\tif playerbot_status_tail.show_title(vid, personality) and not getattr(self, "playerbotTitleKeeper", None):\r\n'
+         b'\t\t\tself.playerbotTitleKeeper = playerbot_status_tail.GetTitleKeeper()\r\n'
+         b'\t\t\tself.RegisterUpdatable(self.playerbotTitleKeeper)\r\n'
+         b'\r\n'
+         b'\tdef __PlayerbotAdmin_AchievementsEnd(self):\r\n'),
     ],
     # The inventory's auto-stack button sent a move for every pair of stacks of
     # one item in a single frame - 300 moves for 25 stacks - and 300 packets in

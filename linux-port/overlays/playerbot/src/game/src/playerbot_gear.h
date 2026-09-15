@@ -29,6 +29,9 @@ namespace
 	// every one of their passes.
 	bool IsPlayerBotChestRefused(DWORD dwPlayerID, DWORD dwVnum, DWORD dwNow);
 	void NotePlayerBotChestRefused(DWORD dwPlayerID, DWORD dwVnum, DWORD dwNow);
+	// And the free column of three a giftbox opens into, made the same way
+	// (FreePlayerBotGiftboxColumn, playerbot_consumables.h).
+	bool FreePlayerBotGiftboxColumn(LPCHARACTER ch);
 
 	// Whether this character fights with a weapon of this kind. Asked of an
 	// item by IsPlayerBotWeapon and of a merchant's proto by
@@ -2918,7 +2921,14 @@ namespace
 				continue;
 			}
 
-			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
+			// A giftbox opens only into a free column of three (UseItemEx asks
+			// GetEmptyInventory(3)), and 16 of the 23 bags looked at that refused
+			// Skrzynia Mistrza II had free cells and no such column. The chest pass
+			// makes one; this pass asks for it the same way, and uses the chest by
+			// its own cell afterwards, since a single-cell chest may be what moved.
+			if (ch->GetEmptyInventory(3) < 0)
+				FreePlayerBotGiftboxColumn(ch);
+			if (!ch->UseItem(TItemPos(INVENTORY, item->GetCell())))
 			{
 				// group=0 is a box the share gives no group, room3=0 the engine's
 				// own refusal for want of a three-cell space; anything else was a

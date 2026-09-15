@@ -193,7 +193,7 @@ namespace
 		TPlayerBotMonkeyDoor aDoors[PLAYERBOT_MONKEY_MAX_DOORS];
 	};
 
-	TPlayerBotMonkeyGeometry s_aPlayerBotMonkeyGeometry[3];
+	TPlayerBotMonkeyGeometry s_aPlayerBotMonkeyGeometry[5];
 
 	struct FPlayerBotCollectMonkeyDoors
 	{
@@ -231,6 +231,14 @@ namespace
 		}
 	};
 
+	// One cache per dungeon map. The three kingdoms' easy dungeons are the same
+	// maze on three bases and the geometry is read off each map's own NPCs, so
+	// Shinsoo's and Jinno's rooms were never the problem - having no slot was:
+	// this answered -1 for maps 5 and 45, GetPlayerBotMonkeyGeometry answered
+	// NULL, no chamber or door was known there, and every bot in those two
+	// dungeons hunted the entrance room while Chunjo's walked all eleven ("in
+	// both Kingdoms Bots only farm in starting zone of Ape Dungeon", Dixdros,
+	// 14 September).
 	int GetPlayerBotMonkeyGeometrySlot(long mapIndex)
 	{
 		switch (mapIndex)
@@ -238,6 +246,8 @@ namespace
 			case PLAYERBOT_MAP_MONKEY_EASY: return 0;
 			case PLAYERBOT_MAP_MONKEY_MEDIUM: return 1;
 			case PLAYERBOT_MAP_MONKEY_HARD: return 2;
+			case PLAYERBOT_MAP_MONKEY_SHINSOO: return 3;
+			case PLAYERBOT_MAP_MONKEY_JINNO: return 4;
 			default: return -1;
 		}
 	}

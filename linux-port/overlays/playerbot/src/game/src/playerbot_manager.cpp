@@ -116,6 +116,21 @@ namespace
 {
 	LPEVENT s_pkPlayerBotUpdateEvent = NULL;
 
+	// Defined beside the lock itself, further down.
+	BYTE GetPlayerBotExpLockLevel(BYTE personality);
+
+	// A dropper farms one band for good (PLAYERBOT_EXP_LOCK_*), and the lock
+	// stops experience without giving any back: a bot drawn a dropper once it
+	// had already passed that band farmed a table the engine fades to nothing
+	// for it. Such a bot is not drawn one (PLAYERBOT_DROPPER_OUTGROWN_LEVELS),
+	// and ManagePlayerBotExpLock lifts the lock from a bot that is no dropper.
+	bool IsPlayerBotPastDropperBand(LPCHARACTER ch, BYTE personality)
+	{
+		const BYTE lockLevel = GetPlayerBotExpLockLevel(personality);
+		return ch && lockLevel != 0 &&
+				ch->GetLevel() > lockLevel + PLAYERBOT_DROPPER_OUTGROWN_LEVELS;
+	}
+
 	BYTE GetPlayerBotStablePersonality(LPCHARACTER ch, BYTE role)
 	{
 		if (!ch)
@@ -123,7 +138,8 @@ namespace
 		if (role == BOT_ROLE_PARTY_FIGHTER)
 			return BOT_PERSONALITY_TEAM_COMPANION;
 		if (role == BOT_ROLE_METIN_HUNTER)
-			return (PlayerBotNavHash(ch->GetPlayerID() ^ 0x4d444f50U) % 3U) == 0
+			return (PlayerBotNavHash(ch->GetPlayerID() ^ 0x4d444f50U) % 3U) == 0 &&
+					!IsPlayerBotPastDropperBand(ch, BOT_PERSONALITY_METIN_DROPPER)
 					? BOT_PERSONALITY_METIN_DROPPER : BOT_PERSONALITY_METIN_BREAKER;
 
 		// Traders are drawn before the rest: a bot that trades for a living is not
@@ -135,12 +151,16 @@ namespace
 		if ((PlayerBotNavHash(ch->GetPlayerID() ^ 0x44524f50U) %
 				PLAYERBOT_DROPPER_SHARE) == 0)
 		{
+			BYTE dropper = BOT_PERSONALITY_MEDAL_DROPPER;
 			switch (PlayerBotNavHash(ch->GetPlayerID() ^ 0x4b494e44U) % 3U)
 			{
-				case 0: return BOT_PERSONALITY_M3_DROPPER;
-				case 1: return BOT_PERSONALITY_M2_DROPPER;
-				default: return BOT_PERSONALITY_MEDAL_DROPPER;
+				case 0: dropper = BOT_PERSONALITY_M3_DROPPER; break;
+				case 1: dropper = BOT_PERSONALITY_M2_DROPPER; break;
+				default: break;
 			}
+			// Past its band it plays as the adventurer the draw below makes it.
+			if (!IsPlayerBotPastDropperBand(ch, dropper))
+				return dropper;
 		}
 
 		switch (PlayerBotNavHash(ch->GetPlayerID() ^ 0x50524f46U) % 4U)
@@ -1114,8 +1134,10 @@ namespace
 		if (dwNow < next)
 			return false;
 		next = dwNow + PLAYERBOT_PARTY_LEADER_BUFF_INTERVAL;
-		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
-				state.bRecoveringAfterDeath || state.bTacticalRetreat ||
+		// A visit, a Biologist walk or a stable errand the bot carried into the
+		// party is only paused there (the tick skips all three for a player's
+		// party), so its flags stay set and must not stop the buffs.
+		if (state.bRecoveringAfterDeath || state.bTacticalRetreat ||
 				state.bMultiPullActive || state.bFishingSession || ch->GetMyShop())
 			return false;
 		LPCHARACTER leader = party->GetLeaderCharacter();
@@ -3038,6 +3060,15 @@ void CPlayerBotManager::Update()
 		ManagePlayerBotPvpChallenge(ch, state, dwNow);
 		ManagePlayerBotKingdomHostility(ch, state, dwNow);
 		ManagePlayerBotParty(ch, state, dwNow);
+		// A bot in a player's party keeps its errands and runs none of them
+		// while it is there. A Biologist or a merchant it had been walking to
+		// took it away from the player, the follow pass fetched it back, and
+		// the two took turns for as long as the party lasted ("[PT] Ide do
+		// handlarza bronia (cel: Biolog)" - Pabloo, 15 September, whose fix
+		// this is). The world travel has stood down since 2.0.48; the stable,
+		// the Biologist, the town visit and the empty-handed recovery stand
+		// down below. Fighting does not: a bot in a party is there to fight.
+		const bool bHumanLedParty = IsPlayerBotHumanLedParty(ch->GetParty());
 		// Keeping up with the player comes before the bot's own plans for the
 		// tick, or the wander pass walks it out of the party it just joined.
 		if (ManagePlayerBotFollowHumanLeader(ch, state, dwNow))
@@ -3111,7 +3142,7 @@ void CPlayerBotManager::Update()
 			continue;
 
 		// Horse medals are equally real resources: a bot leaves combat, walks to
-		if (!state.bMultiPullActive && !bFightingMetin &&
+		if (!bHumanLedParty && !state.bMultiPullActive && !bFightingMetin &&
 				ManagePlayerBotHorse(ch, state, dwNow))
 			continue;
 
@@ -3149,7 +3180,7 @@ void CPlayerBotManager::Update()
 		// Research is a first-class activity, not an instant reward. A bot that
 		// has collected the outstanding specimens walks to Chaegirab and submits
 		// them one by one before it resumes hunting.
-		if (!state.bMultiPullActive && !bFightingMetin &&
+		if (!bHumanLedParty && !state.bMultiPullActive && !bFightingMetin &&
 				ManagePlayerBotBiologist(ch, state, dwNow))
 			continue;
 
@@ -3159,7 +3190,7 @@ void CPlayerBotManager::Update()
 		// the next tier loops forever between the weapon and armour merchants and
 		// never returns to combat (or to its local party).
 		const bool bOnTownMap = IsPlayerBotVillageMap(ch->GetMapIndex());
-		if (bOnTownMap && !state.bVisitingShop && !state.bMultiPullActive &&
+		if (!bHumanLedParty && bOnTownMap && !state.bVisitingShop && !state.bMultiPullActive &&
 				!bFightingMetin &&
 				(bNeedsProfession || dwNow > state.dwNextShopCheckTime))
 		{
@@ -3209,7 +3240,7 @@ void CPlayerBotManager::Update()
 		// A visit is an adaptive, persistent route. The bot only visits specialists
 		// needed by its current inventory: weapon merchant, armor merchant, Misc
 		// Merchant and/or blacksmith. Goals never change in the middle of a route.
-		if (HandlePlayerBotTownVisit(ch, state, dwNow))
+		if (!bHumanLedParty && HandlePlayerBotTownVisit(ch, state, dwNow))
 			continue;
 
 		// A normal horse is for transport only, so it comes off before buffs
@@ -3240,6 +3271,15 @@ void CPlayerBotManager::Update()
 		{
 			state.dwTargetVID = 0;
 			ch->SetVictim(NULL);
+			// Every way out of this branch is an errand - a merchant, the world
+			// travel, the scavenging wander - so in a player's party the bot
+			// stays by the player without one, and a Shaman still buffs.
+			if (bHumanLedParty)
+			{
+				ManagePlayerBotBuffHumanLeader(ch, state, dwNow);
+				ch->Stop();
+				continue;
+			}
 			if (state.dwEmergencyScavengeUntil != 0 &&
 					dwNow < state.dwEmergencyScavengeUntil &&
 					IsPlayerBotM1Map(ch->GetMapIndex()))
@@ -3686,6 +3726,42 @@ void CPlayerBotManager::GetAvailableBots(std::vector<DWORD>& out, size_t limit)
 			it != m_setRegisteredBots.end() && out.size() < limit; ++it)
 		if (m_mapBots.find(*it) == m_mapBots.end())
 			out.push_back(*it);
+}
+
+// A GM's /transfer of a bot on this core. The engine's own transfer is a
+// WarpSet, which tells a client to reconnect and takes the character off its
+// sectree until it does; a bot has nobody to reconnect, so the rescue put it
+// back where its own map starts ("robi tp, ale jakby na start mapy" -
+// NerrVoVy, Mat and RetroGracz38, 14 September). This is the map change the
+// AI makes for every other move, onto the GM's own spot, and the GM is told
+// how it went. Nothing holds the bot there afterwards: its next plan is its own.
+bool CPlayerBotManager::TransferBot(LPCHARACTER bot, LPCHARACTER to)
+{
+	if (!bot || !to)
+		return false;
+	const DWORD dwNow = get_dword_time();
+	const long mapIndex = to->GetMapIndex();
+	TPlayerBotAIStateMap::iterator it = s_mapPlayerBotAIStates.find(bot->GetPlayerID());
+	const char* refusal = NULL;
+	if (it == s_mapPlayerBotAIStates.end())
+		refusal = "bot jeszcze nie wszedl do gry";
+	else if (bot->IsDead())
+		refusal = "bot nie zyje";
+	else if (mapIndex >= PLAYERBOT_INSTANCE_MAP_INDEX_MIN)
+		refusal = "bot nie wejdzie do lochu z osobna instancja";
+	else if (!IsPlayerBotMapHostedHere(mapIndex))
+		refusal = "tej mapy nie hostuje rdzen bota";
+	else if (!TransitionPlayerBotMap(bot, it->second, mapIndex, to->GetX(), to->GetY(),
+			dwNow, "gm_transfer"))
+		refusal = "bot nie moze stanac na tej mapie";
+	if (refusal)
+		to->ChatPacket(CHAT_TYPE_INFO, "Nie przeniesiono bota %s: %s.", bot->GetName(), refusal);
+	else
+		to->ChatPacket(CHAT_TYPE_INFO, "Przeniesiono bota %s do Ciebie.", bot->GetName());
+	sys_log(0, "PLAYERBOT_WORLD: gm transfer pid=%u name=%s gm=%s map=%ld pos=(%ld,%ld) result=%s",
+			bot->GetPlayerID(), bot->GetName(), to->GetName(), mapIndex, to->GetX(), to->GetY(),
+			refusal ? refusal : "ok");
+	return refusal == NULL;
 }
 
 // --- The F10 bot-admin window -----------------------------------------------

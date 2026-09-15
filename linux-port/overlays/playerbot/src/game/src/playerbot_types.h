@@ -724,12 +724,11 @@ namespace
 	const DWORD PLAYERBOT_REFINE_INTERVAL = 3000;
 	// Bonus rerolling. Both verified against share/conf/item_proto.txt rather
 	// than taken from the feature notes: 71084 is USE_CHANGE_ATTRIBUTE (rerolls
-	// every line) and 71085 is USE_ADD_ATTRIBUTE (adds one). Neither can be
-	// dropped, sold, traded or put in a stall, so a bot can only ever spend its
-	// own gold on them.
+	// every line) and 71085 is USE_ADD_ATTRIBUTE (adds one). A bot spends only
+	// the ones in its bag - HasPlayerBotBonusStone says why it no longer buys
+	// them from nobody.
 	const DWORD PLAYERBOT_BONUS_CHANGE_VNUM = 71084;
 	const DWORD PLAYERBOT_BONUS_ADD_VNUM = 71085;
-	const DWORD PLAYERBOT_BONUS_STONE_PRICE = 25000;
 	// Below this the gear itself is still changing every few levels, so paying to
 	// polish its bonus lines is money the bot needs for the next weapon.
 	const BYTE PLAYERBOT_BONUS_MIN_LEVEL = 30;
@@ -863,8 +862,6 @@ namespace
 	// Effectively once per town visit. A four-second cadence like the refiner's
 	// would let one stop at the blacksmith burn a quarter of a million yang.
 	const DWORD PLAYERBOT_BONUS_INTERVAL = 300000;
-	// Gold the bot refuses to spend on bonuses; potions and gear come first.
-	const DWORD PLAYERBOT_BONUS_GOLD_FLOOR = 120000;
 	const DWORD PLAYERBOT_INACTIVITY_RESET_TIME = 90000;
 	const DWORD PLAYERBOT_WANDER_INTERVAL = 8000;
 	const DWORD PLAYERBOT_PARTY_CHECK_INTERVAL = 10000;
@@ -2481,6 +2478,14 @@ namespace
 	const BYTE PLAYERBOT_EXP_LOCK_M3_DROPPER = 30;
 	const BYTE PLAYERBOT_EXP_LOCK_M2_DROPPER = 36;
 	const BYTE PLAYERBOT_EXP_LOCK_MEDAL_DROPPER = 33;
+	// A bot is drawn a dropper only while it stands no further than this over
+	// its lock. The lock stops experience and cannot take any back, so a bot
+	// that had passed its band before droppers existed - or before a restart
+	// drew it one - kept the name and farmed a table the engine fades to
+	// nothing for it: a level-45 dropper at a level-35 Metin in Bokjung
+	// (sizowski, 15 September). The same two levels the operator's medal
+	// cohort allows (CPlayerBotManager::SpawnMedalDropperCohort).
+	const BYTE PLAYERBOT_DROPPER_OUTGROWN_LEVELS = 2;
 	// A dropper opens its stall on a third of its town visits, against one in
 	// ten for an adventurer and every visit for a merchant: it hunts for a
 	// living and sells what the hunt brought, not the other way round.
@@ -2627,6 +2632,10 @@ namespace
 	const DWORD PLAYERBOT_MINING_SESSION_MAX = 720000;
 	const DWORD PLAYERBOT_MINING_REST_MIN = 900000;
 	const DWORD PLAYERBOT_MINING_REST_MAX = 2700000;
+	// A session broken off by a blow or by standing up after a death is taken
+	// up again this long after, instead of after a rest: the fight or the
+	// recovery runs in between, and the vein is still there.
+	const DWORD PLAYERBOT_MINING_RESUME_AFTER_FIGHT = 45000;
 	const DWORD PLAYERBOT_MINING_NO_PICK_RETRY = 1800000;
 	// mining::ORE_COUNT_FOR_REFINE. A hundred raw ore is one smelted piece.
 	const int PLAYERBOT_ORE_SMELT_COUNT = 100;

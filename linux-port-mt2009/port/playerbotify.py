@@ -1274,6 +1274,8 @@ def main(root):
     apply_gm_gameplay(game)
     apply_gm_panel(game)
     apply_costume_block(game)
+    apply_horse_rider_links(game)
+    apply_gm_transfer_bots(game)
     print('playerbotify: done')
 
 
@@ -2085,6 +2087,145 @@ def apply_gm_panel(game):
          '\t\t}\n'
          '\t}\n',
          marker='EVENTFUNC(gmpanel_flag_event)\n')
+
+    # Klient pyta /gmpanel_check_gm przy kazdym wejsciu do gry (game.py,
+    # OnUpdate po ~300 klatkach), a F9 i F10 wysylaja /gmpanel_open i
+    # /botadmin. Z progiem HIGH_WIZARD/IMPLEMENTOR w cmd_info[] zwykly gracz
+    # dostawal po kazdym teleporcie i logowaniu "Ta komenda nie istnieje." -
+    # to samo, co po nacisnieciu F9 (NerrVoVy, 15.09). Te trzy komendy tylko
+    # otwieraja okno albo zapalaja flage, wiec cmd_info[] wpuszcza je od
+    # GM_PLAYER, a prog sprawdza sama komenda i zwyklemu graczowi nie
+    # odpowiada nic. Kazda akcja panelu dalej sprawdza swoj prog w cmd_info[].
+    for name, level in (('gmpanel_open', 'GM_HIGH_WIZARD'),
+                        ('gmpanel_check_gm', 'GM_HIGH_WIZARD'),
+                        ('botadmin', 'GM_IMPLEMENTOR')):
+        edit(os.path.join(game, 'cmd.cpp'),
+             '\t{ "%s",\tdo_%s,\t0,\t\t\tPOS_DEAD,\t%s\t},\n' % (name, name, level),
+             '\t{ "%s",\tdo_%s,\t0,\t\t\tPOS_DEAD,\tGM_PLAYER\t},\n' % (name, name))
+    edit(os.path.join(game, 'cmd_gm.cpp'),
+         'ACMD(do_gmpanel_open)\n\n{\n\n\tch->ChatPacket(CHAT_TYPE_COMMAND, "OpenGMPanelWindow");\n',
+         'ACMD(do_gmpanel_open)\n\n{\n\n'
+         '\t// Registered for GM_PLAYER, so a player pressing F9 hears nothing\n'
+         '\t// instead of "no such command"; the threshold is kept here.\n'
+         '\tif (ch->GetGMLevel() < GM_HIGH_WIZARD)\n'
+         '\t\treturn;\n'
+         '\tch->ChatPacket(CHAT_TYPE_COMMAND, "OpenGMPanelWindow");\n',
+         marker='a player pressing F9 hears nothing')
+    edit(os.path.join(game, 'cmd_gm.cpp'),
+         'ACMD(do_gmpanel_check_gm)\n\n{\n\n\tch->ChatPacket(CHAT_TYPE_COMMAND, "SetGMFlag");\n',
+         'ACMD(do_gmpanel_check_gm)\n\n{\n\n'
+         '\t// The client asks this on every entry into the game, GM or not.\n'
+         '\tif (ch->GetGMLevel() < GM_HIGH_WIZARD)\n'
+         '\t\treturn;\n'
+         '\tch->ChatPacket(CHAT_TYPE_COMMAND, "SetGMFlag");\n',
+         marker='The client asks this on every entry into the game')
+    edit(os.path.join(game, 'cmd_gm.cpp'),
+         'ACMD(do_botadmin)\n{\n\tch->ChatPacket(CHAT_TYPE_COMMAND, "OpenPlayerbotAdminWindow");\n',
+         'ACMD(do_botadmin)\n{\n'
+         '\t// F10 from a player: silence, the same as F9 (do_gmpanel_open).\n'
+         '\tif (ch->GetGMLevel() < GM_IMPLEMENTOR)\n'
+         '\t\treturn;\n'
+         '\tch->ChatPacket(CHAT_TYPE_COMMAND, "OpenPlayerbotAdminWindow");\n',
+         marker='F10 from a player: silence')
+
+
+def apply_horse_rider_links(game):
+    # Crash rdzenia w CHARACTER::HorseSummon (sizowski, 15.09: dwa w szesc
+    # godzin przy ~2000 botow, oba z tym samym stosem CPlayerBotManager::Update
+    # -> CHARACTER::StartRiding -> CHARACTER::HorseSummon+0x6e).
+    #
+    # Kon i jezdziec trzymaja wskazniki na siebie nawzajem: m_chHorse u
+    # jezdzca, m_chRider u konia. Destroy() konia mial je rozlaczyc, ale mt2009
+    # pyta tam "IsPC() && GetRider()", a jezdzca ma tylko kon (NPC) - warunek
+    # nie jest prawdziwy nigdy. Kon zniszczony czymkolwiek innym niz
+    # HorseSummon(false) wlasnego jezdzca zostawia mu wiszace m_chHorse, a
+    # najblizsze StartRiding() wola HorseSummon(false), ktore siega do
+    # zwolnionej pamieci.
+    #
+    # Co takiego konia niszczy: obszarowka. battle_is_attackable konczy sie na
+    # CPVPManager::CanAttack, a ten odmawia tylko CHAR_TYPE_NPC/WARP/GOTO i
+    # kazdemu innemu NPC odpowiada "tak" - wiec umiejetnosc z rozpryskiem bije
+    # konia, ktory idzie za botem po zsiadnieciu na mapie lowieckiej
+    # (SetPlayerBotRidingForTravel odsyla go tylko w strefie bezpiecznej).
+    #
+    # Dwie zmiany: Destroy rozlacza konia od jezdzca, ktory wciaz go trzyma -
+    # to zamyka crash bez wzgledu na to, co konia zniszczylo - a przywolany kon
+    # (taki, ktory ma jezdzca) nie jest celem niczyjego ciosu.
+    edit(os.path.join(game, 'char.cpp'),
+         '\tHorseSummon(false);\n'
+         '\n'
+         '\tif (IsPC() && GetRider())\n'
+         '\t\tGetRider()->ClearHorseInfo();\n',
+         '\tHorseSummon(false);\n'
+         '\n'
+         '\t// Playerbot: a horse destroyed by anything but its own rider\'s\n'
+         '\t// HorseSummon(false) - a splash skill, most often - left the rider\n'
+         '\t// holding m_chHorse, and the rider\'s next StartRiding() called\n'
+         '\t// HorseSummon(false) on freed memory. "IsPC() && GetRider()" was never\n'
+         '\t// true: only a horse has a rider.\n'
+         '\tif (GetRider() && GetRider()->GetHorse() == this)\n'
+         '\t\tGetRider()->ClearHorseInfo();\n',
+         marker='true: only a horse has a rider.')
+    edit(os.path.join(game, 'pvp.cpp'),
+         '\tswitch (pkVictim->GetCharType())\n'
+         '\t{\n'
+         '\t\tcase CHAR_TYPE_NPC:\n'
+         '\t\tcase CHAR_TYPE_WARP:\n'
+         '\t\tcase CHAR_TYPE_GOTO:\n'
+         '\t\t\treturn false;\n'
+         '\t}\n',
+         '\tswitch (pkVictim->GetCharType())\n'
+         '\t{\n'
+         '\t\tcase CHAR_TYPE_NPC:\n'
+         '\t\tcase CHAR_TYPE_WARP:\n'
+         '\t\tcase CHAR_TYPE_GOTO:\n'
+         '\t\t\treturn false;\n'
+         '\t}\n'
+         '\n'
+         '\t// Playerbot: a summoned horse is its rider\'s and nobody\'s target. The\n'
+         '\t// switch above lets every other NPC through, so a splash skill beside\n'
+         '\t// a dismounted rider killed the horse following it - and a horse\n'
+         '\t// destroyed that way is what CHARACTER::Destroy failed to unlink.\n'
+         '\tif (pkVictim->GetRider())\n'
+         '\t\treturn false;\n',
+         marker='a summoned horse is its rider')
+
+
+def apply_gm_transfer_bots(game):
+    # /transfer <bot> (Mat, RetroGracz38, NerrVoVy, 14.09): silnik robi
+    # tch->WarpSet(), czyli kaze klientowi przelaczyc sie na rdzen mapy
+    # docelowej i zdejmuje postac z sektora. Bot nie ma klienta, wiec zostawal
+    # poza mapa, az ratunek stawial go w punkcie startowym jego wlasnej mapy -
+    # "robi tp, ale jakby na start mapy". Bot na tym rdzeniu zmienia teraz mape
+    # ta sama droga co AI (CPlayerBotManager::TransferBot), a o bocie na innym
+    # rdzeniu GM dostaje odpowiedz zamiast "Transfer requested." - na mape
+    # rdzenia, ktory go nie hostuje, bot nie przejdzie nigdy.
+    edit(os.path.join(game, 'cmd_gm.cpp'),
+         '\t\t\tTPacketGGTransfer pgg;\n',
+         '\t\t\t// Playerbot: a bot on another core stays there - it cannot stand\n'
+         '\t\t\t// on a map its own core does not host, and a WarpSet only takes it\n'
+         '\t\t\t// off its sectree.\n'
+         '\t\t\tif (CPlayerBotManager::instance().IsRegisteredBotPID(pkCCI->dwPID))\n'
+         '\t\t\t{\n'
+         '\t\t\t\tch->ChatPacket(CHAT_TYPE_INFO, "Bot %s jest na innym rdzeniu (mapa %ld) i nie przejdzie na mape tego rdzenia.", arg1, pkCCI->lMapIndex);\n'
+         '\t\t\t\treturn;\n'
+         '\t\t\t}\n'
+         '\n'
+         '\t\t\tTPacketGGTransfer pgg;\n',
+         marker='a bot on another core stays there')
+    edit(os.path.join(game, 'cmd_gm.cpp'),
+         '\t//tch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());\n'
+         '\ttch->WarpSet(ch->GetX(), ch->GetY(), ch->GetMapIndex());\n',
+         '\t//tch->Show(ch->GetMapIndex(), ch->GetX(), ch->GetY(), ch->GetZ());\n'
+         '\t// Playerbot: a bot has no client to reconnect, so it changes map the\n'
+         '\t// way its own AI changes every other one.\n'
+         '\tif (tch->GetDesc() && tch->GetDesc()->IsBot())\n'
+         '\t{\n'
+         '\t\tCPlayerBotManager::instance().TransferBot(tch, ch);\n'
+         '\t\treturn;\n'
+         '\t}\n'
+         '\ttch->WarpSet(ch->GetX(), ch->GetY(), ch->GetMapIndex());\n',
+         marker='CPlayerBotManager::instance().TransferBot(tch, ch);')
 
 
 if __name__ == '__main__':

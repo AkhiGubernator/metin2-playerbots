@@ -3408,6 +3408,12 @@ WARP_LOC = [  # (emoji, {lang:name}, coords)
   ("🏮", {"en":"Chunjo City","pl":"Miasto Chunjo","de":"Chunjo-Stadt","tr":"Chunjo Şehri"}, "65900 155600"),
   ("⛩️", {"en":"Jinno City","pl":"Miasto Jinno","de":"Jinno-Stadt","tr":"Jinno Şehri"}, "963500 279700"),
   ("🏘️", {"en":"Bokjung (M2)","pl":"Bokjung (M2)","de":"Bokjung (M2)","tr":"Bokjung (M2)"}, "145500 240000"),
+  # The other two second villages, at their market pitch (GetTownPitch in
+  # playerbot_empire_rules.h: standable ground inside the safe zone, the way
+  # Bokjung's row above is Bokjung's pitch). Only Chunjo's was listed, so a
+  # Shinsoo or Jinno M2 could not be reached from here (Pabloo, 14 September).
+  ("🏘️", {"en":"Jayang (M2)","pl":"Jayang (M2)","de":"Jayang (M2)","tr":"Jayang (M2)"}, "353987 880012"),
+  ("🏘️", {"en":"Bakra (M2)","pl":"Bakra (M2)","de":"Bakra (M2)","tr":"Bakra (M2)"}, "865500 244975"),
   ("⚔️", {"en":"Orc Valley","pl":"Dolina Orków","de":"Orktal","tr":"Ork Vadisi"}, "270400 739900"),
   ("🏜️", {"en":"Yongbi Desert","pl":"Pustynia Yongbi","de":"Yongbi-Wüste","tr":"Yongbi Çölü"}, "221900 502700"),
   ("❄️", {"en":"Mount Sohan","pl":"Góra Sohan","de":"Sohan-Berg","tr":"Sohan Dağı"}, "375200 174900"),

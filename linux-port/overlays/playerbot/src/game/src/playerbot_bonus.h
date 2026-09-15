@@ -558,8 +558,6 @@ namespace
 				item->GetRefineLevel() >= PLAYERBOT_BONUS_MIN_REFINE;
 	}
 
-	// The stones cannot be dropped, sold, traded or shopped, so there is no market
-	// to walk to: the bot pays for one the same way it pays for its stall.
 	// The bag stone of the kind a vnum names: the change stone is
 	// USE_CHANGE_ATTRIBUTE and the add stone USE_ADD_ATTRIBUTE, and on these
 	// files each comes in three vnums (71084/71151/76023, 71085/71152/76024) -
@@ -578,21 +576,19 @@ namespace
 		return -1;
 	}
 
-	bool BuyPlayerBotBonusStone(LPCHARACTER ch, DWORD vnum)
+	// A bot spends the stones it holds and no others. It used to make one out
+	// of nothing whenever the bag had none - AutoGiveItem for a price in yang,
+	// on the grounds that the stones could not be dropped, traded or shopped.
+	// That was never true of mt2009: both drop from monsters
+	// (mob_drop_item.txt) and come out of chests and the Moonlight chest, and on
+	// a world with the chests switched off the gear history showed bots
+	// spending Wzmocnienie Przedmiotu that no bag had ever received and the
+	// economy charts had none of ("boty zmieniaja oraz dodaja bonusy bez
+	// przedmiotu", seban latino and Drip, 15 September). The operator's rule is
+	// the marble's: a bot without a stone does without, the way a player does.
+	bool HasPlayerBotBonusStone(LPCHARACTER ch, DWORD vnum)
 	{
-		if (!ch)
-			return false;
-		if (FindPlayerBotBonusStoneCellLike(ch, vnum) >= 0)
-			return true;
-		if (ch->GetGold() - GetPlayerBotReservedGold(ch) <
-				(int)(PLAYERBOT_BONUS_GOLD_FLOOR + PLAYERBOT_BONUS_STONE_PRICE))
-			return false;
-		if (ch->GetEmptyInventory(1) < 0)
-			return false;
-		if (!ch->AutoGiveItem(vnum, 1, -1, false))
-			return false;
-		PlayerBotChangeGold(ch, -(int)PLAYERBOT_BONUS_STONE_PRICE);
-		return true;
+		return ch && FindPlayerBotBonusStoneCellLike(ch, vnum) >= 0;
 	}
 
 	bool ConsumePlayerBotBonusStone(LPCHARACTER ch, DWORD vnum)
@@ -624,8 +620,11 @@ namespace
 		state.dwNextBonusCheckTime = dwNow + PLAYERBOT_BONUS_INTERVAL;
 		if (ch->GetLevel() < PLAYERBOT_BONUS_MIN_LEVEL)
 			return false;
-		if (ch->GetGold() - GetPlayerBotReservedGold(ch) <
-				(int)(PLAYERBOT_BONUS_GOLD_FLOOR + PLAYERBOT_BONUS_STONE_PRICE))
+		// Nothing to spend, nothing to weigh: the pass below scores every line
+		// of eight worn pieces, and a bag with no stone and no marble ends here.
+		if (!HasPlayerBotBonusStone(ch, PLAYERBOT_BONUS_ADD_VNUM) &&
+				!HasPlayerBotBonusStone(ch, PLAYERBOT_BONUS_CHANGE_VNUM) &&
+				FindPlayerBotBlessingMarbleCell(ch) < 0)
 			return false;
 
 		const BYTE wearSlots[] = {
@@ -671,7 +670,7 @@ namespace
 
 			const DWORD stoneVnum = bWantAdd ? PLAYERBOT_BONUS_ADD_VNUM
 					: PLAYERBOT_BONUS_CHANGE_VNUM;
-			if (!bWantMarble && !BuyPlayerBotBonusStone(ch, stoneVnum))
+			if (!bWantMarble && !HasPlayerBotBonusStone(ch, stoneVnum))
 				continue;
 
 			// The piece has to come off for the engine to touch it, and it has to go
@@ -751,7 +750,7 @@ namespace
 				continue;
 			const DWORD stoneVnum = bWantAdd ? PLAYERBOT_BONUS_ADD_VNUM
 					: PLAYERBOT_BONUS_CHANGE_VNUM;
-			if (!BuyPlayerBotBonusStone(ch, stoneVnum))
+			if (!HasPlayerBotBonusStone(ch, stoneVnum))
 				break;
 			const int score = ScorePlayerBotItemBonuses(ch, item, WEAR_WEAPON);
 			// The engine's odds, as for the worn pieces above.

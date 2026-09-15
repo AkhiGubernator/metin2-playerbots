@@ -46,6 +46,11 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		// Registered identities not spawned right now, ascending, at most
 		// `limit` of them - the F9 panel's "bots ready to spawn" list.
 		void	GetAvailableBots(std::vector<DWORD>& out, size_t limit);
+		// A GM's /transfer of a bot on this core (cmd_gm.cpp, playerbotify.py):
+		// the map change the AI makes itself, onto the GM's spot, with the
+		// answer in the GM's chat. The engine's WarpSet only takes a bot off its
+		// sectree, and the rescue puts it back at its own map's start.
+		bool	TransferBot(LPCHARACTER bot, LPCHARACTER to);
 
 		// The three things the F10 bot-admin window asks for. The data behind
 		// the last two lives in playerbot_admin.h, inside the anonymous

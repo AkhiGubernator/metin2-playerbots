@@ -17,6 +17,137 @@ every version here.
 
 ---
 
+## 2.0.52 — 2026-09-15
+
+Serwer (AI botów, rdzeń gry, baza, panel) i klient 2.0.8.
+
+### Auto Łowy dla graczy
+
+Nowe okno Auto Łowów pod klawiszem K, za darmo i bez wymagań, z tym, co w
+oficjalnej grze jest płatne: sześć umiejętności, dwie mikstury i trzy
+przedmioty na zegarze, wskrzeszenie z ustawianym opóźnieniem, kamienie Metin
+na życzenie i powrót na miejsce startu. Cel wskazuje serwer: potwory w zasięgu
+od miejsca startu, najpierw te, które atakują gracza. Podnoszenie według
+rodzaju: broń, zbroje, biżuteria, mikstury, księgi, kamienie i reszta. Każdy
+rodzaj włącza się osobnym przyciskiem, a yang postać zbiera przy każdym
+włączonym rodzaju. Przedmiot, do którego postać nie dojdzie w sześć sekund,
+jest pomijany na dziesięć. Wymaga serwera 2.0.52 i klienta 2.0.8.
+
+### Poprawki klienta
+
+- Przycisk łączenia stosów w ekwipunku wysyłał wszystkie przesunięcia w jednej
+  klatce (300 dla 25 stosów), a serwer przy 300 pakietach na sekundę zamyka
+  połączenie, więc gracz wracał do ekranu logowania. Przesunięcia idą teraz po
+  sześć co dziesiątą część sekundy.
+- Kliknięcie pustego pola w edycji sklepu offline nie wywołuje już błędu.
+- Opis Zielonej i Fioletowej Mikstury (prędkość ataku i ruchu) znów się
+  wyświetla.
+
+### Dropki zajmują się dropieniem
+
+Dropki medali na 25 poziomie robiły wszystko poza lochem: Biologa, wyprawy,
+odpoczynek na placu, gildie, targ, łowienie, kopanie i wyprawy po materiały.
+Teraz żadna dropka (medali, M2, M3 ani Metinów):
+
+- nie robi Biologa i nie odpoczywa w mieście,
+- nie zakłada gildii ani do niej nie wstępuje, a z obecnej wychodzi (mistrz
+  przekazuje gildię najsilniejszemu botowi, który nie jest dropką, a gildia
+  jednoosobowa jest rozwiązywana),
+- nie chodzi na targ, nie łowi, nie kopie i nie szuka materiałów,
+- swój sklep offline obsługuje co 40–60 minut zamiast co 10–15.
+
+Dropki medali, M2 i M3 nie jeżdżą na wyprawy po Metiny. Dropka medali nie idzie
+na pogranicze, zostaje w Lochu Małp, dopóki ma miejsce na medal, zbiera zapas
+200 medali i podnosi tylko medale, rzeczy do dalszej przeróbki, księgi i to, co
+dołoży do posiadanego stosu. Dropka-łuczniczka nosi zapas 1000 strzał i dokupuje
+je u kupca, bo wychodziła z lochu z pustym kołczanem i setkami mikstur. Żaden
+bot nie wychodzi już z Lochu Małp obsługiwać sklepu offline.
+
+Każdy bot w drodze po medal do konia nie jest już zawracany przez spacer na
+targ w Joan ani przez plecak zapełniony w 45%.
+
+### Unikaty
+
+Boty nie noszą Pierścienia Niejawności (ukrywał poziom), Płaszcza Uciekiniera
+ani Maski Sabaha. Pierścienie doświadczenia i rękawice złodzieja zakładają
+tylko na polowanie, bo ich czas płynie wyłącznie wtedy, gdy są noszone:
+zdejmują je w mieście, na sprawunkach, przy łowieniu i kopaniu, za ladą, w
+pojedynku i po chwili bez walki. Dropka z blokadą doświadczenia nosi rękawice,
+a pierścienia nie.
+
+### Rzeczy do dalszej przeróbki
+
+Korzeń Gango i Grzyb Tue od zielarza, Kryształowe Kolczyki, Zbroja Twarzy
+Ducha, broń na 65 poziom, Fasolka Zen i Pigułka Krwi: boty zawsze je podnoszą,
+nie sprzedają ich kupcowi (chyba że plecak jest pełny, a sklepu otworzyć nie
+mogą) i wystawiają je na ladach obok ulepszaczy.
+
+### Pojedynki
+
+Bot w pojedynku zakłada buffy (np. Aurę Miecza), bije z bliska i regularnie
+używa umiejętności. Szaman i sura czarnej magii walczą z dystansu, a wojownik
+doskakuje do przeciwnika Szarżą albo Uderzeniem Miecza. Na czas pojedynku bot
+wyłącza Eliksir Słońca i Eliksir Księżyca, którymi wcześniej leczył się mimo
+zakazu mikstur, i włącza je z powrotem po walce.
+
+### Świątynia Hwang bez klątwy i bez Maski Sabaha
+
+W Świątyni Hwang ciosy bez Maski Sabaha nie chybiają już co drugi raz. Maska
+przestała wypadać z potworów i ze skrzyni Hwang, nie ma jej w nagrodzie za
+wprowadzenie do świątyni ani w sklepie, a przy każdym starcie serwera znika z
+plecaków, magazynów, sklepów offline i slotów wszystkich postaci, także
+graczy.
+
+### Targi w Shinsoo i Jinno przy strażnikach
+
+W Yongan, Jayang, Pyongmoo i Bakra targ stoi teraz wokół strażnika na okrągłym
+placu, tak jak w Chunjo. Wcześniej stał przy handlarzach, a w Pyongmoo w
+połowie poza strefą bezpieczną. Sklepy offline botów z dawnego targu
+przenoszą się na nowe miejsce raz, przy pierwszym starcie po aktualizacji, z
+zachowaniem układu. Sklepy graczy zostają tam, gdzie je postawili.
+
+### Handel zamiast rozdawania
+
+Boty nie oddają już za darmo ekwipunku słabszym botom ani nie przekazują
+drużynie ksiąg i materiałów. To, co zdejmą, zostaje w plecaku, idzie na ladę
+albo do kupca.
+
+### Kamienie Duchowe, Fasolka Zen i ranga
+
+- Boty czytają Kamienie Duchowe (trening Wielkiego Mistrza) zamiast sprzedawać
+  je kupcowi. Czytają tylko wtedy, gdy ranga po zapłaceniu pełnej ceny
+  zostaje nieujemna, a kamieni nie wystawiają na ladę.
+- Bot z ujemną rangą zjada Fasolkę Zen, a pierwsze fasolki zostawia sobie w
+  plecaku zamiast je wystawiać.
+- Bot z ujemną rangą nie wychodzi ze strefy bezpiecznej, dopóki fasolka jej nie
+  podniesie: na mapie wioski idzie na targ, z innej mapy wraca do swojej
+  pierwszej wioski. Po fasolkę idzie na targ, także dropka.
+
+### Szansa na otrucie
+
+Od 50 poziomu boty cenią szansę na otrucie dwa razy wyżej przy przerzucaniu
+bonusów i przy wyborze ekwipunku: jedno otrucie zabiera bossowi ćwierć życia.
+
+### Broń na 30 poziom u kowala
+
+Broń na 30 poziom ze średnimi obrażeniami poniżej 30% bot ulepsza do +4 u
+kowala, a zwoje zużywa na nią dopiero od kroku na +5. Wcześniej jeden bot
+zużył 10 z 12 zwojów na +3 i +4 broni z 1% średnich.
+
+### Panel
+
+Ranking Biologa i karta bota pokazują, ile zadań bot ukończył i nad czym
+pracuje teraz, np. „6/9 ukończone • teraz: Ząb Orka 1/10”. Karta pokazuje też,
+ile zadań pominął jako za niskie. Wcześniej obok liczby stała nazwa zadania o
+tym numerze w tabeli, co nic nie mówiło o postępie.
+
+### Konfiguracja
+
+Wartości `M2_MOONLIGHT_CHEST_PERMILLE`, `M2_MOONLIGHT_CHEST_STONE_PERMILLE`,
+`M2_DRAGON_COIN_STONE_PERMILLE` i `M2_DRAGON_COIN_BOSS_PERMILLE` z pliku `.env`
+(szansa na Szkatułkę Blasku Księżyca i Smocze Monety) docierają teraz do
+serwera. Na linii 2.x nie docierały nigdy i obowiązywały wartości domyślne.
+
 ## 2.0.51 — 2026-09-15
 
 Serwer (AI botów, rdzeń gry, panel) i klient 2.0.7.

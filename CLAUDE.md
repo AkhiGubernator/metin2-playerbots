@@ -3257,7 +3257,8 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   row his starter-chest quest reads - and none of them is in this image: the
   manage page queried the missing table and answered 500, and the bot count and
   the respawns would have written requests nothing reads.
-  `SEBAN_GAME_INTEGRATION=1` in the panel's environment turns the three on for
+  `M2_PANEL_CUSTOM_PATCHES=1` (our `SEBAN_GAME_INTEGRATION` until his 1.48.0
+  brought a flag of his own) in the panel's environment turns the three on for
   an install that has his scripts; without it they are hidden and refused. Two
   more things came in that zip: bounds for maps 66, 67 and 68 that are not this
   world's (taken from each map's Setting.txt instead), and a collector that
@@ -3470,6 +3471,123 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   video is to come in a later client patch), and it appends a few lines to
   `login_preload.log` in the client folder on every start. The
   static-background switch asked of ĹŌŞƬĒĶ is not in this build.
+- **A blow is modelled the way battle.cpp deals it, and mt2009 hides a share
+  of it.** `GetPlayerBotWeaponHitDamageAt` (playerbot_gear.h) is
+  `CalcAttackRating` against a monster of the bot's own level, `CalcMeleeDamage`
+  (`(ATT_GRADE + roll*2 - level*2) * AR + level*2 + value5*2`), the defence off
+  (about level + 15), then the average line, and for skills the same attack
+  before the defence under the skill line, mixed by school
+  (`PLAYERBOT_WEAPON_OWN_LINE_PERCENT` / `_OTHER_`). The old model had no
+  defence - a percent line multiplies what is left after it, so a big line on a
+  weak base reads better than it hits - and left skill damage out as "a PvP
+  line", while `char_battle.cpp` multiplies every skill on a monster by it: a
+  shaman's skill line scored nothing. And `CHARACTER::Damage` on mt2009 adds
+  `levelLimit * 30 / 100 - 3` percent to a normal hit on an NPC for a weapon of
+  level 32 to 65 (the level-65 elite families excepted; the engine's last range,
+  7140..5149, is empty) and ten for 70 or 75: a Krwawy Miecz (45) hits ten
+  percent harder than its numbers, a level-30 weapon gets nothing. No tooltip
+  shows it; `GetPlayerBotWeaponLevelBonusPercent` does. Worth knowing before
+  telling a player a level-30 weapon beats everything: for a body warrior of
+  forty-five (ST 90, DX 3, the bots' own average) a Full Moon Sword +7 at 25%
+  out-hits a Krwawy Miecz +6 (value5 45) by about eight percent, its hidden ten
+  included - under the project margin, so such a bot buys one from about 33%.
+- **A level-30 weapon is a project, judged at +7.** `ReadPlayerBotLevel30View`
+  reads the bag each time: `toBeat` is the best blow the bot has (a level-30
+  weapon in the hand at its own potential), the project is the bag's level-30
+  weapon whose blow at `PLAYERBOT_LEVEL30_PROJECT_PLUS` beats that by
+  `PLAYERBOT_LEVEL30_PROJECT_MARGIN_PERCENT`. The project and a worn level-30
+  weapon are refined to +9 whatever the personality, the project is a refine bag
+  candidate, and no counter or spare reason takes it; a counter's level-30
+  weapon is bought only when its potential beats both (`IsPlayerBotBetterLevel30Offer`),
+  and `PlayerBotCouldUseLevel30Weapon` gates the market walk with a hoped-for +7
+  at 20%. Measured on the test world before this (15 September): 2315 level-30
+  weapons on the counters, 2295 of them at +0..+3, 23 worn by bots. The buying
+  was never the rule, it was the cap - 30% of the median wallet, several million
+  under an asking price at mob_gold 3000 - so a level-30 weapon, the medal 50050
+  and a safe scroll (`IsPlayerBotStrategicPurchase`) cost up to
+  `PLAYERBOT_STRATEGIC_BUDGET_PERCENT` of the bot's own spare gold, in the
+  offline and the classic path both.
+- **From 37% average or 15% skill a weapon never meets the plain anvil.**
+  `IsPlayerBotScrollOnlyWeapon`; it goes under a scroll at every step, past
+  `SCROLL_FROM` (under the floor it could never be refined at all), and
+  `CanPlayerBotAttemptRefineItem` refuses it without a scroll the step can use,
+  so the planner sends no bot to a blacksmith for it. A level-30 weapon under
+  the line is ground at the anvil with no prize hold and no +6 hold, under a
+  scroll only at steps of `PLAYERBOT_WORN_SCROLL_MAX_PROB` and below (the
+  family runs 90/85/75/65/55/45/35/25/20).
+- **An mt2009 refine scroll is a kind, not a vnum.** `world.item_proto`,
+  USE_TUNING: 25040 and 25041 plain (value0 0), 25042 NO_REDUCTION_WHEN_FAIL,
+  25043/70039 plain +15 (value1), 25045/71032 plain +10, 25044/71021
+  UP_TO_3TH_LEVEL (refused from +4, certain below), 25051-25054 REFINE_BONUS.
+  `DoRefineWithScroll`: success is prob + value1, a failure hands the piece back
+  a level down unless NO_REDUCTION, and REFINE_BONUS destroys. The vnum lists
+  were r40250's (39xxx, 76009), so on mt2009 only 25040 and 71032 ever counted
+  and bags held nothing else. `FindPlayerBotRefineScrollCell` ranks by the
+  values there (War God under +4, then the Magic Stone at steps of
+  `PLAYERBOT_NO_REDUCTION_SCROLL_MAX_PROB` and under, then plain scrolls by
+  value1) and never takes a Gwarancja.
+- **A Biologist specimen from level thirty up goes to him whatever the bot has
+  outgrown.** Measured the same day: collect_quest_lv30 978 bots in
+  go_to_disciple, 3 in key_item, none complete, while 358 bots carried 1484
+  teeth - the carrying pass asked an outgrown row for the whole count, and past
+  forty every row below was outgrown. It takes any held specimen of a row from
+  `PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL` now; `GetPlayerBotBiologistReserve`
+  (the rest of the count over the accept roll, ten teeth at 60% being
+  seventeen) is what `CanPlayerBotAttemptRefineItem` leaves in the bag, and the
+  blacksmith pass asks that of every candidate at the attempt - it asked only of
+  worn pieces, and `DoRefine` takes a material whoever is owed it. A row in
+  key_item makes its specimens surplus. The AI's hand-in never kept the quest's
+  twenty-two hours. The Demon Souvenir row is live on this world: 1001-1004 have
+  homes on map 66 and 29 bots had finished it, so the comment in
+  `PLAYERBOT_BIOLOGIST_MISSIONS` saying 1001 has none is out of date.
+- **The medal errand was rolled by almost nobody.** 17 of 999 bots in a Monkey
+  Dungeon and none in the medium one, one medal handed in an hour, 415 of 1177
+  bots of 35 and up on no horse and 8 past level ten. A bot short of its battle
+  horse rolls twice as often (cap 70), and past `PLAYERBOT_MONKEY_MEDAL_MAX_LEVEL`
+  (64) nobody farms - the hard dungeon's rolls are a few percent there - and the
+  medal comes off a counter as a strategic purchase.
+- **A price memory is yang, so it belongs to one yang rate.**
+  `ForgetPlayerBotPricesOnRateChange` clears the ask anchors and the sale
+  medians when `GetMobGoldAmountRate` moves (`PLAYERBOT_MARKET: yang rate` once
+  a start, `changed from` after), and an offline shop's stamp is
+  `GetPlayerBotPriceGeneration` - table version and rate - so a moved rate
+  reprices every counter on the service walk. Iwakura's sheet was right; "one
+  zero too many" was stands priced under another rate, stepping five percent per
+  ten minutes towards the new one.
+- **A duel is fought with what is in the hand.** `AcceptPlayerBotPvpChallenge`
+  agreed three seconds after a challenge and `ManagePlayerBotDuelCombat` fights
+  at the top of the tick, above the fishing session, so a bot on the bank with
+  its rod out took a duel from another bot and fought it with the rod (Tieru,
+  15 September: "chyba ze chca robic zawody na lowienie ryb"). The bot duel's
+  challenger checked `bFishingSession` for itself and nobody checked the bot it
+  picked or the bot that agreed. `GetPlayerBotDuelUnreadiness` (a fishing
+  session or a rod, mining or a pickaxe, no weapon) is asked now by the
+  acceptance, which tells a player why, by both challengers - the bot duel and
+  the kingdom quarrel - for themselves and for the bot they pick, and by the
+  duel pass, which ends a duel under way rather than fight it.
+- **The operator's medal droppers are a cohort on top of the population.**
+  `PLAYERBOT_MEDAL_DROPPERS` (a kingdom, 0 by default) and
+  `PLAYERBOT_MEDAL_DROPPER_LEVEL` (25, clamped to 18-120) come through the game
+  service's environment like `PLAYERBOT_AUTOSPAWN_COUNT` into the bootstrap in
+  `input_db.cpp` (playerbotify). `SpawnMedalDropperCohort` schedules that many
+  identities from the far end of each kingdom's registry - the set is in pid
+  order and the ordinary spawn takes it from the front - passing over any saved
+  more than two levels above the lock, before the ordinary cohort, which steps
+  over them, and `TopUpMissingBots` restores them like the rest. The state init
+  makes them medal droppers with no party or stone role; `ManagePlayerBotExpLock`
+  locks them at the cohort's level rather than the personality's 33 and lifts
+  `AFFECT_EXP_BLOCK` from a bot that should not carry it, since the affect is
+  otherwise for good. The registry query reads `p.level` for it. They had to be
+  new characters: on the test world all 1000 live bots were 30 and up and the
+  1500 benched ones level 1, and a bot's level is never set by hand. The
+  bootstrap's playerbotify edit carries a marker now, because this one writes
+  into it.
+- **Seban's 1.48.0 calls `collector.init()` from app.py with a DictCursor.** Our
+  2.0.47 check read `fetchone()[0]`, which is a KeyError on a dict row: the
+  panel's workers failed to boot and item-grants with them, a minute after the
+  first deploy. `SELECT 1 ... LIMIT 1` with `fetchone() is None` works with
+  either cursor, the shape of his original SHOW COLUMNS. Test a merged panel by
+  starting it, not by `ast.parse`.
 
 ## Engine facts worth not re-deriving
 

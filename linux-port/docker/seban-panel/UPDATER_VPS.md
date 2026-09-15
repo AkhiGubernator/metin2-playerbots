@@ -4,6 +4,15 @@ Ten poradnik włącza przycisk aktualizacji w Seban Panelu. Działa on przez ofi
 
 Przed rozpoczęciem włącz hasło w Seban Panelu. Przycisk aktualizacji jest dostępny wyłącznie po zalogowaniu, aby osoba odwiedzająca publiczny adres panelu nie mogła zrestartować serwera.
 
+## Serwer linii 2.x (mt2009)
+
+Dalsza część poradnika dotyczy linii 1.x. Serwer 2.x rozpoznasz po pliku `linux-port/docker/ENGINE` ze słowem `mt2009`. Aktualizuje się on z paczki wydania, a nie z repozytorium:
+
+- przycisk w Seban Panelu działa, gdy kontener `updater` jest uruchomiony z `docker-compose.yml` tego serwera, bo wtedy sam wykonuje `linux-port/tools/update.sh`;
+- ręcznie uruchamiasz `sh linux-port/tools/update.sh` z katalogu serwera.
+
+Na takim serwerze nie uruchamiaj `m2-updater` (także przez `docker compose exec`) ani własnego skryptu, który kopiuje `linux-port/docker` z repozytorium. To pliki linii 1.x, między innymi `docker-compose.yml` z MariaDB 10.11 zamiast 11.8, a stara wersja bazy uszkadza jej pliki. `m2-updater` odmawia pracy na serwerze 2.x i wskazuje `update.sh`.
+
 ## Wariant standardowy Tieru
 
 Poniższe polecenia wykonaj na VPS przez SSH jako użytkownik z `sudo`. Zastąp `/opt/seban-panel` ścieżką, pod którą rozpakowano Seban Panel.

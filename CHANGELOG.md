@@ -17,6 +17,108 @@ every version here.
 
 ---
 
+## 2.0.49 — 2026-09-15
+
+Serwer (AI botów) i panel Sebana 1.48.0. Klient zostaje w wersji 2.0.6.
+
+### Boty znają obrażenia swojej broni
+
+Boty liczą cios bronią tak, jak liczy go gra: szansę trafienia z
+Zręczności i poziomu, obronę potwora, średnie obrażenia i obrażenia
+umiejętności. Doliczają też ukryty bonus z poziomu broni, którego nie widać
+w opisie przedmiotu. Na tym silniku bronie od 32 do 65 poziomu biją potwory
+mocniej o 6–16% (Krwawy Miecz o 10%), a bronie na 70 i 75 poziom o 10%.
+Bronie na 30 poziom tego bonusu nie mają. Szamani i sury czarnej magii
+wreszcie cenią na broni bonus obrażeń umiejętności, który wcześniej nic dla
+nich nie znaczył.
+
+### Bronie na 30 poziom
+
+- Bot liczy, jak mocno dana broń na 30 będzie bić na +7. Jeśli wyjdzie
+  wyraźnie lepiej (o co najmniej 10%) niż wszystko, co ma, kupuje ją ze
+  sklepu i ulepsza aż do +9. Dla wojownika na 45 poziomie Miecz Pełni
+  Księżyca +7 z 25% średnich bije zwykłym ciosem o około 8% mocniej niż
+  Krwawy Miecz +6, mimo ukrytego bonusu tego drugiego; żeby bot go kupił,
+  miecz potrzebuje około 33% średnich.
+- Nie kupuje drugiej takiej broni, gdy jedną już ulepsza albo nosi gotową
+  (+7 lub więcej). Broni, którą ulepsza, nie wystawia na straganie.
+- Broń z co najmniej 37% średnich obrażeń (albo 15% obrażeń umiejętności)
+  ulepsza tylko zwojami, nigdy u kowala. Bez zwoju czeka i sama dokupuje
+  zwoje na rynku.
+- Słabsze bronie na 30 ulepsza u kowala do +9, a na ryzykownych krokach
+  używa zwoju, jeśli go ma.
+- Bronie na 30, medale konne i zwoje ulepszeń bot może kupić nawet za 80%
+  wolnego złota. Przy wysokim kursie yang takie bronie kosztują miliony, a
+  dotychczasowy limit (część średniego portfela botów) nie przepuszczał
+  żadnej: w sklepach serwera testowego stało 2315 broni na 30, prawie
+  wszystkie +0 do +3.
+- Boty rozpoznają zwoje po tym, jak działają, a nie po numerze: Zwój Wojny
+  (pewne ulepszenie do +4), Podręcznik Kowala i Zwój Boga Smoków (większa
+  szansa), Magiczny Kamień (bez utraty poziomu, oszczędzany na najtrudniejsze
+  kroki). Wcześniej używały tylko Zwoju Błogosławieństwa i jednego Zwoju Boga
+  Smoków. Gwarancji, która niszczy przedmiot przy porażce, nie używają.
+
+### Najpierw biolog
+
+- Boty w każdym wieku oddają biologowi Zęby Orka, Księgi Klątw i Pamiątki
+  po Demonie, które noszą, zanim wystawią je na sprzedaż albo zużyją u
+  kowala. Dotąd bot starszy o ponad 10 poziomów od zadania trzymał je w
+  torbie: na serwerze testowym 358 botów nosiło 1484 zęby, a zadania z zębami
+  nie skończył żaden.
+- Kowal zostawia w torbie tyle okazów, ile biolog jeszcze potrzebuje, razem
+  z zapasem na odrzucone sztuki.
+- Gdy biolog czeka już tylko na kamień duszy, nadmiarowe okazy idą na
+  sprzedaż.
+
+### Konie
+
+Boty bez konia bojowego chodzą po medale do lochów małp dwa razy częściej,
+także do średniego i trudnego. Na serwerze testowym w lochach było 17 botów
+na 999, a przez godzinę oddano jeden medal. Boty powyżej 64 poziomu nie
+chodzą już do lochu, bo przy takiej różnicy poziomów medale prawie nie
+wypadają. Kupują je w sklepach.
+
+### Pojedynki bez wędki
+
+Bot z wędką albo kilofem w ręku nie przyjmuje już pojedynku i sam nikogo
+nie wyzywa, a inne boty go nie zaczepiają. Pojedynek, który już trwał, gdy
+bot wyjął wędkę, kończy się, zamiast toczyć się na wędki. Gracz, który wyzwie
+łowiącego bota, dostanie odpowiedź, że bot łowi ryby.
+
+### Stali dropiacy medali (do włączenia)
+
+Nowe ustawienie w `.env`: `PLAYERBOT_MEDAL_DROPPERS` — tyle dodatkowych botów
+na każde królestwo, ponad liczbę botów z launchera, z osobowością dropka
+medali. Chodzą do Lochu Małp swojego królestwa, a od poziomu
+`PLAYERBOT_MEDAL_DROPPER_LEVEL` (domyślnie 25) nie zdobywają już
+doświadczenia, więc medale padają im na pełnej szansie i trafiają na
+stragany. Są wybierani z postaci, które jeszcze nie grały, i po każdym
+restarcie są to te same boty. Domyślnie ustawienie jest wyłączone (0).
+
+### Ceny po zmianie kursu yang
+
+Ceny w sklepach botów liczą się od kursu yang ustawionego w panelu. Po
+zmianie kursu boty pamiętały jednak stare ceny i wystawiały przedmioty z
+zerem za dużo albo za mało, a sklep przeceniał jeden przedmiot na godzinę.
+Teraz zmiana kursu czyści pamięć cen, a każdy sklep przecenia cały towar
+przy kolejnych wizytach właściciela.
+
+### Panel Sebana 1.48.0
+
+- Po restarcie i aktualizacji panel nie pokazuje przez kilka minut
+  „Internal Server Error”.
+- Profil gracza: sklep offline z przyciskiem teleportu do straganu, historia
+  ekwipunku, logi na żywo, magazyn ze stronami i ikony umiejętności.
+- Nowy ranking skuteczności ulepszeń, a karuzela rankingów na stronie głównej
+  przewija się sama.
+- Tooltipy przedmiotów liczą atak i obronę z ulepszeniem i mają poprawione
+  nazwy bonusów.
+- Poprawne granice map Las, Czerwony Las i Wieża Demonów.
+
+Kontrolki liczby botów, respawnu na mapach i skrzyni startowej działają tylko
+ze skryptami Sebana, więc zostają ukryte. Włącza je teraz zmienna
+`M2_PANEL_CUSTOM_PATCHES=1` zamiast `SEBAN_GAME_INTEGRATION=1`.
+
 ## 2.0.48 — 2026-09-14
 
 Serwer (AI botów, silnik gry, questy, baza logów i panel zaawansowany),

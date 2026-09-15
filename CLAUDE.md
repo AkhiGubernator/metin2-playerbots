@@ -3663,6 +3663,149 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   start and the continuation of a town visit and the weaponless branch all
   stand down for `IsPlayerBotHumanLedParty`; the visit flags are kept, so
   `ManagePlayerBotBuffHumanLeader` no longer refuses a bot for carrying them.
+- **The weapon in the hand is not burned for want of a scroll when nothing
+  would replace it.** CiosZKarpia (75, Mental Warrior, 125 million yang) gifted
+  her Halabarda +8 at 01:52 on 15 September, burned Zabojca Lwow at +5 -> +6 at
+  a plain anvil with no scroll at 02:08, and fought on with a Gilotynowe Ostrze
+  +7 of level ten while a Halabarda +6 and three swords of level 55 stood on her
+  own offline counter. `IsPlayerBotWornWeaponAtRisk` (the hand weapon -
+  `GetPlayerBotHandWeapon`, worn or the one a blacksmith session keeps in the
+  bag - at a step of `PLAYERBOT_WORN_SCROLL_MAX_PROB` or under, no
+  `FindPlayerBotBackupWeapon`, and above `GetPlayerBotMerchantWeaponCeiling`)
+  goes under a scroll or waits; `CanPlayerBotAttemptRefineItem` asks it, so the
+  planner agrees, and `PlayerBotNeedsScrollForWeapon` makes the bot a scroll
+  buyer. The backup weapon is never a gift, scrap or counter goods. Level-30
+  weapons are left out: grinding those at the anvil is the operator's rule.
+  `BotOfflineReclaimLine` takes a piece back off the own offline counter when
+  it beats what is worn and what is in the bag by
+  `PLAYERBOT_OFFLINE_RECLAIM_MIN_GAIN_PERCENT` (probed once a minute while the
+  hand is empty; one line is not taken back twice in six hours) - without the
+  margin the first run took pieces back for half a point of blow. And the
+  Mental Warrior's two-hander preference is a share of its blow
+  (`PLAYERBOT_TWO_HANDED_PREFERENCE_PERCENT`), not a flat 200 000.
+- **A weapon's damage lines are priced between Iwakura's bands.** As steps,
+  19%/-5% and 1%/+3% were both x1.2: two Ostrza z Czerwonej Stali +0 at
+  15 150 000 ("czy nie pracowalismy nad tym, aby premiowana bardziej byla z
+  wyzszymi srednimi?"). `GetPlayerBotDamageTierPct` takes his number as a
+  band's middle and runs straight between middles (x1.33 and x1.10 for those
+  two); `PLAYERBOT_PRICE_TABLE_VERSION` 5 reprices every counter.
+- **Keys, hoards and marbles reach a counter.** On 15 September 2598 gold and
+  silver keys lay in 1057 bags with no chest they open, 158 bots held 19 577
+  Nieznane Lekarstwo, and the ledger called 7182 listing decisions of an hour
+  overstock. `IsPlayerBotSurplusTreasureKey` (two of a kind kept; the safebox
+  under pressure; withdrawn and bought when a chest turns up),
+  `IsPlayerBotHoardedMaterial` (50 over the anvil's reserve: packs of ten,
+  three lines a counter, past the ledger; the offline service cuts the pack
+  itself, `BotOfflinePrepareLine`) and `PLAYERBOT_SHOP_REASON_HOARD`, rolled
+  against TRADE like the books. The shop pass asks for its reason only after
+  the cheap gates: it read the whole bag on every tick of every bot without a
+  counter. Helmets and shields are loot whatever their merchant price.
+- **A scroll that is also a recipe material was priced as a material.**
+  Recipe 501 consumes the Blessing Scroll, so the material branch of
+  `ScorePlayerBotShopStock` and the ledger decided it, and the 2.0.31 rule
+  (one trader in five keeps one scroll and sells the rest) never ran: 8
+  scrolls on 978 counters, 312 in 177 safeboxes. Scrolls are scored before the
+  materials, kept out of the material deposit and withdrawn. Nor did a trader
+  ever hold "a stack of two" Moonlight chests - the chest pass opens one eight
+  seconds after the drop - so a trader now keeps them for the counter, up to
+  `PLAYERBOT_CHEST_TRADER_HOLD`.
+- **An item AutoGiveItem put on the ground must never be equipped.** BROLID
+  (15 September): 11:10:34 the emergency weapon was bought into a full bag
+  (log.log SYSTEM_DROP) and equipped anyway, 11:15:11 its ground timer found
+  "Owner exist", 11:16:13 a burn at the anvil ended in RemoveFromCharacter's
+  "Invalid Item Position" and a destroyed item left in the weapon slot, and the
+  equipment pass swapped a sword over it 21 times in a second
+  (`old_vnum=1947153072`) until FAST_ITEM_SWAP threw the bot out.
+  `BuyPlayerBotEmergencyWeapon` asks for room first and for the item's owner
+  and window after; `IsPlayerBotWornItemSound` keeps the equipment pass and
+  both refine passes off a slot the engine does not really wear; the engine's
+  `UnequipItem` takes `GetEmptyInventoryEx` without checking it, so the rod
+  refine and the pickaxe ask for room before they unequip.
+- **The weapon atlas is the world's own tables, rendered.**
+  `tools/generate_weapon_atlas.py` (dumps of item_proto, mob_proto and the
+  shops, plus the locale directory) writes `playerbot_weapon_atlas.h`: 126
+  families, who may carry them, and where one comes from - a merchant on a bot
+  map, the common drop of a rank and level band standing there, a monster or a
+  chest there, or only elsewhere; 93 are reachable. `playerbot_weapon_goal.h`
+  gives each bot the best reachable family at its level: outclassed by 30% and
+  able to pay, it walks to the market; a counter weapon 25% better than the
+  hand is paid out of the strategic budget; `PLAYERBOT_WEAPON: census` counts
+  the gap. Worth knowing before promising more: weapons of 65 and up drop only
+  on maps 67/68 (bots walk them) and 70/73 (hosted, never walked), no family of
+  80 or more has any source, and Weapon Shop Dealer 2 (9007, weapons to 60) is
+  commented out in every village's npc.txt.
+  A rod or a pickaxe in the hand is the session's tool, not a weapon with a
+  blow of nothing: the first run's goals named anglers and miners
+  (`hand=27430 blow=0`, `hand=29101 blow=0`), for whom every counter weapon was
+  a strategic offer. `GetPlayerBotHandWeapon` reads the bag when the hand holds
+  a tool, and `BotOfflineReclaimLine` measures a line against the weapon in the
+  bag, not against the rod. The census works out at most
+  `PLAYERBOT_WEAPON_CENSUS_REFRESHES` stale goals and carries on from the pid
+  it stopped at: the goal refresh and the census share one ten-minute interval,
+  so a census that always started from the first pid would read the same bots
+  every time.
+- **The 1.x updater and installer refuse a 2.x server.** seban latino (15
+  September) ran `docker compose exec updater m2-updater`, which bypasses the
+  2.x compose file's entrypoint (update.sh): it fetched main and tarred the
+  repository's linux-port/docker over the stack, MariaDB 10.11 started on a
+  database 11.8 made, and two log indexes were damaged in two minutes.
+  `stack_engine` in m2-updater and the same test in `installer/install.sh`
+  read the ENGINE file (or a compose file naming MariaDB 11) and stop.
+- **A withdrawal must not fill the bag the deposit then empties.** The two
+  safebox rules are each other's inverse only item by item: the deposit waits
+  for bag pressure (`IsPlayerBotBagFull`, eighteen free cells at 80%, or
+  `PLAYERBOT_BAG_PRESSURE_FREE_CELLS`), while the withdrawal took any material
+  the ledger said somebody was short of into any free cell. Demand moves with
+  every minute's ledger, so a bag the withdrawal had filled sent the same stack
+  back down on the next visit. On 15 September 538 of 4060 withdrawals went
+  back within fifteen minutes, 537 of them with no refine in between, and
+  Soul1994 visited the storekeeper four times in eight minutes. The ledger's
+  half now takes only what leaves the bag clear of that pressure. The anvil's
+  half is unchanged, because the deposit never sends down what the anvil needs.
+  `reason=` in `safebox withdraw` says which half moved an item.
+- **A bot's status is a text tail on the 2.x line, not talking.**
+  `SendPlayerBotOverheadChat` sent `CHAT_TYPE_TALKING` with the bot's VID,
+  and the client's `RecvChatPacket` registers a talking packet's text tail
+  *and* appends the whole line to the chat history
+  (PythonNetworkStreamPhaseGame.cpp), so a town of bots filled the chat window
+  with statuses. Under `PLAYERBOT_ENGINE_MT2009` it sends the server command
+  `PlayerBotStatus <vid> <hex>`: `CHAT_TYPE_COMMAND` goes to `ServerCommand`
+  before anything touches the chat, game.py hands it to
+  `client-root/playerbot_status_tail.py`, and that calls
+  `textTail.RegisterChatTail` and nothing else. Hex because the command parser
+  splits its line on spaces; the bytes are the status's CP1250, at most
+  `PLAYERBOT_STATUS_TAIL_MAX_BYTES`. A root without the handler returns 0 from
+  `BINARY_ServerCommand_Run` and the C++ ends in `TraceError("Unknown Server
+  Command")` in syserr.txt - no chat line and no bubble - so the server and the
+  client root have to ship in one release. game.py's two lines are
+  `clientrootify.py`'s, with anchors that take in the following line, so a
+  second run changes nothing; `tests/playerbot_status_tail_test.py` runs the
+  decoder on Python 2.7 (the client's) and 3. The refine announcement
+  (`BroadcastPlayerBotRefineSuccess`, one shout in three minutes for the whole
+  world) and the trade shouts stay shouts. The root's own `PlayerbotOverhead`
+  handler is OskarPWA's GM-only bot-admin overlay; its server half
+  (`SendPlayerBotOverheadTail`) was never merged, and nothing sends it.
+- **How a refine was made lives in log.refinelog, and its SET column lost
+  most of it.** The gear history's "Ulepszenie udane" said nothing of the way
+  (Tieru, 15 September: "w nawiasie pisz (Kowal, Zwoj Blogoslawienstwa, ...)").
+  `DoRefine` logged POWER for the plain blacksmith and the Demon Tower smith
+  alike (`bMoneyOnly`, the `REFINE_TYPE_MONEY_ONLY` path of
+  `CInputMain::Refine`), `DoRefineWithScroll` logged SCROLL for every scroll,
+  and `setType` was a SET that silently dropped the three longer names this
+  engine writes. `apply_refine_log_way` (playerbotify) writes DEVILTOWER and
+  `SCROLL:<vnum>` (the vnum taken before `SetCount` can destroy the last
+  scroll), logschemify makes the column varchar(40) with an index on
+  (pid, time), and `match_refine_ways` in admin_panel.py pairs each refine row
+  of log.log with its refinelog row - the same pid within two seconds, the
+  same outcome, the grade the attempt started from - and puts the way in
+  brackets, a scroll by its item_proto name. Two things the rows taught: a
+  refinelog row names the *old* piece while a success's log.log row names the
+  new one, a grade up; and a scroll's downgrade writes REFINE FAIL for the new
+  piece *and* REMOVE (REFINE FAIL) for the old one, the reason a burn uses, so
+  the history read "Spalone +3" over a sword that was now +2 (CiosZKarpia,
+  12:56). A REMOVE with a REFINE FAIL one grade lower beside it is skipped.
+  This world's "Magiczny Metal" (39016/71026) is a bonus item, not a refine
+  scroll; the no-reduction stone is Magiczny Kamień (25042).
 
 ## Engine facts worth not re-deriving
 

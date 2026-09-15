@@ -17,6 +17,140 @@ every version here.
 
 ---
 
+## 2.0.53 — 2026-09-15
+
+Serwer (AI botów, rdzeń gry, pliki gry, panel) i klient 2.0.9.
+
+### Szkatułki Blasku Księżyca
+
+Boty kupują i otwierają dużo Szkatułek Blasku Księżyca, a dropki je zbierają
+i sprzedają. Do tej pory żaden bot szkatułek nie kupował, a te wystawione na
+ladach się nie sprzedawały. Teraz:
+
+- dropki (medali, M2, M3 i Metinów) podnoszą szkatułki, trzymają do 30 na
+  sklep i wystawiają je w paczkach po 5; nadmiar otwierają,
+- handlarz surowcami trzyma na ladę najwyżej 6 szkatułek, resztę otwiera,
+- pozostałe boty szkatułek nie wystawiają, tylko je otwierają; gdy w pełnej
+  torbie brakuje wolnej kolumny trzech pól, której gra wymaga przy otwarciu,
+  bot przekłada drobne przedmioty, żeby ją zrobić,
+- bot od 20 poziomu kupuje szkatułki z lady, dopóki ma ich mniej niż 10, gdy
+  ma na nie miejsce i wolne złoto równe trzykrotności ceny (nie mniej niż
+  milion), a na targ po szkatułkę idzie tylko wtedy, gdy któraś lada ją ma,
+- na ladzie stoją najwyżej 3 linie szkatułek po 5 sztuk; większe linie, za
+  drogie dla kupujących, wracają do torby przy obsłudze sklepu,
+- szkatułkę, której gra nie pozwoliła otworzyć, bot próbuje znowu po minucie.
+
+Na świecie testowym przed zmianami było 4643 szkatułki w torbach i 1916 na
+ladach. Kwadrans po ostatnim wdrożeniu było ich 2761 w torbach i 851 na
+ladach, a boty otwierały około 85 szkatułek na minutę zamiast 39. Najwięcej
+zostaje w pełnych torbach: 26 botów z najwyżej dwoma wolnymi polami trzyma
+601 szkatułek.
+
+### Skrzynie Mistrza od 70 poziomu
+
+Skrzynia Mistrza II (70 poziom) nie dawała nic ani botom, ani graczom: na
+serwerach 2.x łańcuch skrzyń kończył się na 60 poziomie, a gra przy każdej
+próbie otwarcia zapisywała błąd w syserr. Doszły zawartości Skrzyni Mistrza II,
+Skrzyni Mistrza III i Skrzyni Arcymistrza, takie same jak na serwerach 1.x.
+Bot, któremu gra odmówiła otwarcia skrzyni, nie próbuje już znowu co kilka
+sekund. Na świecie testowym w pierwszych dziesięciu minutach 201 botów
+otworzyło Skrzynię Mistrza II.
+
+### Koń: boty nie schodzą bez potrzeby
+
+Boty schodziły z konia na końcu każdej drogi, przed każdą księgą i przy
+stajennym, a zaraz potem wsiadały z powrotem: na świecie testowym 24 389 zejść
+w 36 minut, a 14 502 z 24 379 wsiadań wypadało w ciągu 6 sekund po zejściu.
+Teraz jeździec zostaje w siodle przy NPC, ladzie, kowalu, skrzyni, księdze,
+zmianie ekwipunku i w drodze do portalu. Z konia schodzi tylko wtedy, gdy
+wymaga tego gra: do walki na zwykłym koniu, do pojedynku, do umiejętności i do
+łowienia. Po każdym zejściu wsiada najwcześniej po 6 sekundach.
+
+Książki boty czytają z siodła, a stajenny obsługuje jeźdźca. W pierwszych
+dziesięciu minutach: 214 wsiadań na minutę zamiast 682, ponowne wsiadanie
+w ciągu 6 sekund 20 razy na minutę zamiast 406, a przeczytanych książek 231
+na minutę zamiast 106.
+
+### Prędkość ruchu +20% na serwerach 2.x
+
+Serwerowy bonus +20% prędkości ruchu na linii 2.x nigdy nie dawał prędkości:
+quest podawał numer bonusu, a ten silnik oczekuje numeru cechy postaci, więc
+każda postać dostawała +20 do maksymalnych PE. Teraz postać dostaje prędkość,
+a stary bonus do PE znika przy najbliższym sprawdzeniu (co minutę). Klient
+2.0.8 niczego w prędkości ruchu nie zmieniał, a limit prędkości w grze wynosi
+200.
+
+### Biolog po kolei
+
+Zadania Biologa idą w kolejności z gry: Ząb Orka, potem Księga Klątw, potem
+Pamiątka po Demonie. Boty rozpoczynały dalsze zadania bez ukończenia
+poprzednich (na świecie testowym 866 postaci miało Księgę Klątw bez Zęba Orka).
+Rozpoczęte już zadania zostają, ale bot bierze kolejne dopiero po ukończeniu
+poprzedniego. Panel pokazuje ten sam etap co gra.
+
+### Osobowość bota nad nickiem (klient 2.0.9)
+
+Nad botem, w miejscu tytułu rangi, widać jego osobowość: Wytrwały poszukiwacz,
+Pogromca Metinów, Towarzysz drużyny, Mistrz ekwipunku, Rozważny zbieracz,
+Handlarz, Wędrowiec albo rodzaj dropki, każda w swoim kolorze. Pomysł: Kenny.
+Wymaga serwera 2.0.53 i klienta 2.0.9.
+
+### Fryzury z ItemShopu
+
+Fryzury znów można zakładać. Pozostałe kostiumy nadal są wyłączone.
+
+### Cennik Iwakury 1.1
+
+Ceny botów pochodzą z nowego cennika Iwakury: niższe mnożniki części bonusów
+(między innymi silny przeciwko ludziom, maks. PŻ, wartość ataku, odporności),
+nowe ceny ulepszaczy, szkatułka 85 000, medal konny 180 000, złoty i srebrny
+klucz, Gourou, wybielacz i farby do włosów. Wszystkie lady przeliczają ceny
+przy najbliższej obsłudze sklepu.
+
+Zasady wystawiania ekwipunku ustalone wcześniej zostają: ekwipunek poniżej 30
+poziomu trafia na ladę od +6, a broń i zbroja na 1 poziom (np. Miecz) od +8.
+Niżej idą do handlarza.
+
+### Ekwipunek na ladzie
+
+- Limit dwóch linii ekwipunku poniżej 30 poziomu liczy tylko przedmioty
+  poniżej +7, więc +7 i wyżej bot wystawia bez limitu.
+- Bot zatrzymuje w torbie jedną broń zapasową, a pozostałe wystawia.
+
+### Ogłoszenia ulepszeń
+
+Bot ogłasza na czacie tylko udane ulepszenie na +7, +8 albo +9, z nazwą nowego
+przedmiotu. Wcześniej ogłaszał też nieudane próby ze zwojem („+4 na +3”).
+
+### Płaszcze, symbole i martwe ryby
+
+- Boty nie podnoszą Płaszcza Uciekiniera ani Symb. Króla Przepowiedni, a te,
+  które mają w torbie (także z łowienia), sprzedają u handlarza. Założony
+  symbol zostaje; gdy oba sloty są zajęte, jego miejsce zajmuje pierścień
+  doświadczenia albo rękawica złodzieja.
+- Z martwych ryb bot zatrzymuje najwyżej 10 (gdy ma drewno na ognisko), resztę
+  sprzedaje.
+
+### Auto Łowy (klient 2.0.9)
+
+Uwaga: podnoszenie dropu w Auto Łowach nadal nie działa, niezależnie od
+ustawień. Panel wymaga naprawy podnoszenia i będziemy nad tym pracować
+w następnych aktualizacjach.
+
+- Przełączniki podnoszenia to zwykłe przyciski z napisem, tak jak Metiny,
+  Wstawaj i Wracaj: „Podnos: tak”, „Bron: nie”. Wcześniej wciśnięty przycisk
+  znaczył „podnosi”, łatwo było go wziąć za wyłączony.
+- Gdy podnoszenie jest wyłączone, przy starcie Auto Łowów pisze o tym czat.
+
+### Tło wyboru postaci (klient 2.0.9)
+
+Nowe tło ekranu wyboru postaci przy logowaniu, autorstwa ĹŌŞƬĒĶ.
+
+### Questy
+
+W questach i quizie gra nazywa się Metin2 SinglePlayer zamiast Metin2009
+(plik tłumaczeń od l0st3ka).
+
 ## 2.0.52 — 2026-09-15
 
 Serwer (AI botów, rdzeń gry, baza, panel) i klient 2.0.8.

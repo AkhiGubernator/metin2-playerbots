@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-15T18:16:49Z",
-  "statusMessage": "2.0.52: **Auto Łowy dla graczy (nowy klient 2.0.8), dropki medali siedzą w Lochu Małp, boty w pojedynkach używają buffów i umiejętności, Hwang bez klątwy i bez Maski Sabaha, targi Shinsoo i Jinno przy strażnikach, boty handlują zamiast rozdawać, a Kamienie Duchowe czytają.** Serwer i klient 2.0.8.",
+  "publishedAt": "2026-09-15T21:28:27Z",
+  "statusMessage": "2.0.53: **Boty otwierają i kupują Szkatułki Blasku Księżyca, a dropki je sprzedają, boty nie schodzą z konia bez potrzeby, nad botami widać ich osobowość (nowy klient 2.0.9), bonus +20% prędkości ruchu wreszcie działa, Biolog idzie po kolei, a Skrzynie Mistrza od 70 poziomu się otwierają.** Serwer i klient 2.0.9. Uwaga: Auto Łowy jeszcze nie podnoszą dropu — naprawimy to w następnych aktualizacjach.",
   "server": {
-    "version": "2.0.52",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.52/metin2-server-update-2.0.52.zip",
-    "sha256": "C0BD91EF97D60555C7ECA20FC7027C5A7FFEC65E36B9396908B838EBFD3BFE0E"
+    "version": "2.0.53",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.53/metin2-server-update-2.0.53.zip",
+    "sha256": "546F8A7BB0E0240EC1D99DECDBCFD8836E12EFD90083B000968752C68AC7257B"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.8",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.52/metin2-client-update-2.0.8.zip",
-    "sha256": "11A71201548A3CA0CBBDCAA359CBDCCC47F42A25570EBF56FEAF7B9EE7DBC46F"
+    "version": "2.0.9",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.53/metin2-client-update-2.0.9.zip",
+    "sha256": "029B84BF34B0174857B51A2761E8551093092819FE0B6F92356B7454F470D379"
   }
 }

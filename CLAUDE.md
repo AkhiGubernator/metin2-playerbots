@@ -4168,7 +4168,11 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   (`GetEmptyInventory(3)`) and `PlayerBotBagTakesGroup` does not model on this
   line. Such a bot asks again ten minutes later to the second (Vyvanse at
   20:59:03 and 21:09:07); modelling that rule is a change of its own. The
-  overlay compiles on r40250 with the same 89 warnings as before it.
+  overlay compiles on r40250 with the same 89 warnings as before it. Since
+  2.0.54 the progression pass asks `FreePlayerBotGiftboxColumn` before
+  `UseItem`, as the Moonlight chest pass does, and both passes use the chest
+  by `item->GetCell()`: the column the helper frees may be the one the chest
+  itself stood in.
 - **mt2009's `affect.add` takes a point, not an apply.** `ALUA(affect_add)`
   tests `applyOn >= POINT_MAX_NUM` and hands the number to `AddAffect` as it
   is, where r40250's converts an APPLY_* through `aApplyInfo`; the locale's
@@ -4312,7 +4316,19 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   kind back once (`ConfigFromText`). Tested against the stubs on Python 2.7
   and 3; in the operator's client it did not help - the character still
   picked nothing up whatever the switches said (15 September, 23:10), and
-  2.0.53 shipped saying so in its notes.
+  2.0.53 shipped saying so in its notes. The cause was the frame, not the
+  switches: the client counts positions from its map's corner - its network
+  stream takes the map's base off every position it receives, and the
+  minimap's "334, 857" in Bokjung sits on a base of 102400, 204800 - while
+  `AutoHuntLoot` carried the item's world `GetX`/`GetY`, so to `LootDistance`
+  every item lay a map's base away and the walk went for a point off the map;
+  the start point went the other way and the server threw it out for being
+  more than 10 000 from the character, so the range was always counted round
+  the character. Since 2.0.54 both go as offsets from the character
+  (`apply_auto_hunt_offsets` in playerbotify.py, `AnchorOffset` in the
+  client). Any client script that trades positions with the server has this
+  frame to convert. Compiled and tested against the stubs; not tried in a
+  client.
 - **Client 2.0.9's locale pack is the one ĹŌŞƬĒĶ sent.** That pack.zip (15
   September) replaces the character-select background,
   `locale/common/ui/select.jpg`, and nothing else: 762 files in the locale

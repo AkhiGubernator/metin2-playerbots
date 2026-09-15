@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-15T21:28:27Z",
-  "statusMessage": "2.0.53: **Boty otwierają i kupują Szkatułki Blasku Księżyca, a dropki je sprzedają, boty nie schodzą z konia bez potrzeby, nad botami widać ich osobowość (nowy klient 2.0.9), bonus +20% prędkości ruchu wreszcie działa, Biolog idzie po kolei, a Skrzynie Mistrza od 70 poziomu się otwierają.** Serwer i klient 2.0.9. Uwaga: Auto Łowy jeszcze nie podnoszą dropu — naprawimy to w następnych aktualizacjach.",
+  "publishedAt": "2026-09-15T21:44:03Z",
+  "statusMessage": "2.0.54: **Auto Łowy podnoszą drop (nowy klient 2.0.10), a skrzynie startowe otwierają się także w pełnej torbie.** Serwer i klient 2.0.10.",
   "server": {
-    "version": "2.0.53",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.53/metin2-server-update-2.0.53.zip",
-    "sha256": "546F8A7BB0E0240EC1D99DECDBCFD8836E12EFD90083B000968752C68AC7257B"
+    "version": "2.0.54",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.54/metin2-server-update-2.0.54.zip",
+    "sha256": "9A0C5A1810E0268BA65A8FF9E7A6F5F583F8D7909E15283E4DE2F4CA0565CF97"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.9",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.53/metin2-client-update-2.0.9.zip",
-    "sha256": "029B84BF34B0174857B51A2761E8551093092819FE0B6F92356B7454F470D379"
+    "version": "2.0.10",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.54/metin2-client-update-2.0.10.zip",
+    "sha256": "D3BCFBC18648A23ABB291DEB9F42BC1BF6CCC732BC85454BABFC2B8AD32ADEF4"
   }
 }

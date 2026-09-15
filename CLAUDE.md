@@ -4111,6 +4111,42 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   takes). `tests/uiautohunt_test.py` covers the mask, the walk and the pick-up,
   the unreachable item, the sixth skill and the third item on Python 2.7 and 3;
   the operator ran the first version in the client, not this one.
+- **A giftbox that hands out the next giftbox needs the next one's group, and
+  nothing says so until somebody opens it.** The starter chain `shareify.py`
+  renders for mt2009 stopped at lv60 (50193), and lv60's last line is 50194,
+  Skrzynia Mistrza II of level seventy - so the chain went on in every bag and
+  nowhere in `special_item_group.txt`. A missing group is no load error: the
+  file loads, and `CHARACTER::DropSpecialItemGroup` writes "cannot find special
+  item group 50194" and hands out nothing at every use, a player's use too.
+  Only the chest pass in `playerbot_consumables.h` remembered a refusal;
+  `ManagePlayerBotProgressionChests` comes back every ten to fifteen seconds and
+  remembered nothing, so on m2zip on 15 September 195 bots of seventy asked for
+  it some 560 times a minute - 258 175 syserr lines in thirty hours - with 368
+  bots of sixty holding one they would start on at seventy. r40250's share
+  goes on to lv70, lv80 and lv90 (50194 -> 50195 -> 50196) and every item those
+  three hold is in this package's `item_proto` (the lv30 and lv60 rows were the
+  ones with r40250 items missing), so they are copied as they stand; the
+  Dockerfile's awk cuts whatever vnums the two appended files define, read out
+  of them rather than typed; and `check_chain` refuses a starter file that hands
+  out a giftbox with no group - against the old file it names 50194. Taking
+  50194 out of lv60 was the other way, and it would have left 574 boxes in bags
+  for good: the chain's antiflag is DROP, SELL, GIVE, STACK, MYSHOP and SAFEBOX.
+  The weapon recovery in `PrepareWeapon` opens the same chests every second
+  with the result ignored, so both passes ask `IsPlayerBotChestRefused` and tell
+  `NotePlayerBotChestRefused` now, and the progression pass logs
+  `PLAYERBOT_CHEST: progression chest refused ... group= room3=` - group=0 is
+  this bug. Built and deployed on m2zip the same evening: from the new core's
+  start at 20:58:33 not one "cannot find special item group" in syserr, 219
+  bots used their Skrzynia Mistrza II once each in the first ten minutes and
+  201 of those uses opened it, and at 21:12 the database had 197 bots of
+  seventy holding a Skrzynia Mistrza III against 17 still holding the second.
+  Most of those 17 were refused by the engine and not for want of a group:
+  16 of the 23 bags looked at had free cells and no free column three cells
+  high, which `UseItemEx` asks of any giftbox whatever its group holds
+  (`GetEmptyInventory(3)`) and `PlayerBotBagTakesGroup` does not model on this
+  line. Such a bot asks again ten minutes later to the second (Vyvanse at
+  20:59:03 and 21:09:07); modelling that rule is a change of its own. The
+  overlay compiles on r40250 with the same 89 warnings as before it.
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

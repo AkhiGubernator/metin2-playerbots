@@ -34,7 +34,24 @@ namespace
 	// 12 September). What 50192 and 50193 actually were is a level limit
 	// (Skrzynia Eksperta III at fifty, Skrzynia Mistrza I at sixty), and that
 	// is asked before UseItem now, so no refusal has to be remembered for it.
+	//
+	// The passes that open a starter-chain chest by themselves - the
+	// progression pass and the weapon recovery in playerbot_gear.h - ask and
+	// add to the same memory through the two functions below, declared there.
 	std::map<std::pair<DWORD, DWORD>, DWORD> s_mapPlayerBotChestRefused;
+
+	bool IsPlayerBotChestRefused(DWORD dwPlayerID, DWORD dwVnum, DWORD dwNow)
+	{
+		std::map<std::pair<DWORD, DWORD>, DWORD>::const_iterator refused =
+				s_mapPlayerBotChestRefused.find(std::make_pair(dwPlayerID, dwVnum));
+		return refused != s_mapPlayerBotChestRefused.end() && dwNow < refused->second;
+	}
+
+	void NotePlayerBotChestRefused(DWORD dwPlayerID, DWORD dwVnum, DWORD dwNow)
+	{
+		s_mapPlayerBotChestRefused[std::make_pair(dwPlayerID, dwVnum)] =
+				dwNow + PLAYERBOT_CHEST_REFUSED_RETRY;
+	}
 
 	// A box this bot has not grown into: the engine's own LIMIT_LEVEL on the
 	// giftbox, which UseItem would refuse with a chat line nobody reads.
@@ -171,10 +188,7 @@ namespace
 					IsPlayerBotResourceTrader(ch->GetPlayerID()) &&
 					(int)ch->CountSpecifyItem(PLAYERBOT_MOONLIGHT_CHEST_VNUM) <= PLAYERBOT_CHEST_TRADER_HOLD)
 				continue;
-			const std::pair<DWORD, DWORD> refuseKey(ch->GetPlayerID(), item->GetVnum());
-			std::map<std::pair<DWORD, DWORD>, DWORD>::const_iterator refused =
-					s_mapPlayerBotChestRefused.find(refuseKey);
-			if (refused != s_mapPlayerBotChestRefused.end() && dwNow < refused->second)
+			if (IsPlayerBotChestRefused(ch->GetPlayerID(), item->GetVnum(), dwNow))
 				continue;
 			// The same test as for the treasure box: room for the whole set the
 			// group can hand out, placed the way the engine places it.
@@ -195,7 +209,7 @@ namespace
 			// and giving up here is what kept the Moonlight chests behind these
 			// two out of reach. The refusal is remembered - for this bot and
 			// this box - so the bot stops asking every eight seconds.
-			s_mapPlayerBotChestRefused[refuseKey] = dwNow + PLAYERBOT_CHEST_REFUSED_RETRY;
+			NotePlayerBotChestRefused(ch->GetPlayerID(), chestVnum, dwNow);
 			PlayerBotLogThrottled("chest_refused", dwNow,
 					"PLAYERBOT_CHEST: refused pid=%u name=%s vnum=%u count=%u free=%d",
 					ch->GetPlayerID(), ch->GetName(), chestVnum,

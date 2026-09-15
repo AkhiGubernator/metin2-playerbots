@@ -22,6 +22,14 @@ namespace
 	void GetPlayerBotNpcApproach(DWORD playerID, long npcX, long npcY, DWORD salt,
 			long& approachX, long& approachY);
 
+	// Defined with the chest pass (playerbot_consumables.h): a box the engine
+	// refused this bot, remembered by bot and vnum. The two passes here that
+	// open a starter-chain chest by themselves ask it before they try and tell
+	// it when UseItem says no, or a box that cannot open is asked for again on
+	// every one of their passes.
+	bool IsPlayerBotChestRefused(DWORD dwPlayerID, DWORD dwVnum, DWORD dwNow);
+	void NotePlayerBotChestRefused(DWORD dwPlayerID, DWORD dwVnum, DWORD dwNow);
+
 	// Whether this character fights with a weapon of this kind. Asked of an
 	// item by IsPlayerBotWeapon and of a merchant's proto by
 	// GetPlayerBotMerchantWeaponCeiling.
@@ -2663,10 +2671,19 @@ namespace
 			const int progressionLevel = (chestVnum == 50187) ? 1 : (int)(chestVnum - 50187) * 10;
 			if (!classStarterChest && (!progressionChest || ch->GetLevel() < progressionLevel))
 				continue;
+			// This runs every second while the bot has no weapon, so a box the
+			// engine refused waits out the chest pass's retry clock instead of
+			// being asked for again on the next one.
+			if (IsPlayerBotChestRefused(ch->GetPlayerID(), chestVnum, dwNow))
+				continue;
 
 			sys_log(0, "PLAYERBOT_AI: opening weapon recovery chest pid=%u name=%s vnum=%u cell=%u",
 					ch->GetPlayerID(), ch->GetName(), chestVnum, cell);
-			ch->UseItem(TItemPos(INVENTORY, cell));
+			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
+			{
+				NotePlayerBotChestRefused(ch->GetPlayerID(), chestVnum, dwNow);
+				continue;
+			}
 			if (!EquipFirstAvailablePlayerBotWeapon(ch))
 				return false;
 			LPITEM weapon = ch->GetWear(WEAR_WEAPON);
@@ -2878,6 +2895,14 @@ namespace
 					? 1 : (int)(chestVnum - 50187) * 10;
 			if (!classStarter && (!progression || ch->GetLevel() < requiredLevel))
 				continue;
+			// A box the engine refused this bot waits out the chest pass's retry
+			// clock. This pass comes back every ten to fifteen seconds and used to
+			// remember nothing, so the lv60 chest's Skrzynia Mistrza II, whose
+			// group the mt2009 share did not have, was asked for by every bot of
+			// seventy holding one: 258 175 lines of "cannot find special item
+			// group 50194" in thirty hours on one core, 560 a minute by the end.
+			if (IsPlayerBotChestRefused(ch->GetPlayerID(), chestVnum, dwNow))
+				continue;
 
 			// The whole set or nothing: a chest whose rewards would spill stays
 			// closed until the town errand for a full bag has made room.
@@ -2894,7 +2919,18 @@ namespace
 			}
 
 			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
+			{
+				// group=0 is a box the share gives no group, room3=0 the engine's
+				// own refusal for want of a three-cell space; anything else was a
+				// refusal of the moment (a busy action, the item-use pulse).
+				NotePlayerBotChestRefused(ch->GetPlayerID(), chestVnum, dwNow);
+				PlayerBotLogThrottled("progression_chest_refused", dwNow,
+						"PLAYERBOT_CHEST: progression chest refused pid=%u name=%s vnum=%u level=%u group=%d room3=%d",
+						ch->GetPlayerID(), ch->GetName(), chestVnum, ch->GetLevel(),
+						ITEM_MANAGER::instance().GetSpecialItemGroup(chestVnum) ? 1 : 0,
+						ch->GetEmptyInventory(3) >= 0 ? 1 : 0);
 				continue;
+			}
 			state.dwNextEquipmentCheckTime = 0;
 			state.bEquipPending = true;
 			state.dwNextGearAttemptTime = 0;

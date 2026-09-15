@@ -14,11 +14,15 @@
 # The client cannot list the monsters or the items round its character - the
 # scripts that do this without the server scan a million VIDs a frame - so it
 # asks the server (do_autohunt_target and do_autohunt_loot, playerbotify.py):
-#   "/autohunt_target <range> <stones> <x> <y>" -> "AutoHuntTarget <vid>", the
-#   nearest monster this character may hit within the range of the point the
-#   hunt started from, what is already hitting it first;
-#   "/autohunt_loot <range> <kinds> <x> <y>" -> "AutoHuntLoot <vid> <x> <y>",
+#   "/autohunt_target <range> <stones> <dx> <dy>" -> "AutoHuntTarget <vid>",
+#   the nearest monster this character may hit within the range of the point
+#   the hunt started from, what is already hitting it first;
+#   "/autohunt_loot <range> <kinds> <dx> <dy>" -> "AutoHuntLoot <vid> <dx> <dy>",
 #   the nearest item on the ground it may take, of a kind the window keeps.
+# Every place goes both ways as an offset from the character: this client
+# counts positions from its map's corner and the server from the world's, and
+# the world's coordinates put every item a map's base out of the pick-up's
+# reach ("nie podnosi dropu", Tieru, 15 September).
 # Every step, swing and pick-up goes through the client's own paths - the main
 # instance's walk, the attack key, the pick-up packet - so the server sees a
 # player walking, swinging and bending down, never a teleport.
@@ -168,7 +172,8 @@ def ParseTargetVid(value):
 
 
 def ParseLoot(vid, x, y):
-	"""The server's "AutoHuntLoot <vid> <x> <y>" as (vid, x, y), or (0, 0, 0)."""
+	"""The server's "AutoHuntLoot <vid> <dx> <dy>" as (vid, dx, dy), or (0, 0, 0):
+	the item's place as an offset from the character."""
 	vid = ParseTargetVid(vid)
 	if not vid:
 		return (0, 0, 0)
@@ -314,11 +319,12 @@ class Hunter(object):
 	def OnServerLoot(self, vid, x, y):
 		if not self.running or app.GetTime() < self.lootPausedUntil or not LootMask(self.config):
 			return
-		(vid, x, y) = ParseLoot(vid, x, y)
+		(vid, dx, dy) = ParseLoot(vid, x, y)
 		if vid != self.lootVid:
 			self.lootSince = 0.0
 		self.lootVid = vid
-		self.lootPos = (x, y)
+		(px, py, pz) = player.GetMainCharacterPosition()
+		self.lootPos = (int(px) + dx, int(py) + dy)
 
 	# --- one pass -------------------------------------------------------
 	def WhileDead(self, now):
@@ -370,14 +376,15 @@ class Hunter(object):
 		if now < self.nextLootRequest or now < self.lootPausedUntil:
 			return
 		self.nextLootRequest = now + LOOT_REQUEST_INTERVAL
-		net.SendChatPacket('/autohunt_loot %d %d %d %d' % (
-			self.config['range'], mask, self.anchor[0], self.anchor[1]))
+		(dx, dy) = self.AnchorOffset()
+		net.SendChatPacket('/autohunt_loot %d %d %d %d' % (self.config['range'], mask, dx, dy))
 
 	def Chase(self, now):
 		if now >= self.nextRequest:
 			self.nextRequest = now + TARGET_REQUEST_INTERVAL
+			(dx, dy) = self.AnchorOffset()
 			net.SendChatPacket('/autohunt_target %d %d %d %d' % (
-				self.config['range'], 1 if self.config['stones'] else 0, self.anchor[0], self.anchor[1]))
+				self.config['range'], 1 if self.config['stones'] else 0, dx, dy))
 
 		# An item at the character's feet is taken whatever else is going on.
 		self.PickNearLoot(now)
@@ -484,6 +491,12 @@ class Hunter(object):
 		if net.GetMainActorRace() % 4 == 1 and net.GetMainActorSkillGroup() == 2:
 			return ARCHER_REACH
 		return MELEE_REACH
+
+	def AnchorOffset(self):
+		# Where the hunt started, as an offset from where the character stands:
+		# the server counts from the world's corner and this client from its map's.
+		(px, py, pz) = player.GetMainCharacterPosition()
+		return (self.anchor[0] - int(px), self.anchor[1] - int(py))
 
 	def LootDistance(self):
 		(px, py, pz) = player.GetMainCharacterPosition()

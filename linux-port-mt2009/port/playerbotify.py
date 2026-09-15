@@ -1279,6 +1279,7 @@ def main(root):
     apply_gm_transfer_bots(game)
     apply_refine_log_way(game)
     apply_auto_hunt(game)
+    apply_auto_hunt_offsets(game)
     apply_hwang_curse_removed(game)
     print('playerbotify: done')
 
@@ -1358,6 +1359,65 @@ def apply_auto_hunt(game):
          '\t{ "autohunt_target",\tdo_autohunt_target,\t0,\t\t\tPOS_DEAD,\tGM_PLAYER\t},\n'
          '\t{ "autohunt_loot",\tdo_autohunt_loot,\t0,\t\t\tPOS_DEAD,\tGM_PLAYER\t},\n',
          marker='{ "autohunt_loot",')
+
+
+def apply_auto_hunt_offsets(game):
+    # Auto Lowy nic nie podnosily, jakkolwiek ustawione (Tieru, 15 wrzesnia,
+    # 23:10, klient 2.0.9). Klient liczy pozycje od rogu swojej mapy - jego
+    # strumien sieciowy odejmuje baze mapy od kazdej pozycji z serwera, minimapa
+    # pokazuje "334, 857" w Bokjung o bazie 102400, 204800 - a "AutoHuntLoot"
+    # niosl GetX()/GetY() swiata, wiec przedmiot stal dla klienta zawsze o baze
+    # mapy od postaci i nigdy nie byl w zasiegu podniesienia. Punkt startu szedl
+    # w druga strone tak samo i serwer odrzucal go jako dalszy niz 10000, wiec
+    # zasieg lowow liczyl sie od postaci, nie od startu. Oba ida teraz jako
+    # przesuniecie od postaci.
+    path = os.path.join(game, 'cmd_general.cpp')
+    edit(path,
+         '\t\t// A point further than the sectrees round the character reach is a\n'
+         '\t\t// stale hunt from another place: hunt round the character instead.\n'
+         '\t\tif (DISTANCE_APPROX(x - anchorX, y - anchorY) <= 10000)\n'
+         '\t\t{\n'
+         '\t\t\tanchorX = x;\n'
+         '\t\t\tanchorY = y;\n'
+         '\t\t}\n',
+         '\t\t// The client counts a position from its own map\'s corner and the\n'
+         '\t\t// server from the world\'s (the client\'s network stream takes the\n'
+         '\t\t// map\'s base off every position it receives), so the start point\n'
+         '\t\t// comes as an offset from where the character stands. One further\n'
+         '\t\t// than the sectrees round the character reach is a stale hunt from\n'
+         '\t\t// another place: hunt round the character instead.\n'
+         '\t\tif (DISTANCE_APPROX(x, y) <= 10000)\n'
+         '\t\t{\n'
+         '\t\t\tanchorX += x;\n'
+         '\t\t\tanchorY += y;\n'
+         '\t\t}\n',
+         marker='// comes as an offset from where the character stands. One further\n')
+    edit(path,
+         '\t\t// The same rule as the target: a stale point hunts round the character.\n'
+         '\t\tif (DISTANCE_APPROX(x - anchorX, y - anchorY) <= 10000)\n'
+         '\t\t{\n'
+         '\t\t\tanchorX = x;\n'
+         '\t\t\tanchorY = y;\n'
+         '\t\t}\n',
+         '\t\t// The same rule as the target: an offset from the character, and a\n'
+         '\t\t// stale one hunts round the character.\n'
+         '\t\tif (DISTANCE_APPROX(x, y) <= 10000)\n'
+         '\t\t{\n'
+         '\t\t\tanchorX += x;\n'
+         '\t\t\tanchorY += y;\n'
+         '\t\t}\n',
+         marker='// The same rule as the target: an offset from the character, and a\n')
+    edit(path,
+         '\tch->ChatPacket(CHAT_TYPE_COMMAND, "AutoHuntLoot %u %ld %ld",\n'
+         '\t\t\t(unsigned int) (DWORD) f.m_pkBest->GetVID(), (long) f.m_pkBest->GetX(), (long) f.m_pkBest->GetY());\n',
+         '\t// The item\'s place as an offset from the character, which the client adds\n'
+         '\t// to its own position: in the world\'s coordinates every item stood a\n'
+         '\t// map\'s base away from a client that counts from its map\'s corner, and\n'
+         '\t// the pick-up never came within reach (Tieru, 15 September).\n'
+         '\tch->ChatPacket(CHAT_TYPE_COMMAND, "AutoHuntLoot %u %ld %ld",\n'
+         '\t\t\t(unsigned int) (DWORD) f.m_pkBest->GetVID(),\n'
+         '\t\t\t(long) (f.m_pkBest->GetX() - ch->GetX()), (long) (f.m_pkBest->GetY() - ch->GetY()));\n',
+         marker='// The item\'s place as an offset from the character, which the client adds\n')
 
 
 AUTO_HUNT_COMMAND = r'''// The player's auto-hunt (client-root/uiautohunt.py) asks which monster to go

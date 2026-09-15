@@ -167,8 +167,8 @@ class HuntTest(unittest.TestCase):
 
 	def test_asks_the_server_from_the_start_point(self):
 		step(self.hunter)
-		self.assertEqual(commands('/autohunt_target'), ['/autohunt_target 2000 0 1000 1000'])
-		self.assertEqual(commands('/autohunt_loot'), ['/autohunt_loot 2000 127 1000 1000'])
+		self.assertEqual(commands('/autohunt_target'), ['/autohunt_target 2000 0 0 0'])
+		self.assertEqual(commands('/autohunt_loot'), ['/autohunt_loot 2000 127 0 0'])
 		step(self.hunter, 0.5)
 		self.assertEqual(len(commands('/autohunt_target')), 1)
 		step(self.hunter, 0.4)
@@ -181,7 +181,7 @@ class HuntTest(unittest.TestCase):
 		self.hunter.config['pickup'] = 0
 		step(self.hunter)
 		self.assertEqual(commands('/autohunt_loot'), [])
-		self.hunter.OnServerLoot('77', '1050', '1000')
+		self.hunter.OnServerLoot('77', '50', '0')
 		step(self.hunter, 1.0)
 		self.assertEqual(STATE['picked'], [])
 
@@ -225,7 +225,7 @@ class HuntTest(unittest.TestCase):
 		self.assertEqual(self.hunter.targetVid, 0)
 
 	def test_walks_to_loot_and_picks_it_up(self):
-		self.hunter.OnServerLoot('77', '1600', '1000')
+		self.hunter.OnServerLoot('77', '600', '0')
 		step(self.hunter)
 		self.assertEqual(STATE['walks'][-1], (1600, 1000))
 		self.assertEqual(STATE['picked'], [])
@@ -238,17 +238,17 @@ class HuntTest(unittest.TestCase):
 		STATE['where'][55] = (1100, 1000, 0)
 		STATE['distance'][55] = 100
 		self.hunter.OnServerTarget('55')
-		self.hunter.OnServerLoot('77', '1050', '1000')
+		self.hunter.OnServerLoot('77', '50', '0')
 		step(self.hunter)
 		self.assertEqual(STATE['attack'], [True])
 		self.assertEqual(STATE['picked'], [77])
 
 	def test_leaves_loot_it_cannot_reach_alone_for_a_while(self):
-		self.hunter.OnServerLoot('77', '3000', '1000')
+		self.hunter.OnServerLoot('77', '2000', '0')
 		step(self.hunter)
 		step(self.hunter, 6.5)
 		self.assertEqual(self.hunter.lootVid, 0)
-		self.hunter.OnServerLoot('77', '3000', '1000')
+		self.hunter.OnServerLoot('77', '2000', '0')
 		self.assertEqual(self.hunter.lootVid, 0)
 		asked = len(commands('/autohunt_loot'))
 		step(self.hunter, 2.0)
@@ -312,7 +312,7 @@ class HuntTest(unittest.TestCase):
 		STATE['where'][55] = (1500, 1000, 0)
 		STATE['distance'][55] = 500
 		self.hunter.OnServerTarget('55')
-		self.hunter.OnServerLoot('77', '1700', '1000')
+		self.hunter.OnServerLoot('77', '700', '0')
 		step(self.hunter)
 		self.assertEqual(STATE['walks'][-1], (1700, 1000))
 		self.assertEqual(STATE['attack'], [])
@@ -321,15 +321,26 @@ class HuntTest(unittest.TestCase):
 		STATE['where'][55] = (1100, 1000, 0)
 		STATE['distance'][55] = 100
 		self.hunter.OnServerTarget('55')
-		self.hunter.OnServerLoot('77', '1700', '1000')
+		self.hunter.OnServerLoot('77', '700', '0')
 		step(self.hunter)
 		self.assertEqual(STATE['attack'], [True])
 		self.assertEqual(STATE['walks'], [])
 
 	def test_picks_up_from_four_hundred_and_fifty(self):
-		self.hunter.OnServerLoot('77', '1440', '1000')
+		self.hunter.OnServerLoot('77', '440', '0')
 		step(self.hunter)
 		self.assertEqual(STATE['picked'], [77])
+
+	def test_the_start_point_goes_as_an_offset(self):
+		STATE['pos'] = (1500, 800)
+		step(self.hunter)
+		self.assertEqual(commands('/autohunt_target'), ['/autohunt_target 2000 0 -500 200'])
+		self.assertEqual(commands('/autohunt_loot'), ['/autohunt_loot 2000 127 -500 200'])
+
+	def test_the_loot_answer_is_an_offset_from_the_character(self):
+		STATE['pos'] = (5000, 7000)
+		self.hunter.OnServerLoot('77', '-300', '400')
+		self.assertEqual(self.hunter.lootPos, (4700, 7400))
 
 	def test_destroy_stops_without_a_word(self):
 		messages = len(STATE['chat'])

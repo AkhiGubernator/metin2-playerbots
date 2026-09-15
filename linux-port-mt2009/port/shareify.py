@@ -278,6 +278,27 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
 '''
 
 
+# The quests call this world Metin2009 - main_quest_lv1's letter and greeting,
+# the guard's warning, the quiz - where it is Metin2 SinglePlayer (l0st3k, 15
+# September, who sent translate.lua with those sixteen lines changed). Both
+# copies of translate.lua carry the strings; every other byte of them, the
+# charset test line at the head included, stays as the package has it.
+DOCKERFILE_BRAND_ANCHOR = ' && echo "share: Maska Sabaha removed"\n'
+DOCKERFILE_BRAND_MARKER = 'echo "share: Metin2 SinglePlayer in the quest texts"'
+DOCKERFILE_BRAND_STEP = r"""
+# The quest texts name this world, not Metin2009 (port/shareify.py renders this
+# step): the substitution l0st3k's translate.lua of 15 September makes, on both
+# copies of the file.
+RUN set -eu; L=/opt/metin2/share/locale/poland \
+ && for f in "$L/translate.lua" "$L/quest/libs/translate/translate.lua"; do \
+      [ -f "$f" ] || continue; \
+      LC_ALL=C sed -i 's/Metin2009/Metin2 SinglePlayer/g' "$f"; \
+      if LC_ALL=C grep -q 'Metin2009' "$f"; then echo "share: Metin2009 left in $f" >&2; exit 1; fi; \
+    done \
+ && echo "share: Metin2 SinglePlayer in the quest texts"
+"""
+
+
 def main():
     items = dump_vnums('item_proto')
     mobs = dump_vnums('mob_proto')
@@ -323,6 +344,12 @@ def main():
         assert s.count(DOCKERFILE_MASK_ANCHOR) == 1, s.count(DOCKERFILE_MASK_ANCHOR)
         s = s.replace(DOCKERFILE_MASK_ANCHOR, DOCKERFILE_MASK_ANCHOR + DOCKERFILE_MASK_STEP)
         print('shareify: Maska Sabaha step added')
+    if DOCKERFILE_BRAND_MARKER in s:
+        print('shareify: Dockerfile already names Metin2 SinglePlayer in the quest texts')
+    else:
+        assert s.count(DOCKERFILE_BRAND_ANCHOR) == 1, s.count(DOCKERFILE_BRAND_ANCHOR)
+        s = s.replace(DOCKERFILE_BRAND_ANCHOR, DOCKERFILE_BRAND_ANCHOR + DOCKERFILE_BRAND_STEP)
+        print('shareify: Metin2 SinglePlayer step added')
     io.open(dockerfile, 'w', encoding='utf-8', newline='').write(s)
 
 

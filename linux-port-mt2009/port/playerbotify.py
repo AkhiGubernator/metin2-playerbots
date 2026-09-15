@@ -1274,6 +1274,7 @@ def main(root):
     apply_gm_gameplay(game)
     apply_gm_panel(game)
     apply_costume_block(game)
+    apply_costume_hair_allowed(game)
     apply_horse_rider_links(game)
     apply_gm_transfer_bots(game)
     apply_refine_log_way(game)
@@ -1630,6 +1631,26 @@ def apply_refine_log_way(game):
          '\n'
          '\tsuccess_prob += pkItemScroll->GetValue(1);\n',
          marker='snprintf(szRefineWay, sizeof(szRefineWay), "SCROLL:%u"')
+
+
+def apply_costume_hair_allowed(game):
+    """A hairstyle is a costume the operator wants worn.
+
+    apply_costume_block refuses every ITEM_COSTUME at the top of CanEquipNow, and
+    a hairstyle from the ItemShop is one (COSTUME_HAIR, 395 vnums in
+    world.item_proto): "po aktualizacji ktora wylaczyla mozliwosc zakladania
+    kostiumow, wylaczona zostala tez mozliwosc zakladania fryzur z IS" (hunmar,
+    15 September). The block stays for every other kind of costume.
+    """
+    edit(os.path.join(game, 'char_item.cpp'),
+         '\tif (item && item->GetType() == ITEM_COSTUME)\n'
+         '\t{\n'
+         '\t\tChatPacket(CHAT_TYPE_INFO, "Kostiumy sa na tym serwerze wylaczone.");\n',
+         '\t// A hairstyle passes (playerbotify.py, apply_costume_hair_allowed).\n'
+         '\tif (item && item->GetType() == ITEM_COSTUME && item->GetSubType() != COSTUME_HAIR)\n'
+         '\t{\n'
+         '\t\tChatPacket(CHAT_TYPE_INFO, "Kostiumy sa na tym serwerze wylaczone.");\n',
+         marker='playerbotify.py, apply_costume_hair_allowed).')
 
 
 def apply_costume_block(game):

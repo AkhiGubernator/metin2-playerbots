@@ -305,6 +305,17 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
  && ! grep -q '{72731, 1}' "$L/quest/libs/other/reward_data.lua" \
  && echo "share: Maska Sabaha removed"
 
+# The quest texts name this world, not Metin2009 (port/shareify.py renders this
+# step): the substitution l0st3k's translate.lua of 15 September makes, on both
+# copies of the file.
+RUN set -eu; L=/opt/metin2/share/locale/poland \
+ && for f in "$L/translate.lua" "$L/quest/libs/translate/translate.lua"; do \
+      [ -f "$f" ] || continue; \
+      LC_ALL=C sed -i 's/Metin2009/Metin2 SinglePlayer/g' "$f"; \
+      if LC_ALL=C grep -q 'Metin2009' "$f"; then echo "share: Metin2009 left in $f" >&2; exit 1; fi; \
+    done \
+ && echo "share: Metin2 SinglePlayer in the quest texts"
+
 # The cores run unprivileged and read this tree by path; a directory only root
 # can enter costs every quest below it, silently. Repair, then assert.
 RUN set -eu; \

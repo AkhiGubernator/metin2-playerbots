@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-15T12:20:10Z",
-  "statusMessage": "2.0.51: **dymki nad głowami botów bez zapychania czatu (nowy klient 2.0.7), broń w ręce nie spala się bez zapasu, klucze i nadmiar ulepszaczy trafiają na lady, boty znają atlas broni, zwoje i szkatułki wracają na rynek, a historia ekwipunku pokazuje, czym zrobiono ulepszenie.** Serwer i klient 2.0.7.",
+  "publishedAt": "2026-09-15T18:16:49Z",
+  "statusMessage": "2.0.52: **Auto Łowy dla graczy (nowy klient 2.0.8), dropki medali siedzą w Lochu Małp, boty w pojedynkach używają buffów i umiejętności, Hwang bez klątwy i bez Maski Sabaha, targi Shinsoo i Jinno przy strażnikach, boty handlują zamiast rozdawać, a Kamienie Duchowe czytają.** Serwer i klient 2.0.8.",
   "server": {
-    "version": "2.0.51",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.51/metin2-server-update-2.0.51.zip",
-    "sha256": "C1287A085784215E3500A9AEB0C2BB60EA0A5DCF15468923CF62F41B32800F6A"
+    "version": "2.0.52",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.52/metin2-server-update-2.0.52.zip",
+    "sha256": "C0BD91EF97D60555C7ECA20FC7027C5A7FFEC65E36B9396908B838EBFD3BFE0E"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.7",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.51/metin2-client-update-2.0.7.zip",
-    "sha256": "892DC4EFC983688D34E6BE887877963CFC70022C63A16539EEB03B65CF9109C9"
+    "version": "2.0.8",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.52/metin2-client-update-2.0.8.zip",
+    "sha256": "11A71201548A3CA0CBBDCAA359CBDCCC47F42A25570EBF56FEAF7B9EE7DBC46F"
   }
 }

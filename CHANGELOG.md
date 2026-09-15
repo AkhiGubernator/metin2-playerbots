@@ -17,6 +17,83 @@ every version here.
 
 ---
 
+## 2.0.51 — 2026-09-15
+
+Serwer (AI botów, rdzeń gry, panel) i klient 2.0.7.
+
+### Dymki nad głowami botów bez czatu
+
+Status bota (dokąd idzie, z kim walczy, co robi w mieście) widać już tylko w
+dymku nad jego głową. Wcześniej każdy status był też zwykłą wypowiedzią, więc
+trafiał do historii czatu, a miasto pełne botów zapychało okno czatu. Wymaga
+klienta 2.0.7: stary klient nie pokaże dymków statusu, ale też niczego nie
+wpisze na czat. Ogłoszenia udanych ulepszeń +7/+8/+9 (najwyżej jedno na trzy
+minuty na cały świat) i okrzyki handlowe zostają na czacie.
+
+### Broń w ręce nie spala się bez zapasu
+
+Bot nie ulepsza u zwykłego kowala broni, którą trzyma w ręce, gdy krok może
+ją spalić, a nie ma zwoju, zapasowej broni ani kupca sprzedającego broń na jej
+poziom. Kupuje wtedy zwoje z lad. Trzyma jedną zapasową broń (co najmniej o
+połowie siły tej w ręce) i nie oddaje jej, nie sprzedaje ani nie wystawia. Ze
+swojego sklepu offline odbiera przedmiot lepszy od noszonego co najmniej o
+10%. Wojownik mentalny woli broń dwuręczną o 20% jej siły, a nie o stałą
+premię, więc Gilotynowe Ostrze nie wygrywa już na 75 poziomie z mieczem na 55.
+
+### Atlas broni
+
+Boty znają każdą broń świata: klasę, poziom i źródło (kupiec, wspólny drop,
+potwór, skrzynia). Bot z bronią wyraźnie słabszą od najlepszej osiągalnej na
+jego poziom idzie na rynek, a broń silniejszą o 25% może kupić z oszczędności.
+Wędka i kilof w ręce nie są liczone jako broń.
+
+### Ceny broni według średnich
+
+Średnie obrażenia i obrażenia umiejętności są wyceniane płynnie między progami
+cennika Iwakury, więc 19% średnich kosztuje wyraźnie więcej niż 1%. Sklepy
+przeceniają się same.
+
+### Klucze, nadmiar towaru i marmury
+
+- Klucze bez pasującej skrzyni (ponad dwa jednego rodzaju) trafiają na ladę, a
+  przy pełnym plecaku do magazynu. Bot ze skrzynią kupuje do niej klucz.
+- Chomikowane ulepszacze (ponad 50 sztuk ponad własne potrzeby) idą na ladę
+  paczkami po 10, najwyżej trzy linie jednego rodzaju.
+- Marmury polimorfii, klucze i nadmiar towaru są powodem do otwarcia sklepu.
+- Sortowanie plecaka zamienia przedmioty miejscami: najpierw mikstury, potem
+  skrzynie i klucze.
+- Hełmy i tarcze bot podnosi zawsze.
+- Materiał, na który jest popyt, bot wyjmuje z magazynu tylko wtedy, gdy
+  plecak się przez to nie zapełni.
+
+### Zwoje i szkatułki na rynku
+
+Zwój Błogosławieństwa nie jest już wyceniany jak ulepszacz. Bot zostawia sobie
+3 zwoje (handlarz zasobów 1), a resztę wystawia. Zwoje nie trafiają do
+magazynu, a te, które już tam są, wracają do plecaka. Handlarz zasobów nie
+otwiera Szkatułek Blasku Księżyca, tylko je sprzedaje (trzyma do 20 sztuk).
+
+### Historia ekwipunku w panelu
+
+Przy ulepszeniu w nawiasie widać, czym je zrobiono: (Kowal), (Kowal w Wieży
+Demonów) albo nazwa zwoju, np. (Zwój Błogosławieństwa). Wpisy sprzed
+aktualizacji pokazują (Kowal) albo (zwój). Nieudany zwój, który obniżył
+przedmiot o poziom, nie jest już pokazywany jako „Spalone przy ulepszaniu”.
+
+### Stabilność
+
+Broń awaryjna kupiona przy pełnym plecaku lądowała na ziemi, a bot zakładał ją
+z ziemi. Kończyło się to zniszczonym przedmiotem w slocie broni i wyrzuceniem
+bota z gry. Bot kupuje teraz tylko z miejscem w plecaku i nie rusza slotu,
+którego silnik naprawdę nie nosi. Wędkę i kilof zdejmuje tylko przy wolnym
+miejscu w plecaku.
+
+### Aktualizacja na Linuksie
+
+`m2-updater` i instalator linii 1.x odmawiają pracy na serwerze 2.x i wskazują
+`linux-port/tools/update.sh`. Wcześniej `docker compose exec updater
+m2-updater` potrafił wgrać na serwer 2.x plik compose z MariaDB 10.11.
+
 ## 2.0.50 — 2026-09-15
 
 Serwer (AI botów i rdzeń gry). Klient zostaje w wersji 2.0.6.

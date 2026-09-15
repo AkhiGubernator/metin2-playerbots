@@ -3588,6 +3588,81 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   first deploy. `SELECT 1 ... LIMIT 1` with `fetchone() is None` works with
   either cursor, the shape of his original SHOW COLUMNS. Test a merged panel by
   starting it, not by `ast.parse`.
+- **A horse destroyed by anything but its own rider left the rider holding it.**
+  `CHARACTER::Destroy` on mt2009 unlinks a horse from its rider only under
+  `IsPC() && GetRider()`, and only a horse has a rider, so it never did: a horse
+  destroyed any way but its rider's own `HorseSummon(false)` left `m_chHorse`
+  dangling, and the rider's next `StartRiding()` called `HorseSummon(false)` on
+  freed memory - game1 SIGSEGV twice in six hours at 2000 bots, both
+  `CPlayerBotManager::Update -> CHARACTER::StartRiding+0x251 ->
+  CHARACTER::HorseSummon+0x6e` (sizowski, 15 September). What destroys one is a
+  splash skill: `battle_is_attackable` ends in `CPVPManager::CanAttack`, which
+  refuses NPC/WARP/GOTO by type and lets every other NPC through, and
+  `SetPlayerBotRidingForTravel` sends a dismounted rider's horse away only in a
+  safe zone, so a hunting map is full of follower horses standing among area
+  skills. `apply_horse_rider_links` (playerbotify.py) unlinks a horse from a
+  rider that still holds it and makes a horse with a rider nobody's target;
+  char.cpp and pvp.cpp already ship staged. A player's summoned horse had the
+  same crash waiting, it was only rarer.
+- **Shinsoo's and Jinno's easy Monkey Dungeons had no geometry slot.**
+  `GetPlayerBotMonkeyGeometrySlot` named 25, 108 and 109, so maps 5 and 45
+  answered NULL, no chamber or door was known there, and those kingdoms' bots
+  hunted the entrance room alone ("Bots only farm in starting zone of Ape
+  Dungeon", Dixdros, 14 September). The geometry was always read off each map's
+  own NPCs; the slot was all that was missing. A per-dungeon array has to grow
+  with `IsPlayerBotMonkeyMap`. The test world's logs from before the fix have
+  bots entering 5 and 45 and no geometry line for either, ever; the first
+  entry after it logged `geometry map=5 chambers=11/11 doors=24`, and a minute
+  later the second bot in logged `spread crossed ... from=0 to=2`.
+- **A bot spends only the bonus stones in its bag.** `BuyPlayerBotBonusStone`
+  created 71084/71085 with `AutoGiveItem` for 25 000 yang whenever the bag had
+  none, reasoning that the stones cannot be dropped or traded - true of r40250's
+  item_proto, not of mt2009's, where both drop (`mob_drop_item.txt`) and come
+  out of chests. With the chests switched off, the gear history showed stones
+  spent that no bag had received and the economy charts had none of (seban
+  latino, Drip, 15 September). The operator chose "only its own":
+  `HasPlayerBotBonusStone`, and a bag with no stone and no marble ends the pass
+  at once. No counter lists a stone, so drops and chests are the whole supply.
+- **The F9 panel's login probe told every player "no such command".** The
+  client sends `/gmpanel_check_gm` some 300 frames after every entry into the
+  game, and F9/F10 send `/gmpanel_open` and `/botadmin`; with HIGH_WIZARD and
+  IMPLEMENTOR rows in `cmd_info[]` a player got "Ta komenda nie istnieje." after
+  every teleport (NerrVoVy, 15 September). The three rows are GM_PLAYER, each
+  command checks its own threshold and answers nothing below it, and every
+  action of the panel still checks its own row.
+- **`/transfer` of a bot was a WarpSet.** It took the bot off its sectree and
+  the rescue put it back at its own map's start ("robi tp, ale jakby na start
+  mapy"). `do_transfer` hands a bot on this core to
+  `CPlayerBotManager::TransferBot` - `TransitionPlayerBotMap` onto the GM's spot,
+  the answer in the GM's chat - and refuses a registered bot on another core by
+  name, because a bot cannot stand on a map its core does not host.
+- **A dropper is drawn only inside its band.** The exp lock stops experience
+  and gives none back, so a bot already past its band kept the name and farmed
+  a table the engine fades to nothing - a level-45 dropper at a level-35 Metin
+  in Bokjung (sizowski, 15 September). `IsPlayerBotPastDropperBand` (more than
+  `PLAYERBOT_DROPPER_OUTGROWN_LEVELS` over the lock) draws such a bot as an
+  adventurer at its next spawn, and `ManagePlayerBotExpLock` lifts its lock.
+  The test world had no such bot to move - not one `exp locked` line above
+  lock+2 in its log, and 0 of 250 droppers past their band after the restart -
+  so the change shows on an older world like sizowski's, not on ours.
+- **A mining session ends at a blow and comes back after a death.** A session
+  owns the tick above the fight and the emergency recovery, so a miner could be
+  killed at its vein without hitting back, and standing up afterwards counted as
+  "busy" with the whole 15-45 minute rest (Mat, 14 September). Health below both
+  its last look and its maximum ends the session as `attacked`, recovery ends it
+  as `recovering`, and either comes back after
+  `PLAYERBOT_MINING_RESUME_AFTER_FIGHT`. The maximum is in the test because a
+  falling maximum pulls health down with it and is no blow. In the first four
+  minutes on the test world three sessions on Mount Sohan ended `attacked`, and
+  the first of those bots dismounted, buffed, cast and drank a potion within
+  three seconds of it.
+- **A bot in a player's party runs no errand, not only no map change.** After
+  2.0.48 a bot with a Biologist or merchant errand still walked off from the
+  player's side and the follow pass fetched it back, in turns ("[PT] Ide do
+  handlarza bronia (cel: Biolog)"). Pabloo's fix: the stable, the Biologist, the
+  start and the continuation of a town visit and the weaponless branch all
+  stand down for `IsPlayerBotHumanLedParty`; the visit flags are kept, so
+  `ManagePlayerBotBuffHumanLeader` no longer refuses a bot for carrying them.
 
 ## Engine facts worth not re-deriving
 

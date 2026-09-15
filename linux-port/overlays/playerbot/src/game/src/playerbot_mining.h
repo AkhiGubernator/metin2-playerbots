@@ -234,7 +234,9 @@ namespace
 	// so a crowd at one is a crowd doing nothing.
 	bool IsPlayerBotMiner(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
-		if (!ch || ch->GetLevel() < PLAYERBOT_MINING_MIN_LEVEL)
+		// Nor is a dropper a miner: a session at a vein is time away from the
+		// one thing it farms (IsPlayerBotAngler).
+		if (!ch || IsPlayerBotDropper(state.bPersonality) || ch->GetLevel() < PLAYERBOT_MINING_MIN_LEVEL)
 			return false;
 		const DWORD roll = PlayerBotNavHash(ch->GetPlayerID() ^ 0x4D494E45U) % 100U;
 		const int chance = state.bPersonality == BOT_PERSONALITY_CAREFUL_COLLECTOR

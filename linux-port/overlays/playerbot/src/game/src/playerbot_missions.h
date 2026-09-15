@@ -182,6 +182,13 @@ namespace
 	{
 		if (!ch)
 			return NULL;
+		// A dropper is a drop character: its table, its gear and its counter,
+		// and no quests ("jesli to osobowosc typowo dropek medali to powinien
+		// sie skupic tylko na lochu i eq ... a nie na robieniu questow", Tieru,
+		// 15 September - dropki of twenty-five doing the Biologist in M2). The
+		// planner, the pass, the travel and the status all ask this.
+		if (IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID())))
+			return NULL;
 		// Four passes: a mission whose specimens the bot already carries, then
 		// one whose monster stands on this map, then the first left undone that
 		// the bot has not outgrown, and last the highest one it has left. A bot

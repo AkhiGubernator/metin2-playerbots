@@ -85,6 +85,13 @@ namespace
 
 		if (item->GetType() == ITEM_WEAPON && !IsPlayerBotWeapon(ch, item))
 			return false;
+		// Two uniques are never worn, and the rings and gloves on a clock are
+		// the unique-slot pass's to put on and take off (playerbot_unique_slots.h):
+		// an empty unique slot took any unique here, which is how a ring that
+		// hides the level ended up on eleven bots.
+		if (item->GetType() == ITEM_UNIQUE &&
+				(IsPlayerBotNeverWornUnique(item->GetVnum()) || IsPlayerBotTimedUnique(item->GetVnum())))
+			return false;
 
 		switch (item->GetType())
 		{
@@ -220,6 +227,9 @@ namespace
 			case APPLY_POTION_BONUS:
 				return (long long)lValue * 100;
 			case APPLY_POISON_PCT:
+				// A quarter of a boss's health a proc: PLAYERBOT_POISON_BOSS_LEVEL.
+				return (long long)lValue *
+						(ch && (int)ch->GetLevel() >= PLAYERBOT_POISON_BOSS_LEVEL ? 400 : 200);
 			case APPLY_STUN_PCT:
 			case APPLY_SLOW_PCT:
 				return (long long)lValue * 200;
@@ -741,114 +751,15 @@ namespace
 				GetPlayerBotBackupWeaponID(ch, fresh) == item->GetID();
 	}
 
-	bool SharePlayerBotOldGearNearby(LPCHARACTER ch, LPITEM oldItem)
-	{
-		if (!ch || !oldItem || oldItem->IsEquipped() || oldItem->isLocked() ||
-				oldItem->GetRefineLevel() < PLAYERBOT_RESERVE_GEAR_MIN_REFINE ||
-				!ch->GetSectree())
-			return false;
-
-		const int wearCell = oldItem->FindEquipCell(ch);
-		if (wearCell < 0)
-			return false;
-		// Never the weapon kept for the day the one in the hand burns.
-		if (IsPlayerBotKeptBackupWeapon(ch, oldItem, true))
-			return false;
-
-		struct FGearSharer
-		{
-			LPCHARACTER m_giver;
-			LPITEM m_item;
-			int m_wearCell;
-			LPCHARACTER m_receiver;
-			long long m_bestImprovement;
-			int m_bestDistance;
-
-			FGearSharer(LPCHARACTER giver, LPITEM item, int wearCell) :
-				m_giver(giver), m_item(item), m_wearCell(wearCell), m_receiver(NULL),
-				m_bestImprovement(0), m_bestDistance(INT_MAX) {}
-
-			bool operator()(LPENTITY entity)
-			{
-				if (!entity || !entity->IsType(ENTITY_CHARACTER))
-					return true;
-
-				LPCHARACTER member = static_cast<LPCHARACTER>(entity);
-				if (!member || member == m_giver || member->IsDead() || !member->IsPC() ||
-						!member->GetDesc() || !member->GetDesc()->IsBot() ||
-						member->GetJob() != m_giver->GetJob() ||
-						member->GetSkillGroup() != m_giver->GetSkillGroup() ||
-						member->GetLevel() >= m_giver->GetLevel() ||
-						m_item->GetLevelLimit() > member->GetLevel())
-					return true;
-
-				const int distance = DISTANCE_APPROX(
-						m_giver->GetX() - member->GetX(), m_giver->GetY() - member->GetY());
-				if (distance > PLAYERBOT_GEAR_SHARE_RANGE ||
-						member->GetEmptyInventory(m_item->GetSize()) < 0)
-					return true;
-
-				if (!IsPlayerBotEquipmentCandidate(member, m_item))
-					return true;
-
-				LPITEM memberOldItem = member->GetWear(m_wearCell);
-				const long long newItemScore = GetPlayerBotEquipmentScore(m_item, member);
-				long long memberScore = memberOldItem ? GetPlayerBotEquipmentScore(memberOldItem, member) : 0;
-				for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
-				{
-					LPITEM candidate = member->GetInventoryItem(cell);
-					if (!candidate || !IsPlayerBotEquipmentCandidate(member, candidate) ||
-							candidate->GetLevelLimit() > member->GetLevel() ||
-							candidate->FindEquipCell(member) != m_wearCell)
-						continue;
-					memberScore = std::max(memberScore,
-							GetPlayerBotEquipmentScore(candidate, member));
-				}
-
-				const long long improvement = newItemScore - memberScore;
-				if (improvement > 0 &&
-						(!m_receiver || improvement > m_bestImprovement ||
-						 (improvement == m_bestImprovement && distance < m_bestDistance)))
-				{
-					m_receiver = member;
-					m_bestImprovement = improvement;
-					m_bestDistance = distance;
-				}
-				return true;
-			}
-		};
-
-		FGearSharer sharer(ch, oldItem, wearCell);
-		ch->GetSectree()->ForEachAround(sharer);
-		if (!sharer.m_receiver)
-			return false;
-
-		const int receiverCell = sharer.m_receiver->GetEmptyInventory(oldItem->GetSize());
-		if (receiverCell < 0)
-			return false;
-
-		const WORD oldCell = oldItem->GetCell();
-		const DWORD vnum = oldItem->GetVnum();
-		const BYTE refine = oldItem->GetRefineLevel();
-		// Both ends of the gift, in log.log: the giver's history says where
-		// its spare went, the receiver's says where its new piece came from.
-		char szHint[64];
-		snprintf(szHint, sizeof(szHint), "%s", sharer.m_receiver->GetName());
-		LogManager::instance().ItemLog(ch, oldItem, "PLAYERBOT_GIFT_OUT", szHint);
-		oldItem->RemoveFromCharacter();
-		if (oldItem->AddToCharacter(sharer.m_receiver, TItemPos(INVENTORY, receiverCell)))
-		{
-			snprintf(szHint, sizeof(szHint), "%s", ch->GetName());
-			LogManager::instance().ItemLog(sharer.m_receiver, oldItem, "PLAYERBOT_GIFT_IN", szHint);
-			sys_log(0, "PLAYERBOT_AI: gifted reserve gear pid=%u name=%s -> target_pid=%u target_name=%s vnum=%u refine=%u improvement=%lld",
-					ch->GetPlayerID(), ch->GetName(), sharer.m_receiver->GetPlayerID(),
-					sharer.m_receiver->GetName(), vnum, refine, sharer.m_bestImprovement);
-			return true;
-		}
-
-		oldItem->AddToCharacter(ch, TItemPos(INVENTORY, oldCell));
-		return false;
-	}
+	// A bot gives nothing away. It used to hand a spare it had outgrown to a
+	// weaker bot of its class standing nearby, and the counter never saw it: a
+	// bot raised Srebrne Kolczyki from +1 to +6 in a minute and gave them to
+	// another while it wore copper ones itself (AkhiGubernator, 15 September:
+	// "dobry samarytanin"). "Niech handluja ale nie daja za darmo" (Tieru):
+	// what comes off stays in the bag, and the junk rule and the counter
+	// decide what becomes of it. Nor does a party pass anything on any more:
+	// the book of another class and the material a member was short of went
+	// the same way ("usun", Tieru, 15 September).
 
 	// The Archer's stone weapon (by build, whatever is in the hand - the
 	// IsPlayerBotArcher of playerbot_targeting.h asks for the bow). A bow cannot break a Metin: the stone does
@@ -1011,6 +922,10 @@ namespace
 					IsPlayerBotFishingPassHeld(ch->GetPlayerID(), dwNow))
 				continue;
 #endif
+			// A ring or a glove on its clock comes off only through the
+			// unique-slot pass, which knows whether the bot is hunting.
+			if (oldItem && IsPlayerBotTimedUnique(oldItem->GetVnum()))
+				continue;
 
 			if (!PlayerBotCanEquipNow(ch, item, TItemPos(INVENTORY, cell)))
 				continue;
@@ -1084,10 +999,8 @@ namespace
 			char szHint[64];
 			snprintf(szHint, sizeof(szHint), "slot %d zamiast %u", bestWearCell, oldVnum);
 			LogManager::instance().ItemLog(ch, bestItem, "PLAYERBOT_EQUIP", szHint);
-
-			if (bestOldItem)
-				SharePlayerBotOldGearNearby(ch, bestOldItem);
-
+			// What came off stays in the bag: a bot trades its spares, it does
+			// not give them away.
 			return true;
 		}
 
@@ -1568,6 +1481,28 @@ namespace
 		if (!item || item->GetType() != ITEM_WEAPON)
 			return false;
 		return IsPlayerBotSpecialLevel30WeaponVnum(item->GetVnum());
+	}
+
+	// What a bot picks up and keeps for a player's crafting whatever the
+	// merchant pays for it (PLAYERBOT_PICKUP_GOODS_VNUMS): the herbalist's
+	// Gango Root and Tue Mushroom, the Crystal Earrings and the Ghost Face
+	// Armour a smith takes further, every weapon of level sixty-five, the Zen
+	// Bean and the Blood Pill. The loot filter never leaves these on a floor,
+	// the junk rule never hands them to the merchant while a counter can sell
+	// them, and the counter ranks them beside the materials.
+	bool IsPlayerBotPickupGoods(LPITEM item)
+	{
+		if (!item || !item->GetProto())
+			return false;
+		const DWORD vnum = item->GetVnum();
+		for (size_t i = 0; i < sizeof(PLAYERBOT_PICKUP_GOODS_VNUMS) / sizeof(PLAYERBOT_PICKUP_GOODS_VNUMS[0]); ++i)
+			if (PLAYERBOT_PICKUP_GOODS_VNUMS[i] == vnum)
+				return true;
+		if ((vnum >= PLAYERBOT_PICKUP_EARRING_FIRST && vnum <= PLAYERBOT_PICKUP_EARRING_FIRST + 9) ||
+				(vnum >= PLAYERBOT_PICKUP_ARMOUR_FIRST && vnum <= PLAYERBOT_PICKUP_ARMOUR_FIRST + 9))
+			return true;
+		return item->GetType() == ITEM_WEAPON && item->GetSubType() != WEAPON_ARROW &&
+				(int)item->GetLevelLimit() == PLAYERBOT_PICKUP_WEAPON_LEVEL;
 	}
 
 	bool HasPlayerBotSpecialLevel30Weapon(LPCHARACTER ch, bool requireAverageDamage)
@@ -2156,6 +2091,17 @@ namespace
 		return CountPlayerBotArrows(ch) < PLAYERBOT_ARROW_RESTOCK_THRESHOLD;
 	}
 
+	// Whether a dropper's archer, already past the need above, still fills its
+	// quiver at the merchant (PLAYERBOT_DROPPER_ARROW_STOCK). The need stays
+	// what ends a dungeon visit and holds a trip; this only decides how much is
+	// bought once the bot stands at the counter.
+	bool WantsPlayerBotArrowTopUp(LPCHARACTER ch)
+	{
+		return ch && ch->GetJob() == JOB_ASSASSIN && ch->GetSkillGroup() == 2 &&
+				IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID())) &&
+				CountPlayerBotArrows(ch) < PLAYERBOT_DROPPER_ARROW_STOCK;
+	}
+
 	long long GetPlayerBotNpcPurchasePrice(const TItemTable* proto, int count)
 	{
 		if (!proto || count <= 0)
@@ -2546,7 +2492,7 @@ namespace
 
 	bool BuyPlayerBotArrowsAtMerchant(LPCHARACTER ch)
 	{
-		if (!NeedsPlayerBotArrows(ch))
+		if (!NeedsPlayerBotArrows(ch) && !WantsPlayerBotArrowTopUp(ch))
 			return false;
 		TItemTable* proto = ITEM_MANAGER::instance().GetTable(PLAYERBOT_WOODEN_ARROW_VNUM);
 		if (!proto)
@@ -2555,7 +2501,12 @@ namespace
 		const long long smallPrice = GetPlayerBotNpcPurchasePrice(
 				proto, PLAYERBOT_ARROW_SMALL_BUNDLE);
 		if (ch->GetGold() < smallPrice)
+		{
+			// Running out is worth selling potions for; a top-up is not.
+			if (!NeedsPlayerBotArrows(ch))
+				return false;
 			RaisePlayerBotEmergencyGold(ch, smallPrice, "arrows");
+		}
 
 		int bundle = 0;
 		long long price = GetPlayerBotNpcPurchasePrice(
@@ -2592,6 +2543,10 @@ namespace
 		sys_log(0, "PLAYERBOT_GEAR: bought wooden arrows pid=%u name=%s vnum=%u count=%d price=%lld equipped=%d",
 				ch->GetPlayerID(), ch->GetName(), PLAYERBOT_WOODEN_ARROW_VNUM,
 				bundle, price, equipped ? 1 : 0);
+		// A dropper's archer fills the quiver on the same visit, a bundle at a
+		// time, for as long as the yang and the cells allow.
+		if (WantsPlayerBotArrowTopUp(ch))
+			BuyPlayerBotArrowsAtMerchant(ch);
 		return true;
 	}
 

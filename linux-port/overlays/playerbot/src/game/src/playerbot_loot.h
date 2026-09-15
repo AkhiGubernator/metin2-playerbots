@@ -168,6 +168,11 @@ namespace
 	{
 		if (!ch || !item || !item->GetProto())
 			return false;
+		// Never the goods a player crafts further, whatever the merchant pays:
+		// a bot of seventy-three walked past Grzyb Tue, Korzen Gango and a
+		// Zbroja Twarzy Ducha+3 on a floor (Tieru, 15 September).
+		if (IsPlayerBotPickupGoods(item))
+			return false;
 		const long long unit = (long long)GetPlayerBotNpcSellUnitPrice(item);
 		if (unit <= 0 || unit * (long long)item->GetCount() >= PLAYERBOT_LOOT_CHOOSY_MAX_VALUE)
 			return false;
@@ -203,6 +208,23 @@ namespace
 		}
 	}
 
+	// What a medal dropper bends down for. Its bag is its counter's stock
+	// already - fifty to seventy of ninety cells - and a Monkey Dungeon floor
+	// filled the rest in two to five minutes: once the dropper was let stay while
+	// a medal had a cell, 28 of 37 visits ended with no cell left and the average
+	// visit lasted under three minutes. It takes the medal, the goods a player
+	// crafts further, a skill book and whatever pours into a stack it already
+	// carries; the rest stays on the floor for whoever wants it.
+	bool IsPlayerBotMedalDropperLoot(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item || !item->GetProto())
+			return false;
+		if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM || item->GetType() == ITEM_SKILLBOOK ||
+				IsPlayerBotPickupGoods(item))
+			return true;
+		return PlayerBotLootMergesIntoStack(ch, item);
+	}
+
 	class CCollectPlayerBotLoot
 	{
 		public:
@@ -216,7 +238,9 @@ namespace
 				m_bagFull(CountPlayerBotFreeInventoryCells(owner) == 0),
 				m_skippedNoRoom(0),
 				m_choosy(IsPlayerBotChoosyLooter(owner)),
-				m_skippedCheap(0)
+				m_skippedCheap(0),
+				m_medalDropper(owner && GetPlayerBotPersonalityByPID(owner->GetPlayerID()) ==
+						BOT_PERSONALITY_MEDAL_DROPPER)
 			{
 			}
 
@@ -240,6 +264,8 @@ namespace
 						m_owner->GetX() - item->GetX(),
 						m_owner->GetY() - item->GetY());
 				if (distance > m_maxDistance)
+					return true;
+				if (m_medalDropper && !IsPlayerBotMedalDropperLoot(m_owner, item))
 					return true;
 				if (m_choosy && IsPlayerBotLootBeneathBot(m_owner, item))
 				{
@@ -285,6 +311,7 @@ namespace
 			int m_skippedNoRoom;
 			bool m_choosy;
 			int m_skippedCheap;
+			bool m_medalDropper;
 			std::vector<std::pair<int, LPITEM> > m_items;
 	};
 

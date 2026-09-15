@@ -1789,6 +1789,22 @@ namespace
 		return ahead;
 	}
 
+	// Units of this item's own vnum in the cells before it: a keep counts those
+	// first, whatever the stall splits the stacks into.
+	int CountPlayerBotVnumUnitsAhead(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item)
+			return 0;
+		int ahead = 0;
+		for (WORD cell = 0; cell < item->GetCell() && cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM held = ch->GetInventoryItem(cell);
+			if (held && held->GetCell() == cell && held->GetVnum() == item->GetVnum())
+				ahead += std::max<int>(1, held->GetCount());
+		}
+		return ahead;
+	}
+
 	int ScorePlayerBotShopStock(LPCHARACTER ch, LPITEM item, bool merchant, bool report)
 	{
 		if (!item)
@@ -1802,6 +1818,12 @@ namespace
 			if (policy != PLAYERBOT_ITEM_POLICY_NONE)
 				return -1;
 		}
+		// A retired item is nobody's goods (IsPlayerBotRetiredItem).
+		if (IsPlayerBotRetiredItem(item->GetVnum()))
+			return -1;
+		// Nor a Kamien Duchowy: every bot trains with its own.
+		if (item->GetVnum() == PLAYERBOT_GRAND_MASTER_STONE_VNUM)
+			return -1;
 		if (item->GetType() == ITEM_POLYMORPH || IsPlayerBotMetinDetector(item->GetVnum()))
 			return PLAYERBOT_SHOP_POLYMORPH_SCORE;
 		// Seven of the Forgetting Scrolls are marked "do sprzedazy u
@@ -1887,6 +1909,15 @@ namespace
 				return 450;
 			return hoard ? PLAYERBOT_SHOP_HOARD_SCORE : -1;
 		}
+		// What a player crafts or refines further: the herbalist's herbs, the
+		// Crystal Earrings, the Ghost Face Armour, the level-65 weapons under +4
+		// (from +4 they ranked above already), the Zen Bean and the Blood Pill.
+		// The first beans stay for a rank that ever falls below zero.
+		if (item->GetVnum() == PLAYERBOT_ZEN_BEAN_VNUM &&
+				CountPlayerBotVnumUnitsAhead(ch, item) < PLAYERBOT_ZEN_BEAN_KEEP)
+			return -1;
+		if (IsPlayerBotPickupGoods(item))
+			return PLAYERBOT_SHOP_PICKUP_GOODS_SCORE + item->GetRefineLevel();
 		// Hair dye: the one the bot is wearing is spent, the rest are stock.
 		// Ranked above ordinary spare gear because there is nowhere else in this
 		// world to buy one.

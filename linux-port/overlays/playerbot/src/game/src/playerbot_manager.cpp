@@ -86,6 +86,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_consumables.h"
 #include "playerbot_activities.h"
 #include "playerbot_mining.h"
+#include "playerbot_unique_slots.h"
 #include "playerbot_missions.h"
 #include "playerbot_skills.h"
 #include "playerbot_combat.h"
@@ -602,6 +603,9 @@ namespace
 			s_mapPlayerBotDuelLogged.erase(pid);
 			return false;
 		}
+		// What heals by itself is switched off for the fight: the potion ban
+		// alone left an auto potion running inside the engine.
+		SwitchOffPlayerBotAutoPotionsForDuel(ch, dwNow);
 		// The duel ends where the engine says it cannot be fought, not where
 		// PLAYERBOT_PVP_DUEL_ASSUMED runs out. A refusal is normal for the
 		// seconds before the other side agrees; past PLAYERBOT_PVP_REFUSED_GIVE_UP
@@ -652,19 +656,41 @@ namespace
 					distance, ch->GetHP(), ch->GetMaxHP());
 		}
 
+		// The aura goes up before the first blow. The duel claims the tick above
+		// the buff pass, so a warrior fought every duel bare and cut with
+		// Trzystronne Ciecie under no visible aura (Tieru, 15 September).
+		if (distance <= PLAYERBOT_DUEL_BUFF_RANGE && ManagePlayerBotCombatBuffs(ch, state, dwNow, true))
+			return true;
+
 		LPITEM weapon = ch->GetWear(WEAR_WEAPON);
 		const bool isBow = (weapon && weapon->GetType() == ITEM_WEAPON &&
 				weapon->GetSubType() == WEAPON_BOW);
-		const int combatRange = isBow ? 800 : 280;
+		// A blade swings from where it reaches. The hunt's two hundred and
+		// eighty is a monster's size, and two duellists that far apart were
+		// seen waving swords at the air between them. A caster casts from
+		// further off, and a warrior charges the gap between the two.
+		const int combatRange = isBow ? 800 : PLAYERBOT_DUEL_MELEE_RANGE;
+		const bool caster = ch->GetJob() == JOB_SHAMAN ||
+				(ch->GetJob() == JOB_SURA && ch->GetSkillGroup() == 2);
 		if (distance > combatRange)
 		{
+			if (!isBow && caster && distance <= PLAYERBOT_DUEL_CASTER_RANGE &&
+					dwNow >= state.dwNextSkillCastTime)
+			{
+				if (ch->IsStateMove())
+					ch->Stop();
+				if (CastPlayerBotDuelSkill(ch, foe, state, dwNow))
+					return true;
+			}
+			if (!isBow && TryPlayerBotDuelGapCloser(ch, foe, state, dwNow, distance))
+				return true;
 			MovePlayerBot(ch, foe->GetX(), foe->GetY(), dwNow, 4, false, false);
 			return true;
 		}
 		if (ch->IsStateMove())
 			ch->Stop();
 		ch->SetPosition(POS_FIGHTING);
-		if (!ExecutePlayerBotAttackSkill(ch, foe, state, dwNow))
+		if (!CastPlayerBotDuelSkill(ch, foe, state, dwNow))
 			ExecutePlayerBotBasicAttack(ch, foe, state, dwNow);
 		return true;
 	}
@@ -1521,108 +1547,12 @@ namespace
 				bestSocket, after, bestScore);
 	}
 
-	bool SharePlayerBotUsefulItemWithParty(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
-	{
-		if (!ch || !ch->IsItemLoaded() || dwNow < state.dwNextPartyShareTime)
-			return false;
-		state.dwNextPartyShareTime = dwNow + PLAYERBOT_PARTY_SHARE_INTERVAL + number(0, 5000);
-
-		// Reserve equipment sharing is deliberately not restricted to a party.
-		// Solo bots that meet in the field may help a lower-level bot of the same
-		// class/build, while all other useful-item sharing remains party-only.
-		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
-		{
-			LPITEM item = ch->GetInventoryItem(cell);
-			if (!item || item->GetRefineLevel() < PLAYERBOT_RESERVE_GEAR_MIN_REFINE ||
-					!IsPlayerBotEquipmentCandidate(ch, item))
-				continue;
-
-			const int wearCell = item->FindEquipCell(ch);
-			LPITEM worn = wearCell >= 0 ? ch->GetWear(wearCell) : NULL;
-			if (!worn || GetPlayerBotEquipmentScore(item, ch) > GetPlayerBotEquipmentScore(worn, ch))
-				continue; // This is the giver's pending upgrade, not a spare.
-
-			if (SharePlayerBotOldGearNearby(ch, item))
-				return true;
-		}
-
-		if (!ch->GetParty())
-			return false;
-
-		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
-		{
-			LPITEM item = ch->GetInventoryItem(cell);
-			if (!item || item->IsEquipped() || item->isLocked())
-				continue;
-
-			const DWORD skillVnum = GetPlayerBotSkillBookSkillVnum(item);
-			const bool isShareableBook = skillVnum != 0 && !IsPlayerBotOwnSkill(ch, skillVnum);
-			const bool isShareableMaterial =
-					(item->GetType() == ITEM_MATERIAL ||
-					 (item->GetVnum() >= 30000 && item->GetVnum() <= 30200)) &&
-					!PlayerBotNeedsRefineMaterial(ch, item->GetVnum());
-			if (!isShareableBook && !isShareableMaterial)
-				continue;
-
-			struct FUsefulItemReceiver
-			{
-				LPCHARACTER m_giver;
-				LPITEM m_item;
-				DWORD m_skillVnum;
-				bool m_bMaterial;
-				LPCHARACTER m_receiver;
-
-				FUsefulItemReceiver(LPCHARACTER giver, LPITEM item, DWORD skillVnum, bool material) :
-					m_giver(giver), m_item(item), m_skillVnum(skillVnum),
-					m_bMaterial(material), m_receiver(NULL) {}
-
-				void operator () (LPCHARACTER member)
-				{
-					if (m_receiver || !member || member == m_giver || member->IsDead() ||
-							!member->GetDesc() || !member->GetDesc()->IsBot() ||
-							DISTANCE_APPROX(m_giver->GetX() - member->GetX(), m_giver->GetY() - member->GetY()) > 1800 ||
-							member->GetEmptyInventory(m_item->GetSize()) < 0)
-						return;
-
-					if ((!m_bMaterial && IsPlayerBotOwnSkill(member, m_skillVnum)) ||
-							(m_bMaterial && PlayerBotNeedsRefineMaterial(member, m_item->GetVnum())))
-						m_receiver = member;
-				}
-			};
-
-			FUsefulItemReceiver finder(ch, item, skillVnum, isShareableMaterial);
-			ch->GetParty()->ForEachOnMapMember(finder, ch->GetMapIndex());
-			if (!finder.m_receiver)
-				continue;
-
-			const int receiverCell = finder.m_receiver->GetEmptyInventory(item->GetSize());
-			const WORD oldCell = item->GetCell();
-			const DWORD itemVnum = item->GetVnum();
-			item->RemoveFromCharacter();
-			if (receiverCell >= 0 && item->AddToCharacter(finder.m_receiver,
-					TItemPos(INVENTORY, receiverCell)))
-			{
-				sys_log(0, "PLAYERBOT_AI: shared useful item pid=%u name=%s -> target_pid=%u target_name=%s vnum=%u kind=%s",
-						ch->GetPlayerID(), ch->GetName(), finder.m_receiver->GetPlayerID(),
-						finder.m_receiver->GetName(), itemVnum,
-						isShareableBook ? "skill_book" : "refine_material");
-				return true;
-			}
-
-			item->AddToCharacter(ch, TItemPos(INVENTORY, oldCell));
-		}
-		return false;
-	}
-
 	void ManagePlayerBotSkillBooks(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !ch->IsItemLoaded() || ch->GetSkillGroup() == 0 ||
 				dwNow < state.dwNextSkillBookTime)
 			return;
 		state.dwNextSkillBookTime = dwNow + PLAYERBOT_SKILL_BOOK_CHECK_INTERVAL;
-
-		if (SharePlayerBotUsefulItemWithParty(ch, state, dwNow))
-			return;
 
 		const TJobSkillBuild build = GetPlayerBotSkillBuild(ch->GetJob(), ch->GetSkillGroup(), ch->GetPlayerID());
 		int bestCell = -1;
@@ -1710,6 +1640,170 @@ namespace
 					ch->GetSkillLevel(bestSkillVnum),
 					ch->GetSkillLevel(bestSkillVnum) > oldLevel ? 1 : 0);
 		}
+	}
+
+	// Kamien Duchowy (50513) is the Grand Master's book: one read trains a skill
+	// at G1..G10 on towards Perfect Master. The engine's half is
+	// LearnGrandMasterSkill (a thirty percent roll, four under the first reads);
+	// the rest is training_grandmaster_skill.quest, a dialog a bot cannot
+	// answer, so this pass does what the quest does - twelve hours between
+	// reads (waved away like the books' while the panel's BOOKS switch is on),
+	// the stone spent either way, and the rank the training costs: 1000 plus
+	// 500 a grade over G1 on a success, a third to a half of that on a failure,
+	// twice as much for a rank already below zero. A bot trains only while the
+	// full price leaves its rank at zero or above, so it never walks about with
+	// a negative rank - the rank that lets a player hunt it for its gear
+	// (ItemDropPenalty). The stones used to go to the merchant for 194 yang,
+	// because nothing kept an ITEM_QUEST out of the junk rule ("Boty sprzedaja
+	// kamienie zamiast z nich korzystac", mateuszp211, 15 September).
+	void ManagePlayerBotGrandMasterTraining(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotGrandMasterNext;
+		if (!ch || !ch->IsItemLoaded() || ch->IsDead() || ch->GetSkillGroup() == 0 ||
+				ch->GetExchange() || ch->GetMyShop())
+			return;
+		DWORD& next = s_mapPlayerBotGrandMasterNext[ch->GetPlayerID()];
+		if (dwNow < next)
+			return;
+		next = dwNow + PLAYERBOT_GRAND_MASTER_CHECK_INTERVAL;
+
+		LPITEM stone = NULL;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS && !stone; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item && item->GetVnum() == PLAYERBOT_GRAND_MASTER_STONE_VNUM && !item->isLocked())
+				stone = item;
+		}
+		if (!stone)
+			return;
+
+		const char* nextTimeFlag = "training_grandmaster_skill.next_time";
+		const int now = get_global_time();
+		if (now < ch->GetQuestFlag(nextTimeFlag) && !IsPlayerBotFastBooksEnabled())
+			return;
+
+		// The skill the books would pick: the build's primary first, then the
+		// highest grade.
+		const TJobSkillBuild build = GetPlayerBotSkillBuild(ch->GetJob(), ch->GetSkillGroup(), ch->GetPlayerID());
+		DWORD skillVnum = 0;
+		int bestPriority = INT_MIN;
+		for (BYTE i = 0; i < build.bSkillCount; ++i)
+		{
+			const DWORD vnum = build.dwSkills[i];
+			if (vnum == 0 || ch->GetSkillMasterType(vnum) != SKILL_GRAND_MASTER)
+				continue;
+			const int level = ch->GetSkillLevel(vnum);
+			if (level < 30 || level >= 40)
+				continue;
+			const int priority = (vnum == build.dwPrimaryMaxSkill ? 10000 : 0) + level;
+			if (priority > bestPriority)
+			{
+				bestPriority = priority;
+				skillVnum = vnum;
+			}
+		}
+		if (skillVnum == 0)
+			return;
+
+		const int level = ch->GetSkillLevel(skillVnum);
+		const int rank = ch->GetRealAlignment();
+		const int cost = (1000 + 500 * (level - 30)) * (rank < 0 ? 2 : 1);
+		if (rank - cost < 0)
+		{
+			PlayerBotLogThrottled("grand_master_rank", dwNow,
+					"PLAYERBOT_AI: grand master training waits for rank pid=%u name=%s skill=%u level=%d rank=%d cost=%d",
+					ch->GetPlayerID(), ch->GetName(), skillVnum, level, rank, cost);
+			return;
+		}
+
+		// item.remove(1): the quest spends the stone before the roll.
+		if (stone->GetCount() > 1)
+			stone->SetCount(stone->GetCount() - 1);
+		else
+			ITEM_MANAGER::instance().RemoveItem(stone, "PLAYERBOT_GRAND_MASTER_READ");
+		ch->SetQuestFlag(nextTimeFlag, now + PLAYERBOT_GRAND_MASTER_TRAIN_SECONDS);
+		const bool learned = ch->LearnGrandMasterSkill(skillVnum);
+		ch->UpdateAlignment(-(learned ? cost : number(cost / 3, cost / 2)));
+		SetPlayerBotAction(state, BOT_ACTION_READ_BOOK, dwNow);
+		sys_log(0, "PLAYERBOT_AI: grand master training %s pid=%u name=%s skill=%u level=%d->%d rank=%d->%d",
+				learned ? "SUCCESS" : "FAILED", ch->GetPlayerID(), ch->GetName(), skillVnum,
+				level, (int)ch->GetSkillLevel(skillVnum), rank, ch->GetRealAlignment());
+	}
+
+	// A rank below zero is what lets another player hunt a character for its
+	// gear, and Fasolka Zen lifts it by up to its value0 - the engine takes a
+	// bean only then. The training above never takes a bot under zero, so this
+	// is the net for whatever else might ("boty powinny unikac biegania z
+	// negatywna ranga", Tieru, 15 September).
+	void ManagePlayerBotZenBeans(LPCHARACTER ch, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotZenBeanNext;
+		if (!ch || !ch->IsItemLoaded() || ch->IsDead() || ch->GetAlignment() >= 0)
+			return;
+		DWORD& next = s_mapPlayerBotZenBeanNext[ch->GetPlayerID()];
+		if (dwNow < next)
+			return;
+		next = dwNow + PLAYERBOT_ZEN_BEAN_CHECK_INTERVAL;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->GetVnum() != PLAYERBOT_ZEN_BEAN_VNUM || item->isLocked())
+				continue;
+			const int before = ch->GetRealAlignment();
+			ch->UseItem(TItemPos(INVENTORY, cell));
+			sys_log(0, "PLAYERBOT_AI: zen bean pid=%u name=%s rank=%d->%d",
+					ch->GetPlayerID(), ch->GetName(), before, ch->GetRealAlignment());
+			return;
+		}
+	}
+
+	// A rank below zero keeps a bot inside its village's safe ring until it is
+	// back. A character with a negative rank drops what it carries when a player
+	// kills it, and outside the ring anybody may ("boty powinny unikac biegania
+	// z negatywna ranga poza kolem", Tieru, 15 September, and a yes to holding
+	// them there with only Fasolka Zen to lift the rank in town). Off its village
+	// the bot is carried home to the market pitch, on a village map it walks
+	// there, and inside the ring it stands: the shopping pass buys a bean off a
+	// counter when one is there (WantsPlayerBotStallItem) and
+	// ManagePlayerBotZenBeans eats it. The rest mark it renews is what keeps the
+	// inactivity watchdog off a bot standing still on purpose. The Kamien
+	// Duchowy never takes a bot under zero, so this is the net for whatever
+	// else does.
+	bool KeepPlayerBotNegativeRankInTown(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || ch->IsDead() || !ch->IsItemLoaded() || ch->GetRealAlignment() >= 0)
+			return false;
+		const long map = ch->GetMapIndex();
+		if (IsPlayerBotSafeZone(map, ch->GetX(), ch->GetY()))
+		{
+			state.dwTownLingerUntil = dwNow + PLAYERBOT_NEGATIVE_RANK_HOLD_MS;
+			if (ch->IsStateMove())
+				ch->Stop();
+			ClearPlayerBotRoute(state, true);
+			SetPlayerBotAction(state, BOT_ACTION_TOWN_REST, dwNow);
+			PlayerBotLogThrottled("negative_rank_hold", dwNow,
+					"PLAYERBOT_AI: negative rank, holding in town pid=%u name=%s map=%ld rank=%d beans=%d",
+					ch->GetPlayerID(), ch->GetName(), map, ch->GetRealAlignment(),
+					(int)ch->CountSpecifyItem(PLAYERBOT_ZEN_BEAN_VNUM));
+			return true;
+		}
+		playerbot_empire_rules::TPoint pitch;
+		if (IsPlayerBotVillageMap(map) && playerbot_empire_rules::GetTownPitch(map, pitch))
+		{
+			SetPlayerBotAction(state, BOT_ACTION_TRAVEL, dwNow);
+			// At the pitch is as good as inside the ring, should a pitch ever
+			// stand on a cell the ring's attribute misses.
+			if (MovePlayerBotTownLeg(ch, state, dwNow, pitch.x, pitch.y,
+					PLAYERBOT_NEGATIVE_RANK_PITCH_ARRIVAL))
+				state.dwTownLingerUntil = dwNow + PLAYERBOT_NEGATIVE_RANK_HOLD_MS;
+			return true;
+		}
+		long destMap = 0, destX = 0, destY = 0;
+		if (GetPlayerBotVillageReturn(ch, playerbot_empire_rules::MAP_ROLE_M1, destMap, destX, destY) &&
+				TransitionPlayerBotMap(ch, state, destMap, destX, destY, dwNow, "negative_rank_home"))
+			sys_log(0, "PLAYERBOT_AI: negative rank, carried home pid=%u name=%s from=%ld rank=%d",
+					ch->GetPlayerID(), ch->GetName(), map, ch->GetRealAlignment());
+		return true;
 	}
 
 	// Once a minute, the reasons the level-40 bots in Bokjung are there.
@@ -3004,7 +3098,12 @@ void CPlayerBotManager::Update()
 
 		ManagePlayerBotSkillBooks(ch, state, dwNow);
 		ManagePlayerBotSoulStones(ch, state, dwNow);
+		ManagePlayerBotGrandMasterTraining(ch, state, dwNow);
+		ManagePlayerBotZenBeans(ch, dwNow);
 		ManagePlayerBotThirdHand(ch, state, dwNow);
+		// Rings and gloves on the clock while the bot hunts and off in town,
+		// and the uniques a bot never wears off for good.
+		ManagePlayerBotUniqueSlots(ch, state, dwNow);
 		// The gear pass, early. It used to sit at the bottom of the tick, past
 		// the stall, the loot, the horse, the fishing, the travel, the town
 		// visit and the wander, each of which claims the tick - so a bot that
@@ -3136,6 +3235,12 @@ void CPlayerBotManager::Update()
 				 NeedsPlayerBotProgressionShield(ch) ||
 				 NeedsPlayerBotProgressionHelmet(ch) ||
 				 NeedsPlayerBotProgressionBoots(ch));
+
+		// A negative rank keeps the bot inside its village's safe ring, ahead of
+		// the loot, the errands, the travel and the fight below.
+		if (!bHumanLedParty && !state.bMultiPullActive &&
+				KeepPlayerBotNegativeRankInTown(ch, state, dwNow))
+			continue;
 
 		// Exactly one loot decision per full AI pass. HandleLoot performs a
 		// non-blocking, throttled Z-style pickup in combat and returns false, while

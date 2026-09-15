@@ -120,6 +120,12 @@ namespace
 		if (!ch || !offer)
 			return false;
 
+		// The bean for a bot standing out a negative rank in town: the one thing
+		// that lifts it there (KeepPlayerBotNegativeRankInTown), one at a time.
+		if (offer->GetVnum() == PLAYERBOT_ZEN_BEAN_VNUM)
+			return ch->GetRealAlignment() < 0 &&
+					ch->CountSpecifyItem(PLAYERBOT_ZEN_BEAN_VNUM) == 0;
+
 		// A material it is short of right now. This is the whole reason a bot
 		// walks the market: the alternative is farming the same material for an
 		// hour while a neighbour has spares on a counter three metres away.
@@ -226,6 +232,9 @@ namespace
 	{
 		if (!ch)
 			return false;
+		// A bean for a negative rank (WantsPlayerBotStallItem).
+		if (ch->GetRealAlignment() < 0 && ch->CountSpecifyItem(PLAYERBOT_ZEN_BEAN_VNUM) == 0)
+			return true;
 		// A refine material for something it is carrying below its target. This
 		// is the common case by a long way - half the counters in this world are
 		// materials, because half of what a bot needs is.
@@ -613,6 +622,18 @@ namespace
 	{
 		if (!ch || !ch->IsItemLoaded() || ch->IsDead())
 			return false;
+		// A dropper farms one thing for the counters and buys nothing off them.
+		// The medal droppers went shopping all the same: 350 trips for 116 of
+		// them in the first twenty-five minutes after a restart, 75 of them a
+		// walk from the second village back to the first, while three of them
+		// reached the Monkey Dungeon ("lataja po m2", sizowski). A dropper
+		// standing out a negative rank in town may shop, for the bean that lifts
+		// it (KeepPlayerBotNegativeRankInTown).
+		if (IsPlayerBotDropper(state.bPersonality) && ch->GetRealAlignment() >= 0)
+		{
+			EndPlayerBotMarketTrip(ch, state, "dropper");
+			return false;
+		}
 #if defined(PLAYERBOT_ENGINE_MT2009) && defined(ENABLE_IKASHOP_RENEWAL)
 		if (ManagePlayerBotOfflineShopping(ch, state, dwNow)) return true;
 		if (playerbot_offline::requests.count(ch->GetPlayerID())) return false;
@@ -682,10 +703,13 @@ namespace
 		// frontier, or is held back from it by an errand, shops in reach and
 		// goes - the same line the stall's walk to Joan draws.
 		// Not a bot in a player's party either: the walk to the Joan gate is a
-		// map change the follow pass undoes a second later.
+		// map change the follow pass undoes a second later. Nor a bot on its way
+		// to the Monkey Dungeon, whose gate stands in this village: the walk to
+		// Joan took it back out through the gate it had just come in by.
 		if (!haveStallInReach && stallsInJoan && IsPlayerBotM2Map(ch->GetMapIndex()) &&
 				dwNow >= state.dwMarketM2AllowedUntil &&
 				state.lDepartureMap == 0 && GetPlayerBotFrontierMapForLevel(ch) == 0 &&
+				state.bLongTermGoal != BOT_GOAL_HORSE &&
 				!(ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty())))
 		{
 			state.bMarketTrip = true;

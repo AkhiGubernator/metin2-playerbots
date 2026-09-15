@@ -197,7 +197,7 @@ namespace
 			// than to a player: nothing here retreats from a fight it is winning.
 			case APPLY_STUN_PCT:                return value * 10;
 			case APPLY_SLOW_PCT:                return value * 6;
-			case APPLY_POISON_PCT:              return value * 8;
+			case APPLY_POISON_PCT:              return value * (ch && (int)ch->GetLevel() >= PLAYERBOT_POISON_BOSS_LEVEL ? 16 : 8);
 
 			// The economy lines. A bot's drops are its gear, its refines, its
 			// stall and its fares, so twenty percent more of them is a real

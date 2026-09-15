@@ -844,6 +844,20 @@ namespace
 
 		const DWORD vnum = item->GetVnum();
 
+		// Maska Sabaha left the world with the Hwang curse (IsPlayerBotRetiredItem):
+		// the merchant takes the ones still in bags.
+		if (IsPlayerBotRetiredItem(vnum))
+			return true;
+		// The goods a player crafts further (IsPlayerBotPickupGoods) wait for a
+		// counter, and reach the merchant only from a bag under pressure that
+		// has no counter to sell from - the rule a polymorph marble keeps.
+		if (IsPlayerBotPickupGoods(item))
+			return IsPlayerBotBagUnderPressure(ch) && !PlayerBotCanOpenShop(ch);
+		// Kamien Duchowy is its owner's training (ManagePlayerBotGrandMasterTraining),
+		// never the merchant's: he paid 194 yang for one.
+		if (vnum == PLAYERBOT_GRAND_MASTER_STONE_VNUM)
+			return false;
+
 		// A specimen of a Biologist row already handed in is scrap, not goods:
 		// "niech ich nie wystawiaja, sprzedaja u handlarza albo wyrzucaja".
 		// Before the anti-sell test on purpose - the quest items carry it, and
@@ -1716,7 +1730,9 @@ namespace
 			// every step and never to the plain anvil - past the operator's floor
 			// too, or under SCROLL_FROM it could never be refined at all. A
 			// level-30 weapon under that line is ground towards +9 at the anvil,
-			// under a scroll only where the step is a real risk.
+			// under a scroll only where the step is a real risk - and under
+			// PLAYERBOT_LEVEL30_SCROLL_LOW_AVERAGE not before the step to +5,
+			// however low the family's odds run below it.
 			const bool scrollOnly = IsPlayerBotScrollOnlyWeapon(item);
 			const bool level30Grind = !scrollOnly && IsPlayerBotSpecialLevel30Weapon(item);
 			// The weapon in the hand - or the one going back into it, since the
@@ -1729,8 +1745,15 @@ namespace
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
 			else if (level30Grind)
 			{
-				if (scrollStepAllowed && stepProb <= PLAYERBOT_WORN_SCROLL_MAX_PROB)
+				const long average = SumPlayerBotItemLines(item, APPLY_NORMAL_HIT_DAMAGE_BONUS);
+				const bool riskyStep = scrollStepAllowed && stepProb <= PLAYERBOT_WORN_SCROLL_MAX_PROB;
+				if (riskyStep && (average >= PLAYERBOT_LEVEL30_SCROLL_LOW_AVERAGE ||
+						plusLevel >= PLAYERBOT_LEVEL30_LOW_AVERAGE_SCROLL_FROM_PLUS))
 					scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
+				else if (riskyStep && FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb) >= 0)
+					PlayerBotLogThrottled("refine_l30_low_average", dwNow,
+							"PLAYERBOT_AI: level-30 weapon to the anvil, scroll kept for +5 pid=%u name=%s vnum=%u plus=%u avg=%ld prob=%d",
+							ch->GetPlayerID(), ch->GetName(), oldVnum, (unsigned int)plusLevel, average, stepProb);
 			}
 			else if (scrollStepAllowed &&
 					(plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item) ||

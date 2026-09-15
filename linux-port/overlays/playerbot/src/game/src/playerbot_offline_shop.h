@@ -20,7 +20,19 @@ namespace {
             state.bFishingSession ||
             // A bot in a player's party does not warp off to its counter every
             // ten minutes; the stand keeps selling until the party ends.
-            (ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty()));
+            (ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty())) ||
+            // Nor out of a Monkey Dungeon: a visit is half an hour in rooms
+            // joined only by their doors, and a keeper warped out of it has the
+            // whole way back in to walk. The service waits for the way out.
+            IsPlayerBotMonkeyMap(ch->GetMapIndex());
+    }
+    // The wait before the next service visit: the long one for a dropper
+    // (PLAYERBOT_DROPPER_SHOP_SERVICE_MIN_MS), ten to fifteen minutes for
+    // everybody else.
+    DWORD BotOfflineServiceGap(const TPlayerBotAIState& state) {
+        if (IsPlayerBotDropper(state.bPersonality))
+            return (DWORD)number((int)PLAYERBOT_DROPPER_SHOP_SERVICE_MIN_MS, (int)PLAYERBOT_DROPPER_SHOP_SERVICE_MAX_MS);
+        return (DWORD)number(600000, 900000);
     }
     void BotOfflineFinishVisit(LPCHARACTER ch, TPlayerBotAIState& state, DWORD now) {
         auto& o = state.offlineShop;
@@ -31,7 +43,7 @@ namespace {
         }
         o.visiting = false;
         o.visitUntil = 0;
-        o.nextService = now + number(600000, 900000);
+        o.nextService = now + BotOfflineServiceGap(state);
     }
     bool BotOfflinePoll(LPCHARACTER ch, DWORD now) {
         auto it = playerbot_offline::requests.find(ch->GetPlayerID());
@@ -371,8 +383,12 @@ namespace {
         // had just been spawned on, and the same wave again ten to fifteen
         // minutes later because the whole population's clocks started together.
         // The thirty seconds stay: the shop list has to arrive from the DB first.
+        // A dropper's first visit is spread over its own long round: the ten
+        // minutes pulled the medal droppers out of the second village 69 times
+        // in the first fourteen minutes after a restart.
         if (o.nextService == 0)
-            o.nextService = now + 30000 + PlayerBotNavHash(ch->GetPlayerID() ^ 0x4f534856U) % 600000;
+            o.nextService = now + 30000 + PlayerBotNavHash(ch->GetPlayerID() ^ 0x4f534856U) %
+                (IsPlayerBotDropper(state.bPersonality) ? PLAYERBOT_DROPPER_SHOP_SERVICE_MAX_MS : (DWORD)600000);
         if (BotOfflineBusy(ch, state) || !db_clientdesc || !db_clientdesc->IsPhase(PHASE_DBCLIENT)) {
             if (o.visiting) BotOfflineFinishVisit(ch, state, now);
             return false;
@@ -406,7 +422,7 @@ namespace {
                 }
                 manager.RecvShopSafeboxCloseClientPacket(ch);
             }
-            o.nextService = now + number(600000, 900000);
+            o.nextService = now + BotOfflineServiceGap(state);
             return false;
         }
         const auto spawn = shop->GetSpawn();

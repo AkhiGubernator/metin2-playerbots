@@ -256,6 +256,10 @@ namespace
 		static std::map<DWORD, DWORD> s_mapPlayerBotAutoPotionNext;
 		if (!ch || !ch->IsItemLoaded() || ch->IsDead() || ch->GetShop() || ch->GetExchange())
 			return false;
+		// Not in a duel: SwitchOffPlayerBotAutoPotionsForDuel takes them off for
+		// it, and this pass puts them back on after it.
+		if (playerbot_pvp::IsInDuel(ch->GetPlayerID(), dwNow))
+			return false;
 		DWORD& next = s_mapPlayerBotAutoPotionNext[ch->GetPlayerID()];
 		if (dwNow < next)
 			return false;
@@ -278,6 +282,45 @@ namespace
 			}
 		}
 		return used;
+	}
+
+	// A duel is fought on the health the bot walks into it with. The potion pass
+	// drinks nothing during one, but an auto potion switched on before the
+	// challenge heals by itself inside the engine (AutoRecoveryItemProcess), and
+	// a bot topping itself up mid-duel was what "boty w PvP uzywaja potki
+	// czerwonej, moze maja wlaczona autopote?" was (Tieru, 15 September). The
+	// engine's own switch is a second use of the item that runs the affect,
+	// found by the item id the affect carries; ManagePlayerBotAutoPotions puts it
+	// back on within a minute of the duel's end. One use a call: the engine
+	// admits one auto-potion use a second.
+	void SwitchOffPlayerBotAutoPotionsForDuel(LPCHARACTER ch, DWORD dwNow)
+	{
+		static std::map<DWORD, DWORD> s_mapPlayerBotDuelPotionNext;
+		if (!ch || !ch->IsItemLoaded() || ch->IsDead())
+			return;
+		DWORD& next = s_mapPlayerBotDuelPotionNext[ch->GetPlayerID()];
+		if (dwNow < next)
+			return;
+		next = dwNow + 1100;
+		const DWORD affects[2] = { AFFECT_AUTO_HP_RECOVERY, AFFECT_AUTO_SP_RECOVERY };
+		for (int i = 0; i < 2; ++i)
+		{
+			const CAffect* running = ch->FindAffect(affects[i]);
+			if (!running)
+				continue;
+			for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+			{
+				LPITEM item = ch->GetInventoryItem(cell);
+				if (!item || item->GetID() != running->dwFlag)
+					continue;
+				const DWORD vnum = item->GetVnum();
+				ch->UseItem(TItemPos(INVENTORY, cell));
+				sys_log(0, "PLAYERBOT_PVP: auto potion off for the duel pid=%u name=%s vnum=%u affect=%u off=%d",
+						ch->GetPlayerID(), ch->GetName(), vnum, (unsigned int)affects[i],
+						ch->FindAffect(affects[i]) ? 0 : 1);
+				return;
+			}
+		}
 	}
 
 	bool UsePlayerBotBoosters(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)

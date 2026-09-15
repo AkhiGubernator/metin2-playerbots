@@ -249,7 +249,9 @@ namespace
 
 	bool IsPlayerBotAngler(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
-		if (!CanPlayerBotUseFishingRod(ch))
+		// A dropper is no angler: a session is a stay on a bank in the first
+		// village, away from the one thing it farms.
+		if (IsPlayerBotDropper(state.bPersonality) || !CanPlayerBotUseFishingRod(ch))
 			return false;
 		const DWORD roll = PlayerBotNavHash(ch->GetPlayerID() ^ 0x46495348U) % 100U;
 		// Thirty collectors in a hundred and eight of everyone else, stretched or

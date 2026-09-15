@@ -1170,7 +1170,11 @@ namespace
 
 	bool StartPlayerBotMaterialHunt(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
-		if (!ch)
+		// A dropper is not sent across the map after a refine material: the
+		// medal droppers took 124 of these errands in their first twenty-five
+		// minutes after a restart, the first two after a tiger thirty-three and
+		// a bear fourteen thousand units away.
+		if (!ch || IsPlayerBotDropper(state.bPersonality))
 			return false;
 		if (state.dwNextMaterialScanTime == 0)
 		{

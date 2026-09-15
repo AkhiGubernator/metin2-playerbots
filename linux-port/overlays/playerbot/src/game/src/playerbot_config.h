@@ -758,9 +758,12 @@ namespace
 	// sklepu wystawionego, to niech nie ogladaja straganow, bo ich nie ma".
 	// Asked when a rest is rolled and on every tick of one, so a slider moved
 	// to zero ends the rests already running rather than waiting them out.
+	// A dropper does not: its time is its table's, and ten medal droppers were
+	// found resting on Yongan's square between two dungeon trips.
 	bool MayPlayerBotRestInTown(LPCHARACTER ch)
 	{
 		return ch && IsPlayerBotM1Map(ch->GetMapIndex()) &&
+				!IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID())) &&
 				ch->GetLevel() >= PLAYERBOT_TOWN_REST_MIN_LEVEL &&
 				GetPlayerBotRestPercent() > 0 &&
 				GetPlayerBotStallsOnMap(ch->GetMapIndex()) > 0;

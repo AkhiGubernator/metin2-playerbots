@@ -340,29 +340,43 @@ namespace
 	// in this engine fades with the level gap, so a dropper that goes on
 	// levelling farms its way out of its own living. The lock is the engine's
 	// AFFECT_EXP_BLOCK, which PointChange checks before it adds any experience,
-	// so nothing else has to know about it - and it is permanent, because the
-	// point is a bot that does the same thing for good.
+	// so nothing else has to know about it. It is meant for good, and it is
+	// lifted only from a bot that should not carry it any more - one of the
+	// operator's medal droppers once that cohort is switched off or given a
+	// higher level (CPlayerBotManager::SpawnMedalDropperCohort), since nothing
+	// else would ever take it off.
 	void ManagePlayerBotExpLock(LPCHARACTER ch, const TPlayerBotAIState& state)
 	{
 		if (!ch)
 			return;
-		const BYTE lockLevel = GetPlayerBotExpLockLevel(state.bPersonality);
-		if (lockLevel == 0 || ch->GetLevel() < lockLevel)
-			return;
+		BYTE lockLevel = GetPlayerBotExpLockLevel(state.bPersonality);
+		// The operator's medal droppers stop where the operator said.
+		if (CPlayerBotManager::instance().IsMedalDropperCohortPID(ch->GetPlayerID()))
+			lockLevel = CPlayerBotManager::instance().GetMedalDropperCohortLevel();
+		const bool shouldLock = lockLevel != 0 && ch->GetLevel() >= lockLevel;
 #if defined(PLAYERBOT_ENGINE_MT2009)
-		if (ch->FindAffect(AFFECT_EXP_BLOCK))
+		const bool locked = ch->FindAffect(AFFECT_EXP_BLOCK) != NULL;
+		if (locked == shouldLock)
 			return;
+		if (!shouldLock)
+		{
+			ch->RemoveAffect(AFFECT_EXP_BLOCK);
+			sys_log(0, "PLAYERBOT_AI: exp lock lifted pid=%u name=%s level=%u lock=%u personality=%u",
+					ch->GetPlayerID(), ch->GetName(), (unsigned)ch->GetLevel(),
+					(unsigned)lockLevel, (unsigned)state.bPersonality);
+			return;
+		}
 		ch->AddAffect(AFFECT_EXP_BLOCK, POINT_NONE, 0, 0, INFINITE_AFFECT_DURATION, 0, true, true);
-		sys_log(0, "PLAYERBOT_AI: exp locked for a dropper pid=%u name=%s level=%u personality=%u",
+		sys_log(0, "PLAYERBOT_AI: exp locked for a dropper pid=%u name=%s level=%u lock=%u personality=%u",
 				ch->GetPlayerID(), ch->GetName(), (unsigned)ch->GetLevel(),
-				(unsigned)state.bPersonality);
+				(unsigned)lockLevel, (unsigned)state.bPersonality);
 #else
 		// r40250 has no AFFECT_EXP_BLOCK at all - PointChange there knows no
 		// such affect, so there is nothing to ask it for and a dropper on that
 		// line goes on levelling as it always did. Freezing it would need an
 		// engine patch of its own, and this feature was asked for on the 2.x
 		// world; the shared overlay simply does nothing here.
-		(void)lockLevel;
+		(void)shouldLock;
 #endif
 	}
 
@@ -421,6 +435,29 @@ namespace
 		}
 	}
 
+	// What a bot holds that is not for fighting, or NULL when it is ready for a
+	// duel. A duel is agreed three seconds after the challenge and fought at the
+	// top of the tick, above the fishing session, so a bot on the bank took one
+	// with its rod out and fought it that way ("bot wzial pvp z innym botem
+	// bedac wyposazonym w wedke", Tieru, 15 September). The same answer is asked
+	// of a bot that would challenge, of the bot it picks, and of both sides of a
+	// duel already under way.
+	const char* GetPlayerBotDuelUnreadiness(LPCHARACTER ch, DWORD dwNow)
+	{
+		if (!ch)
+			return "gone";
+		TPlayerBotAIStateMap::const_iterator it = s_mapPlayerBotAIStates.find(ch->GetPlayerID());
+		const bool fishing = it != s_mapPlayerBotAIStates.end() && it->second.bFishingSession;
+		LPITEM held = ch->GetWear(WEAR_WEAPON);
+		if (fishing || (held && held->GetType() == ITEM_ROD))
+			return "fishing";
+		if (IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow) || (held && held->GetType() == ITEM_PICK))
+			return "mining";
+		if (!held || held->GetType() != ITEM_WEAPON)
+			return "no_weapon";
+		return NULL;
+	}
+
 	// Agreeing to a duel.
 	//
 	// CPVPManager::Insert is a two-sided agreement, so answering a challenge is
@@ -460,6 +497,9 @@ namespace
 		else if (IsPlayerBotSafeZone(ch->GetMapIndex(), ch->GetX(), ch->GetY()) ||
 				IsPlayerBotSafeZone(challenger->GetMapIndex(), challenger->GetX(), challenger->GetY()))
 			refusal = "safe_zone";
+		// Nor one fought with a rod or a pickaxe (GetPlayerBotDuelUnreadiness).
+		else
+			refusal = GetPlayerBotDuelUnreadiness(ch, dwNow);
 		if (refusal)
 		{
 			sys_log(0, "PLAYERBOT_PVP: declined a duel pid=%u name=%s challenger_pid=%u challenger=%s reason=%s level=%u challenger_level=%u",
@@ -468,11 +508,17 @@ namespace
 			// A person is told why; a bot has nobody to read it.
 			if (challenger->GetDesc() && !challenger->GetDesc()->IsBot())
 			{
-				if (refusal[0] == 'l')
+				if (!strcmp(refusal, "level"))
 					challenger->ChatPacket(CHAT_TYPE_INFO, "%s nie przyjmie pojedynku ponizej %d poziomu.",
 							ch->GetName(), (int)PK_PROTECT_LEVEL);
-				else
+				else if (!strcmp(refusal, "safe_zone"))
 					challenger->ChatPacket(CHAT_TYPE_INFO, "%s nie walczy w strefie bezpiecznej.", ch->GetName());
+				else if (!strcmp(refusal, "fishing"))
+					challenger->ChatPacket(CHAT_TYPE_INFO, "%s lowi ryby i nie przyjmie teraz pojedynku.", ch->GetName());
+				else if (!strcmp(refusal, "mining"))
+					challenger->ChatPacket(CHAT_TYPE_INFO, "%s kopie rude i nie przyjmie teraz pojedynku.", ch->GetName());
+				else
+					challenger->ChatPacket(CHAT_TYPE_INFO, "%s nie ma broni w reku i nie przyjmie pojedynku.", ch->GetName());
 			}
 			return;
 		}
@@ -522,6 +568,14 @@ namespace
 			LPCHARACTER fallen = CHARACTER_MANAGER::instance().FindByPID(
 					(DWORD)playerbot_pvp::GetDuelOpponent(pid, dwNow));
 			EndPlayerBotDuel(ch, state, dwNow, fallen && fallen->IsDead() ? "foe_fell" : "foe_gone");
+			s_mapPlayerBotDuelRefusedSince.erase(pid);
+			s_mapPlayerBotDuelLogged.erase(pid);
+			return false;
+		}
+		// A duel under way when the rod came out is ended, not fought with it.
+		if (const char* unready = GetPlayerBotDuelUnreadiness(ch, dwNow))
+		{
+			EndPlayerBotDuel(ch, state, dwNow, unready);
 			s_mapPlayerBotDuelRefusedSince.erase(pid);
 			s_mapPlayerBotDuelLogged.erase(pid);
 			return false;
@@ -772,10 +826,12 @@ namespace
 		// maps: a challenge from there is a duel nobody can fight or end.
 		if (ch->GetLevel() < PK_PROTECT_LEVEL)
 			return;
-		// Anything the bot is actually doing outranks picking a fight.
+		// Anything the bot is actually doing outranks picking a fight, and so does
+		// a rod or a pickaxe still in its hands.
 		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
 				state.bMarketTrip || state.bFishingSession || state.bTacticalRetreat ||
-				state.bRecoveringAfterDeath || ch->GetMyShop())
+				state.bRecoveringAfterDeath || ch->GetMyShop() ||
+				GetPlayerBotDuelUnreadiness(ch, dwNow) != NULL)
 			return;
 		if (ch->GetMaxHP() <= 0 ||
 				(ch->GetHP() * 100) / ch->GetMaxHP() < PLAYERBOT_PVP_MIN_HP_PERCENT)
@@ -807,6 +863,9 @@ namespace
 				if (candidate->GetParty() && candidate->GetParty() == m_me->GetParty())
 					return false;
 				if (playerbot_pvp::IsInDuel(candidate->GetPlayerID(), m_now))
+					return false;
+				// Not a bot on the bank with its rod out, nor one at a vein.
+				if (GetPlayerBotDuelUnreadiness(candidate, m_now) != NULL)
 					return false;
 				if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) >
 						PLAYERBOT_PVP_CHALLENGE_LEVEL_DELTA)
@@ -890,7 +949,8 @@ namespace
 		if (state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
 				state.bMarketTrip || state.bFishingSession || state.bTacticalRetreat ||
 				state.bRecoveringAfterDeath || ch->GetMyShop() ||
-				IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow))
+				IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow) ||
+				GetPlayerBotDuelUnreadiness(ch, dwNow) != NULL)
 			return;
 		if (ch->GetMaxHP() <= 0 ||
 				(ch->GetHP() * 100) / ch->GetMaxHP() < PLAYERBOT_PVP_MIN_HP_PERCENT)
@@ -922,6 +982,9 @@ namespace
 				if (candidate->GetParty() && candidate->GetParty() == m_me->GetParty())
 					return false;
 				if (playerbot_pvp::IsInDuel(candidate->GetPlayerID(), m_now))
+					return false;
+				// The same for a quarrel: nobody is set upon with a rod in hand.
+				if (GetPlayerBotDuelUnreadiness(candidate, m_now) != NULL)
 					return false;
 				if (abs((int)candidate->GetLevel() - (int)m_me->GetLevel()) >
 						PLAYERBOT_KINGDOM_PVP_LEVEL_DELTA)
@@ -1997,7 +2060,7 @@ bool CPlayerBotManager::LoadRegisteredBots()
 	m_mapBotAccounts.clear();
 
 	const char* query =
-			"SELECT l.pid, a.id, a.login, pi.empire "
+			"SELECT l.pid, a.id, a.login, pi.empire, p.level "
 			"FROM common.playerbot_seed_state AS l "
 			"JOIN player.player AS p ON p.id=l.pid "
 			"JOIN account.account AS a ON a.id=p.account_id "
@@ -2058,6 +2121,12 @@ bool CPlayerBotManager::LoadRegisteredBots()
 				str_to_number(account.dwID, row[1]);
 			if (row[2])
 				account.strLogin = row[2];
+			// The level the character was saved at, which is what the medal
+			// droppers' cohort is chosen by (SpawnMedalDropperCohort).
+			unsigned int level = 0;
+			if (row[4])
+				str_to_number(level, row[4]);
+			account.bLevel = (BYTE)std::min<unsigned int>(level, 255);
 			m_mapBotAccounts[pid] = account;
 		}
 	}
@@ -2215,6 +2284,61 @@ size_t CPlayerBotManager::SpawnRegistered(size_t count, BYTE bEmpire)
 			PLAYERBOT_SPAWN_BATCH_INTERVAL, PLAYERBOT_SPAWN_WINDOW);
 	SpawnPendingBatch(get_dword_time());
 	return selected;
+}
+
+// The medal droppers an operator asks for, on top of the population
+// (PLAYERBOT_MEDAL_DROPPERS a kingdom, PLAYERBOT_MEDAL_DROPPER_LEVEL): "po 33
+// osoby na kazde krolestwo z osobowoscia dropek medali, aby grali w lochu malp
+// i mieli zablokowany exp" (Tieru, 15 September). They are taken from the far
+// end of the kingdom's registry, where the identities that have never played
+// stand, so the ordinary slider - which takes the registry from the front -
+// does not reach them until nearly every bot plays, and the same characters
+// are chosen after every restart. One saved more than two levels over the lock
+// is passed over: two is the margin for a level taken on the tick before the
+// lock landed. Scheduled before the ordinary cohort, which steps over them, and
+// restored by TopUpMissingBots like the rest.
+size_t CPlayerBotManager::SpawnMedalDropperCohort(size_t count, BYTE bEmpire, BYTE bExpLockLevel)
+{
+	if (count == 0 || bEmpire < 1 || bEmpire > 3 || bExpLockLevel == 0 || !LoadRegisteredBots())
+		return 0;
+	m_bMedalDropperCohortLevel = bExpLockLevel;
+	size_t selected = 0;
+	for (TRegisteredPlayerBotSet::const_reverse_iterator it = m_setRegisteredBots.rbegin();
+			it != m_setRegisteredBots.rend() && selected < count; ++it)
+	{
+		TPlayerBotAccountMap::const_iterator account = m_mapBotAccounts.find(*it);
+		if (account == m_mapBotAccounts.end() || account->second.bEmpire != bEmpire ||
+				(int)account->second.bLevel > (int)bExpLockLevel + 2)
+			continue;
+		if (m_setScheduledBots.find(*it) != m_setScheduledBots.end())
+			continue;
+		m_setMedalDropperCohort.insert(*it);
+		m_dequePendingSpawns.push_back(*it);
+		m_setScheduledBots.insert(*it);
+		++selected;
+	}
+
+	const size_t batches = std::max<size_t>(1, PLAYERBOT_SPAWN_WINDOW / PLAYERBOT_SPAWN_BATCH_INTERVAL);
+	m_uSpawnBatchSize = std::max<size_t>(1,
+			(m_setScheduledBots.size() + batches - 1) / batches);
+	m_dwSpawnWindowStarted = get_dword_time();
+	m_uSpawnWindowTotal = m_setScheduledBots.size();
+	m_dwNextSpawnBatchTime = 0;
+	sys_log(0, "PLAYERBOT: medal dropper cohort empire=%u asked=%u scheduled=%u exp_lock=%u",
+			(unsigned int)bEmpire, (unsigned int)count, (unsigned int)selected,
+			(unsigned int)bExpLockLevel);
+	SpawnPendingBatch(get_dword_time());
+	return selected;
+}
+
+bool CPlayerBotManager::IsMedalDropperCohortPID(DWORD dwPlayerID) const
+{
+	return m_setMedalDropperCohort.find(dwPlayerID) != m_setMedalDropperCohort.end();
+}
+
+BYTE CPlayerBotManager::GetMedalDropperCohortLevel() const
+{
+	return m_bMedalDropperCohortLevel;
 }
 
 // One batch from the queue, if one is due. Called from Update every tick and
@@ -2424,6 +2548,13 @@ void CPlayerBotManager::OnPlayerLoaded(LPDESC d)
 			state.bBotRole = BOT_ROLE_MOB_GRINDER;
 		state.bPersonality = GetPlayerBotStablePersonality(
 				d->GetCharacter(), state.bBotRole);
+		// The operator's medal droppers are that and nothing else, whatever
+		// their pid draws: no party role, no stone hunting.
+		if (IsMedalDropperCohortPID(dwPID))
+		{
+			state.bBotRole = BOT_ROLE_MOB_GRINDER;
+			state.bPersonality = BOT_PERSONALITY_MEDAL_DROPPER;
+		}
 		state.bAmbition = GetPlayerBotStableAmbition(
 				d->GetCharacter(), state.bPersonality);
 

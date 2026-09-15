@@ -12,6 +12,12 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 
 		bool	Spawn(DWORD dwPlayerID, BYTE bEmpire);
 		size_t	SpawnRegistered(size_t count, BYTE bEmpire);
+		// The operator's medal droppers, scheduled on top of the population from
+		// the far end of a kingdom's registry, and the level their experience
+		// stops at (PLAYERBOT_MEDAL_DROPPERS, PLAYERBOT_MEDAL_DROPPER_LEVEL).
+		size_t	SpawnMedalDropperCohort(size_t count, BYTE bEmpire, BYTE bExpLockLevel);
+		bool	IsMedalDropperCohortPID(DWORD dwPlayerID) const;
+		BYTE	GetMedalDropperCohortLevel() const;
 		// The kingdom a registered PID belongs to, 0 when it is not registered.
 		BYTE	GetRegisteredEmpire(DWORD dwPlayerID);
 		// How many identities each kingdom has, indexed by empire (0 unused).
@@ -61,7 +67,7 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		// The kingdom is part of the identity, not something a caller may pass
 		// in: Spawn takes it from here, so nothing can start a registered PID
 		// into an empire its character does not belong to.
-		struct TPlayerBotAccount { DWORD dwID; std::string strLogin; BYTE bEmpire; };
+		struct TPlayerBotAccount { DWORD dwID; std::string strLogin; BYTE bEmpire; BYTE bLevel; };
 		typedef std::map<DWORD, TPlayerBotAccount> TPlayerBotAccountMap;
 
 		bool	LoadRegisteredBots();
@@ -101,6 +107,9 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		DWORD			m_dwNextBanCheckTime;
 		bool			m_bRegistryLoaded;
 		bool			m_bRegistryAvailable;
+		// The medal droppers' cohort and its level (SpawnMedalDropperCohort).
+		std::set<DWORD>		m_setMedalDropperCohort;
+		BYTE			m_bMedalDropperCohortLevel = 0;
 };
 
 // The AI weights, for the F9 GM panel's "Sterowanie Serwerem" tab.

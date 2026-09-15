@@ -529,7 +529,57 @@ def main(root):
          '\t}\n'
          '}\n'
          '\n'
-         'void CInputDB::P2P(const char * c_pData)\n')
+         'void CInputDB::P2P(const char * c_pData)\n',
+         # A later edit writes into this block (the medal droppers below), so it
+         # is found by one sentence of its own rather than by all of it.
+         marker='\t// MapLocations is the first point at which this core knows which maps it\n')
+    # The operator's medal droppers on top of the population, scheduled per
+    # kingdom before the ordinary cohort (CPlayerBotManager::SpawnMedalDropperCohort).
+    edit(p,
+         '\t\tplayerbot_empire_rules::SplitPopulation(autoSpawnCount, registered, want);\n'
+         '\n'
+         '\t\tfor (int empire = playerbot_empire_rules::EMPIRE_SHINSOO;\n'
+         '\t\t\t\tempire <= playerbot_empire_rules::EMPIRE_JINNO; ++empire)\n'
+         '\t\t{\n'
+         '\t\t\tconst long lVillage = playerbot_empire_rules::GetHomeMap(\n'
+         '\t\t\t\t\tempire, playerbot_empire_rules::MAP_ROLE_M1);\n'
+         '\t\t\tif (lVillage == 0 || !map_allow_find(lVillage) || want[empire] <= 0)\n'
+         '\t\t\t\tcontinue;\n',
+         '\t\tplayerbot_empire_rules::SplitPopulation(autoSpawnCount, registered, want);\n'
+         '\t\t// The operator\'s medal droppers, on top of the population: this many in\n'
+         '\t\t// each kingdom, their experience stopped at the level they farm\n'
+         '\t\t// (CPlayerBotManager::SpawnMedalDropperCohort). Zero by default.\n'
+         '\t\tint medalDroppers = 0;\n'
+         '\t\tint medalDropperLevel = 25;\n'
+         '\t\tconst char* configuredDroppers = std::getenv("PLAYERBOT_MEDAL_DROPPERS");\n'
+         '\t\tif (configuredDroppers && *configuredDroppers)\n'
+         '\t\t\tmedalDroppers = std::atoi(configuredDroppers);\n'
+         '\t\tif (medalDroppers < 0)\n'
+         '\t\t\tmedalDroppers = 0;\n'
+         '\t\telse if (medalDroppers > 200)\n'
+         '\t\t\tmedalDroppers = 200;\n'
+         '\t\tconst char* configuredDropperLevel = std::getenv("PLAYERBOT_MEDAL_DROPPER_LEVEL");\n'
+         '\t\tif (configuredDropperLevel && *configuredDropperLevel)\n'
+         '\t\t\tmedalDropperLevel = std::atoi(configuredDropperLevel);\n'
+         '\t\t// Under eighteen no Monkey Dungeon takes a bot at all.\n'
+         '\t\tif (medalDropperLevel < 18)\n'
+         '\t\t\tmedalDropperLevel = 18;\n'
+         '\t\telse if (medalDropperLevel > 120)\n'
+         '\t\t\tmedalDropperLevel = 120;\n'
+         '\n'
+         '\t\tfor (int empire = playerbot_empire_rules::EMPIRE_SHINSOO;\n'
+         '\t\t\t\tempire <= playerbot_empire_rules::EMPIRE_JINNO; ++empire)\n'
+         '\t\t{\n'
+         '\t\t\tconst long lVillage = playerbot_empire_rules::GetHomeMap(\n'
+         '\t\t\t\t\tempire, playerbot_empire_rules::MAP_ROLE_M1);\n'
+         '\t\t\tif (lVillage == 0 || !map_allow_find(lVillage))\n'
+         '\t\t\t\tcontinue;\n'
+         '\t\t\tif (medalDroppers > 0 && registered[empire] > 0)\n'
+         '\t\t\t\tCPlayerBotManager::instance().SpawnMedalDropperCohort(\n'
+         '\t\t\t\t\t\t(size_t)medalDroppers, (BYTE)empire, (BYTE)medalDropperLevel);\n'
+         '\t\t\tif (want[empire] <= 0)\n'
+         '\t\t\t\tcontinue;\n',
+         marker='(CPlayerBotManager::SpawnMedalDropperCohort). Zero by default.')
     edit(p,
          '\tcase HEADER_DG_PLAYER_LOAD_FAILED:\n'
          '\t\t//sys_log(0, "PLAYER_LOAD_FAILED");\n'

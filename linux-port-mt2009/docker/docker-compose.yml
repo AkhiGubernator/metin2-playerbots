@@ -134,6 +134,8 @@ services:
       M2_ADMINPAGE_PASSWORD: "${M2_ADMINPAGE_PASSWORD:-}"
       M2_CORE_DUMPS: "${M2_CORE_DUMPS:-0}"
       PLAYERBOT_AUTOSPAWN_COUNT: "${PLAYERBOT_AUTOSPAWN_COUNT:-350}"
+      PLAYERBOT_MEDAL_DROPPERS: "${PLAYERBOT_MEDAL_DROPPERS:-0}"
+      PLAYERBOT_MEDAL_DROPPER_LEVEL: "${PLAYERBOT_MEDAL_DROPPER_LEVEL:-25}"
       # 0 keeps Shinsoo and Jinno from being started even when the seed once
       # registered them (the migrate service reads the same switch for the
       # seed itself).

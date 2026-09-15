@@ -596,7 +596,11 @@ namespace
 		if (worn && worn->GetType() == ITEM_ROD && worn->GetRefinedVnum() > 0 &&
 				worn->GetSocket(0) >= worn->GetValue(2))
 		{
-			if (!ch->UnequipItem(worn))
+			// The engine's UnequipItem does not ask for room itself, and the new
+			// rod is put in the old one's cell: a rod that stayed in the hand
+			// would hand the slot's cell to an item nobody equipped.
+			if (ch->GetEmptyInventory(worn->GetSize()) < 0 || !ch->UnequipItem(worn) ||
+					worn->IsEquipped())
 				return false;
 			rod = worn;
 		}
@@ -611,6 +615,8 @@ namespace
 		if (!rod)
 			return false;
 
+		if (rod->GetWindow() != INVENTORY || rod->GetCell() >= PLAYERBOT_BAG_CELLS)
+			return false;
 		const DWORD oldVnum = rod->GetVnum();
 		const BYTE bCell = rod->GetCell();
 		const int chance = rod->GetValue(3);
@@ -1009,7 +1015,8 @@ namespace
 			if (ch->GetEmptyInventory(1) < 0)
 				return false;
 			pass = ch->AutoGiveItem(UNIQUE_ITEM_FISHING_PASS, 1, -1, false);
-			if (!pass)
+			// On the ground is not in the bag (IsPlayerBotWornItemSound).
+			if (!pass || pass->GetOwner() != ch || pass->GetWindow() != INVENTORY)
 				return false;
 			PlayerBotChangeGold(ch, -(int)PLAYERBOT_FISHING_PASS_PRICE);
 			sys_log(0, "PLAYERBOT_FISHING: fishing pass bought pid=%u name=%s price=%u gold=%lld",

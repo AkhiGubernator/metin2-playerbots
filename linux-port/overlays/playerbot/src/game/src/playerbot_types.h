@@ -263,12 +263,13 @@ namespace
 	// of the goods a player buys one at a time - scrolls, soul stones - on
 	// lines of their own, because a private shop sells a line whole.
 	const DWORD PLAYERBOT_STACK_MERGE_INTERVAL = 300000;
-	// A tidy bag: potions on the first lines, then boosters, then chests -
-	// the rest left where it is (Tieru: "co jakis czas sortowac ekwipunek").
-	// Only single-cell items move, and only into an empty earlier cell with
-	// the engine's own MoveItem, which never deletes - so nothing can be
-	// lost or bugged. Bounded per pass; runs on the stack-merge clock.
-	const int PLAYERBOT_SORT_MAX_MOVES = 15;
+	// A tidy bag: every potion first, then chests and keys, then the rest
+	// (Tieru: "co jakis czas sortowac ekwipunek", and on 15 September
+	// "wszelakie potki pierwsze a potem reszte"). Only single-cell items move,
+	// each with the engine's own MoveItem into an empty cell - a swap goes
+	// through a free cell in three - so nothing is merged, overwritten or
+	// lost. Bounded per pass; runs on the stack-merge clock.
+	const int PLAYERBOT_SORT_MAX_MOVES = 30;
 	// How long a bot may stand waiting for the engine's equip window before
 	// the wait is abandoned. Twelve archers stood at arrival points for
 	// twenty minutes, reset by the watchdog every ninety seconds, ticked and
@@ -322,6 +323,43 @@ namespace
 	// worn weapon in five, where the ninety-percent steps below it are not worth
 	// a scroll the market is short of.
 	const int PLAYERBOT_WORN_SCROLL_MAX_PROB = 80;
+	// The weapon in the hand is not taken to the plain anvil at such a step
+	// when nothing would replace it (IsPlayerBotWornWeaponAtRisk). On
+	// 15 September a warrior of 75 gifted her Halabarda +8 at 01:52, burned
+	// her Zabojca Lwow at +5 -> +6 with no scroll at 02:08, and fought on with
+	// a Gilotynowe Ostrze +7 of level ten. "Nothing would replace it" is a bag
+	// with no weapon scoring this share of the one in the hand, and no village
+	// merchant selling the class a weapon of its level. That weapon is kept
+	// too: never a gift, never scrap, never counter goods.
+	const int PLAYERBOT_REFINE_BACKUP_SCORE_PERCENT = 50;
+	// How long the backup weapon's id is trusted by the passes that ask about
+	// every weapon in the bag (IsPlayerBotKeptBackupWeapon).
+	const DWORD PLAYERBOT_BACKUP_WEAPON_CACHE_MS = 3000;
+	// What a Mental Warrior on a battle horse adds to a two-handed weapon's
+	// score, as a share of its own blow (GetPlayerBotEquipmentScore).
+	const int PLAYERBOT_TWO_HANDED_PREFERENCE_PERCENT = 20;
+	// The weapon a bot plays for (playerbot_weapon_goal.h): the best family of
+	// the atlas its class may carry at its level and can get on a map the bots
+	// walk. A goal whose blow at +0 beats the hand's by the first share sends a
+	// bot that can pay for it to the market; a counter weapon beating the hand
+	// by the second is saved for like a level-30 weapon, out of the bot's own
+	// budget rather than a share of the median wallet. Re-read per bot this
+	// often; priced at the sheet's +0, or at the fallback where the sheet has
+	// no row.
+	// A piece comes back off the bot's own counter to be worn only when it beats
+	// the slot by this share of what the bot already has for it
+	// (BotOfflineReclaimLine): the first run on the test world took pieces back
+	// for half a point of blow, a db round trip and a counter line each.
+	const int PLAYERBOT_OFFLINE_RECLAIM_MIN_GAIN_PERCENT = 10;
+	const int PLAYERBOT_WEAPON_OUTCLASSED_PERCENT = 30;
+	const int PLAYERBOT_WEAPON_STRATEGIC_GAIN_PERCENT = 25;
+	const DWORD PLAYERBOT_WEAPON_GOAL_REFRESH_MS = 600000;
+	// How many stale goals one census may work out again. The census walks the
+	// whole population in one tick, and a goal is a pass over the atlas through
+	// the damage model; the rest are counted from what they last read, and the
+	// next census carries on from the pid this one stopped at.
+	const int PLAYERBOT_WEAPON_CENSUS_REFRESHES = 400;
+	const DWORD PLAYERBOT_WEAPON_GOAL_FALLBACK_PRICE = 500000;
 	// The level-30 weapons (Tieru, 15 September): "taka bron +6/7 z srednimi
 	// 25% jest znacznie lepsza niz krwawy miecz +5/6", the bots should want
 	// them and grind them "nawet do +9", and from 37% average "tylko bodziami
@@ -369,6 +407,29 @@ namespace
 	// bag for the next opening. Pearls and the shell are singles.
 	const int PLAYERBOT_SHOP_PACK_UNITS = 2;
 	const int PLAYERBOT_SHOP_PACK_LINES = 8;
+	// A hoard is goods whatever the ledger reads the market as: this many
+	// units of a refine material over the anvil's reserve go on a counter in
+	// packs of PLAYERBOT_SHOP_HOARD_PACK_UNITS, up to PLAYERBOT_SHOP_HOARD_LINES
+	// of one kind on a counter (IsPlayerBotHoardedMaterial). "Niektore boty
+	// maja po prawie 200 danego ulepszacza ... powinni wystawiac nie po 1
+	// sztuce a po 10" (Tieru, 15 September): 158 bots held 19 577 Nieznane
+	// Lekarstwo that day, and the ledger called 7182 of an hour's listing
+	// decisions overstock, so none of it ever left a bag.
+	const int PLAYERBOT_SHOP_HOARD_MIN_UNITS = 50;
+	const int PLAYERBOT_SHOP_HOARD_PACK_UNITS = 10;
+	const int PLAYERBOT_SHOP_HOARD_LINES = 3;
+	const int PLAYERBOT_SHOP_HOARD_SCORE = 440;
+	// Keys of one kind a bot holds on to with no chest in the bag; the rest
+	// are goods (IsPlayerBotSurplusTreasureKey). 2598 gold and silver keys lay
+	// in 1057 bags on the test world on 15 September, and not one of those
+	// bags held a chest they open.
+	const int PLAYERBOT_TREASURE_KEY_KEEP = 2;
+	const int PLAYERBOT_SHOP_KEY_SCORE = 360;
+	// Surplus keys or polymorph marbles that open a counter by themselves
+	// (HasPlayerBotHoardedGoods), per thousand at the neutral TRADE weight.
+	const int PLAYERBOT_SHOP_HOARD_KEYS = 4;
+	const int PLAYERBOT_SHOP_HOARD_MARBLES = 2;
+	const int PLAYERBOT_SHOP_HOARD_ROLL = 1000;
 	// How soon the bag is merged again after the counter closes: the singles
 	// and packs were split for the counter, and a bag of them is a bag with
 	// no room for loot until the five-minute clock came round.
@@ -417,6 +478,10 @@ namespace
 	// all ran on the bot's first tick, whichever second it logged in.
 	const DWORD PLAYERBOT_FIRST_PASS_SPREAD = 60000;
 	const DWORD PLAYERBOT_STATUS_SNAPSHOT_INTERVAL = 2000;
+	// The most of a status the line over a bot's head carries on the 2.x line:
+	// the status is built in 160 bytes, and the client root's decoder
+	// (playerbot_status_tail.py, MAX_STATUS_BYTES) refuses anything longer.
+	const size_t PLAYERBOT_STATUS_TAIL_MAX_BYTES = 159;
 	// A Metin which repeatedly heals all dealt damage is not progress. Sample its
 	// lowest observed HP at a deliberately cheap cadence, give a newcomer time to
 	// change the outcome, and only then let the bot look for a productive target.
@@ -1287,7 +1352,9 @@ namespace
 	// ores and the mt2009 materials, one scaling curve for everything.
 	// 4: the stamp carries the yang rate as well (GetPlayerBotPriceGeneration),
 	// so a rate moved in the panel reprices every stand, not only a new table.
-	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 4;
+	// 5: a weapon's damage lines are read between the sheet's bands
+	// (GetPlayerBotDamageTierPct), so a 19% average asks more than a 10% one.
+	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 5;
 	// Iwakura's upgrade-material prices ("ULEPSZACZE") and the goods he prices
 	// by name are generated into playerbot_price_tables.h from his sheet. A name
 	// is not an item: where the game has two vnums under one name (Nieznany
@@ -2029,6 +2096,10 @@ namespace
 	// safe refine scroll (against three).
 	const DWORD PLAYERBOT_CHEST_TRADER_MIN_STACK = 2;
 	const int PLAYERBOT_REFINE_SCROLL_TRADER_KEEP = 1;
+	// How many Moonlight chests a trader holds unopened for its counter; past
+	// that it opens them like everyone else, so a counter nobody buys from does
+	// not fill its bag.
+	const int PLAYERBOT_CHEST_TRADER_HOLD = 20;
 	// The Forgetting Scroll (ITEM_SKILLFORGET): one level off a skill and the
 	// point back. A skill that reached seventeen without turning Master is
 	// left there rather than pushed on - every further point is a point the
@@ -2520,6 +2591,7 @@ namespace
 		PLAYERBOT_SHOP_REASON_DROPPER_ROLL,
 		PLAYERBOT_SHOP_REASON_ROLL,
 		PLAYERBOT_SHOP_REASON_SPARE,
+		PLAYERBOT_SHOP_REASON_HOARD,
 		PLAYERBOT_SHOP_REASON_MAX
 	};
 	const DWORD PLAYERBOT_SHOP_REEVALUATE_SPREAD_MS = 300000;   // 5 min
@@ -2528,7 +2600,8 @@ namespace
 	{
 		return bReason == PLAYERBOT_SHOP_REASON_BOOKS ||
 				bReason == PLAYERBOT_SHOP_REASON_DROPPER_ROLL ||
-				bReason == PLAYERBOT_SHOP_REASON_ROLL;
+				bReason == PLAYERBOT_SHOP_REASON_ROLL ||
+				bReason == PLAYERBOT_SHOP_REASON_HOARD;
 	}
 
 	inline const char* GetPlayerBotShopReasonName(BYTE bReason)
@@ -2543,6 +2616,7 @@ namespace
 			case PLAYERBOT_SHOP_REASON_DROPPER_ROLL:     return "dropper";
 			case PLAYERBOT_SHOP_REASON_ROLL:             return "los";
 			case PLAYERBOT_SHOP_REASON_SPARE:            return "zbedny duplikat";
+			case PLAYERBOT_SHOP_REASON_HOARD:            return "nadmiar towaru";
 			default:                                     return "?";
 		}
 	}

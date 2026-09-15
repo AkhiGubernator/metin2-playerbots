@@ -180,55 +180,117 @@ namespace
 		return merged;
 	}
 
-	// The order the bag is tidied into: potions first, then the boosters and
-	// speed potions, then chests and keys. Everything else is left where it
-	// is (99), so gear the bot is keeping does not shuffle around.
+	// The order the bag is tidied into: the red and blue potions, then every
+	// other potion - green and purple, the timed boosters, the auto potions -
+	// then chests and keys ("wszelakie potki pierwsze a potem reszte", Tieru,
+	// 15 September). Everything else is 99 and stays behind them.
 	int GetPlayerBotSortPriority(LPITEM item)
 	{
 		if (!item)
 			return 99;
 		const DWORD vnum = item->GetVnum();
-		if ((vnum >= 27001 && vnum <= 27006) || vnum == 27051 || vnum == 27052)
-			return 0;   // red/blue/big HP-SP potions
-		if ((vnum >= 27100 && vnum <= 27105) || vnum == 27053 || vnum == 27054 ||
-				vnum == 71044 || vnum == 71045 || vnum == 71050)
-			return 1;   // green/purple potions, Hand of Critic/Penetration, Swiftness
 		const BYTE type = item->GetType();
+		if (type == ITEM_USE)
+		{
+			const BYTE sub = item->GetSubType();
+			if (sub == USE_POTION || sub == USE_POTION_NODELAY)
+				return 0;   // red/blue/big HP-SP potions
+			if (sub == USE_POTION_CONTINUE || IsPlayerBotBoosterItem(item) ||
+					GetPlayerBotAutoPotionAffect(vnum) != 0)
+				return 1;   // green/purple, Hand of Critic/Penetration, Swiftness, the elixirs
+		}
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		if (type == ITEM_POTION)
+			return 1;   // the green and purple potions are a type of their own here
+#endif
+		if ((vnum >= 27100 && vnum <= 27105) || vnum == 27053 || vnum == 27054)
+			return 1;
 		if (vnum == PLAYERBOT_MOONLIGHT_CHEST_VNUM || type == ITEM_TREASURE_BOX ||
 				type == ITEM_TREASURE_KEY || type == ITEM_GIFTBOX)
 			return 2;   // Moonlight chests, silver/gold chests and keys, boss caskets
 		return 99;
 	}
 
-	// Pull single-cell consumables to the front, group by group, into the
-	// earliest empty cell before each. MoveItem only moves - it cannot delete
-	// or overwrite - so the worst case is an item that does not move.
+	// Potions to the front, chests and keys behind them, the rest after
+	// (GetPlayerBotSortPriority). A selection sort over the cells a single-cell
+	// item can stand in: the best item not yet in place is swapped with the one
+	// in its way through a free cell - three MoveItems, each into an empty cell,
+	// so nothing is merged, overwritten or lost, and a move the engine refuses
+	// leaves an item where it was or in a free cell of the same bag. Gear of two
+	// and three cells never moves, and nothing moves into the cells it covers.
+	// The first version only moved a potion into an empty cell before it, and a
+	// bag full from the front has none: the operator's screenshots showed
+	// potions scattered through two pages of full bags.
 	void SortPlayerBotConsumablesToFront(LPCHARACTER ch)
 	{
 		if (!ch)
 			return;
-		int moves = 0;
-		for (int prio = 0; prio <= 2 && moves < PLAYERBOT_SORT_MAX_MOVES; ++prio)
+		const long kRest = 99L * 1000000L;
+		long key[PLAYERBOT_BAG_CELLS];
+		bool empty[PLAYERBOT_BAG_CELLS];
+		bool anyFront = false;
+		for (int cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
-			for (WORD cell = 1; cell < PLAYERBOT_BAG_CELLS && moves < PLAYERBOT_SORT_MAX_MOVES; ++cell)
+			key[cell] = -1;   // a cell the sort does not touch
+			empty[cell] = false;
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (item)
 			{
-				LPITEM item = ch->GetInventoryItem(cell);
-				if (!item || item->IsEquipped() || item->isLocked() || item->GetSize() > 1)
+				if (item->GetCell() != cell || item->GetSize() != 1 || item->IsEquipped() ||
+						item->isLocked() || item->IsExchanging())
 					continue;
-				if (GetPlayerBotSortPriority(item) != prio)
-					continue;
-				WORD dest = 0;
-				bool found = false;
-				for (WORD f = 0; f < cell; ++f)
-					if (ch->IsEmptyItemGrid(TItemPos(INVENTORY, f), 1))
+				const int prio = GetPlayerBotSortPriority(item);
+				key[cell] = prio >= 99 ? kRest : (long)prio * 1000000L + (long)(item->GetVnum() % 1000000U);
+				anyFront = anyFront || prio < 99;
+			}
+			else if (ch->IsEmptyItemGrid(TItemPos(INVENTORY, (WORD)cell), 1))
+			{
+				key[cell] = kRest;
+				empty[cell] = true;
+			}
+		}
+		if (!anyFront)
+			return;
+		int moves = 0;
+		for (int i = 0; i < PLAYERBOT_BAG_CELLS && moves + 3 <= PLAYERBOT_SORT_MAX_MOVES; ++i)
+		{
+			if (key[i] < 0)
+				continue;
+			int best = -1;
+			for (int j = i + 1; j < PLAYERBOT_BAG_CELLS; ++j)
+				if (key[j] >= 0 && !empty[j] && key[j] < key[i] && (best < 0 || key[j] < key[best]))
+					best = j;
+			if (best < 0)
+				continue;
+			if (empty[i])
+			{
+				if (!ch->MoveItem(TItemPos(INVENTORY, (WORD)best), TItemPos(INVENTORY, (WORD)i), 0))
+					break;
+				++moves;
+			}
+			else
+			{
+				int buffer = -1;
+				for (int k = PLAYERBOT_BAG_CELLS - 1; k >= 0; --k)
+					if (empty[k] && k != i && k != best)
 					{
-						dest = f;
-						found = true;
+						buffer = k;
 						break;
 					}
-				if (found && ch->MoveItem(TItemPos(INVENTORY, cell), TItemPos(INVENTORY, dest), 0))
-					++moves;
+				if (buffer < 0)
+					break;
+				if (!ch->MoveItem(TItemPos(INVENTORY, (WORD)best), TItemPos(INVENTORY, (WORD)buffer), 0))
+					break;
+				++moves;
+				if (!ch->MoveItem(TItemPos(INVENTORY, (WORD)i), TItemPos(INVENTORY, (WORD)best), 0))
+					break;
+				++moves;
+				if (!ch->MoveItem(TItemPos(INVENTORY, (WORD)buffer), TItemPos(INVENTORY, (WORD)i), 0))
+					break;
+				++moves;
 			}
+			std::swap(key[i], key[best]);
+			std::swap(empty[i], empty[best]);
 		}
 		if (moves > 0)
 			sys_log(0, "PLAYERBOT_BAG: sorted pid=%u name=%s moves=%d",
@@ -269,6 +331,7 @@ namespace
 		if (!item || !item->IsStackable() || IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
 			return 0;
 		if (item->GetType() == ITEM_USE || item->GetType() == ITEM_METIN ||
+				item->GetType() == ITEM_TREASURE_KEY ||
 				(item->GetVnum() >= 27992 && item->GetVnum() <= 27994))
 			return 1;
 		return PLAYERBOT_SHOP_PACK_UNITS;
@@ -523,6 +586,43 @@ namespace
 				!IsPlayerBotNonGearMaterial(item->GetVnum());
 	}
 
+	// A hoard of a refine material: PLAYERBOT_SHOP_HOARD_MIN_UNITS or more over
+	// what the bot's own anvil keeps back. It goes on a counter in packs of
+	// PLAYERBOT_SHOP_HOARD_PACK_UNITS whatever the ledger says - the ledger lets
+	// a stack out only while the market is short, and two hundred of one
+	// material in one bag is not a market, it is a bag.
+	bool IsPlayerBotHoardedMaterial(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item || !IsPlayerBotTradeableMaterial(item))
+			return false;
+		const int total = (int)ch->CountSpecifyItem(item->GetVnum());
+		if (total < PLAYERBOT_SHOP_HOARD_MIN_UNITS)
+			return false;
+		return total - GetPlayerBotRefineMaterialReserve(ch, item->GetVnum()) >=
+				PLAYERBOT_SHOP_HOARD_MIN_UNITS;
+	}
+
+	// GetPlayerBotStallLineUnits for this bot's bag: a hoard sells in tens.
+	int GetPlayerBotStallLineUnitsFor(LPCHARACTER ch, LPITEM item)
+	{
+		const int units = GetPlayerBotStallLineUnits(item);
+		return units > 1 && IsPlayerBotHoardedMaterial(ch, item)
+				? PLAYERBOT_SHOP_HOARD_PACK_UNITS : units;
+	}
+
+	// What the stack a counter's lines are cut from keeps back: the anvil's
+	// reserve of a material, the keys the bot holds on to, one of anything else.
+	int GetPlayerBotStallBaseKeep(LPCHARACTER ch, LPITEM item)
+	{
+		if (!item)
+			return 1;
+		if (IsPlayerBotTradeableMaterial(item))
+			return std::max(1, GetPlayerBotRefineMaterialReserve(ch, item->GetVnum()));
+		if (item->GetType() == ITEM_TREASURE_KEY)
+			return PLAYERBOT_TREASURE_KEY_KEEP;
+		return 1;
+	}
+
 	// Junk goes to the general-goods merchant on the next town visit, and for a
 	// refine material that was the end of it. Five hundred and twenty-six bots
 	// on this world are short of one; the top of that list is three hundred and
@@ -627,6 +727,57 @@ namespace
 				return true;
 		}
 		return false;
+	}
+
+	// A chest this key opens, anywhere in the bag.
+	bool PlayerBotHasTreasureBoxFor(LPCHARACTER ch, LPITEM key)
+	{
+		for (WORD cell = 0; ch && key && cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM box = ch->GetInventoryItem(cell);
+			if (box && box->GetType() == ITEM_TREASURE_BOX && box->GetValue(0) == key->GetValue(0))
+				return true;
+		}
+		return false;
+	}
+
+	// A key for a chest the bot holds and has no key for: what a counter or the
+	// storekeeper should hand back to it.
+	bool PlayerBotWantsTreasureKey(LPCHARACTER ch, LPITEM key)
+	{
+		if (!ch || !key || key->GetType() != ITEM_TREASURE_KEY || !PlayerBotHasTreasureBoxFor(ch, key))
+			return false;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM held = ch->GetInventoryItem(cell);
+			if (held && held != key && held->GetType() == ITEM_TREASURE_KEY &&
+					held->GetValue(0) == key->GetValue(0))
+				return false;
+		}
+		return true;
+	}
+
+	// A key past the PLAYERBOT_TREASURE_KEY_KEEP of its kind the bot holds on
+	// to, with no chest in the bag it opens: goods for a counter, and the
+	// storekeeper's when the bag is short of room. A key was never the
+	// merchant's and never a counter's, while the chests it opens go to the
+	// merchant under bag pressure - so on 15 September 2598 gold and silver keys
+	// lay in 1057 bags and not one of those bags held a chest ("srebrne i zlote
+	// klucze ... chomikuja to bez konca", Tieru). The last units in cell order
+	// are the ones kept.
+	bool IsPlayerBotSurplusTreasureKey(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item || item->GetType() != ITEM_TREASURE_KEY || PlayerBotHasTreasureBoxFor(ch, item))
+			return false;
+		const int total = (int)ch->CountSpecifyItem(item->GetVnum());
+		int ahead = 0;
+		for (WORD cell = 0; cell < item->GetCell() && cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM other = ch->GetInventoryItem(cell);
+			if (other && other != item && other->GetVnum() == item->GetVnum())
+				ahead += std::max<int>(1, other->GetCount());
+		}
+		return ahead < total - PLAYERBOT_TREASURE_KEY_KEEP;
 	}
 
 	// How many bots are short of a material and can pay for it, from the
@@ -735,6 +886,10 @@ namespace
 		// The Archer's one stone weapon (playerbot_gear.h) is kept.
 		if (IsPlayerBotArcherBuild(ch) && IsPlayerBotStoneMeleeWeapon(ch, item) &&
 				FindPlayerBotStoneWeapon(ch, false) == item)
+			return false;
+		// So is the weapon kept for the day the one in the hand burns
+		// (FindPlayerBotBackupWeapon).
+		if (IsPlayerBotKeptBackupWeapon(ch, item))
 			return false;
 
 		// Gear the counter could not sell in six stands is scrap, whatever the
@@ -1170,6 +1325,54 @@ namespace
 		return false;
 	}
 
+	// The highest level a village merchant sells this character a weapon at:
+	// what a burned weapon is replaced with for yang, on the spot.
+	int GetPlayerBotMerchantWeaponCeiling(LPCHARACTER ch)
+	{
+		if (!ch)
+			return 0;
+		static const DWORD merchants[] = { 9001, 9002, 9003 };
+		int ceiling = 0;
+		for (size_t i = 0; i < sizeof(merchants) / sizeof(merchants[0]); ++i)
+		{
+			LPSHOP shop = CShopManager::instance().GetByNPCVnum(merchants[i]);
+			if (!shop)
+				continue;
+			const std::vector<CShop::SHOP_ITEM>& offers = shop->GetItemVector();
+			for (size_t k = 0; k < offers.size(); ++k)
+			{
+				const TItemTable* proto = ITEM_MANAGER::instance().GetTable(offers[k].vnum);
+				if (!proto || proto->bType != ITEM_WEAPON || !IsPlayerBotProtoForCharacter(ch, proto) ||
+						!IsPlayerBotWeaponSubTypeFor(ch, proto->bSubType))
+					continue;
+				const int level = GetPlayerBotProtoLevelLimit(proto);
+				if (level <= (int)ch->GetLevel())
+					ceiling = std::max(ceiling, level);
+			}
+		}
+		return ceiling;
+	}
+
+	// The weapon in the hand (GetPlayerBotHandWeapon) at a step the plain anvil
+	// can burn it, with nothing to fall back on: no backup in the bag
+	// (FindPlayerBotBackupWeapon) and nothing a merchant sells at its level.
+	// Such a step goes under a scroll or waits for one. A level-30 weapon is
+	// left out - grinding one at the anvil and buying the next is the
+	// operator's rule - and so is a scroll-only weapon, held on its own.
+	bool IsPlayerBotWornWeaponAtRisk(LPCHARACTER ch, LPITEM item, bool fresh = false)
+	{
+		if (!ch || !item || item->GetType() != ITEM_WEAPON || item->GetRefinedVnum() == 0 ||
+				IsPlayerBotSpecialLevel30Weapon(item) || IsPlayerBotScrollOnlyWeapon(item))
+			return false;
+		const TRefineTable* recipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+		if (!recipe || recipe->prob > PLAYERBOT_WORN_SCROLL_MAX_PROB)
+			return false;
+		if (item != GetPlayerBotHandWeapon(ch) ||
+				item->GetLevelLimit() <= GetPlayerBotMerchantWeaponCeiling(ch))
+			return false;
+		return GetPlayerBotBackupWeaponID(ch, fresh) == 0;
+	}
+
 	// The scroll a refine goes under: from PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS
 	// the Zwoj Boga Smokow when the bag has one, otherwise the Blessing
 	// Scroll. Both are read by DoRefineWithScroll from the cell SetRefineMode
@@ -1308,7 +1511,8 @@ namespace
 		for (size_t i = 0; i < sizeof(wearSlots) / sizeof(wearSlots[0]); ++i)
 		{
 			LPITEM item = ch->GetWear(wearSlots[i]);
-			if (!item || item->GetRefinedVnum() == 0)
+			if (!item || item->GetRefinedVnum() == 0 ||
+					!IsPlayerBotWornItemSound(ch, item, wearSlots[i]))
 				continue;
 
 			const BYTE plusLevel = item->GetRefineLevel();
@@ -1454,6 +1658,13 @@ namespace
 				if (!ch->UnequipItem(item) || item->IsEquipped())
 					continue;
 			}
+			// Only a piece in this bot's own bag goes to the anvil. DoRefine
+			// removes what it burns by its cell, and a piece in a slot the engine
+			// does not count as worn is removed from nowhere - the slot keeps
+			// pointing at a destroyed item (IsPlayerBotWornItemSound).
+			if (item->GetOwner() != ch || item->GetWindow() != INVENTORY ||
+					item->GetCell() >= PLAYERBOT_BAG_CELLS || ch->GetInventoryItem(item->GetCell()) != item)
+				continue;
 
 			// DoRefine(false) is the regular blacksmith path: it reads refine_proto,
 			// charges the exact fee, consumes every required material and applies the
@@ -1508,6 +1719,12 @@ namespace
 			// under a scroll only where the step is a real risk.
 			const bool scrollOnly = IsPlayerBotScrollOnlyWeapon(item);
 			const bool level30Grind = !scrollOnly && IsPlayerBotSpecialLevel30Weapon(item);
+			// The weapon in the hand - or the one going back into it, since the
+			// session keeps it in the bag - at a step that can burn it, with no
+			// backup and nothing a merchant sells at its level: under a scroll or
+			// not at all (IsPlayerBotWornWeaponAtRisk). CanPlayerBotAttemptRefineItem
+			// above already refused it without a scroll; this is the scroll's half.
+			const bool handAtRisk = IsPlayerBotWornWeaponAtRisk(ch, item, true);
 			if (scrollOnly)
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
 			else if (level30Grind)
@@ -1516,7 +1733,8 @@ namespace
 					scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
 			}
 			else if (scrollStepAllowed &&
-					(plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item) || wornStepCanBurn))
+					(plusLevel >= PLAYERBOT_SCROLL_REFINE_MIN_PLUS || IsPlayerBotPrizeItem(item) ||
+						wornStepCanBurn || handAtRisk))
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
 			if (scrollCell < 0 && scrollOnly)
 			{
@@ -1525,6 +1743,8 @@ namespace
 						ch->GetPlayerID(), ch->GetName(), oldVnum, (unsigned int)plusLevel, stepProb);
 				continue;
 			}
+			if (scrollCell < 0 && scrollStepAllowed && handAtRisk)
+				continue;
 			// No scroll, a roll that can fail, and a weapon worth more than the
 			// next plus: leave it. The blacksmith burns what he fails. A level-30
 			// weapon under the scroll-only line is not held any more: grinding it
@@ -1611,7 +1831,8 @@ namespace
 		for (size_t i = 0; i < sizeof(wearSlots) / sizeof(wearSlots[0]); ++i)
 		{
 			LPITEM item = ch->GetWear(wearSlots[i]);
-			if (!item || item->GetRefinedVnum() == 0 || item->isLocked() || item->IsExchanging())
+			if (!item || item->GetRefinedVnum() == 0 || item->isLocked() || item->IsExchanging() ||
+					!IsPlayerBotWornItemSound(ch, item, wearSlots[i]))
 				continue;
 			const BYTE plus = item->GetRefineLevel();
 			// The target is PLAYERBOT_SCROLL_REFINE_MAX_PLUS here by construction:
@@ -1661,7 +1882,8 @@ namespace
 		const DWORD oldVnum = best->GetVnum();
 		const DWORD nextVnum = best->GetRefinedVnum();
 		const BYTE plus = best->GetRefineLevel();
-		if (!ch->UnequipItem(best) || best->IsEquipped())
+		if (!ch->UnequipItem(best) || best->IsEquipped() || best->GetWindow() != INVENTORY ||
+				best->GetCell() >= PLAYERBOT_BAG_CELLS)
 			return false;
 		const WORD cell = best->GetCell();
 		const int before = ch->CountSpecifyItem(nextVnum);
@@ -1907,6 +2129,19 @@ namespace
 		if (IsPlayerBotScrollOnlyWeapon(item) &&
 				FindPlayerBotRefineScrollCell(ch, item->GetRefineLevel(), (int)recipe->prob) < 0)
 			return false;
+		// Nor is the weapon in the hand at a step that can burn it with nothing
+		// to fall back on (IsPlayerBotWornWeaponAtRisk). Under the operator's
+		// SCROLL_FROM no scroll may go on the step, and the anvil's odds stand.
+		if (IsPlayerBotScrollStepAllowed(item->GetRefineLevel()) &&
+				IsPlayerBotWornWeaponAtRisk(ch, item) &&
+				FindPlayerBotRefineScrollCell(ch, item->GetRefineLevel(), (int)recipe->prob) < 0)
+		{
+			PlayerBotLogThrottled("refine_hand_weapon", get_dword_time(),
+					"PLAYERBOT_AI: refine held, the only weapon and no scroll pid=%u name=%s vnum=%u plus=%u prob=%d level=%u",
+					ch->GetPlayerID(), ch->GetName(), item->GetVnum(), (unsigned int)item->GetRefineLevel(),
+					(int)recipe->prob, (unsigned int)ch->GetLevel());
+			return false;
+		}
 		return true;
 	}
 

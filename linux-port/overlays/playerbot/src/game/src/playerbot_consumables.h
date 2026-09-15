@@ -61,6 +61,10 @@ namespace
 			return false;
 		if (IsPlayerBotChestLevelLocked(ch, item))
 			return true;
+		// A resource trader's Moonlight chests are all goods: it does not open
+		// them (ManagePlayerBotChests), so a stack of one is a line.
+		if (item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM && IsPlayerBotResourceTrader(ch->GetPlayerID()))
+			return true;
 		// A box the engine refused this bot stays goods; the retry clock is not
 		// consulted here - it exists to stop the asking, not to make the box
 		// valuable again.
@@ -157,6 +161,15 @@ namespace
 			// refuse it, and remembering that refusal is what used to switch the
 			// chest off for everybody.
 			if (IsPlayerBotChestLevelLocked(ch, item))
+				continue;
+			// A resource trader keeps its Moonlight chests for the counter, up to
+			// PLAYERBOT_CHEST_TRADER_HOLD. 2.0.31 let it put a stack of two up, and
+			// it never had two: this pass opens a chest eight seconds after the
+			// drop, so the one bot in five that was to sell them opened them like
+			// the rest ("nadal ... stan sklepow ze szkatami blasku: 0", sizowski).
+			if (item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM &&
+					IsPlayerBotResourceTrader(ch->GetPlayerID()) &&
+					(int)ch->CountSpecifyItem(PLAYERBOT_MOONLIGHT_CHEST_VNUM) <= PLAYERBOT_CHEST_TRADER_HOLD)
 				continue;
 			const std::pair<DWORD, DWORD> refuseKey(ch->GetPlayerID(), item->GetVnum());
 			std::map<std::pair<DWORD, DWORD>, DWORD>::const_iterator refused =

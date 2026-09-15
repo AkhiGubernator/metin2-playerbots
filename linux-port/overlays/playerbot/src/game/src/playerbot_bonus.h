@@ -453,13 +453,39 @@ namespace
 		return row.lValues[level - 1];
 	}
 
+	// A weapon damage line's multiplier on Iwakura's sheet, read between his
+	// bands. The sheet gives one number to a band - average 10-19 x1.2, 20-29
+	// x1.5, skill 1-10 x1.2 - and read as steps, a 19% average asked what a 10%
+	// one did, and exactly what a weapon of 1% average and 3% skill did: two
+	// Ostrza z Czerwonej Stali +0 at 15 150 000 each ("czy nie pracowalismy nad
+	// tym, aby premiowana bardziej byla z wyzszymi srednimi?", Tieru,
+	// 15 September). His number is taken as what a roll in the middle of its
+	// band is worth, and the multiplier runs in a straight line from one band's
+	// middle to the next: a better roll asks more, a worse one less, and a
+	// band's rolls average his price. It starts from no premium one point under
+	// the first band. The last band is a single value and ends the line.
 	WORD GetPlayerBotDamageTierPct(const TPlayerBotDamageTier* tiers, size_t count, long value)
 	{
-		WORD pct = 100;
+		if (!tiers || count == 0)
+			return 100;
+		// Doubled, so the middle of a band is a whole number.
+		const long v2 = 2L * value;
+		long prevX = 2L * ((long)tiers[0].bFrom - 1);
+		long prevPct = 100;
+		if (v2 <= prevX)
+			return 100;
 		for (size_t i = 0; i < count; ++i)
-			if (value >= tiers[i].bFrom)
-				pct = tiers[i].wPct;
-		return pct;
+		{
+			const long from = tiers[i].bFrom;
+			const long end = i + 1 < count ? (long)tiers[i + 1].bFrom - 1 : from;
+			const long midX = from + end;
+			const long pct = tiers[i].wPct;
+			if (v2 <= midX)
+				return (WORD)(prevPct + (pct - prevPct) * (v2 - prevX) / std::max(1L, midX - prevX));
+			prevX = midX;
+			prevPct = pct;
+		}
+		return (WORD)prevPct;
 	}
 
 	// What the lines on an item add to its asking price, as a percentage:

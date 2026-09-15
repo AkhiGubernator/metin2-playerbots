@@ -38,13 +38,21 @@ namespace {
                     const auto price = line->GetPrice().GetTotalYangAmount();
                     // A level-30 weapon, a medal or a scroll is saved up for: the
                     // bot's own budget caps it, not the median wallet.
-                    const long long cap = IsPlayerBotStrategicPurchase(line->GetInfo().vnum)
-                            ? budget * PLAYERBOT_STRATEGIC_BUDGET_PERCENT / 100
+                    const long long strategicCap = budget * PLAYERBOT_STRATEGIC_BUDGET_PERCENT / 100;
+                    const bool strategic = IsPlayerBotStrategicPurchase(line->GetInfo().vnum);
+                    const long long cap = strategic ? strategicCap
                             : (long long)GetPlayerBotMarketMedianWallet() * PLAYERBOT_MARKET_STACK_WALLET_PERCENT / 100;
-                    if (price <= 0 || price > budget || (cap > 0 && price > cap)) continue;
+                    // A weapon far better than the one in the hand is saved for
+                    // the same way (IsPlayerBotStrategicWeaponOffer): over the
+                    // wallet cap it is still looked at, against the bot's budget.
+                    const bool overCap = cap > 0 && price > cap;
+                    const bool weaponLine = line->GetTable() && line->GetTable()->bType == ITEM_WEAPON;
+                    if (price <= 0 || price > budget ||
+                            (overCap && (strategic || !weaponLine || price > strategicCap))) continue;
                     auto preview = BotOfflinePreview(*line);
                     if (!preview) continue;
-                    bool want = WantsPlayerBotStallItem(ch, preview) && ch->GetEmptyInventory(preview->GetSize()) >= 0;
+                    bool want = WantsPlayerBotStallItem(ch, preview) && ch->GetEmptyInventory(preview->GetSize()) >= 0 &&
+                            (!overCap || IsPlayerBotStrategicWeaponOffer(ch, preview));
                     M2_DELETE(preview);
                     if (!want) continue;
                     o.buyOwner = shop->GetOwnerPID();

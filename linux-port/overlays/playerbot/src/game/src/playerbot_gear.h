@@ -22,14 +22,13 @@ namespace
 	void GetPlayerBotNpcApproach(DWORD playerID, long npcX, long npcY, DWORD salt,
 			long& approachX, long& approachY);
 
-	bool IsPlayerBotWeapon(LPCHARACTER ch, LPITEM item)
+	// Whether this character fights with a weapon of this kind. Asked of an
+	// item by IsPlayerBotWeapon and of a merchant's proto by
+	// GetPlayerBotMerchantWeaponCeiling.
+	bool IsPlayerBotWeaponSubTypeFor(LPCHARACTER ch, BYTE subType)
 	{
-		if (!item || item->GetType() != ITEM_WEAPON)
-			return false;
-
 		if (ch)
 		{
-			const BYTE subType = item->GetSubType();
 			switch (ch->GetJob())
 			{
 				case JOB_ASSASSIN:
@@ -49,7 +48,7 @@ namespace
 			}
 		}
 
-		switch (item->GetSubType())
+		switch (subType)
 		{
 			case WEAPON_SWORD:
 			case WEAPON_DAGGER:
@@ -63,6 +62,12 @@ namespace
 		}
 
 		return false;
+	}
+
+	bool IsPlayerBotWeapon(LPCHARACTER ch, LPITEM item)
+	{
+		return item && item->GetType() == ITEM_WEAPON &&
+				IsPlayerBotWeaponSubTypeFor(ch, item->GetSubType());
 	}
 
 	bool IsPlayerBotEquipmentCandidate(LPCHARACTER ch, LPITEM item)
@@ -99,6 +104,23 @@ namespace
 			return false;
 
 		return true;
+	}
+
+	// An item a wear slot points at that the engine really wears: owned by this
+	// character, flagged equipped, and in that slot's own cell. The first
+	// version of the emergency weapon purchase equipped whatever AutoGiveItem
+	// handed back, and with a full bag that is an item lying on the ground: a
+	// Miecz+0 then sat in the slot and on the ground at once (BROLID, 15
+	// September, 11:10:34), its ground timer fired five minutes later ("Owner
+	// exist"), and the next blacksmith visit ended with RemoveFromCharacter's
+	// "Invalid Item Position", a destroyed item still in the weapon slot, and
+	// twenty-one equips of a sword over it in one second - FAST_ITEM_SWAP, and
+	// a bot thrown out of the game. Whatever put an item there, nothing is
+	// swapped, refined or taken off through a slot that fails this.
+	bool IsPlayerBotWornItemSound(LPCHARACTER ch, LPITEM item, int wearCell)
+	{
+		return ch && item && wearCell >= 0 && item->GetOwner() == ch && item->IsEquipped() &&
+				(int)item->GetCell() == (int)INVENTORY_MAX_NUM + wearCell;
 	}
 
 	// The stat this character fights with. A warrior swings with strength and a
@@ -528,9 +550,14 @@ namespace
 					// Mental Warrior breaks Metin stones with it. Before that the
 					// flat bonus made a +4 spike win over a +6 sword with a
 					// thirty-percent bonus against monsters.
+					// A share of its own blow, not a flat two hundred points of it:
+					// at 75 two hundred is most of what a level-ten two-hander hits
+					// for, so the flat bonus let one outscore a far better sword
+					// (a Gilotynowe Ostrze +7 in the hand of a warrior of 75,
+					// Tieru, 15 September). score is one plus the blow here.
 					if (ch->GetSkillGroup() == 2 && item->GetSubType() == WEAPON_TWO_HANDED &&
 							ch->GetHorseLevel() >= PLAYERBOT_BATTLE_HORSE_LEVEL)
-						score += 200000; // Prefer two-handed for Mental Warrior
+						score += (score - 1) * PLAYERBOT_TWO_HANDED_PREFERENCE_PERCENT / 100;
 					else if (ch->GetSkillGroup() == 1 && item->GetSubType() == WEAPON_SWORD)
 						score += 200000; // Prefer sword for Body Warrior
 				}
@@ -624,6 +651,96 @@ namespace
 		return score;
 	}
 
+	// The best weapon in the bag this character can wear now, other than
+	// `except`, and its score.
+	LPITEM FindPlayerBotBestBagWeapon(LPCHARACTER ch, LPITEM except, long long* scoreOut)
+	{
+		LPITEM best = NULL;
+		long long bestScore = 0;
+		for (WORD cell = 0; ch && cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item == except || item->GetCell() != cell || item->IsEquipped() ||
+					item->GetType() != ITEM_WEAPON || !IsPlayerBotEquipmentCandidate(ch, item) ||
+					item->GetLevelLimit() > ch->GetLevel() || item->FindEquipCell(ch) != WEAR_WEAPON)
+				continue;
+			const long long score = GetPlayerBotEquipmentScore(item, ch);
+			if (!best || score > bestScore || (score == bestScore && item->GetID() < best->GetID()))
+			{
+				best = item;
+				bestScore = score;
+			}
+		}
+		if (scoreOut)
+			*scoreOut = bestScore;
+		return best;
+	}
+
+	// The weapon in the hand, or - with the hand empty, as it is for a whole
+	// blacksmith session, or holding a rod or a pickaxe - the one that goes
+	// back into it. A tool is not a weapon with a blow of nothing: read as one,
+	// an angler's hand was outclassed by the whole atlas and every weapon on a
+	// counter was worth its savings.
+	LPITEM GetPlayerBotHandWeapon(LPCHARACTER ch)
+	{
+		if (!ch || !ch->IsItemLoaded())
+			return NULL;
+		LPITEM worn = ch->GetWear(WEAR_WEAPON);
+		return worn && worn->GetType() == ITEM_WEAPON ? worn : FindPlayerBotBestBagWeapon(ch, NULL, NULL);
+	}
+
+	// The weapon a bot keeps for the day the one in its hand burns: the best
+	// other weapon in the bag it can wear, scoring at least
+	// PLAYERBOT_REFINE_BACKUP_SCORE_PERCENT of the hand's. It is not a gift,
+	// not merchant scrap and not counter goods; without one the refine pass
+	// holds the hand's weapon off the plain anvil (IsPlayerBotWornWeaponAtRisk).
+	LPITEM FindPlayerBotBackupWeapon(LPCHARACTER ch)
+	{
+		LPITEM hand = GetPlayerBotHandWeapon(ch);
+		if (!hand)
+			return NULL;
+		long long backupScore = 0;
+		LPITEM backup = FindPlayerBotBestBagWeapon(ch, hand, &backupScore);
+		if (!backup || backupScore * 100 <
+				GetPlayerBotEquipmentScore(hand, ch) * PLAYERBOT_REFINE_BACKUP_SCORE_PERCENT)
+			return NULL;
+		return backup;
+	}
+
+	// FindPlayerBotBackupWeapon scores every weapon in the bag, and the junk
+	// rule and the planner's refine question ask it once for every weapon in
+	// the bag - the square of the bag's weapons, on every pass of 1100 bots
+	// (the tick went from 8-9 s of 60 to 11 on its first deploy). The answer is
+	// kept by item id for PLAYERBOT_BACKUP_WEAPON_CACHE_MS; what acts on it at
+	// once - a gift, the refine at the anvil - asks afresh.
+	struct TPlayerBotBackupWeaponAnswer
+	{
+		DWORD dwTime;
+		DWORD dwItemID;
+	};
+	std::map<DWORD, TPlayerBotBackupWeaponAnswer> s_mapPlayerBotBackupWeapon;
+
+	DWORD GetPlayerBotBackupWeaponID(LPCHARACTER ch, bool fresh)
+	{
+		if (!ch)
+			return 0;
+		const DWORD now = get_dword_time();
+		TPlayerBotBackupWeaponAnswer& answer = s_mapPlayerBotBackupWeapon[ch->GetPlayerID()];
+		if (fresh || answer.dwTime == 0 || now - answer.dwTime >= PLAYERBOT_BACKUP_WEAPON_CACHE_MS)
+		{
+			LPITEM backup = FindPlayerBotBackupWeapon(ch);
+			answer.dwTime = now != 0 ? now : 1;
+			answer.dwItemID = backup ? backup->GetID() : 0;
+		}
+		return answer.dwItemID;
+	}
+
+	bool IsPlayerBotKeptBackupWeapon(LPCHARACTER ch, LPITEM item, bool fresh = false)
+	{
+		return ch && item && item->GetType() == ITEM_WEAPON && item->GetID() != 0 &&
+				GetPlayerBotBackupWeaponID(ch, fresh) == item->GetID();
+	}
+
 	bool SharePlayerBotOldGearNearby(LPCHARACTER ch, LPITEM oldItem)
 	{
 		if (!ch || !oldItem || oldItem->IsEquipped() || oldItem->isLocked() ||
@@ -633,6 +750,9 @@ namespace
 
 		const int wearCell = oldItem->FindEquipCell(ch);
 		if (wearCell < 0)
+			return false;
+		// Never the weapon kept for the day the one in the hand burns.
+		if (IsPlayerBotKeptBackupWeapon(ch, oldItem, true))
 			return false;
 
 		struct FGearSharer
@@ -875,6 +995,13 @@ namespace
 				continue;
 
 			LPITEM oldItem = ch->GetWear(wearCell);
+			if (oldItem && !IsPlayerBotWornItemSound(ch, oldItem, wearCell))
+			{
+				PlayerBotLogThrottled("wear_slot_unsound", dwNow,
+						"PLAYERBOT_AI: wear slot holds an item the engine does not wear pid=%u name=%s wear=%d",
+						ch->GetPlayerID(), ch->GetName(), wearCell);
+				continue;
+			}
 			if (oldItem && IS_SET(oldItem->GetFlag(), ITEM_FLAG_IRREMOVABLE))
 				continue;
 #if defined(PLAYERBOT_ENGINE_MT2009)
@@ -2500,6 +2627,12 @@ namespace
 		const long long price = GetPlayerBotEmergencyWeaponPrice(ch);
 		if (vnum == 0)
 			return false;
+		// Room first: AutoGiveItem puts what the bag cannot take on the ground
+		// and returns it, and a weapon equipped from the ground is in the slot
+		// and on the ground at once (IsPlayerBotWornItemSound).
+		const TItemTable* weaponProto = ITEM_MANAGER::instance().GetTable(vnum);
+		if (!weaponProto || ch->GetEmptyInventory(std::max(1, (int)weaponProto->bSize)) < 0)
+			return false;
 		if (ch->GetGold() < price)
 			RaisePlayerBotEmergencyGold(ch, price, "weapon");
 		if (ch->GetGold() < price)
@@ -2508,6 +2641,12 @@ namespace
 		LPITEM weapon = ch->AutoGiveItem(vnum, 1, -1, false);
 		if (!weapon)
 			return false;
+		if (weapon->GetOwner() != ch || weapon->GetWindow() != INVENTORY)
+		{
+			sys_err("PLAYERBOT_AI: emergency weapon did not reach the bag pid=%u name=%s vnum=%u",
+					ch->GetPlayerID(), ch->GetName(), vnum);
+			return false;
+		}
 
 		PlayerBotChangeGold(ch, -price);
 		const bool equipped = PlayerBotEquipItem(ch, weapon);

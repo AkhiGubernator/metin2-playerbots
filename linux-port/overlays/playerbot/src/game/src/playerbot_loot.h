@@ -181,6 +181,14 @@ namespace
 			case ITEM_WEAPON:
 			case ITEM_ARMOR:
 			{
+				// Helmets and shields are picked up whatever their merchant price:
+				// the ones of level 21, 41 and 61 are worth more than it says, and a
+				// dungeon floor kept its Upiorna Maska while bots of fifty walked
+				// past (Tieru, 15 September: "tarcze na 21 41 61 poziom czy helmy
+				// ... warto podnosic tak czy siak").
+				if (item->GetType() == ITEM_ARMOR &&
+						(item->GetSubType() == ARMOR_HEAD || item->GetSubType() == ARMOR_SHIELD))
+					return false;
 				if (item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE ||
 						IsPlayerBotPrizeItem(item) || IsPlayerBotSpecialLevel30Weapon(item))
 					return false;

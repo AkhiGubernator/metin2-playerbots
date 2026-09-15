@@ -313,7 +313,10 @@ namespace
 		if (!best)
 			return false;
 		LPITEM worn = ch->GetWear(WEAR_WEAPON);
-		if (worn && !ch->UnequipItem(worn))
+		// The engine's UnequipItem takes a bag cell without asking whether there
+		// is one; the room is asked here, and the weapon has to be off after.
+		if (worn && (ch->GetEmptyInventory(worn->GetSize()) < 0 || !ch->UnequipItem(worn) ||
+				worn->IsEquipped()))
 			return false;
 		if (!PlayerBotEquipItem(ch, best))
 			return false;

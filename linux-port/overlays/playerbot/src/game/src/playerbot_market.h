@@ -91,8 +91,9 @@ namespace
 	}
 
 	// A bot with a weapon that goes to the anvil under scrolls - one it may
-	// refine no other way, a level-30 weapon in its hand, or the one it is
-	// grinding - buys a few, up to PLAYERBOT_LEVEL30_SCROLL_WANT.
+	// refine no other way, a level-30 weapon in its hand, the one it is
+	// grinding, or the only weapon it has at a step that burns - buys a few,
+	// up to PLAYERBOT_LEVEL30_SCROLL_WANT.
 	bool PlayerBotNeedsScrollForWeapon(LPCHARACTER ch)
 	{
 		if (!ch || !ch->IsItemLoaded() ||
@@ -101,6 +102,12 @@ namespace
 		LPITEM worn = ch->GetWear(WEAR_WEAPON);
 		if (worn && worn->GetRefinedVnum() != 0 &&
 				(IsPlayerBotScrollOnlyWeapon(worn) || IsPlayerBotSpecialLevel30Weapon(worn)))
+			return true;
+		// The weapon in the hand the anvil would burn with nothing behind it
+		// (IsPlayerBotWornWeaponAtRisk), while it is short of its target: a rich
+		// bot buys its way past the hold rather than waiting for a drop.
+		if (worn && worn->GetRefineLevel() < GetPlayerBotRefineTarget(ch, worn) &&
+				IsPlayerBotWornWeaponAtRisk(ch, worn))
 			return true;
 		TPlayerBotLevel30View view;
 		ReadPlayerBotLevel30View(ch, view);
@@ -172,6 +179,9 @@ namespace
 		// And a refine scroll, for a weapon that is refined under one.
 		if (IsPlayerBotSafeRefineScroll(offer->GetVnum()) && PlayerBotNeedsScrollForWeapon(ch))
 			return true;
+		// A key for a chest it holds and cannot open.
+		if (offer->GetType() == ITEM_TREASURE_KEY)
+			return PlayerBotWantsTreasureKey(ch, offer);
 
 		// Gear only when it is genuinely better than what is worn. A bot that
 		// buys sideways upgrades spends its yang on nothing.
@@ -248,6 +258,14 @@ namespace
 		// A scroll for a weapon that is refined under one.
 		if (PlayerBotNeedsScrollForWeapon(ch))
 			return true;
+		// A weapon the atlas says it has outgrown, when it could pay for the one
+		// it is after (playerbot_weapon_goal.h).
+		{
+			const TPlayerBotWeaponGoal& goal = GetPlayerBotWeaponGoal(ch, get_dword_time());
+			if (IsPlayerBotWeaponOutclassed(goal) &&
+					GetPlayerBotStrategicPurchaseCap(ch) >= (long long)GetPlayerBotWeaponGoalPrice(goal.family))
+				return true;
+		}
 		// And the level-30 weapon it would otherwise cross the world to farm -
 		// unless it is grinding one already, wears a finished one, no such
 		// weapon could beat what it has (PlayerBotCouldUseLevel30Weapon), or it
@@ -316,7 +334,8 @@ namespace
 					const CShop::SHOP_ITEM& line = lines[k];
 					if (!line.pkItem || line.vnum == 0 || line.price <= 0 ||
 							(cap != 0 && (DWORD)line.price > cap &&
-								!(IsPlayerBotStrategicPurchase(line.vnum) &&
+								!((IsPlayerBotStrategicPurchase(line.vnum) ||
+										IsPlayerBotStrategicWeaponOffer(ch, line.pkItem)) &&
 									(long long)line.price <= GetPlayerBotStrategicPurchaseCap(ch))))
 						continue;
 					TPlayerBotShopOffer offer;
@@ -802,12 +821,14 @@ namespace
 		}
 		// Who is trading and why, against the TRADE weight in force: the number
 		// an operator needs before deciding the slider "does nothing".
-		sys_log(0, "PLAYERBOT_SHOP: census stalls=%u trade_weight=%d merchant=%u poor=%u bag_full=%u dropper_pressure=%u books=%u dropper_roll=%u roll=%u",
+		sys_log(0, "PLAYERBOT_SHOP: census stalls=%u trade_weight=%d merchant=%u poor=%u bag_full=%u dropper_pressure=%u books=%u dropper_roll=%u roll=%u spare=%u hoard=%u",
 				stalls, GetPlayerBotWeight(PLAYERBOT_WEIGHT_TRADE),
 				auStallsByReason[PLAYERBOT_SHOP_REASON_MERCHANT], auStallsByReason[PLAYERBOT_SHOP_REASON_POOR],
 				auStallsByReason[PLAYERBOT_SHOP_REASON_BAG_FULL], auStallsByReason[PLAYERBOT_SHOP_REASON_DROPPER_PRESSURE],
 				auStallsByReason[PLAYERBOT_SHOP_REASON_BOOKS], auStallsByReason[PLAYERBOT_SHOP_REASON_DROPPER_ROLL],
-				auStallsByReason[PLAYERBOT_SHOP_REASON_ROLL]);
+				auStallsByReason[PLAYERBOT_SHOP_REASON_ROLL], auStallsByReason[PLAYERBOT_SHOP_REASON_SPARE],
+				auStallsByReason[PLAYERBOT_SHOP_REASON_HOARD]);
+		ReportPlayerBotWeaponGoals(dwNow);
 		sys_log(0, "PLAYERBOT_MARKET: ledger stalls=%u lines=%u vnums=%u demand_bots=%u wallet=%u decisions list=%u probe=%u no_demand=%u overstock=%u top:%s",
 				stalls, lines, (unsigned int)s_mapMarketLedger.size(), demandBots,
 				s_dwMarketMedianWallet,

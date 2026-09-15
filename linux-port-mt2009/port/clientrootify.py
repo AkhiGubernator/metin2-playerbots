@@ -15,9 +15,17 @@ Writes into client-root/ (beside serverinfo.py, which is hand-written):
   * uiitemshop.py, itemshop_subscriptionwindow.py - "Doladuj SM!" and the
                     subscription button open the buycoffee page, not mt2009.pl;
   * uisystem.py   - the system menu's support button opens our Discord.
-  * uitooltip.py  - the GM branch no longer kills every item tooltip.
+  * uitooltip.py  - the GM branch no longer kills every item tooltip, and the
+                    speed potion's asks for no apply name this client lacks.
   * game.py       - the "PlayerBotStatus" server command, handed to
-                    playerbot_status_tail.py (hand-written, beside serverinfo.py).
+                    playerbot_status_tail.py (hand-written, beside serverinfo.py);
+                    Auto Lowy: the "AutoHuntTarget" and "AutoHuntLoot" commands, the K key and the
+                    hunt among the updateables (uiautohunt.py, hand-written).
+  * uiinventory.py - the auto-stack button queues its moves for
+                    autostackpump.py (hand-written) instead of sending them all
+                    in one frame, which the server's flood limit closed on.
+  * offlineshopmanage.py - a click on an empty slot of the shop's edit grid
+                    removes nothing instead of raising KeyError.
 
 Exact-string edits on the stock CP1250/CRLF files, byte for byte otherwise.
 Idempotent; re-run after a new client package.
@@ -59,6 +67,15 @@ EDITS = {
          b'\t\t\t\tself.AppendTextLine("Auxs: ")\r\n'
          b'\t\t\t\tfor _, val in self.auxiliaryDict.items():\r\n'
          b'\t\t\t\t\tself.AppendTextLine("Key: [{}] Value: [{}]".format(_, val))\r\n'),
+        # The speed potion's tooltip asked item for APPLY_ATT_SPEED and
+        # APPLY_MOV_SPEED, which this client's item module does not export
+        # (AttributeError in l0st3k's syserr, 15 September), so hovering one
+        # broke the tooltip. On this line an apply is its point: 17 and 19,
+        # what Zielona and Fioletowa Mikstura carry in value0.
+        (b'\t\tif abilityType == item.APPLY_ATT_SPEED:\r\n',
+         b'\t\tif abilityType == getattr(item, "APPLY_ATT_SPEED", 17):\r\n'),
+        (b'\t\telif abilityType == item.APPLY_MOV_SPEED:\r\n',
+         b'\t\telif abilityType == getattr(item, "APPLY_MOV_SPEED", 19):\r\n'),
     ],
     # A bot's status arrives as the command "PlayerBotStatus <vid> <hex>"
     # (SendPlayerBotOverheadChat) and is drawn as a text tail only: as talking
@@ -83,6 +100,86 @@ EDITS = {
          b'\t\tplayerbot_status_tail.show(vid, encodedText)\r\n'
          b'\r\n'
          b'\t# Same transport as PlayerbotOverhead above (SendPlayerBotOverheadTail),\r\n'),
+        # Auto Lowy (uiautohunt.py, hand-written beside serverinfo.py): the
+        # server names the target with "AutoHuntTarget <vid>", K opens the
+        # window, and the hunt runs as one of the game's updateables. Every
+        # insertion splits its own anchor, so a re-run on our output finds the
+        # new text and not the old, and none of them touches the two above.
+        (b'\t\t\t"Top1Badge"\t\t\t\t\t\t\t: self.__OnTop1Badge,\r\n'
+         b'\r\n'
+         b'\t\t\t# fishing\r\n',
+         b'\t\t\t"Top1Badge"\t\t\t\t\t\t\t: self.__OnTop1Badge,\r\n'
+         b'\t\t\t"AutoHuntTarget"\t\t\t\t: self.__AutoHuntTarget,\r\n'
+         b'\t\t\t"AutoHuntLoot"\t\t\t\t\t: self.__AutoHuntLoot,\r\n'
+         b'\r\n'
+         b'\t\t\t# fishing\r\n'),
+        (b'\t\t#onPressKeyDict[app.DIK_K]\t\t\t= lambda : self.interface.OpenCubeWindow()\r\n'
+         b'\t\t# CUBE_TEST_END\r\n',
+         b'\t\t#onPressKeyDict[app.DIK_K]\t\t\t= lambda : self.interface.OpenCubeWindow()\r\n'
+         b'\t\tonPressKeyDict[app.DIK_K]\t\t\t= lambda : self.__ToggleAutoHunt()\r\n'
+         b'\t\t# CUBE_TEST_END\r\n'),
+        (b'\t\tself.RegisterUpdatable(updateable.PickUpOnDownKey())\r\n'
+         b'\r\n',
+         b'\t\tself.RegisterUpdatable(updateable.PickUpOnDownKey())\r\n'
+         b'\t\timport uiautohunt\r\n'
+         b'\t\tself.RegisterUpdatable(uiautohunt.GetHunter())\r\n'
+         b'\r\n'),
+        (b'\t\tself.__PressQuickSlot(5)\r\n'
+         b'\t\treturn\r\n'
+         b'\r\n'
+         b'\tdef __ToggleSprint(self):\r\n',
+         b'\t\tself.__PressQuickSlot(5)\r\n'
+         b'\t\treturn\r\n'
+         b'\r\n'
+         b'\tdef __ToggleAutoHunt(self):\r\n'
+         b'\t\timport uiautohunt\r\n'
+         b'\t\tuiautohunt.ToggleWindow()\r\n'
+         b'\r\n'
+         b'\tdef __AutoHuntTarget(self, vid="0", *rest):\r\n'
+         b'\t\timport uiautohunt\r\n'
+         b'\t\tuiautohunt.OnServerTarget(vid)\r\n'
+         b'\r\n'
+         b'\tdef __AutoHuntLoot(self, vid="0", x="0", y="0", *rest):\r\n'
+         b'\t\timport uiautohunt\r\n'
+         b'\t\tuiautohunt.OnServerLoot(vid, x, y)\r\n'
+         b'\r\n'
+         b'\tdef __ToggleSprint(self):\r\n'),
+    ],
+    # The inventory's auto-stack button sent a move for every pair of stacks of
+    # one item in a single frame - 300 moves for 25 stacks - and 300 packets in
+    # a second is the server's flood limit (CInputMain::Analyze logs
+    # FLOOD_HEADER_13 and closes the connection): "loga postac do ekranu
+    # logowania" (l0st3k, 15 September). The same moves now leave a few at a
+    # time through autostackpump.py (hand-written beside this file).
+    'uiinventory.py': [
+        (b'\tdef __OnAutoStackButton(self):\r\n'
+         b'\t\tTOTAL_SLOTS = player.INVENTORY_MAX_NUM\r\n',
+         b'\tdef __OnAutoStackButton(self):\r\n'
+         b'\t\timport autostackpump\r\n'
+         b'\t\tmoves = []\r\n'
+         b'\t\tTOTAL_SLOTS = player.INVENTORY_MAX_NUM\r\n'),
+        (b'\t\t\t\t\tif destItemVnum == srcItemVnum:\r\n'
+         b'\t\t\t\t\t\tself.__SendMoveItemPacket(destSlot, sourceSlot, 0)\r\n'
+         b'\r\n'
+         b'\t\tchat.AppendChat(chat.CHAT_TYPE_INFO, localeInfo.AUTOSTACK_INVENTORY)\r\n',
+         b'\t\t\t\t\tif destItemVnum == srcItemVnum:\r\n'
+         b'\t\t\t\t\t\tmoves.append((destSlot, sourceSlot))\r\n'
+         b'\r\n'
+         b'\t\tautostackpump.Queue(moves)\r\n'
+         b'\t\tchat.AppendChat(chat.CHAT_TYPE_INFO, localeInfo.AUTOSTACK_INVENTORY)\r\n'),
+    ],
+    # The offline shop's edit grid removes an item on a left click and never
+    # asked whether the slot held one: a click on an empty slot was a KeyError
+    # in syserr.txt (slots 44, 45, 55 and 57 in l0st3k's, 15 September). An
+    # empty slot does nothing now.
+    'offlineshopmanage.py': [
+        (b'\tdef RemoveItem(self, slotIndex):\r\n'
+         b'\t\tikashop.SendRemoveItem(constInfo.myshop_data["items"][slotIndex]["id"])\r\n',
+         b'\tdef RemoveItem(self, slotIndex):\r\n'
+         b'\t\titemData = constInfo.myshop_data["items"].get(slotIndex)\r\n'
+         b'\t\tif not itemData:\r\n'
+         b'\t\t\treturn\r\n'
+         b'\t\tikashop.SendRemoveItem(itemData["id"])\r\n'),
     ],
     'uisystem.py': [
         (b'\t\tutils.open_url("https://mt2009.pl/Identity/Account/Manage/Support")\r\n',

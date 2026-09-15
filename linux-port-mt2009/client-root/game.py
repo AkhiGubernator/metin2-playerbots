@@ -421,6 +421,8 @@ class GameWindow(ui.ScriptWindow):
 	def CreateUpdateables(self):
 		self.updateable = []
 		self.RegisterUpdatable(updateable.PickUpOnDownKey())
+		import uiautohunt
+		self.RegisterUpdatable(uiautohunt.GetHunter())
 
 	def __AddFloatingText(self, text, is_negative, life_time=1.5):
 		if systemSetting.GetShowFloatingText():
@@ -646,6 +648,7 @@ class GameWindow(ui.ScriptWindow):
 
 		# CUBE_TEST
 		#onPressKeyDict[app.DIK_K]			= lambda : self.interface.OpenCubeWindow()
+		onPressKeyDict[app.DIK_K]			= lambda : self.__ToggleAutoHunt()
 		# CUBE_TEST_END
 
 		self.onPressKeyDict = onPressKeyDict
@@ -774,6 +777,18 @@ class GameWindow(ui.ScriptWindow):
 
 		self.__PressQuickSlot(5)
 		return
+
+	def __ToggleAutoHunt(self):
+		import uiautohunt
+		uiautohunt.ToggleWindow()
+
+	def __AutoHuntTarget(self, vid="0", *rest):
+		import uiautohunt
+		uiautohunt.OnServerTarget(vid)
+
+	def __AutoHuntLoot(self, vid="0", x="0", y="0", *rest):
+		import uiautohunt
+		uiautohunt.OnServerLoot(vid, x, y)
 
 	def __ToggleSprint(self):
 		slotIndex = 105 # sprint slot index
@@ -2594,6 +2609,8 @@ class GameWindow(ui.ScriptWindow):
 			"PlayerbotOverhead"				: self.__PlayerbotAdmin_Overhead,
 			"PlayerBotStatus"				: self.__PlayerBotStatus,
 			"Top1Badge"							: self.__OnTop1Badge,
+			"AutoHuntTarget"				: self.__AutoHuntTarget,
+			"AutoHuntLoot"					: self.__AutoHuntLoot,
 
 			# fishing
 			"FishingGameStart": self.FishingGameStart,

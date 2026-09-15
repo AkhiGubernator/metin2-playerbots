@@ -756,7 +756,10 @@ namespace
 				ch->HorseSummon(false);
 			ClearPlayerBotRoute(state, false);
 			state.dwNextNavPlanTime = 0;
-			state.dwNextHorseRideCheckTime = dwNow + 1000;
+			// The pass that climbed down wants the ground for a moment, and the
+			// travel used to put the bot back on the horse a second later
+			// (PLAYERBOT_HORSE_TRAVEL_FLIP_HOLD_MS).
+			state.dwNextHorseRideCheckTime = dwNow + PLAYERBOT_HORSE_TRAVEL_FLIP_HOLD_MS;
 			state.dwLastMeaningfulActivityTime = dwNow;
 			sys_log(0, "PLAYERBOT_HORSE: dismounted pid=%u name=%s map=%ld pos=(%ld,%ld) reason=%s",
 					ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(), ch->GetX(), ch->GetY(),
@@ -835,9 +838,8 @@ namespace
 		// horse regardless of how near the destination is. SetPlayerBotRidingForTravel
 		// still refuses gracefully when the horse is spent, leaving the bot on foot.
 		//
-		// A portal wants the saddle kept for a different reason. The dismount below
-		// exists so a bot walks up to an NPC on foot, the way a player does before
-		// talking to one; a teleporter is not talked to at all.
+		// A portal wants the saddle for any distance; the leg's own mount below
+		// takes the horse only for a long way.
 		if (fightOnHorse || keepHorseAtDestination)
 		{
 			SetPlayerBotRidingForTravel(ch, state, true, dwNow,
@@ -876,11 +878,18 @@ namespace
 			if (foe && !foe->IsDead())
 				return;
 		}
-		const int distance = DISTANCE_APPROX(ch->GetX() - destX, ch->GetY() - destY);
-		if (!allowHorse || distance <= PLAYERBOT_HORSE_DISMOUNT_DISTANCE)
-			SetPlayerBotRidingForTravel(ch, state, false, dwNow,
-					allowHorse ? "near_destination" : "on_foot_action");
-		else if (distance >= PLAYERBOT_HORSE_MOUNT_DISTANCE)
+		// A rider keeps the saddle to the end of the leg, and on a leg that does
+		// not ask for the horse. Nothing a bot does at the end of one wants the
+		// ground on either engine: an NPC, a counter, the anvil, a chest, a book,
+		// the gear and a portal all answer a rider (Tieru, 15 September: "Nie
+		// trzeba schodzic z konia by przeczytac ksiazke, sciagnac eq, ubrac eq,
+		// otworzyc jakies skrzynki, porozmawiac z npc, przejsc przez portal"). The
+		// two climb-downs that stood here, near_destination and on_foot_action,
+		// were 13 011 of 24 389 in 36 minutes on the test world. What does want
+		// the ground gets off by itself: a fight on a transport horse, a duel, a
+		// skill, the rod, a polymorph marble, a counter going up.
+		if (allowHorse && !ch->IsRiding() &&
+				DISTANCE_APPROX(ch->GetX() - destX, ch->GetY() - destY) >= PLAYERBOT_HORSE_MOUNT_DISTANCE)
 			SetPlayerBotRidingForTravel(ch, state, true, dwNow, "long_travel");
 	}
 

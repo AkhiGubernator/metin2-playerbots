@@ -47,8 +47,8 @@ oddzielone od siebie pionową kreską (np. 2.5 | 1.7).
 Oznaczają one odpowiednio: [Wartość MAKSYMALNA ] | [ Dowolna INNA wartość ])
 
 > HEŁM
-Silny przeciwko ludziom 			2.50 | 1.15 
-Odpornosc na magie					2.0	| 1.15
+Silny przeciwko ludziom 			2.3 | 1.15 
+Odpornosc na magie					1.7	| 1.15
 Regeneracja ST (staminy) 			1.3 | 1.1
 Maks. Stamina 						1.4 | 1.1 
 Regeneracja Mistur PŻ				1.3	| 1.1 
@@ -59,34 +59,34 @@ Szybkość ataku						2.0 | 1.2
 Szansa na unik. strzały				2.0 | 1.4
 Szansa na otrucie 					2.2 | 1.5
 Silny przeciwko mistykom			1.5 | 1.1
-silny przeciwko diablom				2.4 | 1.5
+silny przeciwko diablom				2.3 | 1.5
 Silny przeciwko nieumarlym  		
-dla itemów powyzej 33 lvl			2.5 | 1.5
+dla itemów powyzej 33 lvl			2.3 | 1.5
 dla itemów poniżej 33 lvl 			2.0 | 1.1
 Silny przeciwko zwierzętom 		
 dla itemów powyzej 33 lvl			1.5 | 1.15
-dla itemów poniżej 33 lvl 			2.5 | 1.3
+dla itemów poniżej 33 lvl 			2.3 | 1.3
 Silny przeciwko orkom		
 dla itemów powyżej 33 lvl			2.2 | 1.3
 dla itemów poniżej 33 lvl 			1.8 | 1.1
 				
 
 > ZBROJA
-Maks. PŻ							2.5 | 1.7 
+Maks. PŻ							2.1 | 1.7 
 Maks. Stamina						1.3 | 1.1
 Regeneracja ST (staminy)			1.3 | 1.1				
-Wartość ataku						2.5 | 1.7
+Wartość ataku						2.1 | 1.7
 Szybkość zaklęcia					1.6 | 1.15 					
-x% obrażen dodanych do PŻ			2.0 | 1.6
+x% obrażen dodanych do PŻ			1.7 | 1.6
 x% obrażen dodanych do PE			1.2	| 1.05 		 			
 Szansa na dobicie ciosu				1.3 | 1.15
-Odporność na magie					1.8 | 1.2
-Odporność na sztylety				1.8 | 1.2
+Odporność na magie					1.5 | 1.2
+Odporność na sztylety				1.6 | 1.2
 Odporność na strzały				2.4 | 1.3 
 Odporność na wahlarze				1.5 | 1.05			
 Odporność na dzwony					1.5 | 1.05
-Odporność na miecze					1.8 | 1.2
-Odrponość na broń dwuręczną			1.8 | 1.2
+Odporność na miecze					1.6 | 1.2
+Odrponość na broń dwuręczną			1.6 | 1.2
 Czas trwania umiejętności			1.3 | 1.1
 
 > TARCZA
@@ -233,88 +233,87 @@ dla itemów powyzej 33 lvl			1.5 | 1.15
 dla itemów poniżej 33 lvl 			2.5 | 1.3
 Silny przeciwko orkom		
 dla itemów powyżej 33 lvl			2.2 | 1.3
-dla itemów poniżej 33 lvl 			1.8 | 1.1
-
+dla itemów poniżej 33 lvl 			1.5 | 1.1
 
 [ULEPSZACZE]
-Amulet Orka                     - 51750
-Amulet Orka +                   - 28750
-Biała Perła                     - 1552500
-Biała Wstęga                    - 28750
-Biała Wstęga +                  - 48300
-Czarny Uniform                  - 51750
-Czarny Uniform +                - 23000
-Czerwona Wstęga                 - 57500
-Ezoteryczny Przewodnik          - 97750
-Ezoteryczny Przewodnik +        - 32200
-Flaga                           - 23000
-Futro Białego Tygrysa           - 9200
-Skóra Tygrysa                   - 10350
-Futro Wilka                     - 2300
-Futro Wilka +                   - 6900
-Futro Yeti                      - 40250
-Futro Yeti +                    - 63250
-Igła Skorpiona                  - 23000
-Język Żaby                      - 40250
-Kawałek Klejnotu                - 71300
-Kawałek Lodu                    - 17250
-Kawałek Lodu +                  - 40250
-Kawałek Płótna                  - 20700
-Kawałek Płótna +                - 23000
-Kawałek Zepsutej Zbroi          - 33350
-Kłąb                            - 10350
-Klejnot Demona                  - 46000
-Klejnot Demona +                - 20700
-Krem Do Twarzy                  - 14950
-Krwawa Perła                    - 862500
-Księga Klątw                    - 96600
-Księga Klątw +                  - 20700
-Liść                            - 11500
-Matowy Lód                      - 85100
-Matowy Lód +                    - 17250
-Lodowy Róg Wieloryba            - 13800
-Małż                            - 158000
-Niebieska Perła                 - 1058000
-Niedźwiedzia Skóra              - 24150
-Niedźwiedzia Skóra +            - 16100
-Nieznane Lekarstwo              - 35650
-Nieznane Lekarstwo +            - 40250
-Nieznany Talizman               - 50600
-Nieznany Talizman +             - 56350
-Nogi Pająka                     - 19550
-Nos Świni                       - 5750
-Oczy Pająka                     - 47150
-Ogon Skorpiona                  - 28750
-Ogon Skorpiona +                - 14950
-Ogon Węża                       - 46000
-Ogon Węża +                     - 23000
-Ornament                        - 26450
-Ozdobna Spinka Do Włosów        - 16100
-Pajęcza Sieć                    - 21850
-Pamiątka Po Demonie             - 86250
-Pamiątka Po Demonie +           - 34500
-Pazur Tygrysa                   - 17250
-Płonąca Grzywa                  - 51750
-Rybia Ość                       - 65550
-Shuriken                        - 29900
-Shuriken +                      - 105800
-Skóra Węża                      - 13800
-Stłuczona Porcelana             - 17250
-Symbol Wojownika                - 64400
-Szpon Skorpiona                 - 79350
-Szpon Tygrysa                   - 8050
-Szpon Wilka                     - 5750
-Szpon Wilka +                   - 5750
-Worek Z Pajęczą Trucizną        - 28750
-Worek Z Pajęczymi Jajami        - 41400
-Zardzewiałe Ostrze              - 18400
-Ząb Dzika                       - 6900
-Ząb Orka                        - 109250
-Ząb Orka +                      - 18400
-Zdobycz Dzikusa                 - 11500
-Żabie Udka                      - 37950
-Żółć Niedźwiedzia               - 31050
-Żółć Niedźwiedzia +             - 13800
+Amulet Orka                     - 60030
+Amulet Orka +                   - 33350
+Biała Perła                     - 1400900
+Biała Wstęga                    - 33350
+Biała Wstęga +                  - 56028
+Czarny Uniform                  - 60030
+Czarny Uniform +                - 28680
+Czerwona Wstęga                 - 66700
+Ezoteryczny Przewodnik          - 113390
+Ezoteryczny Przewodnik +        - 45352
+Flaga                           - 29680
+Futro Białego Tygrysa           - 10672
+Skóra Tygrysa                   - 12006
+Futro Wilka                     - 12668
+Futro Wilka +                   - 12004
+Futro Yeti                      - 46690
+Futro Yeti +                    - 73370
+Igła Skorpiona                  - 26680
+Język Żaby                      - 46690
+Kawałek Klejnotu                - 82708
+Kawałek Lodu                    - 40010
+Kawałek Lodu +                  - 46690
+Kawałek Płótna                  - 24012
+Kawałek Płótna +                - 26680
+Kawałek Zepsutej Zbroi          - 38686
+Kłąb                            - 12006
+Klejnot Demona                  - 53360
+Klejnot Demona +                - 24012
+Krem Do Twarzy                  - 17342
+Krwawa Perła                    - 750500
+Księga Klątw                    - 112056
+Księga Klątw +                  - 24012
+Liść                            - 13340
+Matowy Lód                      - 120716
+Matowy Lód +                    - 20010
+Lodowy Róg Wieloryba            - 16008
+Małż                            - 183280
+Niebieska Perła                 - 1027280
+Niedźwiedzia Skóra              - 28014
+Niedźwiedzia Skóra +            - 18676
+Nieznane Lekarstwo              - 41354
+Nieznane Lekarstwo +            - 46690
+Nieznany Talizman               - 58696
+Nieznany Talizman +             - 65366
+Nogi Pająka                     - 22678
+Nos Świni                       - 12670
+Oczy Pająka                     - 54694
+Ogon Skorpiona                  - 33350
+Ogon Skorpiona +                - 17342
+Ogon Węża                       - 53360
+Ogon Węża +                     - 26680
+Ornament                        - 30682
+Ozdobna Spinka Do Włosów        - 18676
+Pajęcza Sieć                    - 25346
+Pamiątka Po Demonie             - 100050
+Pamiątka Po Demonie +           - 40020
+Pazur Tygrysa                   - 20010
+Płonąca Grzywa                  - 60030
+Rybia Ość                       - 76038
+Shuriken                        - 34684
+Shuriken +                      - 122728
+Skóra Węża                      - 16008
+Stłuczona Porcelana             - 20010
+Symbol Wojownika                - 74704
+Szpon Skorpiona                 - 92046
+Szpon Tygrysa                   - 15338
+Szpon Wilka                     - 12670
+Szpon Wilka +                   - 12670
+Worek Z Pajęczą Trucizną        - 33350
+Worek Z Pajęczymi Jajami        - 48024
+Zardzewiałe Ostrze              - 21344
+Ząb Dzika                       - 15004
+Ząb Orka                        - 126730
+Ząb Orka +                      - 21344
+Zdobycz Dzikusa                 - 13340
+Żabie Udka                      - 44022
+Żółć Niedźwiedzia               - 36018
+Żółć Niedźwiedzia +             - 19008
 Wysuszone Oczy                  - 75000
 Pazury Małpy					- 55000
 Orkowe Jądra					- 50000
@@ -324,52 +323,53 @@ Lodowata Maź					- 95000
 Serce Wojownika					- 54000
 Waleczna Dusza Zaprzys			- 32500
 Łuski Smoka						- 99000
+Gourou							- 40000
 
 [KSIĘGI UMIEJĘTNOŚCI]
-Aura Miecza - 143500
-Berserk - 58500
-Wir Miecza - 42250
-Szarża - 17550
-Trzystronne Cięcie - 13650
-Silne Ciało - 75500
-Duchowe Uderzenie - 42250
-Walnięcie - 18200
-Tąpnięcie - 9750
-Uderzenie Miecza - 9750
-Zasadzka - 29250
-Wirujący Sztylet - 29250
-Krycie Się - 16250
-Szybki Atak - 10400
-Trująca Chmura - 10400
-Ognista Strzała - 35750
-Trująca Strzała - 29250
-Powtarzalny Strzał - 10400
-Deszcz Strzał - 8450
-Bezszelestny Chód - 6500
-Czarowane Ostrze - 95000
-Strach - 62000
-Czarowana Zbroja - 29250
-Rozproszenie Magii - 16250
-Smoczy Wir - 10400
-Uderzenie Palcem - 5850
-Ognisty Duch - 29250
-Mroczna Ochrona - 26000
-Ogniste Uderzenie - 16900
-Mroczne Uderzenie - 14300
-Duchowy Cios - 7800
-Mroczny Kamień - 6500
-Pomoc Smoka - 48750
-Błogosławieństwo - 45500
-Smoczy Skowyt - 20150
-Odbicie - 13000
-Strzelający Smok - 7800
-Latający Talizman - 5850
-Leczenie - 29250
-Przywołanie Błyskawicy - 16250
-Błyskawiczny Rzut - 9750
-Burza - 7150
-Zwinność - 11700
-Szpon Błyskawicy - 11700
+Aura Miecza - 180810
+Berserk - 73710
+Wir Miecza - 53235
+Szarża - 22113
+Trzystronne Cięcie - 17199
+Silne Ciało - 95130
+Duchowe Uderzenie - 53235
+Walnięcie - 22932
+Tąpnięcie - 12285
+Uderzenie Miecza - 12285
+Zasadzka - 36855
+Wirujący Sztylet - 36855
+Krycie Się - 20475
+Szybki Atak - 13104
+Trująca Chmura - 13104
+Ognista Strzała - 45045
+Trująca Strzała - 36855
+Powtarzalny Strzał - 13104
+Deszcz Strzał - 10647
+Bezszelestny Chód - 8190
+Czarowane Ostrze - 119700
+Strach - 78120
+Czarowana Zbroja - 36855
+Rozproszenie Magii - 20475
+Smoczy Wir - 13104
+Uderzenie Palcem - 7371
+Ognisty Duch - 36855
+Mroczna Ochrona - 32760
+Ogniste Uderzenie - 21294
+Mroczne Uderzenie - 18018
+Duchowy Cios - 9828
+Mroczny Kamień - 8190
+Pomoc Smoka - 61425
+Błogosławieństwo - 57330
+Smoczy Skowyt - 25389
+Odbicie - 16380
+Strzelający Smok - 9828
+Latający Talizman - 7371
+Leczenie - 36855
+Przywołanie Błyskawicy - 20475
+Błyskawiczny Rzut - 12285
+Burza - 9009
+Zwinność - 14742
+Szpon Błyskawicy - 14742
 
 [Opaski zapomnienia]
 OZ Aura Miecza – do sprzedaży u handlarki
@@ -463,9 +463,18 @@ Wojownik Z Toporem				- 40000
 Tysięczny Wojownik				- 50000
 	            
 [Inne]                
-Szkat. Blasku Księżyca			- 35000
+Szkat. Blasku Księżyca			- 85000
 Zwój Błogosławieństwa			- 170000
-Medal konny						- 250000
+Medal konny						- 180000
+Złoty klucz						- 90000
+Srebrny klucz					- 72000
+
+[Łowienie]
+Wybielacz						- 20000
+Biała Farba Do Włosów			- 25000
+Blond Farba Do Włosów			- 12000
+Brązowa Farba Do Włosów			- 11000
+Czerwona Farba Do Włosów		- 25000
 
 [Zielarstwo]
 Kwiat Brzoskwini				- 1000
@@ -648,13 +657,13 @@ Od +0 do +3 - 800000
 +9 - 5500000
 
 Miecz Pełni Księżyca 
-Od +0 do +3 - 570000
-+4 - 620000
-+5 - 700000
-+6 - 860000
-+7 - 980000
-+8 - 1350000
-+9 - 2250000
+Od +0 do +3 - 370000
++4 - 420000
++5 - 550000
++6 - 660000
++7 - 880000
++8 - 1250000
++9 - 2050000
 
 [SZTYLETY]
 
@@ -780,13 +789,13 @@ Od +0 do +3 - 1050000
 +9 - 9750000
 
 Kozik Czar. Liś.
-Od +0 do +3 - 427000
-+4 - 490000
-+5 - 532000
+Od +0 do +3 - 227000
++4 - 340000
++5 - 432000
 +6 - 636000
 +7 - 764000
-+8 - 1012000
-+9 - 1730000
++8 - 942000
++9 - 1530000
 
 [ŁUKI]
 
@@ -896,13 +905,13 @@ Od +4 do +6 - 285000
 +9 - 3650000
 
 Łuk Z Rogu Jelenia 
-Od +0 do +3 - 465000
-+4 - 505000
-+5 - 570000
-+6 - 700000
-+7 - 795000
-+8 - 1100000
-+9 - 1930000
+Od +0 do +3 - 225000
++4 - 305000
++5 - 430000
++6 - 520000
++7 - 695000
++8 - 880000
++9 - 1430000
 
 Olbrz. Łuk Diabła 
 Od +0 do +3 - 90000
@@ -1053,13 +1062,13 @@ Od +0 do +3 - 1300000
 +9 - 12090000
 
 Ostrze Z Czerw. Stali
-Od +0 do +3 - 513000
-+4 - 558000
-+5 - 630000
-+6 - 774000
-+7 - 882000
-+8 - 1215000
-+9 - 2525000
+Od +0 do +3 - 280000
++4 - 358000
++5 - 430000
++6 - 574000
++7 - 782000
++8 - 995000
++9 - 1855000
 
 [DZWONY]
 
@@ -1148,13 +1157,13 @@ Od +4 do +6 - 196000
 +9 - 1820000
 
 Antyczny Dzwon
-Od +0 do +3 - 399000
-+4 - 434000
-+5 - 490000
-+6 - 602000
-+7 - 686000
-+8 - 945000
-+9 - 1575000
+Od +0 do +3 - 169000
++4 - 234000
++5 - 300000
++6 - 452000
++7 - 596000
++8 - 855000
++9 - 1475000
 
 Bambusowy Dzwon
 Od +0 do +3 - 980000
@@ -1280,13 +1289,13 @@ Od +4 do +6 - 202000
 +9 - 1870000
 
 Wachlarz Jes. Wiatru
-Od +0 do +3 - 370000
-+4 - 403000
-+5 - 455000
-+6 - 559000
-+7 - 637000
-+8 - 878000
-+9 - 1460000
+Od +0 do +3 - 120000
++4 - 183000
++5 - 245000
++6 - 359000
++7 - 557000
++8 - 778000
++9 - 1260000
 
 Wachlarz 8 Trigramów
 Od +0 do +3 - 952000
@@ -1303,43 +1312,43 @@ Mnisia Zbr. Płytowa
 Od +0 do +3 - 10000
 Od +4 do +6 - 28000
 +7 - 60000
-+8 - 85000
-+9 - 135000
++8 - 125000
++9 - 485000
 
 Żelazna Zbr. Płytowa
 Od +0 do +3 - 15000
 Od +4 do +6 - 55000
 +7 - 75000
-+8 - 115000
-+9 - 280000
++8 - 165000
++9 - 500000
 
 Zbr. Płyt. Tygrysa
 Od +0 do +3 - 22000
 Od +4 do +6 - 70000
 +7 - 120000
-+8 - 180000
-+9 - 380000
++8 - 380000
++9 - 750000
 
 Lwia Zbroja Płytowa
 Od +0 do +3 - 35000
 Od +4 do +6 - 95000
-+7 - 280000
-+8 - 470000
-+9 - 750000
++7 - 370000
++8 - 570000
++9 - 1200000
 
 Śmiert. Zbroja Płytowa
 Od +0 do +3 - 65000
-Od +4 do +6 - 135000
-+7 - 570000
-+8 - 1000000
-+9 - 1770000
+Od +4 do +6 - 165000
++7 - 500000
++8 - 1200000
++9 - 2570000
 
 Smocza Zbroja Płytowa
 Od +0 do +3 - 85000
 Od +4 do +6 - 195000
-+7 - 390000
-+8 - 850000
-+9 - 1250000
++7 - 600000
++8 - 1200000
++9 - 2570000
 
 Zbroja Płytowa Z Łusek
 Od +0 do +3 - 90000
@@ -1371,36 +1380,36 @@ Od +0 do +3 - 900000
 +6 - 3700000
 +7 - 4900000
 +8 - 8500000
-+9 - 11000000
++9 - 13000000
 
 [NINJA]
 Błękitne Ubranie
 Od +0 do +3 - 8500
 Od +4 do +6 - 23500
 +7 - 51500
-+8 - 72500
-+9 - 112000
++8 - 155500
++9 - 392000
 
 Kremowe Ubranie
 Od +0 do +3 - 12500
 Od +4 do +6 - 46000
 +7 - 64000
-+8 - 99000
-+9 - 238000
++8 - 229000
++9 - 538000
 
 Czerwone Ubranie
 Od +0 do +3 - 18500
 Od +4 do +6 - 59500
-+7 - 100000
-+8 - 155000
-+9 - 325000
++7 - 190000
++8 - 425000
++9 - 625000
 
 Czer. Ubranie Mrówki
 Od +0 do +3 - 30000
 Od +4 do +6 - 80000
 +7 - 240000
-+8 - 400000
-+9 - 625000
++8 - 450000
++9 - 705000
 
 Ubranie Lwiej Mrówki
 Od +0 do +3 - 55000
@@ -1412,23 +1421,23 @@ Od +4 do +6 - 113000
 Ubranie Zabójcy
 Od +0 do +3 - 72500
 Od +4 do +6 - 164000
-+7 - 335000
-+8 - 705000
-+9 - 1060000
++7 - 495000
++8 - 1105000
++9 - 1960000
 
 Ubranie Młodego Smoka
 Od +0 do +3 - 76500
 Od +4 do +6 - 185000
 +7 - 600000
-+8 - 1190000
-+9 - 1600000
++8 - 1290000
++9 - 2500000
 
 Ubranie Zabój. Wiatru
 Od +0 do +3 - 81000
 Od +4 do +6 - 200000
 +7 - 780000
-+8 - 1380000
-+9 - 2380000
++8 - 1880000
++9 - 2980000
 
 Ubranie Fuksyjne
 Od +0 do +3 - 212000
@@ -1454,29 +1463,29 @@ Od +0 do +3 - 865000
 Od +0 do +3 - 9000
 Od +4 do +6 - 26000
 +7 - 57000
-+8 - 78000
-+9 - 125000
++8 - 148000
++9 - 285000
 
 Burzowa Zbroj. Płytowa
 Od +0 do +3 - 14000
 Od +4 do +6 - 51000
 +7 - 69000
-+8 - 108000
-+9 - 255000
++8 - 188000
++9 - 385000
 
 Nieszczęsna Zbr. Płytowa
 Od +0 do +3 - 20000
 Od +4 do +6 - 64500
 +7 - 114000
-+8 - 167000
-+9 - 355000
++8 - 227000
++9 - 455000
 
 Upiorna Zbroja Płytowa
-Od +0 do +3 - 32500
-Od +4 do +6 - 87500
-+7 - 263000
-+8 - 432000
-+9 - 712000
+Od +0 do +3 - 42500
+Od +4 do +6 - 107500
++7 - 363000
++8 - 832000
++9 - 1012000
 
 Zbroja Płyt. Yin-Yang
 Od +0 do +3 - 61000
@@ -1488,16 +1497,16 @@ Od +4 do +6 - 125000
 Mistyczna Zbroja Płytowa
 Od +0 do +3 - 79000
 Od +4 do +6 - 183000
-+7 - 355000
-+8 - 780000
-+9 - 1160000
++7 - 425000
++8 - 880000
++9 - 1560000
 
 Mglista Zbroja Płytowa
 Od +0 do +3 - 82500
 Od +4 do +6 - 209000
 +7 - 650000
 +8 - 1285000
-+9 - 1785000
++9 - 2085000
 
 Zbroja Twarzy Ducha
 Od +0 do +3 - 88000
@@ -1535,17 +1544,17 @@ Od +4 do +6 - 23500
 
 Turkusowa Szata
 Od +0 do +3 - 13000
-Od +4 do +6 - 46500
-+7 - 64500
-+8 - 96500
+Od +4 do +6 - 55500
++7 - 74500
++8 - 126500
 +9 - 238000
 
 Różowa Szata
 Od +0 do +3 - 18500
 Od +4 do +6 - 59500
 +7 - 103000
-+8 - 151000
-+9 - 323000
++8 - 181000
++9 - 373000
 
 Miłosna Szata
 Od +0 do +3 - 30000
@@ -1558,7 +1567,7 @@ Szata Zach. Nieba
 Od +0 do +3 - 55000
 Od +4 do +6 - 115000
 +7 - 485000
-+8 - 850000
++8 - 950000
 +9 - 1480000
 
 Szata Słońca
@@ -1566,21 +1575,21 @@ Od +0 do +3 - 72000
 Od +4 do +6 - 168000
 +7 - 330000
 +8 - 720000
-+9 - 1050000
++9 - 1550000
 
 Szata Moralności
 Od +0 do +3 - 76500
 Od +4 do +6 - 189000
 +7 - 595000
 +8 - 1190000
-+9 - 1570000
++9 - 2570000
 
 Szata Pomarań. Kota
 Od +0 do +3 - 81500
 Od +4 do +6 - 204000
 +7 - 780000
-+8 - 1340000
-+9 - 2380000
++8 - 1440000
++9 - 2800000
 
 Szata Baronów
 Od +0 do +3 - 215000
@@ -1597,34 +1606,34 @@ Od +0 do +3 - 765000
 +5 - 1870000
 +6 - 3100000
 +7 - 4160000
-+8 - 7050000
++8 - 6850000
 +9 - 9350000
 
 [BUTY]
 
 Skórzane Buty
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 5000
 Od +4 do +6 - 40000
 +7 - 75000
 +8 - 250000
 +9 - 510000
 
 Bambusowe Buty
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 12000
 Od +4 do +6 - 50000
 +7 - 84000
 +8 - 280000
 +9 - 570000
 
 Drewniane Buty
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 15000
 Od +4 do +6 - 62000
 +7 - 87000
 +8 - 220000
 +9 - 520000
 
 Buty Wyszywane Złotem
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 35000
 Od +4 do +6 - 120000
 +7 - 170000
 +8 - 380000
@@ -1638,14 +1647,14 @@ Od +4 do +6 - 150000
 +9 - 1200000
 
 Złote Buty
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 30000
 Od +4 do +6 - 75000
 +7 - 280000
 +8 - 360000
 +9 - 790000
 
 Buty Z Brązu
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 35000
 Od +4 do +6 - 75000
 +7 - 280000
 +8 - 420000
@@ -1659,7 +1668,7 @@ Od +4 do +6 - 120000
 +9 - 880000
 
 Ekstazyjne Buty
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 21000
 Od +4 do +6 - 85000
 +7 - 87000
 +8 - 220000
@@ -1693,14 +1702,14 @@ Od +0 do +3 - 90000
 [BRANSOLETY]
 
 Drewniana Bransoleta
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 5000
 Od +4 do +6 - 55000
 +7 - 75000
 +8 - 250000
 +9 - 450000
 
 Miedziana Bransoleta
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 15000
 Od +4 do +6 - 81000
 +7 - 94000
 +8 - 280000
@@ -1714,14 +1723,14 @@ Od +4 do +6 - 140000
 +9 - 800000
 
 Złota Bransoleta
-Od +0 do +3 - do handlarki
-Od +4 do +6 - 55000
-+7 - 84000
-+8 - 180000
-+9 - 380000
+Od +0 do +3 - 25000
+Od +4 do +6 - 75000
++7 - 124000
++8 - 240000
++9 - 350000
 
 Jadeitowa Bransoleta
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 25000
 Od +4 do +6 - 65000
 +7 - 84000
 +8 - 180000
@@ -1735,7 +1744,7 @@ Od +4 do +6 - 99000
 +9 - 950000
 
 Perłowa Bransoleta
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 19000
 Od +4 do +6 - 70000
 +7 - 94000
 +8 - 150000
@@ -1751,14 +1760,14 @@ Od +0 do +3 - 120000
 +9 - 4200000
 
 Kryształowa Bransoleta
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 45000
 Od +4 do +6 - 150000
 +7 - 350000
 +8 - 530000
 +9 - 730000
 
 Ametystowa Bransoleta
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 46000
 Od +4 do +6 - 120000
 +7 - 210000
 +8 - 340000
@@ -1776,29 +1785,29 @@ Od +0 do +3 - 150000
 [NASZYJNIKI]
 
 Drewniany Naszyjnik
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 5000
 Od +4 do +6 - 40000
 +7 - 75000
 +8 - 125000
 +9 - 240000
 
 Miedziany Naszyjnik
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 12000
 Od +4 do +6 - 55000
 +7 - 82000
 +8 - 165000
 +9 - 255000
 
 Srebrny Naszyjnik
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 20000
 Od +4 do +6 - 67000
 +7 - 92000
 +8 - 226000
 +9 - 365000
 
 Złoty Naszyjnik
-Od +0 do +3 - do handlarki
-Od +4 do +6 - 72000
+Od +0 do +3 - 25000
+Od +4 do +6 - 92000
 +7 - 170000
 +8 - 316000
 +9 - 445000
@@ -1869,7 +1878,7 @@ Od +0 do +3 - 90000
 [KOLCZYKI]
 
 Drewniane Kolczyki
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 5000
 Od +4 do +6 - 40000
 +7 - 75000
 +8 - 125000
@@ -1883,7 +1892,7 @@ Od +4 do +6 - 80000
 +9 - 370000
 
 Srebrne Kolczyki
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 15000
 Od +4 do +6 - 40000
 +7 - 75000
 +8 - 125000
@@ -1962,7 +1971,7 @@ Od +0 do +3 - 125000
 [TARCZE]
 
 Bojowa Tarcza
-Od +0 do +3 - do handlarki
+Od +0 do +3 - 5000
 Od +4 do +6 - 80000
 +7 - 150000
 +8 - 240000

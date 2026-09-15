@@ -1005,6 +1005,7 @@ namespace
 			return false;
 		int keys = 0, marbles = 0, chests = 0, scrolls = 0;
 		const bool trader = IsPlayerBotResourceTrader(ch->GetPlayerID());
+		const bool dropper = IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID()));
 		std::map<DWORD, int> materials;
 		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
 		{
@@ -1015,7 +1016,7 @@ namespace
 			// A resource trader's Moonlight chests and refine scrolls are its
 			// trade (IsPlayerBotResourceTrader): it keeps one scroll, and the
 			// chests it does not open.
-			if (trader && item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
+			if ((trader || dropper) && item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
 			{
 				if ((chests += count) >= PLAYERBOT_SHOP_HOARD_MARBLES)
 					return true;
@@ -1843,7 +1844,7 @@ namespace
 		// Asked before the bonus and the precious refine below, both of which
 		// used to wave a +4 armour for level 26 through to the top of the list.
 		if (IsPlayerBotLowLevelGear(item))
-			return item->GetRefineLevel() >= PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE
+			return item->GetRefineLevel() >= GetPlayerBotLowGearMinRefine(item)
 					? PLAYERBOT_SHOP_LOW_GEAR_SCORE + item->GetRefineLevel() : -1;
 		// Then anything rolled with a bonus a player would go looking for.
 		if (HasPlayerBotValuableBonus(item))
@@ -2170,7 +2171,7 @@ namespace
 			for (size_t i = 0; i < outScored.size(); ++i)
 			{
 				LPITEM item = ch->GetInventoryItem(outScored[i].second);
-				if (IsPlayerBotLowLevelGear(item) &&
+				if (CountsAgainstPlayerBotLowGearCap(item) &&
 						GetPlayerBotItemPolicy(item) != PLAYERBOT_ITEM_POLICY_STALL)
 				{
 					if (lowRoom <= 0)
@@ -2214,9 +2215,12 @@ namespace
 	// A good refine is the one moment worth breaking the bots' silence for. They
 	// say nothing when attacked, nothing during PvP, and nothing on a kill -
 	// only the blacksmith gets a reaction, and even then rarely.
-	void BroadcastPlayerBotRefineSuccess(LPCHARACTER ch, LPITEM item, int newPlus)
+	void BroadcastPlayerBotRefineSuccess(LPCHARACTER ch, DWORD resultVnum, int newPlus)
 	{
-		if (!ch || !item || newPlus < 7)
+		// Named from the item table: the piece the refine was asked of is gone
+		// by now, and the one in its place is a new object.
+		const TItemTable* resultProto = ITEM_MANAGER::instance().GetTable(resultVnum);
+		if (!ch || !resultProto || newPlus < 7)
 			return;
 		// Same rule as the overhead line: a bot minding a stall says nothing.
 		if (ch->GetMyShop())
@@ -2258,7 +2262,7 @@ namespace
 
 		char msg[CHAT_MAX_LEN + 1];
 		char body[CHAT_MAX_LEN + 1];
-		snprintf(body, sizeof(body), pool[number(0, 3)], item->GetName());
+		snprintf(body, sizeof(body), pool[number(0, 3)], resultProto->szLocaleName);
 		snprintf(msg, sizeof(msg), "%s : %s", ch->GetName(), body);
 
 		s_dwLastShoutTime = dwNow;

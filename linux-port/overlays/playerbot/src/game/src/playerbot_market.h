@@ -90,6 +90,30 @@ namespace
 		return spare > 0 ? spare * PLAYERBOT_STRATEGIC_BUDGET_PERCENT / 100 : 0;
 	}
 
+	// A Moonlight chest is opened, so a bot with room buys one off a counter
+	// (Tieru, 15 September: "wazne przedmioty dla botow, duzo fajnych itemow im
+	// z tego dropi"). No rule wanted one before: every chest a trader listed
+	// stayed listed - 3 000 on AkhiGubernator's counters and not one sold. Not a
+	// trader, which sells them; nobody under PLAYERBOT_CHEST_BUY_MIN_LEVEL or
+	// holding PLAYERBOT_CHEST_BUY_HOLD already; and only into a bag that takes
+	// the chest's whole group and the engine's free column of three.
+	bool WantsPlayerBotMoonlightChest(LPCHARACTER ch)
+	{
+		if (!ch || !ch->IsItemLoaded() || (int)ch->GetLevel() < PLAYERBOT_CHEST_BUY_MIN_LEVEL ||
+				IsPlayerBotResourceTrader(ch->GetPlayerID()) ||
+				IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID())) ||
+				(long long)ch->GetGold() - GetPlayerBotReservedGold(ch) -
+					(long long)PLAYERBOT_SHOPPING_GOLD_FLOOR <
+					MAX(PLAYERBOT_CHEST_BUY_MIN_GOLD, PLAYERBOT_CHEST_BUY_PRICE_MULTIPLE *
+						(long long)GetPlayerBotMaterialAskingBase(PLAYERBOT_MOONLIGHT_CHEST_VNUM)) ||
+				(int)ch->CountSpecifyItem(PLAYERBOT_MOONLIGHT_CHEST_VNUM) >= PLAYERBOT_CHEST_BUY_HOLD ||
+				CountPlayerBotFreeInventoryCells(ch) < PLAYERBOT_CHEST_BUY_MIN_FREE_CELLS ||
+				ch->GetEmptyInventory(3) < 0)
+			return false;
+		int cellsNeeded = 0;
+		return PlayerBotBagTakesGroup(ch, PLAYERBOT_MOONLIGHT_CHEST_VNUM, cellsNeeded);
+	}
+
 	// A bot with a weapon that goes to the anvil under scrolls - one it may
 	// refine no other way, a level-30 weapon in its hand, the one it is
 	// grinding, or the only weapon it has at a step that burns - buys a few,
@@ -125,6 +149,10 @@ namespace
 		if (offer->GetVnum() == PLAYERBOT_ZEN_BEAN_VNUM)
 			return ch->GetRealAlignment() < 0 &&
 					ch->CountSpecifyItem(PLAYERBOT_ZEN_BEAN_VNUM) == 0;
+
+		// A Moonlight chest, to open (WantsPlayerBotMoonlightChest).
+		if (offer->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
+			return WantsPlayerBotMoonlightChest(ch);
 
 		// A material it is short of right now. This is the whole reason a bot
 		// walks the market: the alternative is farming the same material for an
@@ -235,6 +263,16 @@ namespace
 		// A bean for a negative rank (WantsPlayerBotStallItem).
 		if (ch->GetRealAlignment() < 0 && ch->CountSpecifyItem(PLAYERBOT_ZEN_BEAN_VNUM) == 0)
 			return true;
+		// A Moonlight chest, while some counter holds one: the ledger counts the
+		// counters (AddPlayerBotMarketSupply, the offline shops included), so the
+		// question is still answered without reading one. Without this branch the
+		// chest was bought only on a trip made for something else.
+		{
+			const TPlayerBotMarketLedgerEntry* chests =
+					GetPlayerBotMarketLedgerEntry(PLAYERBOT_MOONLIGHT_CHEST_VNUM);
+			if (chests && chests->dwSupplyUnits > 0 && WantsPlayerBotMoonlightChest(ch))
+				return true;
+		}
 		// A refine material for something it is carrying below its target. This
 		// is the common case by a long way - half the counters in this world are
 		// materials, because half of what a bot needs is.

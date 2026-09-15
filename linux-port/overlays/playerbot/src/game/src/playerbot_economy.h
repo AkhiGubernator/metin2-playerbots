@@ -19,7 +19,7 @@ namespace
 	// Defined with the market-stall code, which comes later because it needs
 	// the town. Refining announces a good result the moment it happens, so it
 	// cannot wait for that file.
-	void BroadcastPlayerBotRefineSuccess(LPCHARACTER ch, LPITEM item, int newPlus);
+	void BroadcastPlayerBotRefineSuccess(LPCHARACTER ch, DWORD resultVnum, int newPlus);
 	// Defined beside HasPlayerBotRefineOpportunity; the blacksmith pass asks it
 	// before taking a worn piece off for the anvil.
 	bool CanPlayerBotAttemptRefineItem(LPCHARACTER ch, LPITEM item);
@@ -334,6 +334,8 @@ namespace
 				item->GetType() == ITEM_TREASURE_KEY ||
 				(item->GetVnum() >= 27992 && item->GetVnum() <= 27994))
 			return 1;
+		if (item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
+			return PLAYERBOT_CHEST_LINE_UNITS;
 		return PLAYERBOT_SHOP_PACK_UNITS;
 	}
 
@@ -826,6 +828,25 @@ namespace
 				item->GetLevelLimit() < PLAYERBOT_SHOP_MIN_GEAR_LEVEL;
 	}
 
+	// The refine that gear needs for a counter: +6, and +8 for a weapon or a body
+	// armour of level one (PLAYERBOT_SHOP_STARTER_GEAR_MIN_REFINE).
+	BYTE GetPlayerBotLowGearMinRefine(LPITEM item)
+	{
+		if (item && (int)item->GetLevelLimit() <= PLAYERBOT_SHOP_STARTER_GEAR_MAX_LEVEL &&
+				(item->GetType() == ITEM_WEAPON ||
+				 (item->GetType() == ITEM_ARMOR && item->GetSubType() == ARMOR_BODY)))
+			return PLAYERBOT_SHOP_STARTER_GEAR_MIN_REFINE;
+		return PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE;
+	}
+
+	// Whether a counter line of that gear takes one of the
+	// PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES places: +7 and better does not.
+	bool CountsAgainstPlayerBotLowGearCap(LPITEM item)
+	{
+		return IsPlayerBotLowLevelGear(item) &&
+				item->GetRefineLevel() < PLAYERBOT_SHOP_LOW_GEAR_CAP_BELOW_REFINE;
+	}
+
 	bool IsPlayerBotJunkItem(LPCHARACTER ch, LPITEM item)
 	{
 		if (!ch || !item || item->IsEquipped() || item->isLocked())
@@ -847,6 +868,9 @@ namespace
 		// Maska Sabaha left the world with the Hwang curse (IsPlayerBotRetiredItem):
 		// the merchant takes the ones still in bags.
 		if (IsPlayerBotRetiredItem(vnum))
+			return true;
+		// So are the uniques a bot leaves on the ground (IsPlayerBotLeftOnGroundItem).
+		if (IsPlayerBotLeftOnGroundItem(vnum))
 			return true;
 		// The goods a player crafts further (IsPlayerBotPickupGoods) wait for a
 		// counter, and reach the merchant only from a bag under pressure that
@@ -948,8 +972,9 @@ namespace
 		// and the unsold-stands rule above only counts what went up.
 		if (IsPlayerBotLowLevelGear(item) &&
 				item->GetRefineLevel() >= PLAYERBOT_PRECIOUS_REFINE &&
-				item->GetRefineLevel() < PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE &&
-				!IsPlayerBotUpgradeForSelf(ch, item) && !IsPlayerBotHigherTierSpare(ch, item))
+				item->GetRefineLevel() < GetPlayerBotLowGearMinRefine(item) &&
+				!IsPlayerBotUpgradeForSelf(ch, item) && !IsPlayerBotHigherTierSpare(ch, item) &&
+				item->GetID() != GetPlayerBotBackupWeaponID(ch, false))
 			return true;
 
 		// Whatever else it is, a +5 or better is not something to hand an NPC for
@@ -1078,7 +1103,20 @@ namespace
 		// long as the bot has the wood for one; a grilled fish is a potion.
 		if (item->GetType() == ITEM_FISH && item->GetSubType() == FISH_DEAD &&
 				ch->CountSpecifyItem(PLAYERBOT_CAMPFIRE_VNUM) > 0)
-			return false;
+		{
+			// As many as a fire is worth: the first PLAYERBOT_DEAD_FISH_KEEP in
+			// bag order, and the rest go to the merchant.
+			int ahead = 0;
+			for (WORD cell = 0; cell < item->GetCell() && cell < PLAYERBOT_BAG_CELLS; ++cell)
+			{
+				LPITEM held = ch->GetInventoryItem(cell);
+				if (held && held->GetCell() == cell && held->GetType() == ITEM_FISH &&
+						held->GetSubType() == FISH_DEAD)
+					ahead += std::max<int>(1, held->GetCount());
+			}
+			if (ahead < PLAYERBOT_DEAD_FISH_KEEP)
+				return false;
+		}
 		if (vnum >= PLAYERBOT_GRILLED_FISH_FIRST_VNUM && vnum <= PLAYERBOT_GRILLED_FISH_LAST_VNUM)
 			return false;
 
@@ -1804,7 +1842,11 @@ namespace
 			if (attempted)
 			{
 				const bool success = ch->CountSpecifyItem(nextVnum) > resultCountBefore;
-				BroadcastPlayerBotRefineSuccess(ch, item, (int)plusLevel + 1);
+				// Only a refine that landed is news. A scroll's failure hands the
+				// piece back a grade down and a plain one burns it, and both were
+				// shouted as luck ("ulepszylem zbroje +4 na +3", Tieru, 15 September).
+				if (success)
+					BroadcastPlayerBotRefineSuccess(ch, nextVnum, (int)plusLevel + 1);
 				sys_log(0, "PLAYERBOT_AI: refine %s pid=%u name=%s old_vnum=%u new_vnum=%u plus=%u scroll=%d materials=%s",
 						success ? "SUCCESS" : (scrollCell >= 0 ? "FAILED_DOWNGRADED" : "FAILED_BURNED"),
 						ch->GetPlayerID(), ch->GetName(), oldVnum, nextVnum, plusLevel + 1, scrollCell >= 0 ? 1 : 0,
@@ -1920,7 +1962,7 @@ namespace
 		{
 			const bool success = ch->CountSpecifyItem(nextVnum) > before;
 			if (success)
-				BroadcastPlayerBotRefineSuccess(ch, after ? after : best, (int)plus + 1);
+				BroadcastPlayerBotRefineSuccess(ch, nextVnum, (int)plus + 1);
 			sys_log(0, "PLAYERBOT_AI: refine %s pid=%u name=%s old_vnum=%u new_vnum=%u plus=%u scroll=1 place=field wear=%u",
 					success ? "SUCCESS" : "FAILED_DOWNGRADED", ch->GetPlayerID(), ch->GetName(),
 					oldVnum, nextVnum, (unsigned int)plus + 1, (unsigned int)bestWear);

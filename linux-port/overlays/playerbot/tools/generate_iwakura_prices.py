@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Renderuje playerbot_price_tables.h z cennika Iwakury (data/iwakura_ceny.txt).
 
-Jeden plik, jego wersja 1.0 (14 wrzesnia): skalowanie wedlug dropu yang,
+Jeden plik, jego wersja 1.1 (15 wrzesnia; 1.0 z 14): skalowanie wedlug dropu yang,
 mnozniki kamieni duszy i bonusow, ulepszacze, ksiegi, opaski zapomnienia,
 kamienie duszy, marmury, inne, zielarstwo, gildia, rudy i ceny sprzetu - bronie,
 zbroje, buty, bransolety, naszyjniki, kolczyki i tarcze. Wczesniej byly to dwa
@@ -54,6 +54,8 @@ GOODS_ALIASES = {
     'ruda niebiańskich łez': 'ruda niebiań. łez',
     # item_proto zna jedna "Waleczna Dusza" (30356, material) i nic dluzszego.
     'waleczna dusza zaprzys': 'waleczna dusza',
+    # Cennik 1.1: item_proto skraca "Czerwona" do "Czerw." (70204); jedyny kandydat.
+    'czerwona farba do włosów': 'czerw. farba do włosów',
 }
 
 # Nazwa, pod ktora gra ma kilka przedmiotow, a jego cena dotyczy jednego z nich.

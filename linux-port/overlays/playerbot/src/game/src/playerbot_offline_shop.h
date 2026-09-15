@@ -221,16 +221,31 @@ namespace {
         lowGear = 0;
         DWORD unwanted = 0;
         if (!shop) return 0;
+        // Moonlight chests stand on a counter in packs, and only on the counter
+        // of a bot that sells them (IsPlayerBotSurplusChest): a line of eleven
+        // to thirty never sold, and one a bot that opens its chests put up
+        // before 2.0.53 comes home to be opened.
+        const DWORD owner = shop->GetOwnerPID();
+        const bool sellsChests = IsPlayerBotResourceTrader(owner) ||
+            IsPlayerBotDropper(GetPlayerBotPersonalityByPID(owner));
         for (const auto& [id, line] : shop->GetItems()) {
             if (!line) continue;
             LPITEM preview = BotOfflinePreview(*line);
             if (!preview) continue;
+            if (preview->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM &&
+                    GetPlayerBotItemPolicy(preview) != PLAYERBOT_ITEM_POLICY_STALL &&
+                    (!sellsChests || (int)preview->GetCount() > PLAYERBOT_CHEST_LINE_UNITS)) {
+                if (!unwanted) unwanted = id;
+                M2_DELETE(preview);
+                continue;
+            }
             if (IsPlayerBotLowLevelGear(preview) &&
                     GetPlayerBotItemPolicy(preview) != PLAYERBOT_ITEM_POLICY_STALL) {
-                if (preview->GetRefineLevel() < PLAYERBOT_SHOP_LOW_GEAR_MIN_REFINE ||
-                        lowGear >= PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES) {
+                const bool capped = CountsAgainstPlayerBotLowGearCap(preview);
+                if (preview->GetRefineLevel() < GetPlayerBotLowGearMinRefine(preview) ||
+                        (capped && lowGear >= PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES)) {
                     if (!unwanted) unwanted = id;
-                } else {
+                } else if (capped) {
                     ++lowGear;
                 }
             }
@@ -326,7 +341,8 @@ namespace {
                 if (line && line->GetInfo().vnum == vnum) ++lines;
         return lines;
     }
-    // The bag cell of the line to add. A hoard's pack of ten, or a single key,
+    // The bag cell of the line to add. A hoard's pack of ten, a single key, or a
+    // pack of Moonlight chests (PLAYERBOT_CHEST_LINE_UNITS)
     // is cut off its stack into a free cell (GetPlayerBotStallLineUnitsFor);
     // anything else goes up as the stack it is, as it always has - a stand
     // adds one line a visit. -1 when no line can be cut without the stack's
@@ -336,7 +352,8 @@ namespace {
         if (!item) return -1;
         const int units = GetPlayerBotStallLineUnitsFor(ch, item);
         const bool cut = units == PLAYERBOT_SHOP_HOARD_PACK_UNITS ||
-            (units == 1 && item->GetType() == ITEM_TREASURE_KEY);
+            (units == 1 && item->GetType() == ITEM_TREASURE_KEY) ||
+            item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM;
         if (!cut || (int)item->GetCount() <= units) return cell;
         if ((int)item->GetCount() - units < GetPlayerBotStallBaseKeep(ch, item) ||
                 CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS)
@@ -547,6 +564,8 @@ namespace {
             // counter, each a pack cut here (BotOfflinePrepareLine).
             if (IsPlayerBotHoardedMaterial(ch, item) &&
                     BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_SHOP_HOARD_LINES) continue;
+            if (item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM &&
+                    BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_CHEST_COUNTER_LINES) continue;
             const int lineCell = BotOfflinePrepareLine(ch, cell);
             if (lineCell < 0) continue;
             const WORD at = (WORD)lineCell;

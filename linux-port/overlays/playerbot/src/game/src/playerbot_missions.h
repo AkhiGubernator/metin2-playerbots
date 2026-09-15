@@ -70,6 +70,25 @@ namespace
 				ch->GetQuestFlag(GetPlayerBotBiologistFlag(mission, "__status")) == completeState;
 	}
 
+	// The collect rows are one chain in the quests themselves: the Orc Tooth's
+	// last state starts the Curse Book, and the Curse Book's the Demon Souvenir.
+	// A bot takes its missions without the quest's dialog, so it keeps that
+	// order itself - it did not, and bots of seventy finished the Demon Souvenir
+	// with the Orc Tooth still open (Tieru, 15 September: "Ksiegi Klatw sa po
+	// Zebach Orka, a po Ksiegach Klatw sa Pamiatki Po Demonie"). A collect row
+	// after the first is open once the row before it is complete.
+	bool IsPlayerBotBiologistMissionOpen(LPCHARACTER ch, size_t missionIndex)
+	{
+		if (!ch || missionIndex == 0 || missionIndex >= PLAYERBOT_BIOLOGIST_MISSION_COUNT)
+			return true;
+		const TPlayerBotBiologistMission& mission = PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex];
+		const TPlayerBotBiologistMission& previous = PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex - 1];
+		if (mission.requiredLevel <= PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL ||
+				previous.requiredLevel < PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL)
+			return true;
+		return IsPlayerBotBiologistMissionComplete(ch, missionIndex - 1);
+	}
+
 	// Anything a row collects, and anything a row's second half waits for.
 	// Both used to be spelled out as vnums wherever they mattered - the junk
 	// rule and the stall each carried "50701..50706, the tooth, the stone" -
@@ -210,6 +229,9 @@ namespace
 			if (ch->GetLevel() < mission.requiredLevel)
 				break;
 			if (IsPlayerBotBiologistMissionComplete(ch, i))
+				continue;
+			// A chain row waits for the one before it (IsPlayerBotBiologistMissionOpen).
+			if (!IsPlayerBotBiologistMissionOpen(ch, i))
 				continue;
 			// A row whose monster stands on no map this world hosts can never
 			// be finished, and choosing it means saying so above the bot's head

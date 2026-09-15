@@ -1174,16 +1174,12 @@ namespace
 			const WORD ticks = state.wPortalWalkTicks;
 			state.wPortalWalkTicks = 0;
 			state.wPortalWalkRouteIndex = 0;
-			// And get off the horse on the way out. The tick handed back here is
-			// the bot's whole escape - it is meant to fall through to hunting and
-			// wandering, end up somewhere else and plan from there - and the
-			// manager's "a transport horse must not fight" pass was taking it:
-			// that pass dismounts a rider and claims the tick, so the bot spent
-			// the escape tick getting off the horse, mounted again on the next
-			// travel pass, and stalled for another twenty seconds. Forty-six bots
-			// were found doing exactly that at the Sohan exit, mounting and
-			// dismounting every twenty seconds without moving a step.
-			SetPlayerBotRidingForTravel(ch, state, false, dwNow, "portal_walk_stalled");
+			// The rider keeps the saddle on the way out. It used to get off here,
+			// because the manager's "a transport horse must not fight" pass took any
+			// rider off and claimed the tick - the bot's whole escape - and
+			// forty-six bots at the Sohan exit mounted and dismounted every twenty
+			// seconds without a step. That pass wants a target now (combat_ready),
+			// and nothing the escape falls through to wants the ground.
 			// Everything needed to tell the three failures apart without a
 			// second deploy: whether the walk was ever asked to happen (ticks),
 			// whether it had a route to follow (route), whether the planner was

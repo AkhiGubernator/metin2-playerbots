@@ -528,6 +528,12 @@ namespace
 	// the status is built in 160 bytes, and the client root's decoder
 	// (playerbot_status_tail.py, MAX_STATUS_BYTES) refuses anything longer.
 	const size_t PLAYERBOT_STATUS_TAIL_MAX_BYTES = 159;
+	// A bot's personality in its title's place (ManagePlayerBotPersonalityTitle):
+	// sent while a player is near, again every PLAYERBOT_TITLE_RESEND_MIN_MS to
+	// _MAX_MS, and a player is looked for every PLAYERBOT_TITLE_PROBE_MS otherwise.
+	const DWORD PLAYERBOT_TITLE_RESEND_MIN_MS = 8000;
+	const DWORD PLAYERBOT_TITLE_RESEND_MAX_MS = 12000;
+	const DWORD PLAYERBOT_TITLE_PROBE_MS = 3000;
 	// A Metin which repeatedly heals all dealt damage is not progress. Sample its
 	// lowest observed HP at a deliberately cheap cadence, give a newcomer time to
 	// change the outcome, and only then let the bot look for a productive target.
@@ -668,6 +674,16 @@ namespace
 	// How many lines of it one counter carries, counting what an offline shop
 	// already holds; the service visit takes any more off, one a visit.
 	const int PLAYERBOT_SHOP_LOW_GEAR_MAX_LINES = 2;
+	// Starter gear - a weapon or body armour of level one - goes up only from
+	// +8: "Miecz+6, bo to bron na 1 lv, wiec nic nie warta, raczej do handlarza,
+	// chyba ze bylaby +8 lub +9" (Tieru, 15 September); below that it is the
+	// merchant's. And the cap above counts only lines under
+	// PLAYERBOT_SHOP_LOW_GEAR_CAP_BELOW_REFINE: a sura of twenty-five kept a
+	// Sejmitar+7, a Dlugi Miecz+6 and an armour+6 in its bag because a pair of
+	// boots+9 and a sword+7 already held the two places.
+	const int PLAYERBOT_SHOP_STARTER_GEAR_MAX_LEVEL = 1;
+	const BYTE PLAYERBOT_SHOP_STARTER_GEAR_MIN_REFINE = 8;
+	const BYTE PLAYERBOT_SHOP_LOW_GEAR_CAP_BELOW_REFINE = 7;
 	// Where it ranks: after the materials and the chests, before a scrap
 	// keeper's fodder - and under PLAYERBOT_SHOP_PRIZE_SCORE, so it never
 	// carries a stall on its own.
@@ -1423,7 +1439,7 @@ namespace
 	// so a rate moved in the panel reprices every stand, not only a new table.
 	// 5: a weapon's damage lines are read between the sheet's bands
 	// (GetPlayerBotDamageTierPct), so a 19% average asks more than a 10% one.
-	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 5;
+	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 6;
 	// Iwakura's upgrade-material prices ("ULEPSZACZE") and the goods he prices
 	// by name are generated into playerbot_price_tables.h from his sheet. A name
 	// is not an item: where the game has two vnums under one name (Nieznany
@@ -2167,8 +2183,42 @@ namespace
 	const int PLAYERBOT_REFINE_SCROLL_TRADER_KEEP = 1;
 	// How many Moonlight chests a trader holds unopened for its counter; past
 	// that it opens them like everyone else, so a counter nobody buys from does
-	// not fill its bag.
-	const int PLAYERBOT_CHEST_TRADER_HOLD = 20;
+	// not fill its bag. Twenty put 3 000 chests on AkhiGubernator's counters in
+	// six hours with not one sold (15 September): a trader shows a few, and the
+	// rest are for opening.
+	const int PLAYERBOT_CHEST_TRADER_HOLD = 6;
+	// A bot buys a Moonlight chest off a counter to open it
+	// (WantsPlayerBotMoonlightChest): from this level, while it holds fewer than
+	// PLAYERBOT_CHEST_BUY_HOLD, with this many free cells and this much gold, and
+	// into a bag that takes the chest's whole group. Nothing wanted one before,
+	// so every chest a trader listed stayed listed.
+	const int PLAYERBOT_CHEST_BUY_MIN_LEVEL = 20;
+	const int PLAYERBOT_CHEST_BUY_HOLD = 10;
+	const int PLAYERBOT_CHEST_BUY_MIN_FREE_CELLS = 10;
+	const long long PLAYERBOT_CHEST_BUY_MIN_GOLD = 1000000LL;
+	// ...and spare gold of this many times Iwakura's price for the chest, scaled
+	// by the yang rate: the counter asks round that, up to twice it where the
+	// ledger says the chests are short, and a bot sent to the market for a chest
+	// it could not pay for would walk there for nothing.
+	const long long PLAYERBOT_CHEST_BUY_PRICE_MULTIPLE = 3;
+	// A counter line of Moonlight chests is a pack of this many, cut off the
+	// stack (BotOfflinePrepareLine). A stack went up whole, and the counters of
+	// the test world carried 22 lines of eleven to thirty chests that no
+	// buyer's cap reached (15 September).
+	const int PLAYERBOT_CHEST_LINE_UNITS = 5;
+	// ...and no more than this many such lines stand on one counter.
+	const int PLAYERBOT_CHEST_COUNTER_LINES = 3;
+	// A dropper picks the chests up and sells them rather than opening them
+	// ("dropki medali nie podnosza szkat. blasku", darkroom22; "dodaj im
+	// mozliwosc podnoszenia tego i dawania na sklep", Tieru, 15 September). It
+	// keeps this many unopened for its counter and opens the rest, so a counter
+	// it seldom serves - a medal dropper's is served out of its dungeon only -
+	// does not fill its bag.
+	const int PLAYERBOT_CHEST_DROPPER_HOLD = 30;
+	// The engine's bag page: INVENTORY_PAGE_COLUMN x INVENTORY_PAGE_ROW on both
+	// lines. A giftbox wants three free cells in one column of one page.
+	const int PLAYERBOT_BAG_PAGE_COLUMNS = 5;
+	const int PLAYERBOT_BAG_PAGE_ROWS = 9;
 	// The Forgetting Scroll (ITEM_SKILLFORGET): one level off a skill and the
 	// point back. A skill that reached seventeen without turning Master is
 	// left there rather than pushed on - every further point is a point the
@@ -2262,6 +2312,11 @@ namespace
 	// wiekszosc skrzyn bossow.
 	const int PLAYERBOT_CHEST_FREE_CELLS = 5;
 	const DWORD PLAYERBOT_CHEST_REFUSED_RETRY = 600000;
+	// A Moonlight chest the engine refused is asked for again after a minute:
+	// its group always fits a bag that takes it, so a refusal is a busy moment,
+	// and ten minutes of it kept stacks of twenty-eight unopened in bags with
+	// sixty-nine free cells (LordMicro, 15 September).
+	const DWORD PLAYERBOT_CHEST_MOONLIGHT_REFUSED_RETRY = 60000;
 	const DWORD PLAYERBOT_BOOSTER_INTERVAL = 60000;
 	// How many of one booster a bot keeps when nobody else can have it. A
 	// booster that may go neither to a merchant (ANTI_SELL) nor on a counter
@@ -2351,6 +2406,10 @@ namespace
 	// Crucian 350, Tenchi 230 at once; Mandarin Fish 180 SP, Catfish 500 SP)
 	// go into the potion lists.
 	const DWORD PLAYERBOT_CAMPFIRE_VNUM = 27600;
+	// Dead fish kept for the campfire; the rest is the merchant's. Kept without
+	// a bound, 161 bots of the test world carried 932 dead carp, and one bag's
+	// second page was fish (Tieru, 15 September).
+	const int PLAYERBOT_DEAD_FISH_KEEP = 10;
 	const DWORD PLAYERBOT_CAMPFIRE_MOB_VNUM = 12000;
 	const DWORD PLAYERBOT_BAKE_WINDOW = 35000;
 	// The race histogram a bot keeps of what it has been fighting: one slot per
@@ -3019,7 +3078,15 @@ namespace
 	const DWORD PLAYERBOT_FISHING_REST_MIN = 2700000;      // 45 min
 	const DWORD PLAYERBOT_FISHING_REST_MAX = 7200000;      // 2 h
 	const int PLAYERBOT_HORSE_MOUNT_DISTANCE = 1800;
-	const int PLAYERBOT_HORSE_DISMOUNT_DISTANCE = 1000;
+	// No mount within this long of a climb-down, whatever took the bot off.
+	// The travel itself no longer climbs down (UpdatePlayerBotTravelMount);
+	// what still does wants the ground for a moment - a fight on a transport
+	// horse, a duel, a skill, the rod - and the travel put the bot straight
+	// back in the saddle: 14 502 of 24 379 mounts in 36 minutes on the test
+	// world came within six seconds of a dismount, and 2 136 dismounts an hour
+	// in Bokjung alone were each a stop the client shows as a step back
+	// ("wariuja, schodza z konia, cofaja sie", sizowski, 15 September).
+	const DWORD PLAYERBOT_HORSE_TRAVEL_FLIP_HOLD_MS = 6000;
 	const DWORD PLAYERBOT_HORSE_RIDE_RETRY_INTERVAL = 10000;
 	const DWORD PLAYERBOT_HORSE_TRAVEL_MIN_DELAY = 30000;
 	const DWORD PLAYERBOT_HORSE_TRAVEL_MAX_DELAY = 300000;
@@ -3112,6 +3179,15 @@ namespace
 	bool IsPlayerBotRetiredItem(DWORD vnum)
 	{
 		return vnum == 72731 || vnum == 72735;
+	}
+	// What a bot leaves on the ground, and sells if it has one: Plaszcz
+	// Uciekiniera (70048) and Symb. Krola Przepowiedni (70050), uniques of the
+	// old Moonlight chest no bot wears or uses. 283 bots of the test world
+	// carried 966 capes, and one bag's second page was capes and symbols
+	// (Tieru, 15 September: "niech boty tego nie podnosza").
+	bool IsPlayerBotLeftOnGroundItem(DWORD vnum)
+	{
+		return vnum == 70048 || vnum == 70050;
 	}
 	// The uniques a bot never wears (playerbot_unique_slots.h). Pierscien
 	// Niejawnosci (70007) hides the level over a character's head and Plaszcz

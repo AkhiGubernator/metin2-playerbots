@@ -213,14 +213,15 @@ namespace
 	// filled the rest in two to five minutes: once the dropper was let stay while
 	// a medal had a cell, 28 of 37 visits ended with no cell left and the average
 	// visit lasted under three minutes. It takes the medal, the goods a player
-	// crafts further, a skill book and whatever pours into a stack it already
+	// crafts further, a skill book, a Moonlight chest (for its counter,
+	// PLAYERBOT_CHEST_DROPPER_HOLD) and whatever pours into a stack it already
 	// carries; the rest stays on the floor for whoever wants it.
 	bool IsPlayerBotMedalDropperLoot(LPCHARACTER ch, LPITEM item)
 	{
 		if (!ch || !item || !item->GetProto())
 			return false;
 		if (item->GetVnum() == PLAYERBOT_HORSE_MEDAL_VNUM || item->GetType() == ITEM_SKILLBOOK ||
-				IsPlayerBotPickupGoods(item))
+				item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM || IsPlayerBotPickupGoods(item))
 			return true;
 		return PlayerBotLootMergesIntoStack(ch, item);
 	}
@@ -266,6 +267,9 @@ namespace
 				if (distance > m_maxDistance)
 					return true;
 				if (m_medalDropper && !IsPlayerBotMedalDropperLoot(m_owner, item))
+					return true;
+				// A cape or a symbol nobody wears (IsPlayerBotLeftOnGroundItem).
+				if (IsPlayerBotLeftOnGroundItem(item->GetVnum()))
 					return true;
 				if (m_choosy && IsPlayerBotLootBeneathBot(m_owner, item))
 				{

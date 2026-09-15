@@ -1624,13 +1624,12 @@ namespace
 				!ch->FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
 			return;
 
-		// LearnSkillByBook refuses a rider outright, so the one NPC-less
-		// errand that still needs the ground is this one.
-		if (ch->IsRiding())
-		{
-			SetPlayerBotRidingForTravel(ch, state, false, dwNow, "reading_book");
-			return;
-		}
+		// Read from the saddle: neither LearnSkillByBook nor the book's use asks
+		// about a horse, on either engine. The pass used to climb down, return,
+		// and read on its next visit eight seconds later - by which time the
+		// travel had put the bot back on the horse - so a rider on a long leg was
+		// down every eight seconds and mostly read nothing: 5 121 climb-downs in
+		// 36 minutes on the test world, one rider down 268 times for 15 books.
 		const BYTE oldLevel = ch->GetSkillLevel(bestSkillVnum);
 		if (ch->UseItem(TItemPos(INVENTORY, bestCell)))
 		{
@@ -2871,7 +2870,12 @@ void CPlayerBotManager::Update()
 		// independent of those branches and still makes every change visible in
 		// at most one second.
 		if (d->IsPhase(PHASE_GAME) && !ch->IsDead())
+		{
 			ManagePlayerBotStatusOverhead(ch, state, dwNow);
+#if defined(PLAYERBOT_ENGINE_MT2009)
+			ManagePlayerBotPersonalityTitle(ch, state, dwNow);
+#endif
+		}
 
 		// Keep expensive decisions staggered over two ticks, but let an already
 		// engaged bot continue its basic combo on the intervening tick.  This makes

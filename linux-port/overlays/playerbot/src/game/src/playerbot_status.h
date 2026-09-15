@@ -625,6 +625,54 @@ namespace
 		state.bLastStatusParty = inParty;
 		state.dwLastStatusTargetVID = relevantTargetVID;
 	}
+
+#if defined(PLAYERBOT_ENGINE_MT2009)
+	// A bot's personality where a player's alignment title stands (Pabloo's
+	// proof of concept of 15 September, "osobowosc zamiast rangi"): the server
+	// command "PlayerBotTitle <vid> <personality>", drawn by the client root with
+	// textTail.AttachTitle and put back whenever an alignment refresh takes the
+	// place (playerbot_status_tail.py). Its own pass and its own clock beside
+	// ManagePlayerBotStatusOverhead: the panel's switch for the status line and a
+	// keeper's early return belong to that line, not to the title. A player's
+	// alignment title is untouched.
+	std::map<DWORD, DWORD> s_mapPlayerBotTitleNext;
+
+	void ManagePlayerBotPersonalityTitle(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || !ch->GetSectree())
+			return;
+		DWORD& next = s_mapPlayerBotTitleNext[ch->GetPlayerID()];
+		if (next != 0 && dwNow < next)
+			return;
+		CCheckNearbyHumanPlayer humanChecker(ch, 2500);
+		ch->GetSectree()->ForEachAround(humanChecker);
+		if (!humanChecker.m_bFound)
+		{
+			next = dwNow + PLAYERBOT_TITLE_PROBE_MS;
+			return;
+		}
+
+		char command[64];
+		int commandLen = snprintf(command, sizeof(command), "PlayerBotTitle %u %u",
+				(unsigned int)ch->GetVID(), (unsigned int)state.bPersonality);
+		if (commandLen <= 0 || commandLen >= (int)sizeof(command))
+			return;
+		++commandLen;   // the trailing NUL every chat packet carries
+
+		TPacketGCChat pack_command;
+		pack_command.header = HEADER_GC_CHAT;
+		pack_command.size = sizeof(TPacketGCChat) + commandLen;
+		pack_command.type = CHAT_TYPE_COMMAND;
+		pack_command.id = 0;   // the bot's VID travels in the command
+		pack_command.bEmpire = 0;
+
+		TEMP_BUFFER commandBuf;
+		commandBuf.write(&pack_command, sizeof(TPacketGCChat));
+		commandBuf.write(command, commandLen);
+		ch->PacketAround(commandBuf.read_peek(), commandBuf.size());
+		next = dwNow + (DWORD)number((int)PLAYERBOT_TITLE_RESEND_MIN_MS, (int)PLAYERBOT_TITLE_RESEND_MAX_MS);
+	}
+#endif
 }
 
 #endif

@@ -16,6 +16,8 @@ Writes into client-root/ (beside serverinfo.py, which is hand-written):
                     subscription button open the buycoffee page, not mt2009.pl;
   * uisystem.py   - the system menu's support button opens our Discord.
   * uitooltip.py  - the GM branch no longer kills every item tooltip.
+  * game.py       - the "PlayerBotStatus" server command, handed to
+                    playerbot_status_tail.py (hand-written, beside serverinfo.py).
 
 Exact-string edits on the stock CP1250/CRLF files, byte for byte otherwise.
 Idempotent; re-run after a new client package.
@@ -57,6 +59,30 @@ EDITS = {
          b'\t\t\t\tself.AppendTextLine("Auxs: ")\r\n'
          b'\t\t\t\tfor _, val in self.auxiliaryDict.items():\r\n'
          b'\t\t\t\t\tself.AppendTextLine("Key: [{}] Value: [{}]".format(_, val))\r\n'),
+    ],
+    # A bot's status arrives as the command "PlayerBotStatus <vid> <hex>"
+    # (SendPlayerBotOverheadChat) and is drawn as a text tail only: as talking
+    # it also went into the chat history, and a town of bots filled the window.
+    # Both edits take in the line after the insertion, so a second run on our
+    # own output finds neither anchor and changes nothing.
+    'game.py': [
+        (b'\t\t\t"PlayerbotOverhead"\t\t\t\t: self.__PlayerbotAdmin_Overhead,\r\n'
+         b'\t\t\t"Top1Badge"\t\t\t\t\t\t\t: self.__OnTop1Badge,\r\n',
+         b'\t\t\t"PlayerbotOverhead"\t\t\t\t: self.__PlayerbotAdmin_Overhead,\r\n'
+         b'\t\t\t"PlayerBotStatus"\t\t\t\t: self.__PlayerBotStatus,\r\n'
+         b'\t\t\t"Top1Badge"\t\t\t\t\t\t\t: self.__OnTop1Badge,\r\n'),
+        (b'\t\t\t\tself.interface.wndPlayerbotAdmin.OnOverheadTail(vid, wire)\r\n'
+         b'\r\n'
+         b'\t# Same transport as PlayerbotOverhead above (SendPlayerBotOverheadTail),\r\n',
+         b'\t\t\t\tself.interface.wndPlayerbotAdmin.OnOverheadTail(vid, wire)\r\n'
+         b'\r\n'
+         b'\tdef __PlayerBotStatus(self, vid="0", encodedText="", *rest):\r\n'
+         b'\t\t# A bot\'s status as a text tail and nothing in the chat history\r\n'
+         b'\t\t# (playerbot_status_tail.py; SendPlayerBotOverheadChat on the server).\r\n'
+         b'\t\timport playerbot_status_tail\r\n'
+         b'\t\tplayerbot_status_tail.show(vid, encodedText)\r\n'
+         b'\r\n'
+         b'\t# Same transport as PlayerbotOverhead above (SendPlayerBotOverheadTail),\r\n'),
     ],
     'uisystem.py': [
         (b'\t\tutils.open_url("https://mt2009.pl/Identity/Account/Manage/Support")\r\n',

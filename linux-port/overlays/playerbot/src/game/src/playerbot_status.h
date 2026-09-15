@@ -129,10 +129,56 @@ namespace
 		}
 	}
 
+	// The line over a bot's head. On the 2.x line it is the server command
+	// "PlayerBotStatus <vid> <hex>", which the client root draws as a text tail
+	// and nothing else (playerbot_status_tail.py): the client puts every TALKING
+	// packet from a character into the chat history beside its tail
+	// (RecvChatPacket), so a town of bots filled the chat window with statuses.
+	// The text goes as hex because the client's command parser splits its line
+	// on spaces; the bytes are the status's CP1250, and the name stays out of it,
+	// because the client draws the name over the head already. A root without
+	// the handler writes "Unknown Server Command" to its syserr.txt and draws
+	// nothing. The r40250 client has no handler, so that line keeps talking.
 	void SendPlayerBotOverheadChat(LPCHARACTER ch, const char* szText)
 	{
 		if (!ch || !szText || !szText[0] || !ch->GetSectree())
 			return;
+
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		static const char kHexDigits[] = "0123456789abcdef";
+		char hex[PLAYERBOT_STATUS_TAIL_MAX_BYTES * 2 + 1];
+		size_t n = 0;
+		for (; n < PLAYERBOT_STATUS_TAIL_MAX_BYTES && szText[n]; ++n)
+		{
+			unsigned char c = (unsigned char)szText[n];
+			// The client refuses a control byte; a space keeps the rest of the line.
+			if (c < 32 || c == 127)
+				c = ' ';
+			hex[n * 2] = kHexDigits[c >> 4];
+			hex[n * 2 + 1] = kHexDigits[c & 15];
+		}
+		hex[n * 2] = '\0';
+
+		char command[sizeof(hex) + 32];
+		int commandLen = snprintf(command, sizeof(command), "PlayerBotStatus %u %s",
+				(unsigned int)ch->GetVID(), hex);
+		if (commandLen <= 0 || commandLen >= (int)sizeof(command))
+			return;
+		++commandLen;   // the trailing NUL every chat packet carries
+
+		TPacketGCChat pack_command;
+		pack_command.header = HEADER_GC_CHAT;
+		pack_command.size = sizeof(TPacketGCChat) + commandLen;
+		pack_command.type = CHAT_TYPE_COMMAND;
+		pack_command.id = 0;   // the bot's VID travels in the command
+		pack_command.bEmpire = 0;
+
+		TEMP_BUFFER commandBuf;
+		commandBuf.write(&pack_command, sizeof(TPacketGCChat));
+		commandBuf.write(command, commandLen);
+		ch->PacketAround(commandBuf.read_peek(), commandBuf.size());
+		return;
+#endif
 
 		char chatbuf[256];
 		int len = snprintf(chatbuf, sizeof(chatbuf), "%s : %s", ch->GetName(), szText);

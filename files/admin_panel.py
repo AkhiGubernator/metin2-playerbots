@@ -7126,6 +7126,82 @@ GEAR_HISTORY_HOWS = {
     "EXCHANGE_GIVE":         ("gift_out",    {"pl": "Oddane w wymianie",  "en": "Given in a trade"}),
 }
 
+# The way a refine was made, from log.refinelog, which the engine writes beside
+# each REFINE row of log.log: POWER for a blacksmith, GUILD for a guild's,
+# DEVILTOWER for the Demon Tower smith and SCROLL:<vnum> for a scroll (the last
+# two since playerbotify's apply_refine_log_way; before that either smith said
+# POWER and every scroll SCROLL, or nothing when the SET column dropped its
+# name). Tieru, 15.09: "w nawiasie pisz (Kowal, Zwoj Blogoslawienstwa, ...)".
+REFINE_WAY_LABELS = {
+    "POWER":      {"pl": "Kowal",                 "en": "Blacksmith"},
+    "GUILD":      {"pl": "Kowal gildii",          "en": "Guild blacksmith"},
+    "DEVILTOWER": {"pl": "Kowal w Wieży Demonów", "en": "Demon Tower blacksmith"},
+    "SCROLL":     {"pl": "zwój",                  "en": "scroll"},
+    # The names r40250's DoRefineWithScroll writes into the same column.
+    "HYUNIRON":      {"pl": "Magiczny Kamień",    "en": "Magic Stone"},
+    "GOD_SCROLL":    {"pl": "Zwój Boga Smoków",   "en": "Dragon God scroll"},
+    "MUSIN_SCROLL":  {"pl": "Zwój Boga Wojny",    "en": "War God scroll"},
+    "YAGONG_SCROLL": {"pl": "Podręcznik Kowala",  "en": "Blacksmith's handbook"},
+    "SOCKET":        {"pl": "gniazdo",            "en": "socket"},
+}
+REFINE_HOWS = ("REFINE SUCCESS", "REFINE FAIL", "REMOVE (REFINE FAIL)")
+
+
+def refine_way_label(way, language):
+    lang_key = "pl" if language == "pl" else "en"
+    kind, _, vnum = (way or "").strip().partition(":")
+    if vnum.isdigit():
+        name = localized_item_name(int(vnum), language)
+        if name:
+            return name
+    labels = REFINE_WAY_LABELS.get(kind or "SCROLL")
+    if not labels:
+        return kind
+    return labels.get(lang_key, labels["en"])
+
+
+def match_refine_ways(cur, pid, rows):
+    """{index into rows: log.refinelog setType} for the refine rows of log.log.
+
+    A refinelog row belongs to a log row of the same character written within
+    two seconds with the same outcome; among several, the one whose grade is
+    the grade the attempt started from (a success's result is one above it, a
+    scroll's downgrade one below it, a burned piece is it). Anything the query
+    cannot answer - an old world without the table, say - leaves no way."""
+    import datetime as _dt
+    refines = [(i, r) for i, r in enumerate(rows)
+               if log_text(r.get("how")) in REFINE_HOWS and hasattr(r.get("time"), "strftime")]
+    if not refines:
+        return {}
+    slack = _dt.timedelta(seconds=3)
+    try:
+        cur.execute(
+            "SELECT time, is_success, step, setType FROM log.refinelog "
+            "WHERE pid = %s AND time BETWEEN %s AND %s",
+            (pid, min(r["time"] for _, r in refines) - slack, max(r["time"] for _, r in refines) + slack),
+        )
+        candidates = [w for w in cur.fetchall() if hasattr(w.get("time"), "strftime")]
+    except Exception:
+        return {}
+    ways = {}
+    for i, r in refines:
+        how = log_text(r.get("how"))
+        grade = int(r.get("vnum") or 0) % 10
+        succeeded = how == "REFINE SUCCESS"
+        start = grade - 1 if succeeded else (grade + 1 if how == "REFINE FAIL" else grade)
+        best, best_score = None, None
+        for w in candidates:
+            seconds = abs((w["time"] - r["time"]).total_seconds())
+            if seconds > 2 or (int(w.get("is_success") or 0) == 1) != succeeded:
+                continue
+            step = log_text(w.get("step")).strip()
+            score = seconds * 10 + (0 if step.isdigit() and int(step) == start else 5)
+            if best_score is None or score < best_score:
+                best, best_score = w, score
+        if best is not None:
+            ways[i] = log_text(best.get("setType"))
+    return ways
+
 
 @app.route("/api/bot_gear_history/<int:pid>")
 def api_bot_gear_history(pid):
@@ -7147,9 +7223,21 @@ def api_bot_gear_history(pid):
                 "ORDER BY time DESC LIMIT %s",
                 tuple([pid] + hows + [limit]),
             )
+            raw = list(cur.fetchall())
+            ways = match_refine_ways(cur, pid, raw)
+            # A scroll that fails hands the piece back a grade down, and the
+            # engine removes the old piece under the same reason as a burn: a
+            # REFINE FAIL row one grade lower beside it is the whole story, and
+            # "Spalone" over a sword that is now +2 was not true.
+            downgrades = [(r["time"], int(r.get("vnum") or 0)) for r in raw
+                          if log_text(r.get("how")) == "REFINE FAIL" and hasattr(r.get("time"), "strftime")]
             rows = []
-            for r in cur.fetchall():
+            for index, r in enumerate(raw):
                 how = log_text(r.get("how"))
+                if how == "REMOVE (REFINE FAIL)" and hasattr(r.get("time"), "strftime") and any(
+                        abs((t - r["time"]).total_seconds()) <= 2 and v == int(r.get("vnum") or 0) - 1
+                        for t, v in downgrades):
+                    continue
                 kind, labels = GEAR_HISTORY_HOWS.get(how, ("other", {"pl": how, "en": how}))
                 vnum = int(r.get("vnum") or 0)
                 item = localized_item_name(vnum, language) if vnum else ""
@@ -7170,8 +7258,9 @@ def api_bot_gear_history(pid):
                         detail = ("instead of " if lang_key == "en" else "zamiast ") + localized_item_name(int(parts[3]), language)
                 elif how.startswith("REFINE") or how.startswith("REMOVE"):
                     # The engine's hint is the item's own name with its grade,
-                    # which the item column already shows.
-                    detail = ""
+                    # which the item column already shows; how the refine was
+                    # made comes from log.refinelog.
+                    detail = "(" + refine_way_label(ways[index], language) + ")" if index in ways else ""
                 elif how in ("SAFEBOX PUT", "SAFEBOX GET"):
                     parts = hint.rsplit(" ", 1)
                     if len(parts) == 2 and parts[1].isdigit() and int(parts[1]) > 1:

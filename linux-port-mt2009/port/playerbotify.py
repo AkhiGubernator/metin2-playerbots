@@ -1276,7 +1276,43 @@ def main(root):
     apply_costume_block(game)
     apply_horse_rider_links(game)
     apply_gm_transfer_bots(game)
+    apply_refine_log_way(game)
     print('playerbotify: done')
+
+
+def apply_refine_log_way(game):
+    # Jak zrobiono ulepszenie - do nawiasu w historii ekwipunku panelu
+    # ("Ulepszenie udane (Kowal)", "(Zwoj Blogoslawienstwa)", "(Kowal w Wiezy
+    # Demonow)", Tieru 15.09). DoRefine zapisywal w log.refinelog "POWER" i dla
+    # zwyklego kowala, i dla kowala z Wiezy Demonow (bMoneyOnly, sciezka
+    # REFINE_TYPE_MONEY_ONLY w CInputMain::Refine), a DoRefineWithScroll
+    # "SCROLL" dla kazdego zwoju - kolumna setType to SET, ktory trzy dluzsze
+    # nazwy tego silnika po prostu gubil - wiec Zwoj Blogoslawienstwa i Zwoj
+    # Boga Smokow wygladaly tak samo. Kowal z Wiezy pisze DEVILTOWER, zwoj
+    # SCROLL:<vnum> (vnum brany, zanim SetCount zniszczy ostatni zwoj);
+    # logschemify zamienia kolumne na varchar.
+    path = os.path.join(game, 'char_item.cpp')
+    data = read(path)
+    old = b'IsRefineThroughGuild() ? "GUILD" : "POWER"'
+    new = b'IsRefineThroughGuild() ? "GUILD" : (bMoneyOnly ? "DEVILTOWER" : "POWER")'
+    if new in data:
+        print('  already: %s' % os.path.relpath(path))
+    else:
+        n = data.count(old)
+        if n != 3:
+            raise SystemExit('playerbotify: expected 3 refine ways in %s, found %d' % (path, n))
+        write(path, data.replace(old, new))
+        print('  edited:  %s' % os.path.relpath(path))
+    edit(path,
+         '\tsuccess_prob += pkItemScroll->GetValue(1);\n',
+         '\t// The scroll by its vnum for the refine log, taken while it exists:\n'
+         '\t// SetCount below destroys the last one.\n'
+         '\tchar szRefineWay[48];\n'
+         '\tsnprintf(szRefineWay, sizeof(szRefineWay), "SCROLL:%u", pkItemScroll->GetVnum());\n'
+         '\tszRefineType = szRefineWay;\n'
+         '\n'
+         '\tsuccess_prob += pkItemScroll->GetValue(1);\n',
+         marker='snprintf(szRefineWay, sizeof(szRefineWay), "SCROLL:%u"')
 
 
 def apply_costume_block(game):

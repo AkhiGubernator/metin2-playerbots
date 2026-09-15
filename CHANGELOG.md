@@ -17,6 +17,75 @@ every version here.
 
 ---
 
+## 2.0.50 — 2026-09-15
+
+Serwer (AI botów i rdzeń gry). Klient zostaje w wersji 2.0.6.
+
+### Crash rdzenia przy wsiadaniu na konia
+
+Rdzeń gry potrafił paść, gdy bot wsiadał na konia (dwa razy w sześć godzin
+przy 2000 botów). Koń zniszczony inaczej niż przez zsiadanie jeźdźca —
+najpewniej przez czyjąś umiejętność obszarową — zostawiał jeźdźcowi wskaźnik
+na siebie, a najbliższe wsiadanie sięgało do pamięci po nim. Teraz zniszczony
+koń zawsze odpina się od jeźdźca, a przywołanego konia nie da się zranić. Ten
+sam crash groził też graczom, tylko rzadziej.
+
+### Lochy Małp w Shinsoo i Jinno
+
+Boty czerwonego i niebieskiego królestwa biły małpy tylko w pierwszej sali
+swojego lochu, a boty Chunjo chodziły po wszystkich. AI znało układ sal i
+drzwi tylko w lochu Chunjo i w dwóch trudniejszych. Teraz boty wszystkich
+królestw chodzą po wszystkich jedenastu salach.
+
+### Bonusy tylko z własnych kamieni
+
+Boty dodawały i zmieniały bonusy bez Zaczarowania i Wzmocnienia Przedmiotu:
+brakujący kamień powstawał z niczego za 25 000 yang i od razu był zużyty, a
+historia ekwipunku pokazywała tylko jego zużycie. Teraz bot używa wyłącznie
+kamieni, które ma w ekwipunku (z dropu i skrzyń). Bez kamienia nie bonusuje,
+tak jak gracz.
+
+### Panel F9/F10 u zwykłych graczy
+
+Postać bez rangi GM dostawała „Ta komenda nie istnieje.” po każdym
+teleporcie i zalogowaniu, a także po wciśnięciu F9 albo F10. Klient pyta
+wtedy serwer, czy postać jest GM-em. Teraz serwer zwykłemu graczowi po prostu
+nie odpowiada.
+
+### /transfer na bota
+
+`/transfer <nick bota>` przenosi bota do GM-a. Wcześniej bot znikał i wracał
+w punkcie startowym swojej mapy. Bot z innego rdzenia (układ `split`) nie
+może przejść na mapę rdzenia GM-a, więc GM dostaje o tym wiadomość zamiast
+„Transfer requested.”.
+
+### Boty w grupie gracza
+
+Bot w grupie gracza nie odchodzi od niego do Biologa, handlarza, kowala ani
+stajennego. Swoje sprawy wznawia po wyjściu z grupy. Walczy jak dotąd, a
+szaman buffuje gracza także wtedy, gdy miał rozpoczęte zakupy. Poprawka
+Pabloo.
+
+### Dropki
+
+Bot, który przerósł poziom swojego zajęcia o więcej niż dwa poziomy (np.
+dropek na 45 poziomie przy metinach 35 poziomu w M2), nie dostaje już
+osobowości dropka. Po restarcie serwera gra jak zwykły bot i znów zdobywa
+doświadczenie.
+
+### Górnictwo
+
+Bot bity przy kopaniu rudy przestaje kopać i się broni. Wcześniej kopał do
+śmierci, a po odrodzeniu porzucał rudę na 15–45 minut. Teraz po walce albo po
+odrodzeniu wraca do żyły po około 45 sekundach.
+
+### Panel i aktualizator
+
+- Klasyczny panel: w teleportach postaci są też Jayang (M2 Shinsoo) i Bakra
+  (M2 Jinno).
+- Aktualizator na Linuksie: pobieranie manifestu przez curl ma limit czasu,
+  więc nie wisi bez końca na „[1/4] reading what is published”.
+
 ## 2.0.49 — 2026-09-15
 
 Serwer (AI botów) i panel Sebana 1.48.0. Klient zostaje w wersji 2.0.6.

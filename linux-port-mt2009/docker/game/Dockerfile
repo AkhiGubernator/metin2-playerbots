@@ -293,6 +293,18 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
  && rm -rf /tmp/share-add \
  && echo "share: moonlight + starter chests, M3 drops appended"
 
+# Maska Sabaha goes with the Hwang curse (playerbotify apply_hwang_curse_removed,
+# port/shareify.py renders this step): its drop lines and the Hwang loot box roll
+# it at nothing - a group stops reading at the first index it lacks, so a line is
+# zeroed, not deleted - and the temple's introduction hands none out.
+RUN set -eu; L=/opt/metin2/share/locale/poland \
+ && sed -i -E 's/^([[:blank:]]*[0-9]+[[:blank:]]+7273[15][[:blank:]]+[0-9]+[[:blank:]]+)[0-9.]+/\10/' "$L/mob_drop_item.txt" \
+ && sed -i -E '/^Group[[:blank:]]+LootBox_Hwang/,/^}/ s/^([[:blank:]]*[0-9]+[[:blank:]]+7273[15][[:blank:]]+[0-9]+[[:blank:]]+)[0-9.]+/\10/' "$L/special_item_group.txt" \
+ && sed -i '/^reward_data\.hwang_introduction/,/^}/ { /{72731, 1},/d }' "$L/quest/libs/other/reward_data.lua" \
+ && ! grep -E '^[[:blank:]]*[0-9]+[[:blank:]]+7273[15][[:blank:]]+[0-9]+[[:blank:]]+[1-9]' "$L/mob_drop_item.txt" \
+ && ! grep -q '{72731, 1}' "$L/quest/libs/other/reward_data.lua" \
+ && echo "share: Maska Sabaha removed"
+
 # The cores run unprivileged and read this tree by path; a directory only root
 # can enter costs every quest below it, silently. Repair, then assert.
 RUN set -eu; \

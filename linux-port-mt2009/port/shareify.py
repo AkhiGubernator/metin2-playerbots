@@ -186,6 +186,28 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
 '''
 
 
+# Maska Sabaha leaves the world with the Hwang curse (playerbotify's
+# apply_hwang_curse_removed). A drop line is rolled at nothing rather than
+# deleted, because a mob_drop_item group stops reading at the first index it
+# lacks; the Hwang loot box rolls it at nothing too and the temple's
+# introduction no longer hands one out. world.shop_item loses it in apply.sh.
+DOCKERFILE_MASK_ANCHOR = ' && echo "share: moonlight + starter chests, M3 drops appended"\n'
+DOCKERFILE_MASK_MARKER = 'echo "share: Maska Sabaha removed"'
+DOCKERFILE_MASK_STEP = r'''
+# Maska Sabaha goes with the Hwang curse (playerbotify apply_hwang_curse_removed,
+# port/shareify.py renders this step): its drop lines and the Hwang loot box roll
+# it at nothing - a group stops reading at the first index it lacks, so a line is
+# zeroed, not deleted - and the temple's introduction hands none out.
+RUN set -eu; L=/opt/metin2/share/locale/poland \
+ && sed -i -E 's/^([[:blank:]]*[0-9]+[[:blank:]]+7273[15][[:blank:]]+[0-9]+[[:blank:]]+)[0-9.]+/\10/' "$L/mob_drop_item.txt" \
+ && sed -i -E '/^Group[[:blank:]]+LootBox_Hwang/,/^}/ s/^([[:blank:]]*[0-9]+[[:blank:]]+7273[15][[:blank:]]+[0-9]+[[:blank:]]+)[0-9.]+/\10/' "$L/special_item_group.txt" \
+ && sed -i '/^reward_data\.hwang_introduction/,/^}/ { /{72731, 1},/d }' "$L/quest/libs/other/reward_data.lua" \
+ && ! grep -E '^[[:blank:]]*[0-9]+[[:blank:]]+7273[15][[:blank:]]+[0-9]+[[:blank:]]+[1-9]' "$L/mob_drop_item.txt" \
+ && ! grep -q '{72731, 1}' "$L/quest/libs/other/reward_data.lua" \
+ && echo "share: Maska Sabaha removed"
+'''
+
+
 def main():
     items = dump_vnums('item_proto')
     mobs = dump_vnums('mob_proto')
@@ -211,11 +233,17 @@ def main():
     assert '\r' not in s
     if 'special_item_group.starter.txt /tmp/share-add/' in s:
         print('shareify: Dockerfile already carries the step')
-        return
-    assert s.count(DOCKERFILE_ANCHOR) == 1, s.count(DOCKERFILE_ANCHOR)
-    s = s.replace(DOCKERFILE_ANCHOR, DOCKERFILE_ANCHOR + DOCKERFILE_STEP)
+    else:
+        assert s.count(DOCKERFILE_ANCHOR) == 1, s.count(DOCKERFILE_ANCHOR)
+        s = s.replace(DOCKERFILE_ANCHOR, DOCKERFILE_ANCHOR + DOCKERFILE_STEP)
+        print('shareify: Dockerfile step added')
+    if DOCKERFILE_MASK_MARKER in s:
+        print('shareify: Dockerfile already removes Maska Sabaha')
+    else:
+        assert s.count(DOCKERFILE_MASK_ANCHOR) == 1, s.count(DOCKERFILE_MASK_ANCHOR)
+        s = s.replace(DOCKERFILE_MASK_ANCHOR, DOCKERFILE_MASK_ANCHOR + DOCKERFILE_MASK_STEP)
+        print('shareify: Maska Sabaha step added')
     io.open(dockerfile, 'w', encoding='utf-8', newline='').write(s)
-    print('shareify: Dockerfile step added')
 
 
 if __name__ == '__main__':

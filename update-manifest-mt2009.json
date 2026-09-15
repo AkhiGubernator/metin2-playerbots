@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-15T08:58:02Z",
-  "statusMessage": "2.0.50: **naprawiony crash rdzenia przy wsiadaniu na konia, boty Shinsoo i Jinno chodzą po całym Lochu Małp, bonusy tylko z własnych kamieni, zwykli gracze bez „Ta komenda nie istnieje” po teleporcie, /transfer na bota, boty w grupie gracza nie odchodzą, a górnicy się bronią.** Tylko serwer — klient zostaje 2.0.6.",
+  "publishedAt": "2026-09-15T12:20:10Z",
+  "statusMessage": "2.0.51: **dymki nad głowami botów bez zapychania czatu (nowy klient 2.0.7), broń w ręce nie spala się bez zapasu, klucze i nadmiar ulepszaczy trafiają na lady, boty znają atlas broni, zwoje i szkatułki wracają na rynek, a historia ekwipunku pokazuje, czym zrobiono ulepszenie.** Serwer i klient 2.0.7.",
   "server": {
-    "version": "2.0.50",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.50/metin2-server-update-2.0.50.zip",
-    "sha256": "67944358DBACE23EDC0DFFC6FBA921987B7E1A2D1D49BE02118BDC0E728AC5C1"
+    "version": "2.0.51",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.51/metin2-server-update-2.0.51.zip",
+    "sha256": "C1287A085784215E3500A9AEB0C2BB60EA0A5DCF15468923CF62F41B32800F6A"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.6",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.48/metin2-client-update-2.0.6.zip",
-    "sha256": "6435A6C27A1770F22D4901DDC7C1E7AF7F5238427FEAC1AA052FB7403B0E71AF"
+    "version": "2.0.7",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.51/metin2-client-update-2.0.7.zip",
+    "sha256": "892DC4EFC983688D34E6BE887877963CFC70022C63A16539EEB03B65CF9109C9"
   }
 }

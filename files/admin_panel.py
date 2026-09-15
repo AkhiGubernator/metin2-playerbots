@@ -77,6 +77,12 @@ BIOLOGIST_KEY_ITEM_STATE = -1726153001
 BIOLOGIST_KEY_VNUMS = {
     "collect_quest_lv30": 30220, "collect_quest_lv40": 30221, "collect_quest_lv50": 30222,
 }
+# The collect rows are one chain in the quests: the Orc Tooth's last state starts
+# the Curse Book and the Curse Book's the Demon Souvenir. The core keeps that order
+# (IsPlayerBotBiologistMissionOpen, playerbot_missions.h), and so does the panel.
+BIOLOGIST_CHAIN_PREVIOUS = {
+    "collect_quest_lv40": "collect_quest_lv30", "collect_quest_lv50": "collect_quest_lv40",
+}
 # Where each row's monster stands (PLAYERBOT_HUNTING_MOB_HOMES): the herb rows
 # hunt village game, which every first and second village hosts.
 BIOLOGIST_VILLAGE_MAPS = frozenset((1, 3, 21, 23, 41, 43))
@@ -5043,6 +5049,9 @@ def biologist_progress(level, quest_flags, held, map_index, language=None):
         if level < required_level:
             if upcoming is None:
                 upcoming = index
+            continue
+        previous = BIOLOGIST_CHAIN_PREVIOUS.get(quest_name)
+        if previous and quest_flags.get((previous, "__status")) != BIOLOGIST_COMPLETE_STATE:
             continue
         last = index
         outgrown = level > required_level + BIOLOGIST_OUTGROWN_LEVELS

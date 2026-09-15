@@ -17,6 +17,30 @@ every version here.
 
 ---
 
+## 2.0.54 — 2026-09-16
+
+Serwer (rdzeń gry i AI botów) i klient 2.0.10.
+
+### Auto Łowy podnoszą drop (klient 2.0.10)
+
+Auto Łowy nie podnosiły dropu niezależnie od ustawień. Klient liczy pozycje od
+rogu swojej mapy, a serwer podawał położenie przedmiotu we współrzędnych całego
+świata, więc dla klienta każdy przedmiot leżał daleko poza zasięgiem
+podniesienia. Teraz serwer podaje, gdzie leży przedmiot względem postaci, a
+klient dolicza to do swojej pozycji. Tak samo punkt startu: zasięg łowów liczy
+się od miejsca, w którym włączono Auto Łowy, a nie od miejsca, w którym postać
+akurat stoi.
+
+Wymaga serwera 2.0.54 i klienta 2.0.10. Tego nie dało się sprawdzić w kliencie
+na naszym świecie testowym — dajcie znać, czy postać podnosi drop.
+
+### Skrzynie startowe w pełnej torbie
+
+Skrzynia startowa, której gra nie pozwalała otworzyć z braku wolnej kolumny
+trzech pól (na przykład Skrzynia Mistrza II), otwiera się teraz tak jak
+Szkatułka Blasku Księżyca: bot najpierw przekłada drobne przedmioty, żeby
+zrobić miejsce.
+
 ## 2.0.53 — 2026-09-15
 
 Serwer (AI botów, rdzeń gry, pliki gry, panel) i klient 2.0.9.

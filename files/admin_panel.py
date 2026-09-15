@@ -66,6 +66,24 @@ BIOLOGIST_ITEM_VNUMS = {
     "collect_quest_lv40": 30047, "collect_quest_lv50": 30015,
 }
 BIOLOGIST_OUTGROWN_LEVELS = 10
+# From this level a row's specimen is a refine material too, and the core takes
+# any of it the bot carries to the Biologist, outgrown row or not
+# (PLAYERBOT_BIOLOGIST_COLLECT_QUEST_LEVEL).
+BIOLOGIST_COLLECT_QUEST_LEVEL = 30
+# A compiled quest's state index is a hash of the state's name, the same number
+# in every quest (quest/object/state/). key_item is the second half of the three
+# collect rows: every specimen is in and the Biologist waits for the key.
+BIOLOGIST_KEY_ITEM_STATE = -1726153001
+BIOLOGIST_KEY_VNUMS = {
+    "collect_quest_lv30": 30220, "collect_quest_lv40": 30221, "collect_quest_lv50": 30222,
+}
+# Where each row's monster stands (PLAYERBOT_HUNTING_MOB_HOMES): the herb rows
+# hunt village game, which every first and second village hosts.
+BIOLOGIST_VILLAGE_MAPS = frozenset((1, 3, 21, 23, 41, 43))
+BIOLOGIST_MOB_MAPS = {
+    "collect_quest_lv30": frozenset((64,)), "collect_quest_lv40": frozenset((64,)),
+    "collect_quest_lv50": frozenset((66,)),
+}
 
 # The official ``special.levelup_quest`` choices for the M1/M2 stage.  The
 # game server writes progress to quest ``levelup``; the panel only interprets
@@ -4943,8 +4961,9 @@ MAP_I18N = {
   "event_log":"Dziennik zdarzeń bota (logi na żywo)","track_live":"Śledź na żywo","copy_logs":"Kopiuj logi","loading_logs":"Ładowanie logów postaci","no_logs":"Brak najświeższych wpisów w logach dla tej postaci.",
   "log_error":"Błąd odczytu logów","network_error":"Błąd sieci","teleporting":"Teleportowanie Twojej postaci w grze...","teleported":"Przeteleportowano {name} do bota w grze!","you":"Cię","failure":"Niepowodzenie",
   "copied":"Skopiowano","paste":"wklej w grze [Enter] → Ctrl+V → [Enter]","solo_exp":"Solo — zdobywanie doświadczenia","party_exp":"[PT] Zdobywanie doświadczenia w grupie","metin_hunt":"Polowanie na Metiny",
-  "character_missing":"Postać nie znaleziona","bio_not_started":"Pierwsza misja jeszcze nierozpoczęta","bio_completed":"Ukończono: {name}","bio_next":"Następna misja od Lv {level}: {name}",
-  "bio_all":"Wszystkie podstawowe misje ukończone","bio_complete":"komplet","bio_in_progress":"w toku"
+  "character_missing":"Postać nie znaleziona","bio_next":"Następna misja od Lv {level}: {name}","bio_key":"{name}{sep}{have}/{need}, czeka na: {key}",
+  "bio_all":"Wszystkie podstawowe misje ukończone","bio_complete":"komplet","bio_done":"ukończone","bio_skipped":"za niskie dla bota, pominięte: {n}",
+  "bio_rank_now":"{done}/{total} ukończone • teraz: {stage}","bio_rank_next":"{done}/{total} ukończone • {stage}"
  },
  "en": {
   "title":"Live world map — Chunjo","live":"LIVE (1.5 s)","subtitle":"Interactive real-time view of bot positions and progression",
@@ -4963,8 +4982,9 @@ MAP_I18N = {
   "event_log":"Bot event log (live)","track_live":"Track live","copy_logs":"Copy logs","loading_logs":"Loading logs for","no_logs":"No recent log entries for this character.",
   "log_error":"Log read error","network_error":"Network error","teleporting":"Teleporting your in-game character...","teleported":"Teleported {name} to the bot in game!","you":"you","failure":"Failure",
   "copied":"Copied","paste":"paste in game [Enter] → Ctrl+V → [Enter]","solo_exp":"Solo levelling","party_exp":"[PT] Party levelling","metin_hunt":"Hunting Metins",
-  "character_missing":"Character not found","bio_not_started":"The first mission has not started yet","bio_completed":"Completed: {name}","bio_next":"Next mission at Lv {level}: {name}",
-  "bio_all":"All basic missions completed","bio_complete":"complete","bio_in_progress":"in progress"
+  "character_missing":"Character not found","bio_next":"Next mission at Lv {level}: {name}","bio_key":"{name}{sep}{have}/{need}, waiting for: {key}",
+  "bio_all":"All basic missions completed","bio_complete":"complete","bio_done":"done","bio_skipped":"outgrown, skipped: {n}",
+  "bio_rank_now":"{done}/{total} done • now: {stage}","bio_rank_next":"{done}/{total} done • {stage}"
  }
 }
 
@@ -4993,6 +5013,83 @@ def localized_job_name(job, language=None):
 def localized_biologist_name(quest_name, polish_name, language=None):
     language = language or (lang() if has_request_context() else "en")
     return polish_name if language == "pl" else BIOLOGIST_NAMES_EN.get(quest_name, polish_name)
+
+
+def biologist_progress(level, quest_flags, held, map_index, language=None):
+    """The Biologist as the core plays it for one bot: (completed, stage, skipped).
+
+    The card and the ranking both ask this, so they cannot disagree. The row is
+    the one GetActivePlayerBotBiologistMission picks (playerbot_missions.h): a row
+    whose specimens the bot carries, then one whose monster stands on its map,
+    then the first it has not outgrown, then the highest one left. The ranking
+    used to name the row at the position of the count instead, which is the last
+    row finished only when rows are finished in order, and they are not.
+
+    ``quest_flags`` maps (quest, flag) to its value, ``held`` a vnum to what the
+    bag holds, ``map_index`` is the live map or None. ``stage`` is None when every
+    row is done, ("next", level, name) while the next row waits for a level, and
+    ("row", name, accepted, needed, key_name) otherwise, key_name set when the row
+    waits for its key alone. ``skipped`` counts the open rows the bot has outgrown
+    and is not on - how a bot of seventy reads 1/9 beside the Demon Souvenir."""
+    level = int(level or 1)
+    completed = 0
+    carrying = here = first = last = upcoming = None
+    outgrown_rows = []
+    for index, (quest_name, required_level, _, required_count) in enumerate(BIOLOGIST_REACHABLE):
+        status = quest_flags.get((quest_name, "__status"))
+        if status == BIOLOGIST_COMPLETE_STATE:
+            completed += 1
+            continue
+        if level < required_level:
+            if upcoming is None:
+                upcoming = index
+            continue
+        last = index
+        outgrown = level > required_level + BIOLOGIST_OUTGROWN_LEVELS
+        if outgrown:
+            outgrown_rows.append(index)
+        elif first is None:
+            first = index
+        key_phase = quest_name in BIOLOGIST_KEY_VNUMS and status == BIOLOGIST_KEY_ITEM_STATE
+        wanted = BIOLOGIST_KEY_VNUMS[quest_name] if key_phase else BIOLOGIST_ITEM_VNUMS.get(quest_name, 0)
+        carried = held.get(wanted, 0)
+        if carrying is None and carried > 0 and (
+                not outgrown or carried >= (1 if key_phase else required_count)
+                or required_level >= BIOLOGIST_COLLECT_QUEST_LEVEL):
+            carrying = index
+        if (here is None and not outgrown and map_index is not None and
+                int(map_index) in BIOLOGIST_MOB_MAPS.get(quest_name, BIOLOGIST_VILLAGE_MAPS)):
+            here = index
+    pick = next((i for i in (carrying, here, first, last) if i is not None), None)
+    skipped = sum(1 for index in outgrown_rows if index != pick)
+    if pick is None:
+        if upcoming is None:
+            return completed, None, skipped
+        quest_name, required_level, polish_name, _ = BIOLOGIST_REACHABLE[upcoming]
+        return (completed, ("next", required_level,
+                            localized_biologist_name(quest_name, polish_name, language)), skipped)
+    quest_name, _, polish_name, required_count = BIOLOGIST_REACHABLE[pick]
+    key_name = None
+    if (quest_name in BIOLOGIST_KEY_VNUMS and
+            quest_flags.get((quest_name, "__status")) == BIOLOGIST_KEY_ITEM_STATE):
+        key_name = localized_item_name(BIOLOGIST_KEY_VNUMS[quest_name], language)
+    stage = ("row", localized_biologist_name(quest_name, polish_name, language),
+             quest_flags.get((quest_name, "collect_count"), 0), required_count, key_name)
+    return completed, stage, skipped
+
+
+def biologist_stage_text(stage, messages, separator):
+    """A stage from biologist_progress in words; ``separator`` stands between the
+    name and the count - ": " on the card, a space in the ranking."""
+    if stage is None:
+        return messages["bio_all"]
+    if stage[0] == "next":
+        return messages["bio_next"].format(level=stage[1], name=stage[2])
+    _, name, accepted, needed, key_name = stage
+    if key_name:
+        return messages["bio_key"].format(name=name, sep=separator, have=accepted,
+                                          need=needed, key=key_name)
+    return "%s%s%d/%d" % (name, separator, accepted, needed)
 
 
 TPL_LIVE_MAP = BASE.replace("__BODY__", """
@@ -6581,7 +6678,7 @@ function openBotModal(pid) {
               '<div style="grid-column:1 / -1"><b>' + I18N.current_goal + ':</b> <span style="color:#60a5fa;font-weight:700">' + escapeHtml(p.goal) + '</span></div>' +
               '<div style="grid-column:1 / -1"><b>' + I18N.action + ':</b> <span style="color:#ffd700">' + escapeHtml(p.action) + '</span></div>' +
               '<div><b>' + I18N.horse + ':</b> <span style="color:#c084fc;font-weight:700">Lv ' + (p.horse_level || 0) + '</span></div>' +
-              '<div><b>' + I18N.biologist + ':</b> <span style="color:#4ade80;font-weight:700">' + (p.biologist_completed || 0) + '/' + (p.biologist_total || 7) + '</span></div>' +
+              '<div><b>' + I18N.biologist + ':</b> <span style="color:#4ade80;font-weight:700">' + (p.biologist_completed || 0) + '/' + (p.biologist_total || 7) + (I18N.bio_done ? ' ' + I18N.bio_done : '') + '</span></div>' +
               '<div style="grid-column:1 / -1"><b>' + I18N.bio_stage + ':</b> <span style="color:#86efac">' + (p.biologist_label || I18N.no_data) + '</span></div>' +
               // Only when there is a hunt to report. On the mt2009 line
               // levelup.quest ships in quest/_unused, so hunting_progress_label
@@ -11202,46 +11299,21 @@ def api_bot_inventory(pid):
                 (row["szName"], row["szState"]): int(row.get("lValue") or 0)
                 for row in quest_rows
             }
-            # What the bot carries of each specimen: the one thing that lets an
-            # outgrown row still be the right answer.
-            vnum_list = tuple(BIOLOGIST_ITEM_VNUMS.values())
+            # What the bag holds of each specimen and key: CountSpecifyItem, which
+            # is what the core asks when it chooses the row, counts nothing else.
+            vnum_list = tuple(BIOLOGIST_ITEM_VNUMS.values()) + tuple(BIOLOGIST_KEY_VNUMS.values())
             cur.execute(
                 "SELECT vnum, COALESCE(SUM(count),0) AS n FROM player.item "
-                "WHERE owner_id = %s AND vnum IN ({}) GROUP BY vnum".format(
+                "WHERE owner_id = %s AND window = 'INVENTORY' AND vnum IN ({}) GROUP BY vnum".format(
                     ",".join(["%s"] * len(vnum_list))),
                 (pid,) + vnum_list)
             held = {int(r["vnum"]): int(r.get("n") or 0) for r in cur.fetchall()}
-            bot_level = int(player.get("level") or 1)
-            completed = 0
-            biologist_label = messages["bio_not_started"]
-            chosen = None
-            fallback = None
-            for quest_name, required_level, item_name, required_count in BIOLOGIST_REACHABLE:
-                item_name = localized_biologist_name(quest_name, item_name, language)
-                if quest_flags.get((quest_name, "__status")) == BIOLOGIST_COMPLETE_STATE:
-                    completed += 1
-                    biologist_label = messages["bio_completed"].format(name=item_name)
-                    continue
-                if bot_level < required_level:
-                    if chosen is None and fallback is None:
-                        chosen = ("next", quest_name, required_level, item_name, required_count)
-                    break
-                outgrown = bot_level > required_level + BIOLOGIST_OUTGROWN_LEVELS
-                carries_all = held.get(BIOLOGIST_ITEM_VNUMS.get(quest_name, 0), 0) >= required_count
-                # The highest row left is what the game falls back to when
-                # every row still open has been outgrown.
-                fallback = ("row", quest_name, required_level, item_name, required_count)
-                if chosen is None and (not outgrown or carries_all):
-                    chosen = fallback
-            if chosen is None:
-                chosen = fallback
-            if chosen is None:
-                biologist_label = messages["bio_all"]
-            elif chosen[0] == "next":
-                biologist_label = messages["bio_next"].format(level=chosen[2], name=chosen[3])
-            else:
-                accepted = quest_flags.get((chosen[1], "collect_count"), 0)
-                biologist_label = "%s: %d/%d" % (chosen[3], accepted, chosen[4])
+            completed, stage, skipped = biologist_progress(
+                player.get("level"), quest_flags, held,
+                live.get("map_index") if live else None, language)
+            biologist_label = biologist_stage_text(stage, messages, ": ")
+            if skipped:
+                biologist_label += " • " + messages["bio_skipped"].format(n=skipped)
             player["biologist_completed"] = completed
             # How many rows there are, so the card does not carry the number in
             # its own markup. It said "/7" outright, and a chain that grew a row
@@ -11577,6 +11649,30 @@ def api_bot_rankings():
                 """), (rank_limit,))
 
             rows = cur.fetchall()
+            # The Biologist's ranking names the row each bot is on, as the card
+            # does, so it reads the same quest flags and bag for the whole page.
+            bio_flags, bio_bags, bio_live = {}, {}, {}
+            if rtype == "biologist" and rows:
+                bio_ids = tuple(int(r["id"]) for r in rows)
+                id_marks = ",".join(["%s"] * len(bio_ids))
+                bio_names = tuple(m[0] for m in BIOLOGIST_MISSIONS)
+                cur.execute(
+                    "SELECT dwPID, szName, szState, lValue FROM player.quest "
+                    "WHERE dwPID IN ({}) AND szName IN ({})".format(
+                        id_marks, ",".join(["%s"] * len(bio_names))),
+                    bio_ids + bio_names)
+                for q in cur.fetchall():
+                    bio_flags.setdefault(int(q["dwPID"]), {})[(q["szName"], q["szState"])] = (
+                        int(q.get("lValue") or 0))
+                bio_vnums = tuple(BIOLOGIST_ITEM_VNUMS.values()) + tuple(BIOLOGIST_KEY_VNUMS.values())
+                cur.execute(
+                    "SELECT owner_id, vnum, COALESCE(SUM(count),0) AS n FROM player.item "
+                    "WHERE owner_id IN ({}) AND window = 'INVENTORY' AND vnum IN ({}) "
+                    "GROUP BY owner_id, vnum".format(id_marks, ",".join(["%s"] * len(bio_vnums))),
+                    bio_ids + bio_vnums)
+                for it in cur.fetchall():
+                    bio_bags.setdefault(int(it["owner_id"]), {})[int(it["vnum"])] = int(it.get("n") or 0)
+                bio_live = read_playerbot_live_status()
             # One lookup for the whole page instead of a column in each of the
             # dozen ranking queries, which is also the only way it stays right
             # when a new ranking is added.
@@ -11639,17 +11735,26 @@ def api_bot_rankings():
                          41: "j1", 43: "j2", 44: "j3"}.get(stall_map_index, ""), "")
 
                 bio_completed = max(0, min(len(BIOLOGIST_REACHABLE), int(r.get("biologist_completed") or 0)))
-                if bio_completed >= len(BIOLOGIST_REACHABLE):
-                    bio_label = "%d/%d • %s" % (
-                        bio_completed, len(BIOLOGIST_REACHABLE), messages["bio_complete"])
-                elif bio_completed > 0:
-                    mission = BIOLOGIST_REACHABLE[bio_completed - 1]
-                    bio_label = "%d/%d • %s" % (
-                        bio_completed, len(BIOLOGIST_REACHABLE),
-                        localized_biologist_name(mission[0], mission[2], language))
-                else:
-                    bio_label = "0/%d • %s" % (
-                        len(BIOLOGIST_REACHABLE), messages["bio_in_progress"])
+                bio_label = ""
+                if rtype == "biologist":
+                    # The count, then the row the bot is on now. The label used to
+                    # name the row at the position of the count: "6/9 • Grzyb Tue"
+                    # for bots whose six herbs were done and whose Orc Tooth stood
+                    # at 1/10, and "5/9 • Bez" for bots whose fifth finished row was
+                    # the Demon Souvenir - an outgrown row is stepped over, so rows
+                    # are not finished in order.
+                    entry = bio_live.get(int(r["id"])) or {}
+                    bio_completed, stage, _ = biologist_progress(
+                        r.get("level"), bio_flags.get(int(r["id"]), {}),
+                        bio_bags.get(int(r["id"]), {}), entry.get("map_index"), language)
+                    if stage is None:
+                        bio_label = "%d/%d • %s" % (
+                            bio_completed, len(BIOLOGIST_REACHABLE), messages["bio_complete"])
+                    else:
+                        template = "bio_rank_next" if stage[0] == "next" else "bio_rank_now"
+                        bio_label = messages[template].format(
+                            done=bio_completed, total=len(BIOLOGIST_REACHABLE),
+                            stage=biologist_stage_text(stage, messages, " "))
                 hunting_complete = max(0, int(r.get("hunting_complete") or 0))
                 hunting_current = max(0, int(r.get("hunting_current") or 0))
                 hunting_remain = max(0, int(r.get("hunting_remain") or 0))

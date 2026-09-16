@@ -1033,6 +1033,10 @@ def read_ai_weights():
     vals["NIGHT"] = 1
     # "Boty graja jak zywi ludzie": sessions and rests. Experimental, off.
     vals["LIFE"] = 0
+    # Guild wars between the bots' guilds (playerbot_guild_war.h). On.
+    vals["WARS"] = 1
+    # The bots' ItemShop purchases (playerbot_itemshop.h). On.
+    vals["ISHOP"] = 1
     vals["SCRAP"] = 0
     # Percent of bots that rest on the market ring after a town errand; 100 is
     # the author's town, 0 is "every bot hunting".
@@ -1067,6 +1071,12 @@ def read_ai_weights():
                     continue
                 if name == "LIFE":
                     vals["LIFE"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                    continue
+                if name == "WARS":
+                    vals["WARS"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                    continue
+                if name == "ISHOP":
+                    vals["ISHOP"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
                     continue
                 if name == "SCRAP":
                     try:
@@ -1133,6 +1143,10 @@ def write_ai_weights(vals):
     # Not a weight: whether bots play in sessions and log out to rest in
     # between (experimental, off by default).
     body.append("LIFE\t%d" % (1 if vals.get("LIFE", 0) else 0))
+    # Not a weight: whether the bots' guilds fight field wars.
+    body.append("WARS\t%d" % (1 if vals.get("WARS", 1) else 0))
+    # Not a weight: whether the bots cash their vouchers and buy in the ItemShop.
+    body.append("ISHOP\t%d" % (1 if vals.get("ISHOP", 1) else 0))
     # Percent of stall keepers that sell scrap gear; 0 is off.
     body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
     # Percent of bots that rest in town after an errand; 0 means nobody does.
@@ -1174,6 +1188,16 @@ EVENTS_STATUS_FILES = [
     "/opt/metin2/var/channel1/first/playerbot_events_status.tsv",
     "/opt/metin2/var/channel1/game2/playerbot_events_status.tsv",
 ]
+# The bot guilds, one file per core (playerbot_guild.h writes it once a
+# minute): every core knows every guild, but counts only the bots of it
+# standing in its own world, so the page adds the three up.
+GUILD_STATUS_FILES = [
+    "/opt/metin2/var/channel1/game1/playerbot_guild_status.tsv",
+    "/opt/metin2/var/channel1/first/playerbot_guild_status.tsv",
+    "/opt/metin2/var/channel1/game2/playerbot_guild_status.tsv",
+]
+GUILD_TIER_KEYS = ("gl_tier_elite", "gl_tier_strong", "gl_tier_medium", "gl_tier_ordinary")
+GUILD_EMPIRE_KEYS = {1: "gl_empire_shinsoo", 2: "gl_empire_chunjo", 3: "gl_empire_jinno"}
 EVENT_NOW_MINUTES = (15, 30, 60, 120, 180, 360)
 _EVENT_HHMM = re.compile(r"^([01]?\d|2[0-4]):([0-5]\d)$")
 
@@ -1286,6 +1310,68 @@ def read_events_status():
                 st[key + "_text"] = time.strftime("%H:%M" if same_day else "%d.%m %H:%M", lt)
     return best
 
+
+
+def read_guild_status():
+    """The bot guilds as the cores last reported them: a list of dicts sorted
+    by tier, then level, then members; [] when no core has written for five
+    minutes. Online bots and the experience offered are summed over the cores,
+    everything else is the guild's own (the same on every core)."""
+    guilds, newest = {}, 0
+    for path in GUILD_STATUS_FILES:
+        try:
+            mtime = os.path.getmtime(path)
+            with open(path, "r", encoding="utf-8", errors="replace") as fh:
+                lines = fh.read().splitlines()
+        except OSError:
+            continue
+        if not lines:
+            continue
+        newest = max(newest, mtime)
+        head = lines[0].rstrip("\r").split("\t")
+        for line in lines[1:]:
+            f = line.rstrip("\r").split("\t")
+            if len(f) < len(head):
+                continue
+            row = dict(zip(head, f))
+            try:
+                gid = int(row.get("guild_id", 0))
+                online = int(row.get("online", 0))
+                avg = int(row.get("avg_strength", 0))
+                offered = int(row.get("exp_offered_here", 0))
+            except ValueError:
+                continue
+            if gid <= 0:
+                continue
+            g = guilds.get(gid)
+            if g is None:
+                g = {"guild_id": gid, "name": row.get("name", ""), "online": 0, "strength_sum": 0,
+                     "exp_offered": 0, "master": row.get("master", "")}
+                for key in ("empire", "tier", "level", "members", "master_pid", "ladder",
+                            "wins", "draws", "losses", "war_score", "war_enemy_score"):
+                    try:
+                        g[key] = int(row.get(key, 0))
+                    except ValueError:
+                        g[key] = 0
+                g["war_with"] = row.get("war_with", "")
+                guilds[gid] = g
+            if not g["master"] and row.get("master"):
+                g["master"] = row["master"]
+            if not g["war_with"] and row.get("war_with"):
+                g["war_with"] = row["war_with"]
+            g["online"] += online
+            g["strength_sum"] += avg * online
+            g["exp_offered"] += offered
+    if not guilds or time.time() - newest > 300:
+        return []
+    out = []
+    for g in guilds.values():
+        g["avg_strength"] = g["strength_sum"] // g["online"] if g["online"] else 0
+        g["tier_key"] = GUILD_TIER_KEYS[min(max(g["tier"], 0), 3)]
+        g["empire_key"] = GUILD_EMPIRE_KEYS.get(g["empire"], "gl_empire_unknown")
+        out.append(g)
+    out.sort(key=lambda g: (g["tier"], -g["level"], -g["members"], g["name"]))
+    return out
 
 
 def read_chest_switch():
@@ -3217,6 +3303,18 @@ T.update({
                   "de":"Experimentell. Jeder Bot spielt eine Sitzung von 3-6 Stunden (die erste nach einem Start ab einer halben Stunde), loggt sich aus, ruht 3-9 Stunden und kommt zurück - etwa zwei von fünf Bots sind jeweils online. Aus: alle Bots bleiben wie bisher in der Welt. Greift innerhalb einer Minute; Ausschalten holt die ruhenden Bots in wenigen Minuten zurück. Ein Bot in der Gruppe eines Spielers wartet mit dem Ausloggen.",
                   "tr":"Deneysel. Her bot 3-6 saatlik bir oturum oynar (başlangıçtan sonraki ilki yarım saatten itibaren), çıkış yapar, 3-9 saat dinlenir ve geri gelir - her an botların yaklaşık beşte ikisi çevrimiçidir. Kapalıyken tüm botlar eskisi gibi dünyada kalır. Bir dakika içinde uygulanır; kapatmak dinlenen botları birkaç dakika içinde geri getirir. Bir oyuncunun grubundaki bot çıkış yapmadan bekler."},
  "ai_life_on":   {"en":"Enabled (experimental)","pl":"Włączone (eksperymentalne)","de":"Eingeschaltet (experimentell)","tr":"Açık (deneysel)"},
+ "ai_wars":      {"en":"Guild wars between the bots","pl":"Wojny gildii botów","de":"Gildenkriege der Bots","tr":"Botların lonca savaşları"},
+ "ai_wars_help": {"en":"Every two hours or so two bot guilds of one kingdom fight a field war on that kingdom's guild map: thirty minutes, the game's own declaration and scoring, a notice on the chat when it starts. A guild needs eight bots online to be picked. Off: no new war is declared; one under way is fought to its end.",
+                  "pl":"Mniej więcej co dwie godziny dwie gildie botów z jednego królestwa toczą wojnę polową na mapie gildyjnej tego królestwa: trzydzieści minut, wypowiedzenie i punktacja gry, komunikat na czacie przy starcie. Gildia musi mieć osiem botów online, żeby ją wylosowano. Wyłączone: nowa wojna nie jest wypowiadana; trwająca dobiega końca.",
+                  "de":"Etwa alle zwei Stunden führen zwei Bot-Gilden eines Königreichs einen Feldkrieg auf der Gildenkarte dieses Königreichs: dreißig Minuten, Kriegserklärung und Wertung des Spiels selbst, eine Meldung im Chat beim Start. Eine Gilde braucht acht Bots online, um gewählt zu werden. Aus: kein neuer Krieg wird erklärt; ein laufender wird zu Ende gekämpft.",
+                  "tr":"Yaklaşık iki saatte bir, aynı krallıktan iki bot loncası o krallığın lonca haritasında bir saha savaşı yapar: otuz dakika, oyunun kendi ilanı ve puanlaması, başlangıçta sohbette bir duyuru. Bir loncanın seçilmesi için sekiz botu çevrimiçi olmalı. Kapalı: yeni savaş ilan edilmez; süren savaş sonuna kadar oynanır."},
+ "ai_wars_on":   {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
+ "ai_ishop":     {"en":"Bots buy in the ItemShop","pl":"Boty kupują w ItemShopie","de":"Bots kaufen im ItemShop","tr":"Botlar ItemShop'tan alır"},
+ "ai_ishop_help":{"en":"A bot cashes the Kupon SM vouchers it finds (Metin stones and bosses drop them, M2_DRAGON_COIN_*_PERMILLE) into its account's Dragon Coins and buys, at most once an hour, only what its own rules would use: a Kamień Duchowy for a Grand Master skill, a change stone for a worn weapon still worth rerolling, with Dragon Marks a Blessing Scroll or the Dragon God's attack potions, and one bot in four a hairstyle, once. No VIP items and no pass: every bot already holds the premium subscription. Off: the vouchers stay in the bags.",
+                  "pl":"Bot wymienia znalezione Kupony SM (dropią z metinów i bossów, M2_DRAGON_COIN_*_PERMILLE) na Smocze Monety swojego konta i kupuje, najwyżej raz na godzinę, tylko to, z czego jego własne reguły korzystają: Kamień Duchowy do umiejętności Wielkiego Mistrza, kamień zmiany bonusów do noszonej broni wartej jeszcze losowania, za Smocze Znaki Zwój Błogosławieństwa albo mikstury ataku Boga Smoków, a jeden bot na czterech fryzurę, raz. Bez przedmiotów VIP i bez przepustki: każdy bot ma już subskrypcję premium. Wyłączone: kupony zostają w torbach.",
+                  "de":"Ein Bot löst die gefundenen Kupon-SM-Gutscheine (Metinsteine und Bosse lassen sie fallen, M2_DRAGON_COIN_*_PERMILLE) in Drachenmünzen seines Kontos ein und kauft höchstens einmal pro Stunde nur, was seine eigenen Regeln nutzen: einen Kamień Duchowy für eine Großmeister-Fertigkeit, einen Bonus-Wechselstein für die getragene Waffe, wenn sie noch neu gewürfelt würde, mit Drachenmarken eine Segensrolle oder die Angriffstränke des Drachengottes, und jeder vierte Bot einmal eine Frisur. Keine VIP-Gegenstände und kein Pass: jeder Bot hat das Premium-Abo bereits. Aus: die Gutscheine bleiben im Inventar.",
+                  "tr":"Bot bulduğu Kupon SM kuponlarını (Metin taşları ve boss'lar düşürür, M2_DRAGON_COIN_*_PERMILLE) hesabının Ejderha Parasına çevirir ve saatte en fazla bir kez, yalnızca kendi kurallarının kullanacağı şeyi alır: Büyük Usta becerisi için Kamień Duchowy, hâlâ yeniden atılmaya değer takılı silah için bonus değiştirme taşı, Ejderha İşaretleriyle Kutsama Parşömeni ya da Ejderha Tanrısı saldırı iksirleri ve dört bottan biri bir kez bir saç modeli. VIP eşya ve geçiş kartı yok: her bot zaten premium aboneliğe sahip. Kapalı: kuponlar çantada kalır."},
+ "ai_ishop_on":  {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
  "ai_experimental": {"en":"experimental","pl":"eksperymentalne","de":"experimentell","tr":"deneysel"},
  "ai_scrap":     {"en":"Scrap keepers","pl":"Boty złomiarze","de":"Schrotthändler-Bots","tr":"Hurdacı botlar"},
  "ai_scrap_help":{"en":"The share of stall keepers that put their low refines (+0 to +3) on the counter, cheaply, instead of vendoring them - fodder for burning at the blacksmith, the way the hard servers play. Off by default.",
@@ -3252,6 +3350,37 @@ T.update({
                   "tr":"Sandığın ne sıklıkla düştüğü, binde olarak: öldürülen canavar başına ve kırılan Metin başına. Oyun varsayılanı 10‰ (%1) ve 300‰ (%30); daha çok sandık, botlarda daha çok bonus parşömeni, hız iksiri ve Kutsama Parşömeni demek. Beş saniye içinde, bot ve oyuncu için aynı şekilde uygulanır."},
  "ev_nav":       {"en":"\U0001F389 Events","pl":"\U0001F389 Eventy","de":"\U0001F389 Events","tr":"\U0001F389 Etkinlikler"},
  "ev_open":      {"en":"\U0001F389 Open events","pl":"\U0001F389 Otw\u00f3rz eventy","de":"\U0001F389 Events \u00f6ffnen","tr":"\U0001F389 Etkinlikleri a\u00e7"},
+ "gl_nav":       {"en":"\U0001F6E1 Guilds","pl":"\U0001F6E1 Gildie","de":"\U0001F6E1 Gilden","tr":"\U0001F6E1 Loncalar"},
+ "gl_open":      {"en":"\U0001F6E1 Open guilds","pl":"\U0001F6E1 Otwórz gildie","de":"\U0001F6E1 Gilden öffnen","tr":"\U0001F6E1 Loncaları aç"},
+ "gl_dash_hint": {"en":"The bot guilds by tier: elite, strong, medium and ordinary, with their level, members, ladder and the war they are in.","pl":"Gildie botów wg klasy: elitarne, silne, średnie i zwykłe, z poziomem, członkami, rankingiem i toczoną wojną.","de":"Die Bot-Gilden nach Stufe: Elite, stark, mittel und gewöhnlich, mit Level, Mitgliedern, Rangliste und laufendem Krieg.","tr":"Bot loncaları kademeye göre: elit, güçlü, orta ve sıradan; seviye, üyeler, sıralama ve süren savaşla."},
+ "gl_intro":     {"en":"A bot guild has a tier. Every bot's strength is one number (level, weapon, skills, horse, armour); every ten minutes each kingdom's bots are cut into percentiles, and a guild is founded at the tier its founder's percentile puts it in: the top 3% found an elite guild, the top 15% a strong one, the top half a medium one, the rest an ordinary one. A master recruits only above its tier's floor, strongest first; a member that outgrows its guild leaves for a better one. Members offer the guild a share of their experience every hour, so a guild levels and its master spends the skill points.",
+                  "pl":"Gildia botów ma klasę. Siła każdego bota to jedna liczba (poziom, broń, umiejętności, koń, zbroja); co dziesięć minut boty każdego królestwa dzielone są na percentyle, a gildia powstaje w klasie, do której trafia percentyl założyciela: górne 3% zakłada gildię elitarną, górne 15% silną, górna połowa średnią, reszta zwykłą. Mistrz rekrutuje tylko powyżej progu swojej klasy, od najsilniejszych; członek, który przerósł gildię, odchodzi do lepszej. Członkowie co godzinę oddają gildii część zdobytego expa, więc gildia wbija poziomy, a mistrz wydaje punkty umiejętności.",
+                  "de":"Eine Bot-Gilde hat eine Stufe. Die Stärke jedes Bots ist eine Zahl (Level, Waffe, Fertigkeiten, Pferd, Rüstung); alle zehn Minuten werden die Bots jedes Königreichs in Perzentile geteilt, und eine Gilde wird in der Stufe gegründet, in die das Perzentil ihres Gründers fällt: die oberen 3% gründen eine Elite-Gilde, die oberen 15% eine starke, die obere Hälfte eine mittlere, der Rest eine gewöhnliche. Ein Meister rekrutiert nur über der Schwelle seiner Stufe, die Stärksten zuerst; ein Mitglied, das seiner Gilde entwachsen ist, wechselt in eine bessere. Mitglieder geben der Gilde stündlich einen Teil ihrer Erfahrung, so steigt die Gilde auf und der Meister verteilt die Fertigkeitspunkte.",
+                  "tr":"Bir bot loncasının kademesi vardır. Her botun gücü tek bir sayıdır (seviye, silah, beceriler, at, zırh); her on dakikada bir her krallığın botları yüzdelik dilimlere ayrılır ve lonca, kurucusunun dilimine denk gelen kademede kurulur: en üst %3 elit, en üst %15 güçlü, üst yarı orta, geri kalanı sıradan bir lonca kurar. Usta yalnızca kademesinin eşiğinin üzerinden, en güçlülerden başlayarak üye alır; loncasını aşan üye daha iyisine geçer. Üyeler her saat tecrübelerinin bir kısmını loncaya verir, böylece lonca seviye atlar ve usta beceri puanlarını harcar."},
+ "gl_stale":     {"en":"No game core has written a guild status yet (it does so within a minute of starting with this version).","pl":"Żaden rdzeń gry nie zapisał jeszcze statusu gildii (robi to w ciągu minuty od startu z tą wersją).","de":"Noch kein Spielkern hat einen Gildenstatus geschrieben (er tut es binnen einer Minute nach dem Start mit dieser Version).","tr":"Henüz hiçbir oyun çekirdeği lonca durumu yazmadı (bu sürümle başladıktan bir dakika içinde yazar)."},
+ "gl_summary":   {"en":"Bot guilds","pl":"Gildie botów","de":"Bot-Gilden","tr":"Bot loncaları"},
+ "gl_tier_elite":    {"en":"Elite","pl":"Elitarna","de":"Elite","tr":"Elit"},
+ "gl_tier_strong":   {"en":"Strong","pl":"Silna","de":"Stark","tr":"Güçlü"},
+ "gl_tier_medium":   {"en":"Medium","pl":"Średnia","de":"Mittel","tr":"Orta"},
+ "gl_tier_ordinary": {"en":"Ordinary","pl":"Zwykła","de":"Gewöhnlich","tr":"Sıradan"},
+ "gl_empire_shinsoo":{"en":"Shinsoo","pl":"Shinsoo","de":"Shinsoo","tr":"Shinsoo"},
+ "gl_empire_chunjo": {"en":"Chunjo","pl":"Chunjo","de":"Chunjo","tr":"Chunjo"},
+ "gl_empire_jinno":  {"en":"Jinno","pl":"Jinno","de":"Jinno","tr":"Jinno"},
+ "gl_empire_unknown":{"en":"?","pl":"?","de":"?","tr":"?"},
+ "gl_col_name":  {"en":"Guild","pl":"Gildia","de":"Gilde","tr":"Lonca"},
+ "gl_col_kingdom":{"en":"Kingdom","pl":"Królestwo","de":"Königreich","tr":"Krallık"},
+ "gl_col_tier":  {"en":"Tier","pl":"Klasa","de":"Stufe","tr":"Kademe"},
+ "gl_col_level": {"en":"Level","pl":"Poziom","de":"Level","tr":"Seviye"},
+ "gl_col_members":{"en":"Members","pl":"Członkowie","de":"Mitglieder","tr":"Üyeler"},
+ "gl_col_online":{"en":"Online","pl":"Online","de":"Online","tr":"Çevrimiçi"},
+ "gl_col_master":{"en":"Master","pl":"Mistrz","de":"Meister","tr":"Usta"},
+ "gl_col_strength":{"en":"Avg. strength","pl":"Śr. siła","de":"Ø Stärke","tr":"Ort. güç"},
+ "gl_col_ladder":{"en":"Ladder","pl":"Ranking","de":"Rangliste","tr":"Sıralama"},
+ "gl_col_record":{"en":"W/D/L","pl":"Z/R/P","de":"S/U/N","tr":"G/B/M"},
+ "gl_col_exp":   {"en":"Exp received","pl":"Otrzymany exp","de":"Erhaltene Erfahrung","tr":"Alınan tecrübe"},
+ "gl_col_war":   {"en":"War","pl":"Wojna","de":"Krieg","tr":"Savaş"},
+ "gl_war_with":  {"en":"vs","pl":"z","de":"gegen","tr":"vs"},
+ "gl_exp_note":  {"en":"Exp received counts what the bots have offered since the cores started; the guild's own exp column in the game is the same number, kept by the DB.","pl":"„Otrzymany exp” liczy, co boty oddały od startu rdzeni; kolumna expa gildii w grze to ta sama liczba, trzymana przez bazę.","de":"„Erhaltene Erfahrung“ zählt, was die Bots seit dem Start der Kerne gegeben haben; die Erfahrungsspalte der Gilde im Spiel ist dieselbe Zahl, von der Datenbank geführt.","tr":"„Alınan tecrübe“ çekirdekler başladığından beri botların verdiğini sayar; oyundaki lonca tecrübe sütunu veritabanının tuttuğu aynı sayıdır."},
  "ev_dash_hint": {"en":"Timed windows: Moonlight chests drop only while their event runs; more experience, drop or yang at chosen hours. \u201cActivate now\u201d switches an event on for a number of minutes.","pl":"Okna czasowe: Szkatu\u0142ki Blasku Ksi\u0119\u017cyca dropi\u0105 tylko wtedy, gdy trwa ich event; wi\u0119cej expa, dropu albo yang o wybranych porach. \u201eAktywuj teraz\u201d w\u0142\u0105cza event na podan\u0105 liczb\u0119 minut.","de":"Zeitfenster: Mondschein-Truhen fallen nur w\u00e4hrend ihres Events; mehr Erfahrung, Drop oder Yang zu gew\u00e4hlten Stunden. \u201eJetzt aktivieren\u201c schaltet ein Event f\u00fcr einige Minuten ein.","tr":"Zaman pencereleri: Ay I\u015f\u0131\u011f\u0131 Sand\u0131klar\u0131 yaln\u0131zca etkinlik s\u00fcrerken d\u00fc\u015fer; se\u00e7ilen saatlerde daha fazla tecr\u00fcbe, drop veya yang. \u201c\u015eimdi etkinle\u015ftir\u201d bir etkinli\u011fi belirli dakika a\u00e7ar."},
  "ev_intro":     {"en":"A row is a weekly window: which days, from what hour to what hour, and for a rate how many percent over the server's own rates (50 = +50%). The game core reads this within five seconds; nothing restarts. A window past midnight (22:00-02:00) runs into the next day.","pl":"Wiersz to okno tygodniowe: w jakie dni, od kt\u00f3rej do kt\u00f3rej, a dla rat o ile procent ponad ustawione raty serwera (50 = +50%). Rdze\u0144 gry odczytuje to w pi\u0119\u0107 sekund; nic si\u0119 nie restartuje. Okno przez p\u00f3\u0142noc (22:00-02:00) trwa do nast\u0119pnego dnia.","de":"Eine Zeile ist ein w\u00f6chentliches Fenster: welche Tage, von wann bis wann, und bei einer Rate wie viel Prozent \u00fcber den Serverraten (50 = +50%). Der Spielkern liest das binnen f\u00fcnf Sekunden; nichts startet neu. Ein Fenster \u00fcber Mitternacht (22:00-02:00) l\u00e4uft in den n\u00e4chsten Tag.","tr":"Bir sat\u0131r haftal\u0131k bir penceredir: hangi g\u00fcnler, saat ka\u00e7tan ka\u00e7a ve oran i\u00e7in sunucu oranlar\u0131n\u0131n y\u00fczde ka\u00e7 \u00fcst\u00fc (50 = +%50). Oyun \u00e7ekirde\u011fi bunu be\u015f saniyede okur; hi\u00e7bir \u015fey yeniden ba\u015flamaz. Gece yar\u0131s\u0131n\u0131 ge\u00e7en pencere (22:00-02:00) ertesi g\u00fcne sarkar."},
  "ev_chest_note":{"en":"Once a single chest window is in the schedule, the chests drop only inside the windows; the two sliders on the bot behaviour page say how often they drop then.","pl":"Gdy w harmonogramie jest cho\u0107 jedno okno szkatu\u0142ek, poza oknami szkatu\u0142ki nie dropi\u0105 wcale; dwa suwaki na stronie zachowania bot\u00f3w m\u00f3wi\u0105, jak cz\u0119sto dropi\u0105 w oknie.","de":"Sobald ein Truhenfenster im Plan steht, fallen die Truhen nur innerhalb der Fenster; die zwei Regler auf der Seite Bot-Verhalten sagen, wie oft sie dann fallen.","tr":"Planda tek bir sand\u0131k penceresi bile varsa sand\u0131klar yaln\u0131zca pencereler i\u00e7inde d\u00fc\u015fer; bot davran\u0131\u015f\u0131 sayfas\u0131ndaki iki kayd\u0131r\u0131c\u0131 o s\u0131rada ne s\u0131kl\u0131kta d\u00fc\u015ft\u00fc\u011f\u00fcn\u00fc s\u00f6yler."},
@@ -4727,6 +4856,11 @@ TPL_DASH = BASE.replace("__BODY__", """
 <a class="btn" href="{{url_for('events_page')}}">{{t('ev_open')}}</a>
 </div>
 <div class="card">
+<h3 class="help">{{t('gl_nav')}}</h3>
+<p class="muted">{{t('gl_dash_hint')}}</p>
+<a class="btn" href="{{url_for('guilds_page')}}">{{t('gl_open')}}</a>
+</div>
+<div class="card">
 <h3 class="help" title="{{t('tip_reset')}}">🔗 {{t('reset_title')}}</h3>
 <p class="muted">{{t('reset_hint')}}</p>
 <form method="post" action="{{url_for('admin_resetlink')}}">
@@ -5127,13 +5261,54 @@ TPL_EVENTS = BASE.replace("__BODY__", """
 </div>
 """)
 
+TPL_GUILDS = BASE.replace("__BODY__", """
+<p><a href="{{url_for('dash')}}">{{t('back_players')}}</a></p>
+<div class="card">
+<h3>{{t('gl_nav')}}</h3>
+<p class="muted">{{t('gl_intro')}}</p>
+<p class="muted">{{t('gl_exp_note')}}</p>
+</div>
+
+<div class="card">
+<h3>{{t('gl_summary')}}{% if guilds %}: {{guilds|length}}
+  {% for key in tier_keys %}{% set n = guilds|selectattr('tier_key', 'equalto', key)|list|length %}{% if n %}<span class="badge">{{t(key)}}: {{n}}</span> {% endif %}{% endfor %}{% endif %}</h3>
+{% if not guilds %}<p class="muted">{{t('gl_stale')}}</p>{% else %}
+<div style="overflow-x:auto">
+<table>
+<tr><th>{{t('gl_col_name')}}</th><th>{{t('gl_col_kingdom')}}</th><th>{{t('gl_col_tier')}}</th>
+    <th>{{t('gl_col_level')}}</th><th>{{t('gl_col_members')}}</th><th>{{t('gl_col_online')}}</th>
+    <th>{{t('gl_col_master')}}</th><th>{{t('gl_col_strength')}}</th><th>{{t('gl_col_ladder')}}</th>
+    <th>{{t('gl_col_record')}}</th><th>{{t('gl_col_exp')}}</th><th>{{t('gl_col_war')}}</th></tr>
+{% for g in guilds %}
+<tr>
+  <td><b>{{g.name}}</b></td>
+  <td>{{t(g.empire_key)}}</td>
+  <td>{{t(g.tier_key)}}</td>
+  <td>{{g.level}}</td>
+  <td>{{g.members}}</td>
+  <td>{{g.online}}</td>
+  <td>{{g.master}}</td>
+  <td>{{g.avg_strength}}</td>
+  <td>{{g.ladder}}</td>
+  <td>{{g.wins}}/{{g.draws}}/{{g.losses}}</td>
+  <td>{{g.exp_offered}}</td>
+  <td>{% if g.war_with %}\u2694 {{t('gl_war_with')}} <b>{{g.war_with}}</b> {{g.war_score}}:{{g.war_enemy_score}}{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% endif %}
+</div>
+""")
+
 TPL_AI = BASE.replace("__BODY__", """
 <p><a href="{{url_for('dash')}}">{{t('back_players')}}</a></p>
 <div class="card">
 <h3>{{t('ai_nav')}}</h3>
 <p class="muted">{{t('ai_intro')}}</p>
 <p><a class="btn" href="{{url_for('ai_item_policy')}}">{{t('ai_items_open')}}</a>
-   <a class="btn" href="{{url_for('events_page')}}">{{t('ev_open')}}</a></p>
+   <a class="btn" href="{{url_for('events_page')}}">{{t('ev_open')}}</a>
+   <a class="btn" href="{{url_for('guilds_page')}}">{{t('gl_open')}}</a></p>
 </div>
 
 <div class="card">
@@ -5158,6 +5333,16 @@ TPL_AI = BASE.replace("__BODY__", """
   <h3 style="margin:0 0 2px">🧑‍💻 {{t('ai_life')}} <span class="badge">{{t('ai_experimental')}}</span></h3>
   <p class="muted" style="margin:0 0 6px">{{t('ai_life_help')}}</p>
   <label><input type="checkbox" name="LIFE" value="1" {% if cur.get('LIFE', 0) %}checked{% endif %}> {{t('ai_life_on')}}</label>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">🛡 {{t('ai_wars')}}</h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_wars_help')}}</p>
+  <label><input type="checkbox" name="WARS" value="1" {% if cur.get('WARS', 1) %}checked{% endif %}> {{t('ai_wars_on')}}</label>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">🛒 {{t('ai_ishop')}}</h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_ishop_help')}}</p>
+  <label><input type="checkbox" name="ISHOP" value="1" {% if cur.get('ISHOP', 1) %}checked{% endif %}> {{t('ai_ishop_on')}}</label>
 </div>
 <div style="margin-bottom:18px">
   <h3 style="margin:0 0 2px">♻️ {{t('ai_scrap')}}
@@ -5367,10 +5552,10 @@ def biologist_progress(level, quest_flags, held, map_index, language=None):
         if previous and quest_flags.get((previous, "__status")) != BIOLOGIST_COMPLETE_STATE:
             continue
         last = index
-        outgrown = level > required_level + BIOLOGIST_OUTGROWN_LEVELS
-        if outgrown:
-            outgrown_rows.append(index)
-        elif first is None:
+        # 2.0.60: no row is "too low" - the core does them in order at any
+        # level, so nothing is skipped and nothing is reported as skipped.
+        outgrown = False
+        if first is None:
             first = index
         key_phase = quest_name in BIOLOGIST_KEY_VNUMS and status == BIOLOGIST_KEY_ITEM_STATE
         wanted = BIOLOGIST_KEY_VNUMS[quest_name] if key_phase else BIOLOGIST_ITEM_VNUMS.get(quest_name, 0)
@@ -12215,6 +12400,14 @@ def rates():
 
 
 
+@app.route("/guilds")
+@login_required
+def guilds_page():
+    """The bot guilds: tier, level, members, ladder, the war under way. Read
+    from the cores' playerbot_guild_status.tsv; nothing is written."""
+    return render_template_string(TPL_GUILDS, guilds=read_guild_status(), tier_keys=GUILD_TIER_KEYS)
+
+
 @app.route("/events", methods=["GET", "POST"])
 @login_required
 def events_page():
@@ -12317,6 +12510,8 @@ def ai_weights():
         vals["BOOKS"] = 1 if request.form.get("BOOKS") else 0
         vals["NIGHT"] = 1 if request.form.get("NIGHT") else 0
         vals["LIFE"] = 1 if request.form.get("LIFE") else 0
+        vals["WARS"] = 1 if request.form.get("WARS") else 0
+        vals["ISHOP"] = 1 if request.form.get("ISHOP") else 0
         try:
             vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
         except (TypeError, ValueError):

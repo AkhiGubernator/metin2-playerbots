@@ -1240,12 +1240,12 @@ namespace
 		// one camp; applied to a person's party they would walk the bot back
 		// out within a minute of it being invited, which is the opposite of
 		// what an invitation means. The player decides when it ends.
+		// Its distribution mode included: a bot in a person's party put the
+		// party back on parity at every check, whatever the leader had chosen
+		// ("boty dodane do PT zawsze same zmieniaja podzial na rowny nawet gdy
+		// to nie one sa liderem", Dearminder, 15 September).
 		if (pParty && IsPlayerBotHumanLedParty(pParty))
-		{
-			if (pParty->GetExpDistributionMode() != PARTY_EXP_DISTRIBUTION_PARITY)
-				pParty->SetParameter(PARTY_EXP_DISTRIBUTION_PARITY);
 			return;
-		}
 		// Party play is an explicit, deterministic cohort. Archer weighting is
 		// decided at login, while the total cohort remains close to ten percent.
 		if (!IsPlayerBotPartyEligible(ch, state))

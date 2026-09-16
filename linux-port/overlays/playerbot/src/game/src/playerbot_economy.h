@@ -923,6 +923,10 @@ namespace
 		// never the merchant's: he paid 194 yang for one.
 		if (vnum == PLAYERBOT_GRAND_MASTER_STONE_VNUM)
 			return false;
+		// A hairstyle from the ItemShop (playerbot_itemshop.h) is worn, not sold:
+		// the rule's default would vendor it on the next town trip.
+		if (item->GetType() == ITEM_COSTUME)
+			return false;
 
 		// A specimen of a Biologist row already handed in is scrap, not goods:
 		// "niech ich nie wystawiaja, sprzedaja u handlarza albo wyrzucaja".

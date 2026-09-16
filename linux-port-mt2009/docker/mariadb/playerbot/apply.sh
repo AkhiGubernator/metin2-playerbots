@@ -233,6 +233,10 @@ fi
 # own shop is left where its owner put it. Before the game container starts,
 # because the db core reads the shops at boot.
 db -e "CREATE TABLE IF NOT EXISTS player.playerbot_migrations (name VARCHAR(64) NOT NULL PRIMARY KEY, done_at DATETIME NOT NULL) ENGINE=InnoDB;"
+# The bot guilds' tiers (playerbot_guild.h): a guild outlives every core
+# restart, so its tier and kingdom live here; the core reads the table once
+# and writes a row when it founds or adopts a guild.
+db -e "CREATE TABLE IF NOT EXISTS player.playerbot_guild (guild_id INT UNSIGNED NOT NULL PRIMARY KEY, tier TINYINT UNSIGNED NOT NULL DEFAULT 3, empire TINYINT UNSIGNED NOT NULL DEFAULT 0, founder_pid INT UNSIGNED NOT NULL DEFAULT 0, founded_at DATETIME NOT NULL) ENGINE=InnoDB;"
 pitch_done=$(db -e "SELECT COUNT(*) FROM player.playerbot_migrations WHERE name = 'pitch_on_guard_2052';" 2>/dev/null || echo x)
 case "$pitch_done" in
     0) pitch_near=1700; pitch_far=1700 ;;

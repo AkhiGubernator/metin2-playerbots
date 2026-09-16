@@ -943,9 +943,68 @@ namespace
 	const DWORD PLAYERBOT_GUILD_FOUNDER_SHARE = 12;
 	// The lowest grade, which is what an ordinary member joins at.
 	const int PLAYERBOT_GUILD_MEMBER_GRADE = 15;
-	const int PLAYERBOT_GUILD_INVITE_RANGE = 3000;
+	// A master asks this many a pass, from the whole kingdom's roster.
 	const DWORD PLAYERBOT_GUILD_INVITES_PER_PASS = 3;
 	const DWORD PLAYERBOT_GUILD_CHECK_INTERVAL = 120000;
+	// Guild tiers (playerbot_guild.h): a guild is founded at the tier its
+	// founder's strength percentile puts it in - the top three percent of a
+	// kingdom's bots found an elite guild, the top fifteen a strong one, the
+	// top half a medium one, the rest an ordinary one - and recruits only
+	// above its tier's floor; the elite and the strong keep small tables and
+	// are few a kingdom, so a thousand bots end with one or two elite guilds a
+	// kingdom, a few strong ones and the rest ("gildie mega mocne, silne oraz
+	// srednie i slabsze", Tieru, 16 September). Indexed by EPlayerBotGuildTier.
+	const int PLAYERBOT_GUILD_TIER_COUNT = 4;
+	const int PLAYERBOT_GUILD_TIER_PERCENT[PLAYERBOT_GUILD_TIER_COUNT] = { 3, 15, 50, 100 };
+	const int PLAYERBOT_GUILD_TIER_MEMBER_CAP[PLAYERBOT_GUILD_TIER_COUNT] = { 24, 40, 0, 0 };
+	const int PLAYERBOT_GUILD_TIER_MAX_PER_KINGDOM[PLAYERBOT_GUILD_TIER_COUNT] = { 2, 6, 0, 0 };
+	const DWORD PLAYERBOT_GUILD_STRENGTH_INTERVAL = 10 * 60 * 1000;
+	const DWORD PLAYERBOT_GUILD_PROMOTION_HOLD_MS = 6 * 60 * 60 * 1000;
+	const int PLAYERBOT_GUILD_PROMOTIONS_PER_PASS = 3;
+	// Guild experience: once an hour a member offers this share of the
+	// experience it gained since its last offer (CGuild::OfferExp gives the
+	// guild a hundredth of it), never under the minimum and never more than
+	// the level holds. The elite give more.
+	const DWORD PLAYERBOT_GUILD_EXP_OFFER_INTERVAL = 60 * 60 * 1000;
+	const int PLAYERBOT_GUILD_EXP_OFFER_PERCENT[PLAYERBOT_GUILD_TIER_COUNT] = { 15, 12, 10, 10 };
+	const DWORD PLAYERBOT_GUILD_EXP_OFFER_MIN = 10000;
+	const DWORD PLAYERBOT_GUILD_STATUS_INTERVAL = 60 * 1000;
+	// Guild wars (playerbot_guild_war.h): a field war between two bot guilds
+	// of one kingdom on that kingdom's guild map, every so often, thirty
+	// minutes by the engine's own clock; the first one half an hour after a
+	// start, and a kingdom with no pair ready asks again after the retry.
+	const DWORD PLAYERBOT_GUILD_WAR_CHECK_INTERVAL = 60 * 1000;
+	const DWORD PLAYERBOT_GUILD_WAR_INTERVAL = 2 * 60 * 60 * 1000;
+	const DWORD PLAYERBOT_GUILD_WAR_FIRST_DELAY = 30 * 60 * 1000;
+	const DWORD PLAYERBOT_GUILD_WAR_RETRY_MS = 10 * 60 * 1000;
+	const DWORD PLAYERBOT_GUILD_WAR_DECLARE_TIMEOUT = 3 * 60 * 1000;
+	const int PLAYERBOT_GUILD_WAR_MIN_ONLINE = 8;
+	// The sides stand this far apart on the battlefield, on open ground found
+	// within this radius of the map's Town.txt point (playerbot_guild_war.h).
+	const int PLAYERBOT_GUILD_WAR_RALLY_SPREAD = 700;
+	const long PLAYERBOT_GUILD_WAR_GROUND_SEARCH = 6000;
+	// The ItemShop (playerbot_itemshop.h, the 2.x line only): a bot looks at
+	// its vouchers and its wishes every ten minutes, buys at most once an
+	// hour, and reads its account's balance back once an hour, because that
+	// read is a synchronous query. The catalogue is rebuilt hourly from the
+	// manager's table, whose indices run to a few hundred on this package.
+	const DWORD PLAYERBOT_ISHOP_CHECK_INTERVAL = 10 * 60 * 1000;
+	const DWORD PLAYERBOT_ISHOP_BUY_INTERVAL = 60 * 60 * 1000;
+	const DWORD PLAYERBOT_ISHOP_BALANCE_INTERVAL = 60 * 60 * 1000;
+	const DWORD PLAYERBOT_ISHOP_CATALOGUE_INTERVAL = 60 * 60 * 1000;
+	const DWORD PLAYERBOT_ISHOP_CENSUS_INTERVAL = 10 * 60 * 1000;
+	const int PLAYERBOT_ISHOP_MAX_INDEX = 2000;
+	// Kupon SM 50/100/500/1000/250 (80017/80014/80015/80016/80018).
+	const DWORD PLAYERBOT_ISHOP_VOUCHER_MIN_VNUM = 80014;
+	const DWORD PLAYERBOT_ISHOP_VOUCHER_MAX_VNUM = 80018;
+	// What is bought with Dragon Marks: the shop's Blessing Scroll (25041,
+	// a plain tuning scroll on this package like 25040) and the Dragon
+	// God's attack potions, five to a line.
+	const DWORD PLAYERBOT_ISHOP_BLESSING_SCROLL_VNUM = 25041;
+	const DWORD PLAYERBOT_ISHOP_ATTACK_POTION_VNUM = 71028;
+	// One bot in this many buys a hairstyle, once, from this level.
+	const DWORD PLAYERBOT_ISHOP_HAIR_SHARE = 4;
+	const BYTE PLAYERBOT_ISHOP_HAIR_MIN_LEVEL = 30;
 
 	// How many acquaintances a bot keeps, and how much any one of them can be
 	// worth. Small on purpose: this is looked at on every party check, and a bot
@@ -3704,6 +3763,18 @@ namespace
 		{ 1001, 66, 0 }, { 1002, 66, 0 }, { 1003, 66, 0 }, { 1004, 66, 0 }
 	};
 
+	// The map a listed monster stands on (its first home), or zero for a
+	// village monster and for one the table does not know.
+	long GetPlayerBotHuntingMobHome(DWORD vnum)
+	{
+		if (vnum < 500)
+			return 0;
+		for (size_t i = 0; i < sizeof(PLAYERBOT_HUNTING_MOB_HOMES) / sizeof(PLAYERBOT_HUNTING_MOB_HOMES[0]); ++i)
+			if (PLAYERBOT_HUNTING_MOB_HOMES[i].vnum == vnum)
+				return PLAYERBOT_HUNTING_MOB_HOMES[i].map1;
+		return 0;
+	}
+
 	bool IsPlayerBotHuntingMobHosted(DWORD vnum, long lMapIndex = 0)
 	{
 		// Everything the first twenty-five rows asks for is starter game, and
@@ -4458,6 +4529,19 @@ namespace
 			dwNextGuildCheckTime(0),
 			dwLastKillCreditedVID(0),
 			bFoundedGuild(false),
+			dwNextGuildExpOfferTime(0),
+			dwGuildExpAtLastOffer(0),
+			bGuildLevelAtLastOffer(0),
+			dwLastGuildPromotionTime(0),
+			dwGuildWarEnemyGID(0),
+			dwNextGuildWarMoveTime(0),
+			iDragonCoins(0),
+			iDragonMarks(0),
+			bDragonBalanceKnown(false),
+			bBoughtHairstyle(false),
+			dwNextItemShopCheckTime(0),
+			dwNextItemShopBuyTime(0),
+			dwNextItemShopBalanceTime(0),
 			dwNextMaterialScanTime(0),
 			dwMaterialHuntVnum(0),
 			dwShopSignClearUntil(0),
@@ -4782,6 +4866,29 @@ namespace
 		// minutes later - and the bot would found a second guild under the
 		// second name. This is the only thing that knows it already has one.
 		bool bFoundedGuild;
+		// The guild's share of the bot's experience (ManagePlayerBotGuildExp):
+		// when the next offer is due, and the experience and level the last one
+		// was measured against.
+		DWORD dwNextGuildExpOfferTime;
+		DWORD dwGuildExpAtLastOffer;
+		BYTE bGuildLevelAtLastOffer;
+		// When this bot last left a guild for a stronger one, so it does not
+		// hop on every check.
+		DWORD dwLastGuildPromotionTime;
+		// The guild war: the enemy guild while the bot is at war (zero
+		// otherwise), and the clock on its walks to and about the battlefield.
+		DWORD dwGuildWarEnemyGID;
+		DWORD dwNextGuildWarMoveTime;
+		// The ItemShop (playerbot_itemshop.h): the account's Dragon Coins and
+		// Marks as last read or reckoned, whether they were ever read, the
+		// hairstyle bought once, and the three clocks.
+		int iDragonCoins;
+		int iDragonMarks;
+		bool bDragonBalanceKnown;
+		bool bBoughtHairstyle;
+		DWORD dwNextItemShopCheckTime;
+		DWORD dwNextItemShopBuyTime;
+		DWORD dwNextItemShopBalanceTime;
 		// Where this bot has been standing, since when, and whether it is
 		// currently being walked off it. See ManagePlayerBotRelocation.
 		// The fight in progress: which monster, since when, the lowest health it

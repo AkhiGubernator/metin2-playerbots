@@ -132,6 +132,10 @@ namespace
 	// and the switch in the panel is for the ones who would rather not.
 	bool s_bPlayerBotNight = true;
 	bool s_bPlayerBotNightReported = true;
+	// "Boty graja jak zywi ludzie" (the LIFE key): sessions and rests, in
+	// CPlayerBotManager::ManageLifeSchedule. Off until the panel says so.
+	bool s_bPlayerBotLifeSchedule = false;
+	bool s_bPlayerBotLifeScheduleReported = false;
 	// What the clock last asked the DB core for, so a request is not repeated
 	// every minute while the round trip is still in flight, and so switching
 	// the clock off in the middle of a night lowers the flag it raised.
@@ -171,6 +175,7 @@ namespace
 		s_iPlayerBotScrollFromPlus = 1;
 		s_bPlayerBotFastBooks = true;
 		s_bPlayerBotNight = true;
+		s_bPlayerBotLifeSchedule = false;
 		if (s_iPlayerBotChestConfigPermille < 0)
 		{
 			s_iPlayerBotChestConfigPermille = g_iMoonlightChestPermille;
@@ -243,6 +248,17 @@ namespace
 				s_bPlayerBotNightReported = enabled;
 			}
 			s_bPlayerBotNight = enabled;
+			return;
+		}
+		if (PlayerBotWeightNameEquals(szKey, "LIFE"))
+		{
+			const bool enabled = value != 0;
+			if (enabled != s_bPlayerBotLifeScheduleReported)
+			{
+				sys_log(0, "PLAYERBOT_CONFIG: life schedule %s", enabled ? "on" : "off");
+				s_bPlayerBotLifeScheduleReported = enabled;
+			}
+			s_bPlayerBotLifeSchedule = enabled;
 			return;
 		}
 		if (PlayerBotWeightNameEquals(szKey, "CHEST") || PlayerBotWeightNameEquals(szKey, "CHEST_STONE"))
@@ -389,6 +405,8 @@ namespace
 			return s_bPlayerBotFastBooks ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "NIGHT"))
 			return s_bPlayerBotNight ? 1 : 0;
+		if (PlayerBotWeightNameEquals(szKey, "LIFE"))
+			return s_bPlayerBotLifeSchedule ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "SCRAP"))
 			return s_iPlayerBotScrapPercent;
 		if (PlayerBotWeightNameEquals(szKey, "REST"))
@@ -434,7 +452,8 @@ namespace
 	{
 		if (PlayerBotWeightNameEquals(szKey, "CHAT") ||
 				PlayerBotWeightNameEquals(szKey, "BOOKS") ||
-				PlayerBotWeightNameEquals(szKey, "NIGHT"))
+				PlayerBotWeightNameEquals(szKey, "NIGHT") ||
+				PlayerBotWeightNameEquals(szKey, "LIFE"))
 		{
 			value = value ? 1 : 0;
 			return true;
@@ -786,6 +805,12 @@ namespace
 		if (!s_bPlayerBotWeightsInitialised)
 			ResetPlayerBotWeights();
 		return s_bPlayerBotOverheadChat;
+	}
+
+	// The LIFE switch, asked by CPlayerBotManager::ManageLifeSchedule.
+	bool IsPlayerBotLifeScheduleEnabled()
+	{
+		return s_bPlayerBotLifeSchedule;
 	}
 
 	bool IsPlayerBotFastBooksEnabled()

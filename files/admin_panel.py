@@ -1031,6 +1031,8 @@ def read_ai_weights():
     vals["CHAT"] = 1
     vals["BOOKS"] = 1
     vals["NIGHT"] = 1
+    # "Boty graja jak zywi ludzie": sessions and rests. Experimental, off.
+    vals["LIFE"] = 0
     vals["SCRAP"] = 0
     # Percent of bots that rest on the market ring after a town errand; 100 is
     # the author's town, 0 is "every bot hunting".
@@ -1062,6 +1064,9 @@ def read_ai_weights():
                     continue
                 if name == "NIGHT":
                     vals["NIGHT"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                    continue
+                if name == "LIFE":
+                    vals["LIFE"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
                     continue
                 if name == "SCRAP":
                     try:
@@ -1125,6 +1130,9 @@ def write_ai_weights(vals):
     # Not a weight: whether the core raises the night flag (xmas_snow) between
     # 22:00 and 05:59 of the server's local time.
     body.append("NIGHT\t%d" % (1 if vals.get("NIGHT", 1) else 0))
+    # Not a weight: whether bots play in sessions and log out to rest in
+    # between (experimental, off by default).
+    body.append("LIFE\t%d" % (1 if vals.get("LIFE", 0) else 0))
     # Percent of stall keepers that sell scrap gear; 0 is off.
     body.append("SCRAP\t%d" % max(0, min(100, int(vals.get("SCRAP", 0)))))
     # Percent of bots that rest in town after an errand; 0 means nobody does.
@@ -3203,6 +3211,13 @@ T.update({
                   "de":"Zwischen 22:00 und 05:59 Serverzeit (M2_TZ) setzt der Kern die Nacht-Flagge - dieselbe, die ein GM mit /xmas_snow 1 setzt - und nimmt sie morgens zurück. Der Client zeigt den Nachthimmel und, weil es die Weihnachtsflagge ist, Schnee.",
                   "tr":"Sunucu saatine göre (M2_TZ) 22:00-05:59 arasında çekirdek gece bayrağını kaldırır - GM'in /xmas_snow 1 ile ayarladığı bayrağın aynısı - ve sabah indirir. İstemci gece gökyüzünü ve, bayrak Noel bayrağı olduğu için, kar gösterir."},
  "ai_night_on":  {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
+ "ai_life":      {"en":"Bots play like people","pl":"Boty grają jak żywi ludzie","de":"Bots spielen wie Menschen","tr":"Botlar insan gibi oynar"},
+ "ai_life_help": {"en":"Experimental. Each bot plays a session of 3-6 hours (the first after a start from half an hour up), logs out, rests 3-9 hours and comes back - about two bots in five are online at any moment. Off, every bot stays in the world as before. Applies within a minute; switching it off brings the resting bots back within a few minutes. A bot in a player's party waits before logging out.",
+                  "pl":"Eksperymentalne. Każdy bot gra sesję 3–6 godzin (pierwszą po starcie serwera od pół godziny wzwyż), wylogowuje się, odpoczywa 3–9 godzin i wraca — w danej chwili online jest około dwóch botów na pięć. Wyłączone: wszystkie boty są w świecie jak dotąd. Działa w ciągu minuty; wyłączenie sprowadza odpoczywające boty z powrotem w kilka minut. Bot w drużynie gracza czeka z wylogowaniem.",
+                  "de":"Experimentell. Jeder Bot spielt eine Sitzung von 3-6 Stunden (die erste nach einem Start ab einer halben Stunde), loggt sich aus, ruht 3-9 Stunden und kommt zurück - etwa zwei von fünf Bots sind jeweils online. Aus: alle Bots bleiben wie bisher in der Welt. Greift innerhalb einer Minute; Ausschalten holt die ruhenden Bots in wenigen Minuten zurück. Ein Bot in der Gruppe eines Spielers wartet mit dem Ausloggen.",
+                  "tr":"Deneysel. Her bot 3-6 saatlik bir oturum oynar (başlangıçtan sonraki ilki yarım saatten itibaren), çıkış yapar, 3-9 saat dinlenir ve geri gelir - her an botların yaklaşık beşte ikisi çevrimiçidir. Kapalıyken tüm botlar eskisi gibi dünyada kalır. Bir dakika içinde uygulanır; kapatmak dinlenen botları birkaç dakika içinde geri getirir. Bir oyuncunun grubundaki bot çıkış yapmadan bekler."},
+ "ai_life_on":   {"en":"Enabled (experimental)","pl":"Włączone (eksperymentalne)","de":"Eingeschaltet (experimentell)","tr":"Açık (deneysel)"},
+ "ai_experimental": {"en":"experimental","pl":"eksperymentalne","de":"experimentell","tr":"deneysel"},
  "ai_scrap":     {"en":"Scrap keepers","pl":"Boty złomiarze","de":"Schrotthändler-Bots","tr":"Hurdacı botlar"},
  "ai_scrap_help":{"en":"The share of stall keepers that put their low refines (+0 to +3) on the counter, cheaply, instead of vendoring them - fodder for burning at the blacksmith, the way the hard servers play. Off by default.",
                   "pl":"Udział straganiarzy, którzy wystawiają na ladę swoje słabe ulepszenia (+0 do +3) za grosze zamiast sprzedawać je NPC - złom do palenia u kowala, jak na serwerach hard. Domyślnie wyłączone.",
@@ -5138,6 +5153,11 @@ TPL_AI = BASE.replace("__BODY__", """
   <h3 style="margin:0 0 2px">🌙 {{t('ai_night')}}</h3>
   <p class="muted" style="margin:0 0 6px">{{t('ai_night_help')}}</p>
   <label><input type="checkbox" name="NIGHT" value="1" {% if cur.get('NIGHT', 1) %}checked{% endif %}> {{t('ai_night_on')}}</label>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">🧑‍💻 {{t('ai_life')}} <span class="badge">{{t('ai_experimental')}}</span></h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_life_help')}}</p>
+  <label><input type="checkbox" name="LIFE" value="1" {% if cur.get('LIFE', 0) %}checked{% endif %}> {{t('ai_life_on')}}</label>
 </div>
 <div style="margin-bottom:18px">
   <h3 style="margin:0 0 2px">♻️ {{t('ai_scrap')}}
@@ -12296,6 +12316,7 @@ def ai_weights():
         vals["CHAT"] = 1 if request.form.get("CHAT") else 0
         vals["BOOKS"] = 1 if request.form.get("BOOKS") else 0
         vals["NIGHT"] = 1 if request.form.get("NIGHT") else 0
+        vals["LIFE"] = 1 if request.form.get("LIFE") else 0
         try:
             vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
         except (TypeError, ValueError):

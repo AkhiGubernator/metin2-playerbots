@@ -112,6 +112,7 @@ dependency order at the top of `playerbot_manager.cpp`:
 | `playerbot_status.h` | What a bot shows above its head, and the words for it. |
 | `playerbot_targeting.h` | Choosing what to hit and hitting it, including the claim that keeps hundreds of bots off the same monster. |
 | `playerbot_guild_war.h` | The bots' guild wars: the pair picked per kingdom, the engine's field war declared and accepted, the rally on the guild map and the fight there. After targeting.h because the blows are its. |
+| `playerbot_demon_tower.h` | The bots' Demon Tower: one guild's raid at a time (the call, the gathering by the stone, the stone broken together), and the floors for whoever the jump takes - the scan of the floor, the duel-shaped fight, the keys used and handed in, the smith passed. After guild_war.h because the fight and the kingdom names are its. |
 | `playerbot_manager.cpp` | Personality, party, upkeep, the watchdog - and `CPlayerBotManager` with the tick. |
 
 These are fragments, not normal headers: each defines objects, relies on the
@@ -4983,6 +4984,142 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   so.** textTail has no detach, so a switch in the options changes what is
   drawn only once a title is attached again; `__OnClickBotTitleButton`
   (clientrootify.py, client 2.0.12) writes one chat line saying it.
+
+- **A bot's WarpSet is its own AI's move (2.0.62).** `CHARACTER::WarpSet`
+  takes the character off its sectree and waits for the client to reconnect
+  to the target map's core; a bot has no client, so a dungeon's `JumpAll`,
+  `ExitAll`, a quest's `pc.warp` and a GM's `/warp` left it off the map
+  until the sectree rescue put it back at its map's start (the nine bots at
+  660000 on 14 September). `apply_bot_warpset` (playerbotify.py) sends a
+  bot descriptor's WarpSet to `CPlayerBotManager::WarpBot`: the map index
+  from `SECTREE_MANAGER::GetMapIndex(x, y)` (a private index keeps its own
+  number once it is a child of that map), refused when this core does not
+  host it, `TransitionPlayerBotMap` otherwise, and the dungeon membership
+  `Entergame` would give a reconnecting player (`SetDungeon`, which is what
+  `pc.in_dungeon()` and `d.*` read - `Show` never sets it). `SetDungeon`'s
+  own rule stands: a character joining a dungeon past level 0 whose
+  `dungeon_return.dungeon_level` does not match is warped home, which for a
+  bot is now a real warp. The navigation grid is the base map's for an
+  instance (`CPlayerBotNavigation::instance` and `Init` divide by ten
+  thousand): same attributes, no grid per copy. Bots saved inside an
+  instance are moved home by apply.sh at the next start as any map not on
+  its list.
+- **The Demon Tower is the package's quest, driven from outside it.**
+  `deviltower_zone.quest` (pre_qc in the image, `/opt/metin2/share/locale/
+  poland/quest/pre_qc/`) is the whole mechanism: the ground floor's Metin
+  of Toughness (8015, regen cell 195,690, five to seven minutes to respawn)
+  breaks -> six seconds -> `d.new_jump_all(66, ...)` takes every PC on the
+  killer's map into a new instance at level 0; `d.get_level()` + 2 is the
+  floor. Floor 2 clears by `set_warp_at_eliminate` (its first argument is a
+  delay in seconds, not a count); 3 the Demon King 1091 then everything;
+  4 the Metin of the Devil 8016, then seven Metins of the Fall 8017 of which
+  six are purged at half health and one has to die, fifteen minutes; 5 the
+  Opening Stone 50084 dropped every fifty kills and given (`CHARACTER::GiveItem`,
+  the quest's `take`) to the five Ancient Seals 20073, twenty minutes; 6 the
+  Elite Demon King 1092, then one of three smiths 20074-20076 whose "go on"
+  is `select` in a dialog and needs level 75 - a bot cannot press it, so a
+  bot of 75 does what `devil_jump_7` does (`Purge`, `ClearRegen`, four 8018 at
+  the quest's cells, `AdvanceLevel`, `JumpAll`) and without one the run ends
+  there, as it would for players; 7 the four Metins of Death 8018, then the
+  Metin of Murder 8019 (one, nine seconds to respawn) dropping the Unknown
+  Old Chest 30300, used for a one-in-ten Map of the Tower 30302, used for the
+  jump; 8 the Zin-Bong-In Key 30304 (one kill in fifty of the Immortal
+  Ghost 1040, four in five of those the fake 30303) given to Sa-Soe 20366;
+  9 the Dead Reaper 1093, then `d.exit_all` a minute later. A jump inside
+  the instance is a `Show` on the same map, so the AI's route and target
+  are stale after it - the fragment drops them on a floor change. And the
+  fifth floor was broken on this package: the quest counted `1062.kill`
+  while `deviltower5_regen.txt` resolves (through group_group 1051-1053 and
+  the global group.txt) to 1002-1004 and 1031-1034, never 1062. The shipped
+  copy in `linux-port-mt2009/docker/game/quest/` counts those, compiled in
+  the Dockerfile loop like the horse quests. `tools`-style check before
+  trusting a regen: resolve `r`/`ra` lines through both group files
+  (the fields are `<idx> "<name>" <mob>` in group.txt and `<idx> <group>
+  <prob>` in group_group.txt).
+- **Inside the tower the pass owns the tick, after the loot.** The hook
+  sits after `HandleLoot` so the keys are picked up (`IsPlayerBotDemonTowerKey`
+  passes the choosy and dropper filters; the fake key is left on the ground
+  and is scrap), and claims everything below it: the target collector never
+  runs there, so the fight is the war's duel-shaped one against the nearest
+  objective of a whole-map scan (`ScanPlayerBotTowerMap`, once per
+  PLAYERBOT_TOWER_SCAN_INTERVAL per map - the floors are far wider than
+  `PLAYERBOT_SEARCH_RANGE`), stones ahead of monsters on the fourth and
+  seventh floors, and what keeps a bot alive is called from the pass
+  (`HandlePostDeathRecovery`, the potions, the recovery start), because the
+  tick's own copies sit below the hook. The inactivity watchdog counts a bot
+  in an instance, a raider and a summoned bot as legitimately still. The
+  value policy's `activeQuestTarget` is also set for the tower
+  (`IsPlayerBotDemonTowerTarget`) so the collector agrees where it does run
+  - climbing with a player - and `IsPlayerBotDungeonStoneObjective` lifts the
+  8015-8019 refusals for a raider as for a bot in a player's party.
+- **On a floor the pack fights as one, or it dies one at a time.** The
+  first runs on m2zip (16 September) took floors 2-6 in 208, 253, 107, 177
+  and 104 seconds - sixteen bots, five Opening Stones to the seals, the
+  smith passed by a bot of 75 three seconds after the Elite Demon King fell
+  - and stalled on the seventh: 214 demons of 72-73, each bot on the
+  nearest one to itself, 253 deaths and 244 revivals in eight minutes, not
+  one kill in the last six. The revival is `restart_here` at twenty percent
+  in the middle of the pack that killed the bot. So the objective is chosen
+  from the pack's centroid (`TPlayerBotTowerScan::packX/Y`, the live bots
+  on the map), everybody walks at the same demon, a straggler with nothing
+  within PLAYERBOT_TOWER_PACK_FIGHT_RANGE of itself walks back to the pack
+  first, and a floor's stones wait until PLAYERBOT_TOWER_STONE_CLEAR_LIMIT
+  monsters or fewer stand - the Metin of Murder stood among the two
+  hundred and the stone-first rule had walked the pack into them. The
+  fourth floor is stones only and keeps stone-first. Also learned there:
+  the census waits ten minutes after a start, so a raid called before it
+  sorted its members by pid - the sixteen lowest, two of them of
+  forty-two; the level stands in for a strength of zero. And three raiders
+  of the first run left the instance inside two minutes for
+  `offline_shop_service`: the passes above the tower's hook that can move
+  a bot - the offline stand's service visit, the market trip, the
+  negative-rank rule - ask `IsPlayerBotOnTowerBusiness` now.
+- **One raid on a core at a time, because the ground floor is one map.**
+  Two guilds gathering on the parter would be jumped into one instance by
+  whichever broke the stone first, so `s_PlayerBotTowerRaid` is a single
+  record, the pick rotates over the guilds with PLAYERBOT_TOWER_MIN_MEMBERS
+  online of PLAYERBOT_TOWER_MIN_LEVEL (those with a bot of 75 first), the
+  war picker skips a raiding guild and the raid picker a warring one. The
+  members' `dwTowerRaidGuild` is set from the world pass and cleared when
+  the raid ends or the bot leaves the instance; a bystander (any bot on the
+  parter, or a player's guild bot summoned to its human master standing
+  there) has none and is simply on the floor.
+
+- **A reason to go somewhere is a reason to stay there.** The herb rows of
+  the Biologist became a trip to the first village (`NeedsPlayerBotM1OnlyServices`,
+  asked only from outside one), and the M1 branch of the world travel had no
+  reason to keep a bot of forty for a level-15 monster: "level_to_m2" out,
+  "m1_only_service" back, and since both gates' arrival points stand beside
+  the return gate the round trip was four seconds (Greess, 16 September,
+  TAKAMURU1's Logi.txt, "nie przechodza przez teleporty").
+  `PlayerBotHuntsVillageHerbs` holds the bot in the M1 branch exactly as the
+  errand that brought it. Measured the same evening: the Teleporter is used
+  from every first and second village of all three kingdoms (M1 -> Orc
+  Valley 361/377/252 in 45 minutes, M2 -> Orc Valley 103/54/67), so a report
+  of "bots not passing a teleport" is a loop or a hold, never the warp.
+- **A door and an exit that ask two questions make a revolving door.**
+  `ShouldPlayerBotVisitM3` answered for the M3 dropper by level alone - the
+  level-30 weapon it holds is what it farms for - and the M3 branch of the
+  world travel sent any bot holding one home as "m3_weapon_found": four
+  droppers of seban latino's split world (two a kingdom) crossed M2 <-> M3
+  every five seconds, 62-65 round trips each in six minutes, and the
+  Teleporter's arrival on the guild map stands beside the return gate.
+  `IsPlayerBotM3DropperOnFarm` is the one answer both ask. The same shape as
+  the Joan <-> Bokjung loop above, and the measurement is the same: pairs of
+  `transitioned` lines for one pid under ten seconds apart, by map pair.
+- **A trial is open only where its map is.** `IsPlayerBotOnBattleHorseTrial`
+  asked the level, the horse and the kills and never the core, so on a split
+  world 58 Shinsoo and 42 Jinno bots read "Zdobywam konia bojowego na pustyni
+  (0/100)" in their second villages with the desert on game1 - the frontier
+  draw answered the desert and `GetPlayerBotFrontierMapForLevel` filtered it to
+  nothing, and since 2.0.61 `GetPlayerBotBiologistHuntMob` yielded to the
+  trial, so those bots had neither a frontier nor a Biologist row.
+  `IsPlayerBotHorseTrialOpenHere` (the desert for the battle horse, the Demon
+  Tower for the military one; `IsPlayerBotMapHostedHere` forward-declared,
+  the answer kept per map because the collector asks per candidate) gates
+  both trial predicates, so the status, the draw, the targeting and the
+  Biologist's yield agree. Anything that names a map a bot must reach has
+  to ask whether this core hosts it before it becomes a status line.
 
 ## Engine facts worth not re-deriving
 

@@ -5910,6 +5910,12 @@ quest pony_levelup begin
 			elseif pc.get_empire() == 3 then -- = Jinno
 				HomeMapIndex = 41 -- = Pyungmoo
 			end
+			-- metin2-suite: the wait is the world's difficulty as it stands now, so
+			-- one begun under a longer wait lasts no longer than the current one
+			-- (Hiob, 16 September: easy set, "dalej trzeba czekac")
+			if pc.getqf("next_time") > get_time()+m2_horse_wait("train") then
+				pc.setqf("next_time", get_time()+m2_horse_wait("train"))
+			end
 			if pc.get_map_index() != HomeMapIndex  then
 				say_title(gameforge.horse_exchange_ticket._20_sayTitle)
 				local map_lookup = { "Yongan", "Joan", "Pyongmoo" }

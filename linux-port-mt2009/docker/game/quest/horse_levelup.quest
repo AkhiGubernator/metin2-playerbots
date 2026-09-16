@@ -400,6 +400,12 @@ quest horse_levelup begin
 	end
 	state start begin
 		when 20349.chat.gameforge.horse_levelup._230_npcChat with horse.get_grade()==2 begin
+			-- metin2-suite: the wait is the world's difficulty as it stands now, so
+			-- one begun under a longer wait lasts no longer than the current one
+			-- (Hiob, 16 September: easy set, "dalej trzeba czekac")
+			if pc.getqf("next_time") > get_time()+m2_horse_wait("train2") then
+				pc.setqf("next_time", get_time()+m2_horse_wait("train2"))
+			end
 			if horse.get_level()==20 then
 				say_title(gameforge.horse_levelup._240_sayTitle)
 				say(gameforge.horse_levelup._250_say)

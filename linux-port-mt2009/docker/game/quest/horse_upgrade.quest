@@ -226,8 +226,16 @@ quest horse_upgrade begin
 			say_title(gameforge.horse_upgrade._180_makequestbutton)
 						say_reward(gameforge.horse_upgrade._190_sayReward)
 					end
-		when login with get_time()>=pc.getqf("make_time") begin
-			setstate(buy)
+		when login begin
+			-- metin2-suite: the wait is the world's difficulty as it stands now, so
+			-- one begun under a longer wait lasts no longer than the current one
+			-- (Hiob, 16 September: easy set, "dalej trzeba czekac")
+			if pc.getqf("make_time") > get_time()+m2_horse_wait("upgrade") then
+				pc.setqf("make_time", get_time()+m2_horse_wait("upgrade"))
+			end
+			if get_time()>=pc.getqf("make_time") then
+				setstate(buy)
+			end
 		end
 		when 20349.chat.gameforge.horse_upgrade2._300_npcChat with horse.get_grade()!=1 begin
 			setstate(start)
@@ -235,7 +243,18 @@ quest horse_upgrade begin
 		end
 		when 20349.chat.gameforge.horse_upgrade._200_npcChat with horse.get_grade()==1 begin
 			say_title(gameforge.horse_exchange_ticket._20_sayTitle)
-			say(gameforge.horse_upgrade._210_say)
+			-- metin2-suite: the wait is the world's difficulty as it stands now, so
+			-- one begun under a longer wait lasts no longer than the current one
+			-- (Hiob, 16 September: easy set, "dalej trzeba czekac")
+			if pc.getqf("make_time") > get_time()+m2_horse_wait("upgrade") then
+				pc.setqf("make_time", get_time()+m2_horse_wait("upgrade"))
+			end
+			if get_time()>=pc.getqf("make_time") then
+				say("Gotowe! Porozmawiaj ze mna jeszcze raz.")
+				setstate(buy)
+			else
+				say(gameforge.horse_upgrade._210_say)
+			end
 		end
 	end
 	state buy begin

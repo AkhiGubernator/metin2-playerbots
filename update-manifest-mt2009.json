@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T07:09:50Z",
-  "statusMessage": "2.0.55: **Zwoje Błogosławieństwa w liniach po 1–5, sklep gracza od 15 poziomu bez 800 zabójstw, Biolog bez limitu czasu, w opcjach gry wybór tytułów botów (nowy klient 2.0.11), panel Sebana 1.54.1.** Serwer i klient 2.0.11.",
+  "publishedAt": "2026-09-16T09:18:45Z",
+  "statusMessage": "2.0.56: **Zwoje Błogosławieństwa trafiają na lady (bot zostawia sobie trzy, resztę wystawia po 1–5), dropek medali z pełnym zapasem nie wraca co minutę do Lochu Małp, stosy liczone według limitu przedmiotu, stajenny wydaje konia od razu, w panelu przełącznik dropu szkatułek.** Serwer; klient bez zmian (2.0.11).",
   "server": {
-    "version": "2.0.55",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.55/metin2-server-update-2.0.55.zip",
-    "sha256": "C47F84DC48CE106897999E0C6137BD86D4474BE05F3FD749ED07064DCF402DD7"
+    "version": "2.0.56",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.56/metin2-server-update-2.0.56.zip",
+    "sha256": "672DC74400C9E82EFC12DD38744BCFDDF79AA314C901E0D4106DF2732E2C5589"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

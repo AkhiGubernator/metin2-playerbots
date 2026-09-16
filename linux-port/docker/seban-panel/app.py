@@ -144,7 +144,7 @@ DEFAULT_SETTINGS = {
     "panel_name": "Metin2 Singleplayer", "stuck_minutes": "5", "theme": "ocean", "monitor_mode": "vps",
     # Existing installations without this key stay usable. Fresh installations
     # receive setup_complete=0 from the collector and enter the setup wizard.
-    "setup_complete": "1", "auth_enabled": "0", "auth_password_hash": "",
+    "setup_complete": "1", "auth_enabled": "0", "auth_password_hash": "", "allow_student_chest": "0", "allow_moonlight_chest": "0", "keep_demo_characters": "0", "update_seban_panel": "0",
 }
 try:
     ITEM_DEFS = json.loads((Path(__file__).parent / "static" / "item_defs.json").read_text(encoding="utf-8"))
@@ -196,13 +196,17 @@ APPLY_LABELS = {
 # account.account has no empire column and player.player no bank_value.
 PANEL_ENGINE = os.environ.get("PLAYERBOTS_ENGINE", "r40250").strip().lower()
 ENGINE_MT2009 = PANEL_ENGINE == "mt2009"
-# Three /manage controls (target bot count, per-map respawn, student chest
-# toggle) read/write quest and wiring files this panel's own patch_*.py
-# scripts add to the managed tree -- a fresh/public install of this panel
-# does not have them, so those controls would silently do nothing there.
+# Four /manage controls (target bot count, per-map respawn, student chest
+# toggle, +9 refine announcements) read/write quest and wiring files this
+# panel's own patch_*.py scripts (or, for +9 announcements, a hand-added
+# NOTICE command in web_admin.quest) add to the managed tree -- a
+# fresh/public install of this panel does not have them, so those controls
+# would silently do nothing there: e.g. a queued NOTICE command would sit
+# as "pending" forever with nothing compiled in to pick it up.
 # Off by default (public release); this VPS's own .env turns it on since
-# the patches are actually applied here. Flagged by Tieru testing the
-# exported zip on a clean install, 2026-09-15.
+# the patches are actually applied here. First three flagged by Tieru
+# testing the exported zip on a clean install, 2026-09-15; +9 announcements
+# added same day and gated the same way from the start.
 CUSTOM_PATCHES_ENABLED = os.environ.get("M2_PANEL_CUSTOM_PATCHES", "0").strip().lower() in ("1", "true", "yes", "on")
 ATTR_SKILL_DAMAGE = 121 if ENGINE_MT2009 else 71
 ATTR_AVG_DAMAGE = 122 if ENGINE_MT2009 else 72
@@ -814,14 +818,16 @@ def update_status():
 
 
 def installed_playerbots_version():
-    """Prefer the version confirmed by the updater, then the configured baseline."""
+    """Read the live MT2009 version reported by the isolated updater watcher."""
     current = update_status()
+    reported = str(current.get("version") or "").strip()
+    if version_key(reported):
+        return reported
     if current.get("state") == "ok":
         match = re.search(r"version ([0-9]+(?:\.[0-9]+)+)", current.get("message", ""))
         if match:
             return match.group(1)
     return os.environ.get("PLAYERBOTS_VERSION", "nieustawiona")
-
 
 def version_key(value):
     match = re.fullmatch(r"v?([0-9]+(?:\.[0-9]+)+)", str(value or "").strip(), re.I)
@@ -871,7 +877,7 @@ def update_csrf_token():
     return token
 
 
-def queue_tieru_update():
+def queue_tieru_update(update_seban_panel=False):
     """Request only the updater's fixed sequence; no command, URL or path crosses this boundary."""
     current = update_status()
     if not current["watcher_ready"]:
@@ -885,7 +891,11 @@ def queue_tieru_update():
     UPDATE_SPOOL.mkdir(parents=True, exist_ok=True)
     temporary = UPDATE_SPOOL / (request_id + ".new")
     try:
-        temporary.write_text(f"id={request_id}\nversion={version}\ntime={int(time.time())}\n", encoding="utf-8")
+        update_panel = "1" if update_seban_panel else "0"
+        temporary.write_text(
+            f"id={request_id}\nversion={version}\ntime={int(time.time())}\nupdate_seban_panel={update_panel}\n",
+            encoding="utf-8",
+        )
         temporary.chmod(0o660)
         # replace is atomic. The worker records the id before doing work, so a
         # completed request never runs twice after a container recreation.
@@ -1302,8 +1312,67 @@ BOT_IS = bot_identity("p")
 BOT_IS_BARE = bot_identity("")
 
 
+def include_real_players_in_rankings():
+    """/manage toggle: rankingi/leaderboardy licza tylko playerboty domyslnie,
+    albo kazda postac (w tym prawdziwych graczy) gdy operator to wlaczy --
+    zgloszone przez gracza NerrVoVy na Discordzie, 2026-09-15, zeby granie
+    obok botow bylo bardziej immersyjne."""
+    # common.m2_switches is Seban's own table: the collector creates it at
+    # start since 1.54.1+Playerbots 2.0.55, but a panel asked before that,
+    # or on a database it cannot create in, reads "off" rather than 500 on
+    # every ranking and the dashboard (Playerbots 2.0.55).
+    try:
+        row = one("SELECT value FROM common.m2_switches WHERE name='include_real_players_in_rankings'")
+    except pymysql.MySQLError:
+        return False
+    return str(row.get("value", "0")) == "1"
+
+
+def write_include_real_players_in_rankings(enabled):
+    rows(
+        "INSERT INTO common.m2_switches (name, value) VALUES ('include_real_players_in_rankings', %s) "
+        "ON DUPLICATE KEY UPDATE value = VALUES(value)",
+        ("1" if enabled else "0",),
+    )
+
+
+def read_announce_plus9_refines():
+    """/manage toggle: server-wide gold announcement (same notice_all() /b
+    uses) when a real player upgrades something to +9. Never for bots --
+    they refine to +9 constantly, that would be pure spam. The collector
+    polls for this switch and queues the actual notice_all() call through
+    web_admin.quest; see collector.py's check_plus9_refines()."""
+    try:
+        row = one("SELECT value FROM common.m2_switches WHERE name='announce_plus9_refines'")
+    except pymysql.MySQLError:
+        return False
+    return str(row.get("value", "0")) == "1"
+
+
+def write_announce_plus9_refines(enabled):
+    rows(
+        "INSERT INTO common.m2_switches (name, value) VALUES ('announce_plus9_refines', %s) "
+        "ON DUPLICATE KEY UPDATE value = VALUES(value)",
+        ("1" if enabled else "0",),
+    )
+
+
+def ranking_scope_sql(alias="p"):
+    """The WHERE-clause predicate for 'who counts' in rankings/leaderboards
+    (NOT the same question as economy stats, which already count everyone,
+    or the teleport-me human lookup, which always means real characters).
+    With real players included, the installer's seeded admin/test account
+    (Admin/AdminNinja/AdminSura/AdminSzaman, 500M gold each -- see the same
+    exclusion for "yang w obiegu") would otherwise top every single
+    category and bury any actual player under it."""
+    if include_real_players_in_rankings():
+        ref = (alias + ".") if alias else ""
+        return ref + "name NOT IN ('[SA]Admin','Test','Admin','AdminNinja','AdminSura','AdminSzaman')"
+    return bot_identity(alias)
+
+
 def bot_ranking(kind, sort_by="avg"):
-    base = BOT_IS
+    base = ranking_scope_sql("p")
     if kind == "gold":
         return rows(f"SELECT p.id,p.name,p.level,p.gold,CONCAT(FORMAT(p.gold,0),' Yang') AS detail FROM player.player p WHERE {base} ORDER BY p.gold DESC,p.level DESC LIMIT 100")
     if kind == "weapon":
@@ -1421,9 +1490,14 @@ def bot_ranking(kind, sort_by="avg"):
         # (13xxx) i cala bizuterie razem z nimi. type 1 to ITEM_WEAPON,
         # 2 to ITEM_ARMOR - dokladnie ten zbior, ktorego lancuch ulepszen
         # biegnie base+0..9.
+        # window musi byc ograniczone do EQUIPMENT/INVENTORY: w SAFEBOX
+        # owner_id to id KONTA, nie postaci (magazyn dzielony miedzy
+        # postaciami), wiec bez tego warunku przedmiot ze skrytki trafial
+        # do rankingu tej postaci, ktorej id przypadkiem zbieglo sie z
+        # id konta wlasciciela skrytki.
         return rows(f"""SELECT p.id,p.name,p.level,p.gold,i.vnum,COALESCE(ip.locale_name,CONCAT('VNUM ',i.vnum)) AS detail
             FROM player.item i JOIN player.player p ON p.id=i.owner_id LEFT JOIN player.item_proto ip ON ip.vnum=i.vnum
-            WHERE {base} AND ip.type IN (1,2) AND MOD(i.vnum,10)=9 ORDER BY i.vnum DESC,p.level DESC LIMIT 100""")
+            WHERE {base} AND i.window IN ('EQUIPMENT','INVENTORY') AND ip.type IN (1,2) AND MOD(i.vnum,10)=9 ORDER BY i.vnum DESC,p.level DESC LIMIT 100""")
     return rows(f"SELECT p.id,p.name,p.level,p.gold,p.level AS score,'Poziom' AS detail FROM player.player p WHERE {base} ORDER BY p.level DESC,p.exp DESC LIMIT 100")
 
 
@@ -1547,7 +1621,7 @@ def dashboard():
         raw_shop_map = rows("""SELECT map_index, empire, shop_count FROM player.web_seban_shop_snapshot
           WHERE captured_at=%s ORDER BY empire, shop_count DESC""", (shop_snapshot_latest,))
         shop_map_rows = [{"map_index": r["map_index"], "empire": int(r["empire"]), "map_short": map_short_code(r["map_index"]), "shop_count": int(r["shop_count"])} for r in raw_shop_map if int(r["shop_count"]) > 0]
-    top = rows("SELECT id, name, level, exp, job, map_index, playtime FROM player.player WHERE " + BOT_IS_BARE + " ORDER BY level DESC, exp DESC LIMIT 10")
+    top = rows("SELECT id, name, level, exp, job, map_index, playtime FROM player.player WHERE " + ranking_scope_sql("") + " ORDER BY level DESC, exp DESC LIMIT 10")
     global_top_id = top[0]["id"] if top else None
     live = live_statuses()
     live_roster = live_bots()
@@ -1588,7 +1662,7 @@ def dashboard():
     weapon30 = bot_ranking("weapon30")[:10]
     quick_rankings.append({"title": "Broń 30 Lv", "subtitle": "średnie / umiejętności", "items": [{"id": row["id"], "name": row["name"], "value": f"Śr. {int(row.get('avg_damage') or 0)}% · Um. {int(row.get('skill_damage') or 0)}%"} for row in weapon30]})
     metins = rows("""SELECT p.id,p.name,COUNT(*) AS score FROM log.log l JOIN player.player p ON p.id=l.who
-                     WHERE """ + BOT_IS + """ AND l.how='STONE_KILL' AND l.time >= NOW() - INTERVAL 7 DAY
+                     WHERE """ + ranking_scope_sql("p") + """ AND l.how='STONE_KILL' AND l.time >= NOW() - INTERVAL 7 DAY
                      GROUP BY p.id,p.name ORDER BY score DESC,p.name LIMIT 10""")
     quick_rankings.append({"title": "Metiny", "subtitle": "rozbite · ostatnie 7 dni", "items": [{"id": row["id"], "name": row["name"], "value": f"{int(row['score'])} szt."} for row in metins]})
     bosses = bot_ranking("bosses")[:10]
@@ -2387,6 +2461,8 @@ def economy_shops():
         "offers": sum(t["offers"] for t in empire_totals.values()),
         "items": sum(t["items"] for t in empire_totals.values()),
         "value": sum(t["value"] for t in empire_totals.values()),
+        "transactions_total": int(one("SELECT COUNT(*) AS n FROM log.log WHERE how='PLAYERBOT_STALL_SOLD'").get("n") or 0),
+        "transactions_24h": int(one("SELECT COUNT(*) AS n FROM log.log WHERE how='PLAYERBOT_STALL_SOLD' AND time >= NOW() - INTERVAL 24 HOUR").get("n") or 0),
     }
 
     # Same label/series pivot as maps(): one line per empire, values aligned
@@ -2739,7 +2815,7 @@ def season():
         SUM(l.how='BOSS_KILL') AS bosses,
         SUM(l.how='REFINE SUCCESS' AND (l.hint LIKE '%%+7' OR l.hint LIKE '%%+8' OR l.hint LIKE '%%+9')) AS refine7
         FROM log.log l JOIN player.player p ON p.id=l.who
-        WHERE l.time>=NOW()-INTERVAL 7 DAY AND """ + BOT_IS + """
+        WHERE l.time>=NOW()-INTERVAL 7 DAY AND """ + ranking_scope_sql("p") + """
           AND l.how IN ('STONE_KILL','BOSS_KILL','REFINE SUCCESS')
         GROUP BY p.id ORDER BY (SUM(l.how='STONE_KILL')*150+SUM(l.how='BOSS_KILL')*500+SUM(l.how='REFINE SUCCESS' AND (l.hint LIKE '%%+7' OR l.hint LIKE '%%+8' OR l.hint LIKE '%%+9'))*200) DESC,p.level DESC LIMIT 30""")
     for row in weekly:
@@ -2763,7 +2839,7 @@ def manage():
     current_settings = settings()
     updater = update_status()
     updater["protected"] = current_settings.get("auth_enabled") == "1" and bool(session.get("seban_admin"))
-    return render_template("manage.html", rates=read_rates(), ai_weights=read_ai_weights(), ai_weight_keys=AI_WEIGHT_KEYS, restart=restart_progress(), settings=current_settings, map_counts=map_counts, bot_count=len(live_bots()), map_respawn_options=MAP_RESPAWN_OPTIONS, map_stone_respawn_ids=MAP_STONE_RESPAWN_IDS, map_respawn_status=read_map_regen_status(), server_settings=server_settings_status(), updater=updater, playerbots_release=playerbots_release_status(), update_csrf=update_csrf_token(), bot_count_wanted=read_bot_count() if CUSTOM_PATCHES_ENABLED else 0, student_chest_disabled=read_student_chest_disabled() if CUSTOM_PATCHES_ENABLED else False, custom_patches_enabled=CUSTOM_PATCHES_ENABLED)
+    return render_template("manage.html", rates=read_rates(), ai_weights=read_ai_weights(), ai_weight_keys=AI_WEIGHT_KEYS, restart=restart_progress(), settings=current_settings, map_counts=map_counts, bot_count=len(live_bots()), map_respawn_options=MAP_RESPAWN_OPTIONS, map_stone_respawn_ids=MAP_STONE_RESPAWN_IDS, map_respawn_status=read_map_regen_status(), server_settings=server_settings_status(), updater=updater, playerbots_release=playerbots_release_status(), update_csrf=update_csrf_token(), bot_count_wanted=read_bot_count() if CUSTOM_PATCHES_ENABLED else 0, student_chest_disabled=read_student_chest_disabled() if CUSTOM_PATCHES_ENABLED else False, custom_patches_enabled=CUSTOM_PATCHES_ENABLED, include_real_players=include_real_players_in_rankings(), announce_plus9=read_announce_plus9_refines())
 
 
 @app.post("/manage/update")
@@ -2778,11 +2854,12 @@ def manage_update():
     if not expected or not hmac.compare_digest(supplied, expected):
         abort(403)
     try:
-        queue_tieru_update()
+        queue_tieru_update(current.get("update_seban_panel") == "1")
     except (OSError, RuntimeError) as exc:
         flash(str(exc), "error")
     else:
-        flash("Pobrano zlecenie aktualizacji. Serwer zostanie przebudowany przez odizolowany updater; postęp jest widoczny poniżej.")
+        panel_note = " Razem z Playerbots zostanie zaktualizowany Seban Panel." if current.get("update_seban_panel") == "1" else " Seban Panel pozostanie w obecnej wersji."
+        flash("Pobrano zlecenie aktualizacji. Serwer zostanie przebudowany przez odizolowany updater; postęp jest widoczny poniżej." + panel_note)
     return redirect(url_for("manage"))
 
 
@@ -2810,6 +2887,15 @@ def manage_settings():
     values.update({"auth_enabled": "1" if enable_auth else "0", "auth_password_hash": password_hash, "setup_complete": "1"})
     write_settings(values)
     flash("Ustawienia panelu zapisane.")
+    return redirect(url_for("manage"))
+
+
+@app.post("/manage/overrides")
+@login_required
+def manage_overrides():
+    values = {key: "1" if request.form.get(key) == "1" else "0" for key in ("allow_student_chest", "allow_moonlight_chest", "keep_demo_characters", "update_seban_panel")}
+    write_settings(values)
+    flash("Override'y zapisane. Zostaną zastosowane przy następnej aktualizacji Playerbots.")
     return redirect(url_for("manage"))
 
 
@@ -2878,6 +2964,30 @@ def manage_student_chest():
         flash("Skrzynia startowa jest teraz wyłączona dla nowych postaci graczy, każdej klasy — działa od razu, bez restartu.")
     else:
         flash("Skrzynia startowa jest teraz włączona dla nowych postaci graczy, każdej klasy — działa od razu, bez restartu.")
+    return redirect(url_for("manage"))
+
+
+@app.post("/manage/ranking-scope")
+@login_required
+def manage_ranking_scope():
+    enabled = "1" in request.form.getlist("include_real_players")
+    write_include_real_players_in_rankings(enabled)
+    if enabled:
+        flash("Rankingi i karuzela na dashboardzie liczą teraz każdą postać, nie tylko boty — działa od razu.")
+    else:
+        flash("Rankingi liczą teraz znowu wyłącznie boty.")
+    return redirect(url_for("manage"))
+
+
+@app.post("/manage/plus9-announce")
+@login_required
+def manage_plus9_announce():
+    enabled = "1" in request.form.getlist("announce_plus9_refines")
+    write_announce_plus9_refines(enabled)
+    if enabled:
+        flash("Ulepszenia graczy na +9 będą teraz ogłaszane na złoto na całym świecie — kolektor sprawdza co kilka sekund/minut, nie natychmiast.")
+    else:
+        flash("Ogłoszenia +9 wyłączone.")
     return redirect(url_for("manage"))
 
 

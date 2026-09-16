@@ -13,6 +13,52 @@ def connect():
     return pymysql.connect(host=os.environ.get("DB_HOST", "mariadb"), port=int(os.environ.get("DB_PORT", "3306")), user=os.environ["DB_USER"], password=os.environ["DB_PASSWORD"], charset="utf8mb4", autocommit=True)
 
 
+def decode_cp1250(value):
+    if isinstance(value, (bytes, bytearray)):
+        return bytes(value).decode("cp1250", "replace")
+    return value or ""
+
+
+def check_plus9_refines(cur):
+    """Gold "/b"-style server announcement when a real player (not a bot --
+    they refine to +9 constantly, that would be pure spam) upgrades
+    something to +9. Off by default, toggled from /manage
+    ('announce_plus9_refines' in common.m2_switches). Queues one NOTICE
+    command (see web_admin.quest) for the player who just refined -- they
+    are guaranteed online, they just acted -- and that quest's own poll
+    loop calls notice_all(), the same Lua function /b uses, next tick.
+    The watermark ('plus9_announce_watermark') is a unix timestamp, not a
+    formatted datetime: common.m2_switches.value is only VARCHAR(16)."""
+    try:
+        cur.execute("SELECT value FROM common.m2_switches WHERE name='announce_plus9_refines'")
+    except pymysql.MySQLError:
+        # No switch table on this database (init() could not create it):
+        # nothing to announce, and no error line every cycle (Playerbots 2.0.55).
+        return
+    row = cur.fetchone()
+    if not row or str(row[0]) != "1":
+        return
+    cur.execute("SELECT value FROM common.m2_switches WHERE name='plus9_announce_watermark'")
+    row = cur.fetchone()
+    last_time = datetime.fromtimestamp(int(row[0])) if row else datetime(2000, 1, 1)
+    cur.execute("""SELECT l.time, l.hint, p.name FROM log.log l
+      JOIN player.player p ON p.id = l.who
+      WHERE l.how='REFINE SUCCESS' AND l.hint LIKE '%%+9' AND l.time > %s
+        AND NOT (EXISTS (SELECT 1 FROM account.account ba WHERE ba.id=p.account_id AND LEFT(ba.login,10)='playerbot_') OR p.name LIKE 'bot%%')
+      ORDER BY l.time ASC LIMIT 20""", (last_time,))
+    events = cur.fetchall()
+    newest = last_time
+    for time_val, hint, name in events:
+        message = f"{decode_cp1250(name) if isinstance(name, (bytes, bytearray)) else name} ulepszył {decode_cp1250(hint)}"[:250]
+        cur.execute("INSERT INTO player.web_admin_queue (player_name,cmd,arg1,arg2) VALUES (%s,'NOTICE',%s,'')", (name, message))
+        newest = time_val
+    if events:
+        cur.execute(
+            "INSERT INTO common.m2_switches (name, value) VALUES ('plus9_announce_watermark', %s) "
+            "ON DUPLICATE KEY UPDATE value = VALUES(value)",
+            (str(int(newest.timestamp())),))
+
+
 def host_metrics(previous=None):
     try:
         with open("/host/proc/stat") as f:
@@ -38,6 +84,16 @@ def host_metrics(previous=None):
 
 
 def init(cur):
+    # The switches /manage writes (rankings with real players, the +9
+    # announcements, the starter chest) live in common.m2_switches, a table
+    # Seban's own VPS scripts made and a stock Playerbots install never had:
+    # 1.54.1's rankings, dashboard and /manage answered 500 without it. Made
+    # here like the panel's other tables (Playerbots 2.0.55); an existing one
+    # is left as it is.
+    cur.execute("""CREATE TABLE IF NOT EXISTS common.m2_switches (
+      name VARCHAR(64) NOT NULL PRIMARY KEY,
+      value VARCHAR(16) NOT NULL DEFAULT '0'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
     cur.execute("""CREATE TABLE IF NOT EXISTS player.web_admin_queue (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       player_name VARCHAR(24) NOT NULL, cmd VARCHAR(32) NOT NULL,
@@ -193,6 +249,7 @@ def collect(con, previous):
         cur.execute("SELECT COALESCE(SUM(gold),0) FROM player.player WHERE name NOT IN ('[SA]Admin','Test','Admin','AdminNinja','AdminSura','AdminSzaman')")
         yang = cur.fetchone()[0]
         cur.execute("INSERT IGNORE INTO player.web_seban_metric_snapshot VALUES (%s,'total_yang',%s)", (now, yang))
+        check_plus9_refines(cur)
     return previous
 
 

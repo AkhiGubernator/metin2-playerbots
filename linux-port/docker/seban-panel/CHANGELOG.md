@@ -1,4 +1,49 @@
 # Zmiany
+## 2026-09-16 02:30 CEST · 1.54.1
+
+- Dodano domyślnie wyłączony checkbox „Aktualizuj także Seban Panel do wersji dołączonej przez Tieru”. Decyzja jest zapisywana trwale i dołączana do konkretnego zlecenia aktualizacji. Po włączeniu aktualizator przebudowuje również `seban-panel`, `seban-collector` i `seban-item-grants`; po wyłączeniu zachowuje aktualny panel oraz lokalne zmiany. Porównanie wersji blokuje przypadkowy downgrade, gdy paczka Tieru zawiera panel starszy od już zainstalowanego.
+- Aktualizator obsługuje teraz nazwę projektu Docker Compose podaną instalatorowi, dzięki czemu mechanizm nie jest przywiązany do projektu `metin2`. Ujednolicono publiczną instrukcję i usunięto przestarzałe odwołanie do starego `m2-updater selftest`.
+
+## 2026-09-16 01:35 CEST · 1.54.0
+
+- Przygotowano publiczne wydanie Aktualizatora Seban: przenośny instalator przyjmuje ścieżkę dowolnej instalacji MT2009 i nazwę projektu Compose, wykrywa wspólną kolejkę oraz uruchamia trwałą usługę systemową. Instrukcja w `/manage` zmienia się zależnie od stanu usługi.
+- Checkboxy override'ów sterują rzeczywistą aktualizacją: Skrzynią Ucznia, Skrzyniami Blasku Księżyca i zachowaniem postaci demonstracyjnych. Oryginalny quest Tieru jest zachowywany i może zostać przywrócony.
+- Reguły override'ów połączono z sekcją Aktualizator Seban. Ukryto skrót do niedziałającego masowego nadawania przedmiotów.
+
+## 2026-09-16 01:10 CEST · 1.53.1
+
+- Domknięto aktualizator: nazewnictwo w /manage jest jednolite (Aktualizator Seban), usunięto przestarzałe odwołania do oficjalnego kontenera updater Tieru i nieistniejącej ścieżki starego serwera. Ostatni restart po aktualizacji pokazuje teraz rzeczywistą datę oraz źródło „Aktualizator Seban”. Blok aktualizatora jest widoczny tylko przy monitoringu VPS/host.
+
+## 2026-09-16 00:40 CEST · 1.53.0
+
+- Przełomowy, niezależny aktualizator MT2009 w /manage: przed każdą aktualizacją tworzy kopię baz account, common, player i log, pobiera wyłącznie paczkę MT2009 Tieru, weryfikuje jej sumę SHA-256, ponownie stosuje nasze override'y (brak Skrzyni Ucznia, brak Skrzyń Blasku Księżyca, usuwanie kont demonstracyjnych) i przebudowuje tylko usługi gry. Seban Panel na porcie 7790 pozostaje nienaruszony. Watcher działa jako trwała usługa systemowa i pokazuje rzeczywistą wersję VERSION, a pasek postępu przechodzi przez kolejne etapy aktualizacji.
+
+## 2026-09-15 14:41 CEST · 1.52.1
+
+- Naprawiono regresję z 1.52.0: CSS nowej szuflady nawigacji celował w każdy element `<aside>` na stronie, nie tylko w pasek boczny — na telefonie w pionie to samo (`transform`, `overflow-y`, `max-width`) trafiało też w moduł "Mapa świata botów" (średni/maks. poziom, liczniki aktywności) i w ekwipunek na `/player/`, spychając oba poza ekran. Pasek nawigacji ma teraz własną klasę (`aside.site-nav`), więc reguły dotyczą wyłącznie niego. Zgłoszone przez [GA]Seban (telefon w pionie).
+
+## 2026-09-15 14:20 CEST · 1.52.0
+
+- Mobilny układ: nawigacja (lewy pasek na desktopie) jest teraz rozwijaną szufladą z przyciskiem ☰ w rogu zamiast wielkiej siatki linków na górze każdej strony. Na `/player/` ekwipunek/magazyn pokazuje się od razu pod paskiem PŻ/PM/EXP zamiast na samym dole strony po przewinięciu wszystkich sekcji. Zgłoszone przez [GA]Seban (widok na iPhone).
+
+## 2026-09-15 12:10 CEST · 1.51.0
+
+- Odblokowano przycisk "Aktualizator Tieru" w `/manage` (był ukryty od 2026-09-13). Izolowany kontener `updater` Tieru — jedyny, który dotyka gniazda Dockera, panel nigdy go nie dostaje — teraz sam odtwarza nasze skrypty `patch_*.py` i zamiata skrzynię ucznia zaraz po pobraniu nowych plików, przed zbudowaniem obrazów. Po drodze naprawiono trzy niezależne usterki blokujące tę usługę: zepsuty entrypoint w mt2009-owym renderze `docker-compose.yml` Tieru (wskazywał na nieistniejący plik), brak widoczności `/opt/seban-panel-custom` w kontenerze updatera (build panelu się tam zatrzymywał) i odmowę gita ("dubious ownership") przy pracy jako root. Wszystko naprawione lokalnie w `docker-compose.override.yml`, przeżyje każdą przyszłą aktualizację Tieru. Zweryfikowane działającym, pełnym przebiegiem na żywo.
+
+## 2026-09-15 07:54 CEST · 1.50.0
+
+- Naprawiono ranking "Przedmiot +9": zapytanie łączyło przedmioty z postacią tylko po `owner_id`, bez sprawdzania `window`. W SAFEBOX `owner_id` to ID konta (magazyn dzielony między postaciami), więc gdy ID czyjegoś konta zbiegło się z ID cudzej postaci, przedmiot leżący w skrytce był pokazywany jako własność tamtej postaci. Ranking teraz liczy tylko przedmioty w EQUIPMENT/INVENTORY. Zgłoszone przez [GA]Seban (kolczyki w skrytce błędnie przypisane postaci Medicusa).
+
+## 2026-09-15 00:43 CEST · 1.49.1
+
+- Ogłoszenia +9 ukryte w wersji publicznej, tym samym mechanizmem co liczba botów/respawn/skrzynia startowa: nowa komenda `NOTICE` istnieje na razie tylko w naszej kopii `web_admin.quest`, nie u Tieru — bez tego, u innego operatora kolejka zalegałaby jako "pending" na zawsze, bez żadnego błędu.
+
+## 2026-09-15 00:39 CEST · 1.49.0
+
+- Nowy przełącznik w `/manage`: rankingi (i karuzela na dashboardzie) mogą teraz liczyć też prawdziwych graczy, nie tylko boty — zgłoszone przez gracza NerrVoVy na Discordzie. Wyłączone domyślnie, jedno kliknięcie żeby włączyć.
+- `/economy/shops`: kafelki "Oferty" i "Sztuk towaru" scalone w jeden, zwolnione miejsce na nowy kafelek "Transakcji łącznie" (+ ostatnie 24h).
+- Nowy przełącznik w `/manage`: serwerowe ogłoszenie na złoto (jak `/b` GM-a), gdy prawdziwy gracz ulepszy coś na +9 — nigdy dla botów. Wymagało dopisania jednej komendy do `web_admin.quest` (reużywa silnikowej `notice_all()`) i przy okazji naprawiło rozjazd między naszą kopią tego questa a tym co faktycznie działa na serwerze. Wyłączone domyślnie.
+
 ## 2026-09-15 00:11 CEST · 1.48.0
 
 - Naprawiono "Internal Server Error" przez pierwsze ~5 minut po restarcie/aktualizacji: panel sam tworzy potrzebne tabele przy starcie zamiast czekać, aż kolektor je stworzy w swoim własnym cyklu; kolektor też ponawia szybko (10s) zamiast czekać pełne 5 minut, gdy pierwsza próba się nie uda (np. baza jeszcze się budzi). Zgłoszone przez graczy (sizowski, 23:16).

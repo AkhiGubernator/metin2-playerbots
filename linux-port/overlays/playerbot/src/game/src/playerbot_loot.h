@@ -266,12 +266,15 @@ namespace
 						m_owner->GetY() - item->GetY());
 				if (distance > m_maxDistance)
 					return true;
-				if (m_medalDropper && !IsPlayerBotMedalDropperLoot(m_owner, item))
+				// A key of the Demon Tower is the floor's, whoever the bot is
+				// (playerbot_demon_tower.h uses or hands it in).
+				const bool towerKey = IsPlayerBotDemonTowerKey(item->GetVnum());
+				if (!towerKey && m_medalDropper && !IsPlayerBotMedalDropperLoot(m_owner, item))
 					return true;
 				// A cape or a symbol nobody wears (IsPlayerBotLeftOnGroundItem).
 				if (IsPlayerBotLeftOnGroundItem(item->GetVnum()))
 					return true;
-				if (m_choosy && IsPlayerBotLootBeneathBot(m_owner, item))
+				if (!towerKey && m_choosy && IsPlayerBotLootBeneathBot(m_owner, item))
 				{
 					++m_skippedCheap;
 					return true;

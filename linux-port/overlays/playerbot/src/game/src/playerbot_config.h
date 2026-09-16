@@ -139,6 +139,9 @@ namespace
 	// Guild wars between the bots' guilds (the WARS key), playerbot_guild_war.h.
 	bool s_bPlayerBotGuildWars = true;
 	bool s_bPlayerBotGuildWarsReported = true;
+	// The bot guilds' Demon Tower raids (the TOWER key), playerbot_demon_tower.h.
+	bool s_bPlayerBotTowerRaids = true;
+	bool s_bPlayerBotTowerRaidsReported = true;
 	// The bots' ItemShop purchases (the ISHOP key), playerbot_itemshop.h.
 	bool s_bPlayerBotItemShop = true;
 	bool s_bPlayerBotItemShopReported = true;
@@ -183,6 +186,7 @@ namespace
 		s_bPlayerBotNight = true;
 		s_bPlayerBotLifeSchedule = false;
 		s_bPlayerBotGuildWars = true;
+		s_bPlayerBotTowerRaids = true;
 		s_bPlayerBotItemShop = true;
 		if (s_iPlayerBotChestConfigPermille < 0)
 		{
@@ -278,6 +282,17 @@ namespace
 				s_bPlayerBotGuildWarsReported = enabled;
 			}
 			s_bPlayerBotGuildWars = enabled;
+			return;
+		}
+		if (PlayerBotWeightNameEquals(szKey, "TOWER"))
+		{
+			const bool enabled = value != 0;
+			if (enabled != s_bPlayerBotTowerRaidsReported)
+			{
+				sys_log(0, "PLAYERBOT_CONFIG: tower raids %s", enabled ? "on" : "off");
+				s_bPlayerBotTowerRaidsReported = enabled;
+			}
+			s_bPlayerBotTowerRaids = enabled;
 			return;
 		}
 		if (PlayerBotWeightNameEquals(szKey, "ISHOP"))
@@ -439,6 +454,8 @@ namespace
 			return s_bPlayerBotLifeSchedule ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "WARS"))
 			return s_bPlayerBotGuildWars ? 1 : 0;
+		if (PlayerBotWeightNameEquals(szKey, "TOWER"))
+			return s_bPlayerBotTowerRaids ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "ISHOP"))
 			return s_bPlayerBotItemShop ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "SCRAP"))
@@ -489,6 +506,7 @@ namespace
 				PlayerBotWeightNameEquals(szKey, "NIGHT") ||
 				PlayerBotWeightNameEquals(szKey, "LIFE") ||
 				PlayerBotWeightNameEquals(szKey, "WARS") ||
+				PlayerBotWeightNameEquals(szKey, "TOWER") ||
 				PlayerBotWeightNameEquals(szKey, "ISHOP"))
 		{
 			value = value ? 1 : 0;
@@ -853,6 +871,12 @@ namespace
 	bool IsPlayerBotGuildWarsEnabled()
 	{
 		return s_bPlayerBotGuildWars;
+	}
+
+	// The TOWER switch, asked by ManagePlayerBotTowerRaids.
+	bool IsPlayerBotTowerRaidsEnabled()
+	{
+		return s_bPlayerBotTowerRaids;
 	}
 
 	// The ISHOP switch, asked by ManagePlayerBotItemShop.

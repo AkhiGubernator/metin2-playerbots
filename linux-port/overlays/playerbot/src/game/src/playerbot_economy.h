@@ -928,6 +928,10 @@ namespace
 		// So are the uniques a bot leaves on the ground (IsPlayerBotLeftOnGroundItem).
 		if (IsPlayerBotLeftOnGroundItem(vnum))
 			return true;
+		// The Demon Tower's keys are the floor's while the bot is in the tower
+		// and nothing anywhere else (the quest takes a player's on logout).
+		if (IsPlayerBotDemonTowerKey(vnum))
+			return !IsPlayerBotDemonTowerInstance(ch->GetMapIndex());
 		// The goods a player crafts further (IsPlayerBotPickupGoods) wait for a
 		// counter, and reach the merchant only from a bag under pressure that
 		// has no counter to sell from - the rule a polymorph marble keeps.

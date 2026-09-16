@@ -685,6 +685,9 @@ namespace
 	{
 		if (!ch || !ch->IsItemLoaded() || ch->IsDead())
 			return false;
+		// The Demon Tower first (playerbot_demon_tower.h).
+		if (IsPlayerBotOnTowerBusiness(ch, state))
+			return false;
 		// A dropper farms one thing for the counters and buys nothing off them.
 		// The medal droppers went shopping all the same: 350 trips for 116 of
 		// them in the first twenty-five minutes after a restart, 75 of them a

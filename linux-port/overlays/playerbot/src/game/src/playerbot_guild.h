@@ -798,6 +798,8 @@ namespace
 	DWORD s_dwNextPlayerBotGuildStatusTime = 0;
 	// Defined in playerbot_guild_war.h, which comes after targeting.h.
 	int GetPlayerBotNextGuildWarInSeconds(BYTE empire, DWORD dwNow);
+	// Defined in playerbot_demon_tower.h, after that.
+	bool IsPlayerBotGuildRaidingTower(DWORD dwGuildID);
 
 	void WritePlayerBotGuildStatus(DWORD dwNow)
 	{
@@ -812,7 +814,7 @@ namespace
 		FILE* f = fopen(tempPath, "wb");
 		if (!f)
 			return;
-		fprintf(f, "guild_id\tname\tempire\ttier\tlevel\tmembers\tonline\tmaster_pid\tmaster\tladder\twins\tdraws\tlosses\tavg_strength\twar_with\twar_score\twar_enemy_score\texp_offered_here\tnext_war_in_s\n");
+		fprintf(f, "guild_id\tname\tempire\ttier\tlevel\tmembers\tonline\tmaster_pid\tmaster\tladder\twins\tdraws\tlosses\tavg_strength\twar_with\twar_score\twar_enemy_score\texp_offered_here\tnext_war_in_s\ttower_raid\n");
 		for (std::map<DWORD, TPlayerBotGuildInfo>::const_iterator it = s_mapPlayerBotGuildInfo.begin();
 				it != s_mapPlayerBotGuildInfo.end(); ++it)
 		{
@@ -824,7 +826,7 @@ namespace
 			LPCHARACTER master = g->GetMasterCharacter();
 			const DWORD opp = g->UnderAnyWar(GUILD_WAR_TYPE_FIELD);
 			CGuild* enemy = opp ? CGuildManager::instance().FindGuild(opp) : NULL;
-			fprintf(f, "%u\t%s\t%u\t%u\t%u\t%d\t%d\t%u\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%llu\t%d\n",
+			fprintf(f, "%u\t%s\t%u\t%u\t%u\t%d\t%d\t%u\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%llu\t%d\t%d\n",
 					it->first, g->GetName(), (unsigned int)it->second.bEmpire, (unsigned int)it->second.bTier,
 					(unsigned int)g->GetLevel(), g->GetMemberCount(), online, g->GetMasterPID(),
 					master ? master->GetName() : "", g->GetLadderPoint(), g->GetGuildWarWinCount(),
@@ -833,7 +835,8 @@ namespace
 					enemy ? enemy->GetName() : "", opp ? g->GetWarScoreAgainstTo(opp) : 0,
 					enemy ? enemy->GetWarScoreAgainstTo(g->GetID()) : 0,
 					s_ullPlayerBotGuildExpOffered,
-					GetPlayerBotNextGuildWarInSeconds(it->second.bEmpire, dwNow));
+					GetPlayerBotNextGuildWarInSeconds(it->second.bEmpire, dwNow),
+					IsPlayerBotGuildRaidingTower(it->first) ? 1 : 0);
 		}
 		fclose(f);
 		rename(tempPath, finalPath);

@@ -53,6 +53,10 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		// answer in the GM's chat. The engine's WarpSet only takes a bot off its
 		// sectree, and the rescue puts it back at its own map's start.
 		bool	TransferBot(LPCHARACTER bot, LPCHARACTER to);
+		// A bot's WarpSet (char.cpp, playerbotify.py): the engine's map change
+		// for a player made server-side for a bot - a dungeon's jump, an exit,
+		// a quest's warp. False when this core does not host the map.
+		bool	WarpBot(LPCHARACTER bot, long x, long y, long lPrivateMapIndex);
 		// A player invited a bot into a guild (CGuild::Invite, mt2009 via
 		// playerbotify.py): answered on the spot, while the invitation lives.
 		void	OnGuildInvite(CGuild* guild, LPCHARACTER inviter, LPCHARACTER invitee);

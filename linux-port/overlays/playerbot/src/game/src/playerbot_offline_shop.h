@@ -21,6 +21,8 @@ namespace {
             // A bot in a player's party does not warp off to its counter every
             // ten minutes; the stand keeps selling until the party ends.
             (ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty())) ||
+            // Nor out of the Demon Tower, nor off a raid on its way there.
+            IsPlayerBotOnTowerBusiness(ch, state) ||
             // Nor out of a Monkey Dungeon: a visit is half an hour in rooms
             // joined only by their doors, and a keeper warped out of it has the
             // whole way back in to walk. The service waits for the way out.

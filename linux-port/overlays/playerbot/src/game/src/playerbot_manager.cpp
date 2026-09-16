@@ -117,6 +117,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_status.h"
 #include "playerbot_targeting.h"
 #include "playerbot_guild_war.h"
+#include "playerbot_demon_tower.h"
 #include "playerbot_lure.h"
 #include "playerbot_admin.h"
 
@@ -1823,6 +1824,9 @@ namespace
 	{
 		if (!ch || ch->IsDead() || !ch->IsItemLoaded() || ch->GetRealAlignment() >= 0)
 			return false;
+		// A raider of the Demon Tower finishes the tower first.
+		if (IsPlayerBotOnTowerBusiness(ch, state))
+			return false;
 		const long map = ch->GetMapIndex();
 		if (IsPlayerBotSafeZone(map, ch->GetX(), ch->GetY()))
 		{
@@ -2006,7 +2010,10 @@ namespace
 		// September).
 		if (moved || foughtRecently || castRecently || state.bFishingSession ||
 				IsPlayerBotMiningNow(ch->GetPlayerID(), dwNow) ||
-				state.dwTownLingerUntil != 0 || IsPlayerBotBesideHumanLeader(ch))
+				state.dwTownLingerUntil != 0 || IsPlayerBotBesideHumanLeader(ch) ||
+				// waiting for a floor's script in the Demon Tower, or for the
+				// raid to gather on its ground floor (playerbot_demon_tower.h)
+				state.lTowerInstance != 0 || state.dwTowerRaidGuild != 0 || state.bTowerSummoned)
 		{
 			state.dwLastMeaningfulActivityTime = dwNow;
 			state.lLastX = ch->GetX();
@@ -3060,6 +3067,7 @@ void CPlayerBotManager::Update()
 	// playerbot_guild_war.h).
 	RefreshPlayerBotStrengths(dwNow);
 	ManagePlayerBotGuildWars(dwNow);
+	ManagePlayerBotTowerRaids(dwNow);
 	WritePlayerBotGuildStatus(dwNow);
 	WritePlayerBotItemShopCensus(dwNow);
 	// The ore veins, once a minute for the whole world. A vein deletes itself
@@ -3535,6 +3543,13 @@ void CPlayerBotManager::Update()
 		// non-blocking, throttled Z-style pickup in combat and returns false, while
 		// peaceful loot may take ownership of this tick and walk to the drop.
 		if (HandleLoot(ch, state, dwNow))
+			continue;
+
+		// The Demon Tower: a raider on its way to the ground floor, and every
+		// bot inside an instance whatever brought it there
+		// (playerbot_demon_tower.h). Owns the tick the way the guild war does,
+		// after the loot so the floors' keys are picked up.
+		if (ManagePlayerBotDemonTower(ch, state, dwNow))
 			continue;
 
 		// Horse medals are equally real resources: a bot leaves combat, walks to
@@ -4139,6 +4154,49 @@ void CPlayerBotManager::GetAvailableBots(std::vector<DWORD>& out, size_t limit)
 // NerrVoVy, Mat and RetroGracz38, 14 September). This is the map change the
 // AI makes for every other move, onto the GM's own spot, and the GM is told
 // how it went. Nothing holds the bot there afterwards: its next plan is its own.
+// A bot's WarpSet (char.cpp through playerbotify.py, apply_bot_warpset): the
+// engine's own map change for a player - a dungeon's jump, d.exit_all, a
+// quest's pc.warp, a GM's /warp - made server-side, because a bot has no
+// client to reconnect. Only onto a map this core hosts, and with the dungeon
+// membership Entergame would give a reconnecting player.
+bool CPlayerBotManager::WarpBot(LPCHARACTER bot, long x, long y, long lPrivateMapIndex)
+{
+	if (!bot)
+		return false;
+	const DWORD dwNow = get_dword_time();
+	long lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(x, y);
+	if (lPrivateMapIndex >= PLAYERBOT_INSTANCE_MAP_INDEX_MIN)
+	{
+		if (lMapIndex != 0 && lPrivateMapIndex / 10000 != lMapIndex)
+		{
+			sys_err("PLAYERBOT_WORLD: warpset pid=%u name=%s private map %ld is not a child of %ld",
+					bot->GetPlayerID(), bot->GetName(), lPrivateMapIndex, lMapIndex);
+			return false;
+		}
+		lMapIndex = lPrivateMapIndex;
+	}
+	TPlayerBotAIStateMap::iterator it = s_mapPlayerBotAIStates.find(bot->GetPlayerID());
+	if (lMapIndex == 0 || it == s_mapPlayerBotAIStates.end() || !IsPlayerBotMapHostedHere(lMapIndex))
+	{
+		sys_log(0, "PLAYERBOT_WORLD: warpset refused pid=%u name=%s to=(%ld,%ld) map=%ld private=%ld from=%ld",
+				bot->GetPlayerID(), bot->GetName(), x, y, lMapIndex, lPrivateMapIndex, bot->GetMapIndex());
+		return false;
+	}
+	LPDUNGEON before = bot->GetDungeon();
+	if (!TransitionPlayerBotMap(bot, it->second, lMapIndex, x, y, dwNow, "warpset"))
+		return false;
+	LPDUNGEON after = lMapIndex >= PLAYERBOT_INSTANCE_MAP_INDEX_MIN
+			? CDungeonManager::instance().FindByMapIndex(lMapIndex) : NULL;
+	if (before != after)
+	{
+		if (before)
+			bot->SetDungeon(NULL);
+		if (after)
+			bot->SetDungeon(after);
+	}
+	return true;
+}
+
 bool CPlayerBotManager::TransferBot(LPCHARACTER bot, LPCHARACTER to)
 {
 	if (!bot || !to)

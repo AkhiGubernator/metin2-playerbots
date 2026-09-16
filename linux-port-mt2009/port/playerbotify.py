@@ -1363,6 +1363,7 @@ def main(root):
     apply_auto_hunt_offsets(game)
     apply_hwang_curse_removed(game)
     apply_playerbot_guild_invites(game)
+    apply_bot_warpset(game)
     print('playerbotify: done')
 
 
@@ -2808,6 +2809,43 @@ def apply_gm_transfer_bots(game):
          '\t}\n'
          '\ttch->WarpSet(ch->GetX(), ch->GetY(), ch->GetMapIndex());\n',
          marker='CPlayerBotManager::instance().TransferBot(tch, ch);')
+
+
+def apply_bot_warpset(game):
+    """A bot's WarpSet is made server-side by its own AI.
+
+    CHARACTER::WarpSet takes the character off its sectree and tells the
+    client to reconnect to the core hosting the target map; a bot has no
+    client, so every WarpSet at a bot - a dungeon's JumpAll and ExitAll, a
+    quest's pc.warp, the GM's /warp - left it off the map until the sectree
+    rescue put it back at its own map's start (nine bots at 660000 on 14
+    September, all back on the Demon Tower's ground floor). A bot's move is
+    CPlayerBotManager::WarpBot now (playerbot_manager.cpp): the map change the
+    AI makes itself, onto a map this core hosts, with the dungeon membership
+    Entergame would give a reconnecting player. The Demon Tower is the first
+    thing that needs it (playerbot_demon_tower.h).
+    """
+    edit(os.path.join(game, 'char.cpp'),
+         '#include "playerbot_party_policy.h"\n',
+         '#include "playerbot_party_policy.h"\n#include "playerbot_manager.h"\n',
+         marker='#include "playerbot_party_policy.h"\n#include "playerbot_manager.h"\n')
+    edit(os.path.join(game, 'char.cpp'),
+         'bool CHARACTER::WarpSet(long x, long y, long lPrivateMapIndex)\n'
+         '{\n'
+         '\tif (!IsPC())\n'
+         '\t\treturn false;\n',
+         'bool CHARACTER::WarpSet(long x, long y, long lPrivateMapIndex)\n'
+         '{\n'
+         '\tif (!IsPC())\n'
+         '\t\treturn false;\n'
+         '\n'
+         '\t// Playerbot: a bot has no client to reconnect to another core, so its\n'
+         '\t// own AI makes the move server-side when this core hosts the map - a\n'
+         "\t// dungeon's jump, d.exit_all and a quest's pc.warp reach a bot this\n"
+         '\t// way (playerbotify.py, apply_bot_warpset).\n'
+         '\tif (GetDesc() && GetDesc()->IsBot())\n'
+         '\t\treturn CPlayerBotManager::instance().WarpBot(this, x, y, lPrivateMapIndex);\n',
+         marker='CPlayerBotManager::instance().WarpBot(this, x, y, lPrivateMapIndex);')
 
 
 if __name__ == '__main__':

@@ -236,6 +236,20 @@ namespace
 
 		const char* prefix = ch->GetParty() ? "[PT] " : "";
 		const char* goal = GetPlayerBotGoalLabel(state.bLongTermGoal);
+		// The Demon Tower: the floor a bot is on, or the raid it is going to
+		// (playerbot_demon_tower.h).
+		if (IsPlayerBotDemonTowerInstance(ch->GetMapIndex()))
+		{
+			LPDUNGEON dungeon = ch->GetDungeon();
+			snprintf(status, statusSize, "%sWieza Demonow: pietro %d", prefix,
+					dungeon ? GetPlayerBotDungeonLevel(dungeon) + 2 : 0);
+			return;
+		}
+		if (state.dwTowerRaidGuild != 0 || state.bTowerSummoned)
+		{
+			snprintf(status, statusSize, "%sZbiorka gildii: Wieza Demonow", prefix);
+			return;
+		}
 		// A guild war outranks every errand while it lasts (playerbot_guild_war.h).
 		if (state.dwGuildWarEnemyGID != 0)
 		{

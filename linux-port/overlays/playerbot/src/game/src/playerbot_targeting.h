@@ -645,6 +645,11 @@ namespace
 	//
 	// Ordinary monsters only. A Metin stone keeps its own rules and its own
 	// reservation, and nothing here is asked about players.
+	// The Demon Tower's objectives (playerbot_demon_tower.h, later in the
+	// include order): everything on a floor, and the ground floor's stone
+	// for a raid breaking it.
+	bool IsPlayerBotDemonTowerTarget(LPCHARACTER ch, LPCHARACTER candidate);
+
 	playerbot_combat_value::Context BuildPlayerBotCombatContext(
 			LPCHARACTER ch, LPCHARACTER candidate, const TPlayerBotAIState& state,
 			bool baseEligible, DWORD desiredMobVnum, bool huntM2Bestials,
@@ -730,7 +735,8 @@ namespace
 
 		if ((desiredMobVnum != 0 && candidate->IsMonster() &&
 				candidate->GetRaceNum() == desiredMobVnum) ||
-				IsPlayerBotHorseTrialTarget(ch, candidate))
+				IsPlayerBotHorseTrialTarget(ch, candidate) ||
+				IsPlayerBotDemonTowerTarget(ch, candidate))
 			context.activeQuestTarget = true;
 
 		// A material the bot is actually short of. CollectPlayerBotWantedMaterials

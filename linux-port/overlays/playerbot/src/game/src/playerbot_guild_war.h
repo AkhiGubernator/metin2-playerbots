@@ -92,7 +92,9 @@ namespace
 			if (it->second.bEmpire != empire)
 				continue;
 			CGuild* g = CGuildManager::instance().FindGuild(it->first);
-			if (!g || g->UnderAnyWar() != 0)
+			// A guild climbing the Demon Tower is not picked for a war
+			// (playerbot_demon_tower.h).
+			if (!g || g->UnderAnyWar() != 0 || IsPlayerBotGuildRaidingTower(it->first))
 				continue;
 			const int online = CountPlayerBotGuildOnline(g);
 			if (online < PLAYERBOT_GUILD_WAR_MIN_ONLINE)

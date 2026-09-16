@@ -999,6 +999,64 @@ namespace
 	// within this radius of the map's Town.txt point (playerbot_guild_war.h).
 	const int PLAYERBOT_GUILD_WAR_RALLY_SPREAD = 700;
 	const long PLAYERBOT_GUILD_WAR_GROUND_SEARCH = 6000;
+	// The Demon Tower raid (playerbot_demon_tower.h): one bot guild at a
+	// time on this core, the first a few minutes after a start and the next
+	// an interval after a raid ends; the members gather on the ground floor
+	// for GATHER_MS and break the stone together; a run that makes no
+	// progress for STALL_MS, sits on one floor for FLOOR_MAX_MS or lasts
+	// MAX_MS leaves. The last three floors want a bot of UPPER_LEVEL, the
+	// game's own rule at the sixth floor's smith.
+	const DWORD PLAYERBOT_TOWER_CHECK_INTERVAL = 30 * 1000;
+	const DWORD PLAYERBOT_TOWER_FIRST_DELAY = 12 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_INTERVAL = 90 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_RETRY_MS = 10 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_GATHER_MS = 4 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_STONE_TIMEOUT_MS = 10 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_STALL_MS = 20 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_FLOOR_MAX_MS = 35 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_MAX_MS = 2 * 60 * 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_SMITH_WAIT_MS = 60 * 1000;
+	const DWORD PLAYERBOT_TOWER_SCAN_INTERVAL = 1500;
+	const DWORD PLAYERBOT_TOWER_CENSUS_INTERVAL = 10 * 60 * 1000;
+	const int PLAYERBOT_TOWER_MIN_LEVEL = 40;
+	const int PLAYERBOT_TOWER_UPPER_LEVEL = 75;
+	const int PLAYERBOT_TOWER_MIN_MEMBERS = 4;
+	const int PLAYERBOT_TOWER_MAX_MEMBERS = 16;
+	const int PLAYERBOT_TOWER_HANDIN_RANGE = 300;
+	const int PLAYERBOT_TOWER_GATHER_FIGHT_RANGE = 2500;
+	// The pack on a floor: a bot this far from where the others stand, with
+	// nothing to fight within PACK_FIGHT_RANGE of itself, walks back; a
+	// floor's stones are attacked once no more than STONE_CLEAR_LIMIT
+	// monsters stand (the fourth floor, stones only, always).
+	const int PLAYERBOT_TOWER_PACK_RADIUS = 2500;
+	const int PLAYERBOT_TOWER_PACK_FIGHT_RANGE = 700;
+	const int PLAYERBOT_TOWER_STONE_CLEAR_LIMIT = 25;
+	// metin2_map_deviltower1's base in cells (Setting.txt), the ground
+	// floor's entrance the quest warps a player to, and the Metin of
+	// Toughness's spawn point (regen.txt: cell 195,690 off the base).
+	const long PLAYERBOT_TOWER_BASE_CELL_X = 1280;
+	const long PLAYERBOT_TOWER_BASE_CELL_Y = 7936;
+	const long PLAYERBOT_TOWER_PARTER_CELL_X = 1397;
+	const long PLAYERBOT_TOWER_PARTER_CELL_Y = 8550;
+	const long PLAYERBOT_TOWER_STONE_X = 147500;
+	const long PLAYERBOT_TOWER_STONE_Y = 862600;
+	// The floors' actors, from deviltower_zone.quest: the stone that spawns
+	// the seven of the fourth floor, the Metins of Death of the seventh,
+	// the Opening Stone for the five Ancient Seals, the Unknown Old Chest
+	// and the Map of the Tower, the Bong-In keys for Sa-Soe, the smiths.
+	const DWORD PLAYERBOT_TOWER_STONE_FLOOR4 = 8016;
+	const DWORD PLAYERBOT_TOWER_STONE_FLOOR7 = 8018;
+	const DWORD PLAYERBOT_TOWER_OPENING_STONE = 50084;
+	const DWORD PLAYERBOT_TOWER_CHEST_ITEM = 30300;
+	const DWORD PLAYERBOT_TOWER_MAP_ITEM = 30302;
+	const DWORD PLAYERBOT_TOWER_FAKE_KEY = 30303;
+	const DWORD PLAYERBOT_TOWER_KEY_ITEM = 30304;
+	const DWORD PLAYERBOT_TOWER_NPC_SEAL = 20073;
+	const DWORD PLAYERBOT_TOWER_NPC_SMITH_FIRST = 20074;
+	const DWORD PLAYERBOT_TOWER_NPC_SMITH_LAST = 20076;
+	const DWORD PLAYERBOT_TOWER_NPC_SASOE = 20366;
+	// "Aktywuj teraz" from the panel: the file's mtime is the request.
+	const char* const PLAYERBOT_TOWER_NOW_PATH = "/opt/m2spool/playerbot_tower_now";
 	// The ItemShop (playerbot_itemshop.h, the 2.x line only): a bot looks at
 	// its vouchers and its wishes every ten minutes, buys at most once an
 	// hour, and reads its account's balance back once an hour, because that
@@ -2557,6 +2615,20 @@ namespace
 	{
 		return race >= PLAYERBOT_DEVIL_TOWER_STONE_FIRST && race <= PLAYERBOT_DEVIL_TOWER_STONE_LAST;
 	}
+	// A Demon Tower instance: the map's own index times ten thousand plus a
+	// serial, the copy the quest makes when the stone breaks.
+	bool IsPlayerBotDemonTowerInstance(long lMapIndex)
+	{
+		return lMapIndex >= PLAYERBOT_INSTANCE_MAP_INDEX_MIN &&
+				lMapIndex / 10000 == PLAYERBOT_MAP_DEMON_TOWER;
+	}
+	// The tower's keys a bot carries to where they are used
+	// (playerbot_demon_tower.h); the fake Bong-In key is not one of them.
+	bool IsPlayerBotDemonTowerKey(DWORD vnum)
+	{
+		return vnum == PLAYERBOT_TOWER_OPENING_STONE || vnum == PLAYERBOT_TOWER_CHEST_ITEM ||
+				vnum == PLAYERBOT_TOWER_MAP_ITEM || vnum == PLAYERBOT_TOWER_KEY_ITEM;
+	}
 	// How far round a splash skill's caster and its target a Demon Tower stone
 	// is looked for before the skill is cast: the skill's own splash range when
 	// it has one, this when it does not, plus a margin for a stone at the edge
@@ -3359,6 +3431,10 @@ namespace
 	// (Tieru, 15 September: "niech boty tego nie podnosza").
 	bool IsPlayerBotLeftOnGroundItem(DWORD vnum)
 	{
+		// The Demon Tower's fake Bong-In key (playerbot_demon_tower.h): the
+		// real one is carried to Sa-Soe, this one is worth nothing to anybody.
+		if (vnum == PLAYERBOT_TOWER_FAKE_KEY)
+			return true;
 		return vnum == 70048 || vnum == 70050;
 	}
 	// The uniques a bot never wears (playerbot_unique_slots.h). Pierscien
@@ -4573,6 +4649,12 @@ namespace
 			dwLastGuildPromotionTime(0),
 			dwGuildWarEnemyGID(0),
 			dwNextGuildWarMoveTime(0),
+			dwTowerRaidGuild(0),
+			bTowerSummoned(false),
+			lTowerInstance(0),
+			dwNextTowerMoveTime(0),
+			dwNextTowerMasterCheckTime(0),
+			bTowerTalkStep(0),
 			iDragonCoins(0),
 			iDragonMarks(0),
 			bDragonBalanceKnown(false),
@@ -4917,6 +4999,17 @@ namespace
 		// otherwise), and the clock on its walks to and about the battlefield.
 		DWORD dwGuildWarEnemyGID;
 		DWORD dwNextGuildWarMoveTime;
+		// The Demon Tower (playerbot_demon_tower.h): the raid this bot answered
+		// (its guild's id, zero otherwise), whether its human master called it
+		// to the ground floor, the instance it is in, the clock on its walks
+		// and item uses there, when it next looks for its master, and the
+		// step of a dialog (unused since the smith is passed without one).
+		DWORD dwTowerRaidGuild;
+		bool bTowerSummoned;
+		long lTowerInstance;
+		DWORD dwNextTowerMoveTime;
+		DWORD dwNextTowerMasterCheckTime;
+		BYTE bTowerTalkStep;
 		// The ItemShop (playerbot_itemshop.h): the account's Dragon Coins and
 		// Marks as last read or reckoned, whether they were ever read, the
 		// hairstyle bought once, and the three clocks.
@@ -5129,6 +5222,18 @@ namespace
 		state.dwGoalStartedTime = dwNow;
 		sys_log(0, "PLAYERBOT_GOAL: pid=%u name=%s goal=%u",
 				ch ? ch->GetPlayerID() : 0, ch ? ch->GetName() : "?", (unsigned int)goal);
+	}
+
+	// A bot the Demon Tower has (playerbot_demon_tower.h): inside an instance,
+	// called to a raid, or summoned to its human master on the ground floor.
+	// The passes that run above the tower's hook in the tick and can move a
+	// bot to another map - the offline shop's service visit, the market trip,
+	// the negative-rank rule - stand down for such a bot: the first run lost
+	// three raiders to "offline_shop_service" inside two minutes.
+	bool IsPlayerBotOnTowerBusiness(LPCHARACTER ch, const TPlayerBotAIState& state)
+	{
+		return (ch && IsPlayerBotDemonTowerInstance(ch->GetMapIndex())) ||
+				state.dwTowerRaidGuild != 0 || state.bTowerSummoned;
 	}
 
 	void SetPlayerBotAction(TPlayerBotAIState& state, BYTE action, DWORD dwNow)

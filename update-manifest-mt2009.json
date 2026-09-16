@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T21:49:30Z",
-  "statusMessage": "2.0.62 (serwer; do testów): **Gildie botów chodzą do Wieży Demonów — jedna gildia naraz zwołuje zbiórkę na parterze, razem rozbija Metin Twardości i przechodzi piętra jak gracze (klucze, kowal, bossy); kto stoi na parterze, wchodzi z nimi. Naprawione 5. piętro Wieży (quest paczki liczył potwora, którego tam nie ma). Bot przechodzi przez każdy warp gry.** Przełącznik i „Wyprawa teraz” w panelu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian (2.0.12).",
+  "publishedAt": "2026-09-16T22:19:50Z",
+  "statusMessage": "2.0.63 (serwer): poprawki po pierwszych testach Wieży Demonów i zgłoszeniach z Discorda po 2.0.62. W launcherze ZAINSTALUJ AKTUALIZACJE.",
   "server": {
-    "version": "2.0.62",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.62/metin2-server-update-2.0.62.zip",
-    "sha256": "BF97A90C2D13B7AF165D6C2990E0D6B2BDB1BB56588F8844CDA6BAADC7F6AF67"
+    "version": "2.0.63",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.63/metin2-server-update-2.0.63.zip",
+    "sha256": "33EDB06EA8057EEDB239576FA2DEAD21476566B06C6F7701D5027D6E76359486"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

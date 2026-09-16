@@ -453,6 +453,10 @@ namespace
 
 	bool IsPlayerBotSplashNearTriggerStone(LPCHARACTER ch, LPCHARACTER target, DWORD skillVnum)
 	{
+		// Climbing with a player, the stone is the floor's objective and a
+		// splash that reaches it is welcome.
+		if (IsPlayerBotClimbingWithPlayer(ch))
+			return false;
 		if (!ch || !target || ch->GetMapIndex() != PLAYERBOT_MAP_DEMON_TOWER || !ch->GetSectree())
 			return false;
 		CSkillProto* proto = CSkillManager::instance().Get(skillVnum);

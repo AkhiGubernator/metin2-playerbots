@@ -551,6 +551,30 @@ namespace
 		return leader ? leader->GetPlayerID() : ch->GetPlayerID();
 	}
 
+	// Defined with the party code in playerbot_manager.cpp; declared in
+	// playerbot_travel.h too, which comes later in the include order.
+	bool IsPlayerBotHumanLedParty(LPPARTY party);
+
+	// A bot climbing the Demon Tower with a player: in the player's party, the
+	// player on the same map. For such a bot the tower's stones are the floor's
+	// objective - "takie metiny sie zbija, by zaliczyc kolejne pietra" (Tieru,
+	// 16 September) - and no level band applies; for a bot on its own they stay
+	// what IsPlayerBotDungeonTriggerStone says, a warp sprung on strangers.
+	bool IsPlayerBotClimbingWithPlayer(LPCHARACTER ch)
+	{
+		if (!ch || !ch->GetParty() || !IsPlayerBotHumanLedParty(ch->GetParty()))
+			return false;
+		LPCHARACTER leader = ch->GetParty()->GetLeaderCharacter();
+		return leader && leader != ch && leader->GetMapIndex() == ch->GetMapIndex();
+	}
+
+	bool IsPlayerBotDungeonStoneObjective(LPCHARACTER ch, LPCHARACTER stone)
+	{
+		return ch && stone && stone->IsStone() && !stone->IsDead() &&
+				IsPlayerBotDungeonTriggerStone(stone->GetRaceNum()) &&
+				IsPlayerBotClimbingWithPlayer(ch);
+	}
+
 	void RememberPlayerBotMetin(LPCHARACTER stone, DWORD dwNow)
 	{
 		// The Demon Tower's quest stones are nobody's hunting ground: see
@@ -594,14 +618,18 @@ namespace
 	{
 		if (!ch || !stone || !stone->IsStone() || stone->IsDead())
 			return false;
+		// A floor's objective for a bot climbing with a player: no band at all.
+		if (IsPlayerBotDungeonStoneObjective(ch, stone))
+			return true;
 		// Breaking one warps every PC on the killer's map into a new tower.
 		if (IsPlayerBotDungeonTriggerStone(stone->GetRaceNum()))
 			return false;
-		// The server drop multiplier still has useful value at a ten-level
-		// advantage. Below that it collapses sharply (15% at -11 and 1% at -15),
-		// so a level-25 bot should pass level-5/10 stones and keep level-15+.
+		// Alone, a stone up to nine over the bot (a stronger one it cannot break
+		// by itself - it joins those, IsPlayerBotStoneJoinable), and one it has
+		// outgrown by PLAYERBOT_STONE_OUTGROWN_LEVELS is passed: the drop curve
+		// is 1% at fifteen over, and nothing comes out of it past that.
 		return stone->GetLevel() <= ch->GetLevel() + 9 &&
-				ch->GetLevel() <= stone->GetLevel() + 10;
+				(int)ch->GetLevel() <= (int)stone->GetLevel() + PLAYERBOT_STONE_OUTGROWN_LEVELS;
 	}
 
 	BYTE ChoosePlayerBotMetinHotspot(DWORD playerID, BYTE currentIndex, DWORD dwNow,

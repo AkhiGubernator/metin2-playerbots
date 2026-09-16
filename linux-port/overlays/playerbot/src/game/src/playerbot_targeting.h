@@ -334,17 +334,21 @@ namespace
 	// A stone above the bot's own band that others are already breaking. "Jesli
 	// nie da sobie rady, niech dolacza jesli ktos w danym momencie bije kamien"
 	// (Tieru, 16 September): up to PLAYERBOT_STONE_JOIN_LEVEL_DELTA over the bot,
-	// never one it has outgrown (the drop curve is gone there for everybody),
-	// never a dungeon trigger. Kiciamol's report was the other half - one bot
-	// on a stone and the rest walking past, because a claimed target was a
-	// claimed target; see IsTargetClaimedByAnotherBot.
+	// never one it has outgrown by PLAYERBOT_STONE_OUTGROWN_LEVELS (the drop
+	// curve is gone there for everybody) - sixteen either way, the operator's
+	// band - and never a dungeon trigger, unless the bot is climbing the tower
+	// with a player, for whom it is the floor's objective and needs nobody
+	// else on it first. Kiciamol's report was the other half - one bot on a
+	// stone and the rest walking past, because a claimed target was a claimed
+	// target; see IsTargetClaimedByAnotherBot.
 	bool IsPlayerBotStoneJoinable(LPCHARACTER ch, LPCHARACTER stone)
 	{
-		if (!ch || !stone || !stone->IsStone() || stone->IsDead() ||
-				IsPlayerBotDungeonTriggerStone(stone->GetRaceNum()))
+		if (!ch || !stone || !stone->IsStone() || stone->IsDead())
 			return false;
+		if (IsPlayerBotDungeonTriggerStone(stone->GetRaceNum()))
+			return IsPlayerBotDungeonStoneObjective(ch, stone);
 		if ((int)stone->GetLevel() > (int)ch->GetLevel() + PLAYERBOT_STONE_JOIN_LEVEL_DELTA ||
-				(int)ch->GetLevel() > (int)stone->GetLevel() + 10)
+				(int)ch->GetLevel() > (int)stone->GetLevel() + PLAYERBOT_STONE_OUTGROWN_LEVELS)
 			return false;
 		return IsPlayerBotStoneUnderJoinableAttack(ch, stone);
 	}
@@ -1520,10 +1524,12 @@ namespace
 
 				LPCHARACTER candidate = static_cast<LPCHARACTER>(entity);
 				// A sweep that grazes a Demon Tower stone can break it, and the
-				// kill is the bot's: see PLAYERBOT_DEVIL_TOWER_STONE_FIRST.
+				// kill is the bot's: see PLAYERBOT_DEVIL_TOWER_STONE_FIRST - unless
+				// the bot is climbing with a player, for whom that is the point.
 				if (candidate == m_owner || candidate->GetVID() == m_primaryVID ||
 						(!candidate->IsMonster() && !candidate->IsStone()) || candidate->IsDead() ||
-						(candidate->IsStone() && IsPlayerBotDungeonTriggerStone(candidate->GetRaceNum())))
+						(candidate->IsStone() && IsPlayerBotDungeonTriggerStone(candidate->GetRaceNum()) &&
+							!IsPlayerBotDungeonStoneObjective(m_owner, candidate)))
 					return false;
 
 				if (candidate->GetMapIndex() != m_owner->GetMapIndex() ||

@@ -606,7 +606,7 @@ namespace
 				if (partyCamps == NULL || campTotal <= 0)
 					return;
 				int campChoices[16];
-				const int campCount = CollectPlayerBotM1HubsForLevel(ch->GetLevel(),
+				const int campCount = CollectPlayerBotM1HubsForLevel(GetPlayerBotVillageHuntLevel(ch),
 						partyCamps, campTotal, campChoices, 16);
 				if (campCount <= 0)
 					return;
@@ -656,7 +656,9 @@ namespace
 				if (hubs == NULL || hubTotal <= 0)
 					return;
 				int hubChoices[64];
-				const int hubCount = CollectPlayerBotM1HubsForLevel(ch->GetLevel(),
+				// The active herb row's level while its monster is wanted, the
+				// bot's own otherwise (GetPlayerBotVillageHuntLevel).
+				const int hubCount = CollectPlayerBotM1HubsForLevel(GetPlayerBotVillageHuntLevel(ch),
 						hubs, hubTotal, hubChoices, 64);
 				if (hubCount <= 0)
 					return;

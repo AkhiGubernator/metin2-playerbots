@@ -205,15 +205,17 @@ namespace
 				GetActivePlayerBotBiologistMission(ch, &missionIndex);
 		if (!mission)
 			return false;
-		int required = mission->requiredCount;
-		const DWORD wantedVnum = GetPlayerBotBiologistWantedItem(ch, missionIndex, &required);
-		const int accepted = IsPlayerBotBiologistKeyPhase(ch, missionIndex) ? 0 : std::max(0, ch->GetQuestFlag(
-				GetPlayerBotBiologistFlag(*mission, "collect_count")));
-		const int remaining = std::max(0, required - accepted);
-		// Same threshold as the hand-in itself, or the trip would never start
-		// for a bot the Biologist would happily serve.
-		return remaining > 0 && ch->CountSpecifyItem(wantedVnum) >=
-				std::min(remaining, PLAYERBOT_BIOLOGIST_MIN_HANDIN);
+		// The hand-in: same threshold as the hand-in itself, or the trip would
+		// never start for a bot the Biologist would happily serve.
+		if (PlayerBotBiologistHoldsHandIn(ch, mission, missionIndex))
+			return true;
+		// The hunt for a first-village row: the six herb rows' monsters stand
+		// in Joan and its two mirrors and nowhere else, so a bot anywhere else
+		// with such a row open goes there for them - at seventy-eight as at
+		// fifteen (Tieru, 16 September). The wander then picks the hubs for
+		// the row's level (GetPlayerBotVillageHuntLevel).
+		const DWORD huntMob = GetPlayerBotBiologistHuntMob(ch);
+		return huntMob != 0 && huntMob < 500 && !IsPlayerBotM1Map(ch->GetMapIndex());
 	}
 
 	// Above this level Bokjung has nothing left to offer, so nothing there is
@@ -407,6 +409,17 @@ namespace
 		// Valley, and the Black Wind band it needs lives in the desert.
 		if (IsPlayerBotOnBattleHorseTrial(ch))
 			return PLAYERBOT_MAP_DESERT;
+		// The Biologist's row is done where its monster stands, whatever the
+		// level says: the Orc Tooth and the Curse Book in the valley, the Demon
+		// Souvenir in the tower. A row is finished before the next is begun,
+		// at any level ("nie ma czegos takiego jak za niskie dla bota", Tieru,
+		// 16 September); the specimen comes from the quest's own kill hook,
+		// which asks nothing about the level gap.
+		{
+			const long rowHome = GetPlayerBotHuntingMobHome(GetPlayerBotBiologistHuntMob(ch));
+			if (rowHome != 0 && IsPlayerBotFrontierMapIndex(rowHome) && IsPlayerBotMapHostedHere(rowHome))
+				return rowHome;
+		}
 		// And the military trial is in the Demon Tower, for the same reason: the
 		// bot hunts where the trial is, whatever its level would otherwise say.
 		if (IsPlayerBotOnMilitaryHorseTrial(ch))

@@ -577,6 +577,22 @@ namespace
 		}
 	};
 
+	// A monster the bot's horse trial wants dead: the desert's two archers
+	// while the battle horse is being earned, the Demon Tower's four while the
+	// military one is. A quest target to the policy and to the score, whatever
+	// the bot's level says about the experience - a bot of seventy on the
+	// desert was refusing every scorpion as worthless, and 161 of the 178 bots
+	// of seventy and up with a horse at ten on the test world had never made a
+	// single kill of the trial (16 September).
+	bool IsPlayerBotHorseTrialTarget(LPCHARACTER ch, LPCHARACTER candidate)
+	{
+		if (!ch || !candidate || !candidate->IsMonster())
+			return false;
+		const DWORD race = candidate->GetRaceNum();
+		return (IsPlayerBotOnBattleHorseTrial(ch) && IsPlayerBotBattleHorseTrialMob(race)) ||
+				(IsPlayerBotOnMilitaryHorseTrial(ch) && IsPlayerBotMilitaryHorseTrialMob(race));
+	}
+
 	// The monster this bot's own errands want it to kill, if any. One
 	// definition, because the collector and the re-check below must not
 	// disagree about what counts as an active hunt.
@@ -712,8 +728,9 @@ namespace
 				context.boundedPartyDefense = true;
 		}
 
-		if (desiredMobVnum != 0 && candidate->IsMonster() &&
-				candidate->GetRaceNum() == desiredMobVnum)
+		if ((desiredMobVnum != 0 && candidate->IsMonster() &&
+				candidate->GetRaceNum() == desiredMobVnum) ||
+				IsPlayerBotHorseTrialTarget(ch, candidate))
 			context.activeQuestTarget = true;
 
 		// A material the bot is actually short of. CollectPlayerBotWantedMaterials
@@ -1004,8 +1021,9 @@ namespace
 				const int botLevel = m_owner->GetLevel();
 				const int mobLevel = candidate->GetLevel();
 				const int levelDelta = mobLevel - botLevel;
-				const bool isQuestTarget = candidate->IsMonster() &&
-						m_desiredMobVnum != 0 && candidate->GetRaceNum() == m_desiredMobVnum;
+				const bool isQuestTarget = (candidate->IsMonster() &&
+						m_desiredMobVnum != 0 && candidate->GetRaceNum() == m_desiredMobVnum) ||
+						IsPlayerBotHorseTrialTarget(m_owner, candidate);
 				const bool isBestialWeaponTarget = candidate->IsMonster() &&
 						m_huntM2Bestials &&
 						(candidate->GetRaceNum() == 533 || candidate->GetRaceNum() == 534);

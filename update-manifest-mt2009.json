@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T13:49:32Z",
-  "statusMessage": "2.0.59: **Stopniowe wpuszczanie botów (okno wejścia kohorty i dodatkowi boty dołączający w ciągu godzin — w launcherze pod LICZBA BOTÓW), przełącznik „Boty grają jak żywi ludzie” w panelu (sesje i odpoczynki, eksperymentalne, domyślnie wyłączone), metiny w przedziale 16 poziomów, kamienie Wieży Demonów jako cel piętra dla bota w drużynie gracza, a zmiana poziomu trudności skraca też trwające czekanie u Stajennego.** Serwer; klient bez zmian (2.0.11).",
+  "publishedAt": "2026-09-16T17:27:20Z",
+  "statusMessage": "2.0.60 (do testów): **Gildie botów w klasach — elitarne, silne, średnie i zwykłe według siły założyciela, rekrutacja najsilniejszych z całego królestwa, awans do lepszej gildii, co godzinę część expa dla gildii (gildie wbijają poziomy); wojny gildii botów co ~2 h na mapie gildyjnej królestwa; boty wymieniają Kupony SM na Smocze Monety i kupują w ItemShopie to, z czego korzystają; misje Biologa po kolei bez „za niskie dla bota”; boty 70+ z koniem na 10. poziomie robią próbę konia bojowego. Strona „Gildie” i dwa przełączniki w panelu klasycznym.** Serwer; klient bez zmian (2.0.11).",
   "server": {
-    "version": "2.0.59",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.59/metin2-server-update-2.0.59.zip",
-    "sha256": "480521A45D8CF9CEB0489A2C7A4B93C3628E663A81E482F39D1C99C10A9D6DF2"
+    "version": "2.0.60",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.60/metin2-server-update-2.0.60.zip",
+    "sha256": "B99541AEF8B3803B54F99EF2400A747FC879AE83AA59C1C7B2D6E01B865EA0D1"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

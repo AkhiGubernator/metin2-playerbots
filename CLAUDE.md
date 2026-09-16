@@ -4327,8 +4327,9 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   the character. Since 2.0.54 both go as offsets from the character
   (`apply_auto_hunt_offsets` in playerbotify.py, `AnchorOffset` in the
   client). Any client script that trades positions with the server has this
-  frame to convert. Compiled and tested against the stubs; not tried in a
-  client.
+  frame to convert. Compiled and tested against the stubs; the operator's
+  word the next morning (16 September) was "od ostatniej aktualizacji
+  autolowy dzialaja pieknie".
 - **Client 2.0.9's locale pack is the one ĹŌŞƬĒĶ sent.** That pack.zip (15
   September) replaces the character-select background,
   `locale/common/ui/select.jpg`, and nothing else: 762 files in the locale
@@ -4336,6 +4337,59 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `pack/locale.{index,data}` unchanged, so the next locale repack
   (`rulesify.py`, `client-locale`) has to start from the published 2.0.9 pack
   or it puts the old background back.
+- **The offline stand's service visit put a stack up whole.**
+  `BotOfflinePrepareLine` cut a line only for a hoard, a key and the Moonlight
+  chests; everything else - the twenty Blessing Scrolls of jaksiezabic's
+  screenshot, 4.7 million for one line - went up as the stack it was, while
+  the classic split (`SplitPlayerBotStallSingles`) only ever ran for the first
+  opening. A safe refine scroll is a line of `PLAYERBOT_SHOP_SCROLL_LINE_UNITS`
+  (five) now, `PLAYERBOT_SHOP_SCROLL_LINES` of them a counter, in
+  `GetPlayerBotStallLineUnits` for both paths, and `BotOfflineUnwantedLine`
+  takes a bigger scroll line home at the next visit to be cut. Any other kind
+  a player buys a few of at a time and the bots hold in stacks wants the same
+  two lines - the offline path is the one every mt2009 stand goes through.
+- **A player's private shop opens at fifteen, kills or none.** mt2009's
+  `CanOpenShop` asked `PLAYER_STATS_MONSTER_FLAG >= 800`, the public server's
+  gate for a "tobolek"; 2.0.12 exempted bots and 2.0.45 GMs, and a new
+  character still had eight hundred kills to make before trading (gregoszky,
+  14 September). A third playerbotify edit on the same function takes the
+  count out for everybody - it sits below the two early returns, so the
+  markers of all three hold on a re-run.
+- **The Biologist's wait is a runtime library, not a quest.** Every
+  `collect_quest_lv*` asks `collect_data.is_wait` (`quest/libs/other/
+  collect_data.lua`, `dofile`d by questlib at start), so the day between two
+  hand-ins is one function in one file the image carries: a shareify step
+  makes `is_research_in_progress` answer false (`do return false end` - Lua
+  wants `return` last in a block), which also leaves the Researcher's Elixir
+  unconsumed. The file is CRLF, so the sed anchors an optional carriage
+  return. The bots' own hand-in never kept the wait; this is for players
+  (namiot_, 15 September). No quest recompiles for it.
+- **A bot's title is the player's choice, in the client.** The game options
+  carry a "Tytuly botow" row (Osobowosc / Klasyczne) since client 2.0.11:
+  `playerbot_status_tail.py` keeps `playerbot_titles.cfg` beside the client
+  (systemSetting has no key to lend), `show_title` attaches nothing while it
+  is off and the keeper forgets what it held. textTail has `AttachTitle` and
+  no detach - checked in the binary - so a title already drawn stays until the
+  bot's next alignment change, a kill away. `clientrootify.py` renders
+  `uigameoption.py` and `uiscript/gameoptiondialog.py` from the stock root
+  (its first file in a subdirectory; the strings are CP1250 escapes so the
+  scripts stay ASCII, and the dialog grows by a row). Asked for by NerrVoVy
+  (15 September).
+- **Seban's 1.54.1 carries his backups and an unused icon set.**
+  `static/bak-*`, `static/maps/bak-*`, `templates/bak-*`, `icons.bak-*`,
+  `*.orig`, `*.before-*` and `static/icons_new` (1 915 files nothing reads)
+  travel in his zip; `scratchpad/merge_seban1541.py` is the shape of the
+  merge (three-way against his 1.48.0, our guards re-asserted). His
+  `updater/` is a host-side systemd service for a VPS and nothing in our
+  images runs it; the panel only shows its state. His `web_admin.quest` has
+  a `NOTICE` command ours lacks, gated off in public builds.
+- **A mod in an engine file survives an update and breaks the next build.**
+  The package replaces our files and leaves everything else, so a fork's
+  edit in `guild.cpp` or `messenger_manager.cpp` calling a manager method we
+  never had (`GetCompanionOwner`, maxziomeknw1, 15 September) fails the
+  build after every update, one file at a time. The answer is a search over
+  `game/src` for the symbol and the stock file from the full package for
+  each hit; a launcher that named the files itself would be the real fix.
 
 ## Engine facts worth not re-deriving
 

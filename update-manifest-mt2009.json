@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-15T21:44:03Z",
-  "statusMessage": "2.0.54: **Auto Łowy podnoszą drop (nowy klient 2.0.10), a skrzynie startowe otwierają się także w pełnej torbie.** Serwer i klient 2.0.10.",
+  "publishedAt": "2026-09-16T07:09:50Z",
+  "statusMessage": "2.0.55: **Zwoje Błogosławieństwa w liniach po 1–5, sklep gracza od 15 poziomu bez 800 zabójstw, Biolog bez limitu czasu, w opcjach gry wybór tytułów botów (nowy klient 2.0.11), panel Sebana 1.54.1.** Serwer i klient 2.0.11.",
   "server": {
-    "version": "2.0.54",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.54/metin2-server-update-2.0.54.zip",
-    "sha256": "9A0C5A1810E0268BA65A8FF9E7A6F5F583F8D7909E15283E4DE2F4CA0565CF97"
+    "version": "2.0.55",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.55/metin2-server-update-2.0.55.zip",
+    "sha256": "C47F84DC48CE106897999E0C6137BD86D4474BE05F3FD749ED07064DCF402DD7"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.10",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.54/metin2-client-update-2.0.10.zip",
-    "sha256": "D3BCFBC18648A23ABB291DEB9F42BC1BF6CCC732BC85454BABFC2B8AD32ADEF4"
+    "version": "2.0.11",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.55/metin2-client-update-2.0.11.zip",
+    "sha256": "70801863A1A7ACC599DF17C1DF0000A4FE17B86A7300A794CA5EEC324B88C53B"
   }
 }

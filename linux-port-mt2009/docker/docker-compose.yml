@@ -141,6 +141,11 @@ services:
       PLAYERBOT_AUTOSPAWN_COUNT: "${PLAYERBOT_AUTOSPAWN_COUNT:-350}"
       PLAYERBOT_MEDAL_DROPPERS: "${PLAYERBOT_MEDAL_DROPPERS:-0}"
       PLAYERBOT_MEDAL_DROPPER_LEVEL: "${PLAYERBOT_MEDAL_DROPPER_LEVEL:-25}"
+      # The spawn plan (input_db.cpp): the cohort's window in minutes, and a
+      # second cohort joining one at a time over hours.
+      PLAYERBOT_SPAWN_WINDOW_MINUTES: "${PLAYERBOT_SPAWN_WINDOW_MINUTES:-1}"
+      PLAYERBOT_LATE_JOINERS: "${PLAYERBOT_LATE_JOINERS:-0}"
+      PLAYERBOT_LATE_JOIN_HOURS: "${PLAYERBOT_LATE_JOIN_HOURS:-24}"
       # m2-render-config writes these four into CONFIG. Without a line here the
       # value in .env never reaches the container and the defaults stand, which
       # is what every 2.x world had until 2.0.52 (the 1.x compose passes them).

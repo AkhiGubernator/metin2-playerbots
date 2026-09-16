@@ -2437,7 +2437,7 @@ size_t CPlayerBotManager::SpawnRegistered(size_t count, BYTE bEmpire)
 		++selected;
 	}
 
-	const size_t batches = std::max<size_t>(1, PLAYERBOT_SPAWN_WINDOW / PLAYERBOT_SPAWN_BATCH_INTERVAL);
+	const size_t batches = std::max<size_t>(1, m_dwSpawnWindowMs / PLAYERBOT_SPAWN_BATCH_INTERVAL);
 	m_uSpawnBatchSize = std::max<size_t>(1,
 			(m_setScheduledBots.size() + batches - 1) / batches);
 	m_dwSpawnWindowStarted = get_dword_time();
@@ -2446,7 +2446,7 @@ size_t CPlayerBotManager::SpawnRegistered(size_t count, BYTE bEmpire)
 	sys_log(0, "PLAYERBOT: staggered spawn empire=%u scheduled=%u total=%u batch=%u every=%ums window=%ums",
 			(unsigned int)bEmpire, (unsigned int)selected,
 			(unsigned int)m_uSpawnWindowTotal, (unsigned int)m_uSpawnBatchSize,
-			PLAYERBOT_SPAWN_BATCH_INTERVAL, PLAYERBOT_SPAWN_WINDOW);
+			PLAYERBOT_SPAWN_BATCH_INTERVAL, m_dwSpawnWindowMs);
 	SpawnPendingBatch(get_dword_time());
 	return selected;
 }
@@ -2483,7 +2483,7 @@ size_t CPlayerBotManager::SpawnMedalDropperCohort(size_t count, BYTE bEmpire, BY
 		++selected;
 	}
 
-	const size_t batches = std::max<size_t>(1, PLAYERBOT_SPAWN_WINDOW / PLAYERBOT_SPAWN_BATCH_INTERVAL);
+	const size_t batches = std::max<size_t>(1, m_dwSpawnWindowMs / PLAYERBOT_SPAWN_BATCH_INTERVAL);
 	m_uSpawnBatchSize = std::max<size_t>(1,
 			(m_setScheduledBots.size() + batches - 1) / batches);
 	m_dwSpawnWindowStarted = get_dword_time();
@@ -2522,6 +2522,9 @@ void CPlayerBotManager::SpawnPendingBatch(DWORD dwNow)
 		// scheduled, so removing the ban lets a later top-up bring it back.
 		if (m_setBannedBots.find(pid) != m_setBannedBots.end())
 			continue;
+		// A resting one likewise: its rest ends in ManageLifeSchedule.
+		if (IsRestingBot(pid))
+			continue;
 		Spawn(pid, GetRegisteredEmpire(pid));
 		++sent;
 	}
@@ -2529,6 +2532,89 @@ void CPlayerBotManager::SpawnPendingBatch(DWORD dwNow)
 		sys_log(0, "PLAYERBOT: staggered spawn complete scheduled=%u over=%ums",
 				(unsigned int)m_uSpawnWindowTotal,
 				(unsigned int)(dwNow - m_dwSpawnWindowStarted));
+}
+
+// The operator's spawn plan. The cohort's window: a minute by default, up to
+// PLAYERBOT_SPAWN_WINDOW_MAX_MINUTES, so a thousand bots can take a quarter of
+// an hour to come in instead of filling the square in sixty seconds.
+void CPlayerBotManager::SetSpawnWindow(DWORD dwWindowMs)
+{
+	const DWORD maxMs = PLAYERBOT_SPAWN_WINDOW_MAX_MINUTES * 60U * 1000U;
+	if (dwWindowMs < PLAYERBOT_SPAWN_WINDOW)
+		dwWindowMs = PLAYERBOT_SPAWN_WINDOW;
+	else if (dwWindowMs > maxMs)
+		dwWindowMs = maxMs;
+	m_dwSpawnWindowMs = dwWindowMs;
+	sys_log(0, "PLAYERBOT: spawn window %u s", (unsigned int)(dwWindowMs / 1000U));
+}
+
+// A second cohort that joins one at a time: the next `count` identities of the
+// kingdom after the ones already scheduled, each given its moment spread evenly
+// over the window. Nothing is in the world or in m_setScheduledBots until that
+// moment, so the top-up neither counts nor hurries them; from it on they are
+// the cohort's like the rest. "Dodatkowe 500 botow dolacza stopniowo w ciagu
+// 24 godzin" (Tieru, 16 September).
+size_t CPlayerBotManager::ScheduleLateJoiners(size_t count, BYTE bEmpire, DWORD dwWindowMs)
+{
+	if (count == 0 || bEmpire < 1 || bEmpire > 3 || !LoadRegisteredBots())
+		return 0;
+	const DWORD maxMs = PLAYERBOT_LATE_JOIN_MAX_HOURS * 60U * 60U * 1000U;
+	if (dwWindowMs < 60000U)
+		dwWindowMs = 60000U;
+	else if (dwWindowMs > maxMs)
+		dwWindowMs = maxMs;
+	std::set<DWORD> waiting;
+	for (std::deque<std::pair<DWORD, DWORD> >::const_iterator it = m_dequeLateJoiners.begin();
+			it != m_dequeLateJoiners.end(); ++it)
+		waiting.insert(it->second);
+	std::vector<DWORD> chosen;
+	for (TRegisteredPlayerBotSet::const_iterator it = m_setRegisteredBots.begin();
+			it != m_setRegisteredBots.end() && chosen.size() < count; ++it)
+	{
+		if (GetRegisteredEmpire(*it) != bEmpire)
+			continue;
+		if (m_setScheduledBots.find(*it) != m_setScheduledBots.end() ||
+				m_setMedalDropperCohort.find(*it) != m_setMedalDropperCohort.end() ||
+				waiting.find(*it) != waiting.end())
+			continue;
+		chosen.push_back(*it);
+	}
+	const DWORD dwNow = get_dword_time();
+	for (size_t i = 0; i < chosen.size(); ++i)
+	{
+		// The i-th of n joins at (i+1)/(n+1) of the window: the first not at
+		// once, the last not at the very end.
+		const DWORD due = dwNow + (DWORD)((unsigned long long)dwWindowMs * (i + 1) / (chosen.size() + 1));
+		m_dequeLateJoiners.push_back(std::make_pair(due, chosen[i]));
+	}
+	std::sort(m_dequeLateJoiners.begin(), m_dequeLateJoiners.end());
+	m_uLateJoinersTotal += chosen.size();
+	sys_log(0, "PLAYERBOT: late joiners empire=%u scheduled=%u over=%umin first_in=%umin waiting=%u",
+			(unsigned int)bEmpire, (unsigned int)chosen.size(),
+			(unsigned int)(dwWindowMs / 60000U),
+			m_dequeLateJoiners.empty() ? 0U : (unsigned int)((m_dequeLateJoiners.front().first - dwNow) / 60000U),
+			(unsigned int)m_dequeLateJoiners.size());
+	return chosen.size();
+}
+
+void CPlayerBotManager::SpawnLateJoiners(DWORD dwNow)
+{
+	while (!m_dequeLateJoiners.empty() && (int)(dwNow - m_dequeLateJoiners.front().first) >= 0)
+	{
+		const DWORD pid = m_dequeLateJoiners.front().second;
+		m_dequeLateJoiners.pop_front();
+		if (m_setScheduledBots.find(pid) != m_setScheduledBots.end())
+			continue;
+		m_setScheduledBots.insert(pid);
+		// A banned or resting one is scheduled and not spawned: the top-up
+		// brings it in when the ban lifts or the rest ends, like anybody's.
+		if (m_setBannedBots.find(pid) != m_setBannedBots.end() || IsRestingBot(pid))
+			continue;
+		Spawn(pid, GetRegisteredEmpire(pid));
+		sys_log(0, "PLAYERBOT: late joiner pid=%u empire=%u left=%u of %u",
+				pid, (unsigned int)GetRegisteredEmpire(pid),
+				(unsigned int)m_dequeLateJoiners.size(), (unsigned int)m_uLateJoinersTotal);
+	}
 }
 
 // Put back whoever the world has lost.
@@ -2566,7 +2652,7 @@ void CPlayerBotManager::TopUpMissingBots(DWORD dwNow)
 		// A banned bot is missing on purpose; leaving it out of the queue keeps
 		// the top-up from asking for it every minute only for SpawnPendingBatch
 		// to drop it again.
-		else if (m_setBannedBots.find(*it) == m_setBannedBots.end())
+		else if (m_setBannedBots.find(*it) == m_setBannedBots.end() && !IsRestingBot(*it))
 			missing.push_back(*it);
 	}
 	if (missing.empty())
@@ -2662,6 +2748,118 @@ bool CPlayerBotManager::Despawn(DWORD dwPlayerID)
 
 	sys_log(0, "PLAYERBOT: despawned pid=%u", dwPlayerID);
 	return true;
+}
+
+bool CPlayerBotManager::IsRestingBot(DWORD dwPlayerID) const
+{
+	return m_mapLifeRestEnd.find(dwPlayerID) != m_mapLifeRestEnd.end();
+}
+
+// "Boty graja jak zywi ludzie" - the LIFE switch of the weights file, off by
+// default and experimental: a bot plays for PLAYERBOT_LIFE_SESSION_MIN..MAX,
+// logs out, rests for PLAYERBOT_LIFE_REST_MIN..MAX and comes back through the
+// top-up, which leaves a resting bot alone (IsRestingBot) the way it leaves a
+// banned one. The first session after a start is drawn from half an hour up
+// so the log-outs spread over the day instead of the cohort leaving together;
+// a bot in a player's party is not logged out from under them, it waits. Its
+// offline shop stands on, as any player's does. Switched off, every rest ends
+// at once and the top-up fills the world again.
+void CPlayerBotManager::ManageLifeSchedule(DWORD dwNow)
+{
+	if (m_dwNextLifeCheckTime != 0 && dwNow < m_dwNextLifeCheckTime)
+		return;
+	m_dwNextLifeCheckTime = dwNow + PLAYERBOT_LIFE_CHECK_INTERVAL;
+	if (!IsPlayerBotLifeScheduleEnabled())
+	{
+		if (!m_mapLifeSessionEnd.empty() || !m_mapLifeRestEnd.empty() || !m_setLifeReturning.empty())
+		{
+			sys_log(0, "PLAYERBOT_LIFE: schedule off, %u resting come back",
+					(unsigned int)m_mapLifeRestEnd.size());
+			m_mapLifeSessionEnd.clear();
+			m_mapLifeRestEnd.clear();
+			m_setLifeReturning.clear();
+			m_dwNextTopUpTime = 0;
+		}
+		return;
+	}
+
+	std::vector<DWORD> leaving;
+	for (TPlayerBotMap::const_iterator it = m_mapBots.begin(); it != m_mapBots.end(); ++it)
+	{
+		const DWORD pid = it->first;
+		std::map<DWORD, DWORD>::iterator session = m_mapLifeSessionEnd.find(pid);
+		if (session == m_mapLifeSessionEnd.end())
+		{
+			// Back from a rest: a whole session. Just started with the world:
+			// anything from half an hour, so the first log-outs spread.
+			const bool returning = m_setLifeReturning.erase(pid) > 0;
+			const DWORD floor = returning ? PLAYERBOT_LIFE_SESSION_MIN_MS : PLAYERBOT_LIFE_FIRST_SESSION_MIN_MS;
+			const DWORD spread = PlayerBotNavHash(pid ^ (dwNow / 1000U) ^ 0x4c494645U) %
+					(PLAYERBOT_LIFE_SESSION_MAX_MS - floor);
+			m_mapLifeSessionEnd[pid] = dwNow + floor + spread;
+			continue;
+		}
+		if ((int)(dwNow - session->second) < 0)
+			continue;
+		LPCHARACTER ch = it->second ? it->second->GetCharacter() : NULL;
+		if (ch && ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty()))
+		{
+			session->second = dwNow + PLAYERBOT_LIFE_POSTPONE_MS;
+			continue;
+		}
+		leaving.push_back(pid);
+	}
+	for (size_t i = 0; i < leaving.size(); ++i)
+	{
+		const DWORD pid = leaving[i];
+		const DWORD rest = PLAYERBOT_LIFE_REST_MIN_MS +
+				PlayerBotNavHash(pid ^ dwNow ^ 0x52455354U) %
+				(PLAYERBOT_LIFE_REST_MAX_MS - PLAYERBOT_LIFE_REST_MIN_MS);
+		char szName[CHARACTER_NAME_MAX_LEN + 1];
+		szName[0] = '\0';
+		TPlayerBotMap::const_iterator bot = m_mapBots.find(pid);
+		if (bot != m_mapBots.end() && bot->second && bot->second->GetCharacter())
+			strlcpy(szName, bot->second->GetCharacter()->GetName(), sizeof(szName));
+		m_mapLifeSessionEnd.erase(pid);
+		if (!Despawn(pid))
+			continue;
+		m_mapLifeRestEnd[pid] = dwNow + rest;
+		sys_log(0, "PLAYERBOT_LIFE: logged out pid=%u name=%s rest=%umin",
+				pid, szName, (unsigned int)(rest / 60000U));
+	}
+	// Whose rest is over: off the resting list, and the top-up on the next
+	// tick brings them back the way it brings anybody back.
+	unsigned int back = 0;
+	for (std::map<DWORD, DWORD>::iterator it = m_mapLifeRestEnd.begin(); it != m_mapLifeRestEnd.end(); )
+	{
+		if ((int)(dwNow - it->second) >= 0)
+		{
+			sys_log(0, "PLAYERBOT_LIFE: back pid=%u", it->first);
+			m_setLifeReturning.insert(it->first);
+			m_mapLifeRestEnd.erase(it++);
+			++back;
+		}
+		else
+			++it;
+	}
+	if (back > 0)
+		m_dwNextTopUpTime = 0;
+	// A sessioned bot that left the world for another reason (a ban, a load
+	// failure) would keep a stale entry; forget what is not in the world.
+	for (std::map<DWORD, DWORD>::iterator it = m_mapLifeSessionEnd.begin(); it != m_mapLifeSessionEnd.end(); )
+	{
+		if (m_mapBots.find(it->first) == m_mapBots.end())
+			m_mapLifeSessionEnd.erase(it++);
+		else
+			++it;
+	}
+	if (m_dwNextLifeCensusTime == 0 || dwNow >= m_dwNextLifeCensusTime)
+	{
+		m_dwNextLifeCensusTime = dwNow + PLAYERBOT_LIFE_CENSUS_INTERVAL;
+		sys_log(0, "PLAYERBOT_LIFE: census online=%u resting=%u returning=%u left_now=%u back_now=%u",
+				(unsigned int)m_mapBots.size(), (unsigned int)m_mapLifeRestEnd.size(),
+				(unsigned int)m_setLifeReturning.size(), (unsigned int)leaving.size(), back);
+	}
 }
 
 void CPlayerBotManager::OnPlayerLoaded(LPDESC d)
@@ -2837,9 +3035,13 @@ void CPlayerBotManager::Update()
 
 	// The next batch of the cohort, if one is due - see PLAYERBOT_SPAWN_WINDOW.
 	SpawnPendingBatch(dwNow);
+	// The second cohort, one at a time over its hours (ScheduleLateJoiners).
+	SpawnLateJoiners(dwNow);
 	// And a minute apart, whoever is missing from it - and, on the same clock,
-	// whoever a GM has banned is taken back out.
+	// whoever a GM has banned is taken back out, and whoever the life schedule
+	// logs out or lets back in (the LIFE switch) goes before the count.
 	RefreshBannedBots(dwNow);
+	ManageLifeSchedule(dwNow);
 	TopUpMissingBots(dwNow);
 
 	// Once for the whole population: the panel may have moved a weight since

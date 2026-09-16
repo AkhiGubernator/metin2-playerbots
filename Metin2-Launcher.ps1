@@ -4,6 +4,10 @@ param(
     [string]$Action = 'Menu',
     [string]$Manifest = '',
     [int]$BotCount = -1,
+    # The spawn plan beside the count (SetBots): -1 leaves .env as it is.
+    [int]$SpawnMinutes = -1,
+    [int]$LateJoiners = -1,
+    [int]$LateHours = -1,
     # SetDifficulty: easy | medium | hard | custom, and the hours custom reads.
     [string]$Difficulty = '',
     [string]$BiologistHours = '',
@@ -546,17 +550,53 @@ function Set-PlayerbotCount {
     return $Count
 }
 
+function Get-SpawnPlanFromEnv {
+    # PLAYERBOT_SPAWN_WINDOW_MINUTES / PLAYERBOT_LATE_JOINERS / PLAYERBOT_LATE_JOIN_HOURS
+    # as .env has them; 1 / 0 / 24 when the keys are not there yet.
+    return @{
+        Minutes = Get-DotEnvValue -Key 'PLAYERBOT_SPAWN_WINDOW_MINUTES' -Default '1'
+        Late    = Get-DotEnvValue -Key 'PLAYERBOT_LATE_JOINERS' -Default '0'
+        Hours   = Get-DotEnvValue -Key 'PLAYERBOT_LATE_JOIN_HOURS' -Default '24'
+    }
+}
+
+function Set-SpawnPlan {
+    # The core reads the three at startup (input_db.cpp): the window the
+    # cohort arrives over, the second cohort and its hours. Clamped to what
+    # the core accepts, so .env never carries a number it would refuse.
+    param([int]$Minutes, [int]$Late, [int]$Hours)
+    if ($Minutes -lt 1) { $Minutes = 1 }
+    if ($Minutes -gt 180) { $Minutes = 180 }
+    if ($Late -lt 0) { $Late = 0 }
+    if ($Late -gt 2500) { $Late = 2500 }
+    if ($Hours -lt 1) { $Hours = 1 }
+    if ($Hours -gt 168) { $Hours = 168 }
+    Set-DotEnvValue -Key 'PLAYERBOT_SPAWN_WINDOW_MINUTES' -Value "$Minutes"
+    Set-DotEnvValue -Key 'PLAYERBOT_LATE_JOINERS' -Value "$Late"
+    Set-DotEnvValue -Key 'PLAYERBOT_LATE_JOIN_HOURS' -Value "$Hours"
+    return @{ Minutes = $Minutes; Late = $Late; Hours = $Hours }
+}
+
 function Set-BotCountAction {
     $current = Get-PlayerbotCount
+    $plan = Get-SpawnPlanFromEnv
     Write-Host "Aktualnie gra: $current botów (efektywny limit = liczba botów w Twoim świecie; kanoniczna paczka ma 350)." -ForegroundColor Gray
+    Write-Host "Wchodzą w ciągu $($plan.Minutes) min od startu; dodatkowych botów dołączających stopniowo: $($plan.Late) w ciągu $($plan.Hours) h." -ForegroundColor Gray
 
     # -BotCount passed (from the GUI or scripting) is non-interactive: never call
     # Read-Host, because the GUI runs this in a hidden, non-interactive console.
     # Restart only when -Yes is also given. Without -BotCount we are in the text
-    # menu and can prompt for both the number and the restart.
+    # menu and can prompt for the numbers and the restart.
     if ($BotCount -ge 0) {
         $applied = Set-PlayerbotCount -Count $BotCount
         Write-Host "Zapisano: $applied grających botów." -ForegroundColor Green
+        if ($SpawnMinutes -ge 0 -or $LateJoiners -ge 0 -or $LateHours -ge 0) {
+            $m = if ($SpawnMinutes -ge 0) { $SpawnMinutes } else { [int]$plan.Minutes }
+            $l = if ($LateJoiners -ge 0) { $LateJoiners } else { [int]$plan.Late }
+            $h = if ($LateHours -ge 0) { $LateHours } else { [int]$plan.Hours }
+            $p = Set-SpawnPlan -Minutes $m -Late $l -Hours $h
+            Write-Host "Zapisano: wejście w $($p.Minutes) min, $($p.Late) dodatkowych botów w ciągu $($p.Hours) h." -ForegroundColor Green
+        }
         if ($Yes) {
             Start-Server
             Write-Host "Serwer zrestartowany z liczbą botów: $applied." -ForegroundColor Green
@@ -571,6 +611,19 @@ function Set-BotCountAction {
     if ($answer -notmatch '^\d+$') { Write-Host 'Anulowano: to nie jest liczba.' -ForegroundColor Yellow; return }
     $applied = Set-PlayerbotCount -Count ([int]$answer)
     Write-Host "Zapisano: $applied grających botów." -ForegroundColor Green
+    $m = Read-Host "W ciągu ilu minut od startu mają wejść (1-180, Enter = $($plan.Minutes))"
+    $l = Read-Host "Ilu dodatkowych botów ma dołączać stopniowo później (0-2500, Enter = $($plan.Late))"
+    $h = Read-Host "W ciągu ilu godzin mają dołączać (1-168, Enter = $($plan.Hours))"
+    if (-not "$m".Trim()) { $m = $plan.Minutes }
+    if (-not "$l".Trim()) { $l = $plan.Late }
+    if (-not "$h".Trim()) { $h = $plan.Hours }
+    if ("$m" -notmatch '^\d+$' -or "$l" -notmatch '^\d+$' -or "$h" -notmatch '^\d+$') {
+        Write-Host 'Plan wejścia bez zmian: to nie są liczby.' -ForegroundColor Yellow
+    }
+    else {
+        $p = Set-SpawnPlan -Minutes ([int]$m) -Late ([int]$l) -Hours ([int]$h)
+        Write-Host "Zapisano: wejście w $($p.Minutes) min, $($p.Late) dodatkowych botów w ciągu $($p.Hours) h." -ForegroundColor Green
+    }
     if (Confirm-Operation 'Zrestartować serwer teraz, aby zastosować zmianę? Baza i postęp botów pozostają bez zmian') {
         Start-Server
         Write-Host "Serwer zrestartowany z liczbą botów: $applied." -ForegroundColor Green

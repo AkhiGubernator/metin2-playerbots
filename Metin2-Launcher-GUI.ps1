@@ -675,6 +675,22 @@ function Get-BotCountFromEnv {
     return 350
 }
 
+function Get-SpawnPlanFromEnv {
+    # The spawn plan as .env has it; 1 / 0 / 24 when the keys are not there yet.
+    $envPath = Join-Path $root 'linux-port\docker\.env'
+    $plan = @{ Minutes = 1; Late = 0; Hours = 24 }
+    if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+        $content = [IO.File]::ReadAllText($envPath)
+        $m = [Regex]::Match($content, '(?m)^PLAYERBOT_SPAWN_WINDOW_MINUTES=(\d+)\s*$')
+        if ($m.Success) { $plan.Minutes = [int]$m.Groups[1].Value }
+        $m = [Regex]::Match($content, '(?m)^PLAYERBOT_LATE_JOINERS=(\d+)\s*$')
+        if ($m.Success) { $plan.Late = [int]$m.Groups[1].Value }
+        $m = [Regex]::Match($content, '(?m)^PLAYERBOT_LATE_JOIN_HOURS=(\d+)\s*$')
+        if ($m.Success) { $plan.Hours = [int]$m.Groups[1].Value }
+    }
+    return $plan
+}
+
 function Get-DifficultyFromEnv {
     # M2_DIFFICULTY and the two hour counts, as .env has them; easy/0/0 when the
     # keys are not there yet (an older .env, which start-server.ps1 fills in).
@@ -984,10 +1000,13 @@ function Show-BotCountDialog {
     # thousand seeded bots could not be asked for from here at all. Asking for
     # more than a world holds is safe and always was: the core spawns what its
     # registry has and logs requested/registered/started.
-    param([int]$Current = 350)
+    # Under the slider, the spawn plan: the window the cohort arrives over and
+    # the second cohort with its hours - "1000 w 15 minut, a dodatkowe 500 w
+    # ciagu 24 godzin". Returns @{ Count; Minutes; Late; Hours } or $null.
+    param([int]$Current = 350, [hashtable]$Plan = @{ Minutes = 1; Late = 0; Hours = 24 })
     $dialog = [Windows.Forms.Form]::new()
     $dialog.Text = (T 'botDialog')
-    $dialog.Size = [Drawing.Size]::new(480, 260)
+    $dialog.Size = [Drawing.Size]::new(480, 396)
     $dialog.StartPosition = 'CenterParent'
     $dialog.FormBorderStyle = 'FixedDialog'
     $dialog.MaximizeBox = $false
@@ -1027,16 +1046,43 @@ function Show-BotCountDialog {
             }
         })
 
+    $planInfo = [Windows.Forms.Label]::new()
+    $planInfo.Text = "Wejście stopniowe: tylu botów wchodzi w ciągu podanych minut od startu,`r`na dodatkowe dołączają pojedynczo w ciągu podanych godzin (0 = bez dodatkowych)."
+    $planInfo.Location = [Drawing.Point]::new(14, 150)
+    $planInfo.Size = [Drawing.Size]::new(440, 34)
+    $dialog.Controls.Add($planInfo)
+
+    $rows = @(
+        @{ Name = 'minutesBox'; Text = 'Wejście w ciągu (min, 1-180):'; Min = 1; Max = 180; Value = [int]$Plan.Minutes; Y = 188 },
+        @{ Name = 'lateBox';    Text = 'Dodatkowych botów później (0-2500):'; Min = 0; Max = 2500; Value = [int]$Plan.Late; Y = 218 },
+        @{ Name = 'hoursBox';   Text = 'dołączających w ciągu (h, 1-168):'; Min = 1; Max = 168; Value = [int]$Plan.Hours; Y = 248 }
+    )
+    foreach ($row in $rows) {
+        $label = [Windows.Forms.Label]::new()
+        $label.Text = $row.Text
+        $label.Location = [Drawing.Point]::new(14, $row.Y + 3)
+        $label.Size = [Drawing.Size]::new(280, 22)
+        $dialog.Controls.Add($label)
+        $box = [Windows.Forms.NumericUpDown]::new()
+        $box.Name = $row.Name
+        $box.Minimum = $row.Min
+        $box.Maximum = $row.Max
+        $box.Value = [Math]::Max($row.Min, [Math]::Min($row.Max, $row.Value))
+        $box.Location = [Drawing.Point]::new(300, $row.Y)
+        $box.Size = [Drawing.Size]::new(90, 24)
+        $dialog.Controls.Add($box)
+    }
+
     $okButton = [Windows.Forms.Button]::new()
     $okButton.Text = (T 'apply')
-    $okButton.Location = [Drawing.Point]::new(252, 168)
+    $okButton.Location = [Drawing.Point]::new(252, 300)
     $okButton.Size = [Drawing.Size]::new(100, 32)
     $okButton.DialogResult = [Windows.Forms.DialogResult]::OK
     $dialog.Controls.Add($okButton)
 
     $cancelButton = [Windows.Forms.Button]::new()
     $cancelButton.Text = (T 'cancel')
-    $cancelButton.Location = [Drawing.Point]::new(358, 168)
+    $cancelButton.Location = [Drawing.Point]::new(358, 300)
     $cancelButton.Size = [Drawing.Size]::new(96, 32)
     $cancelButton.DialogResult = [Windows.Forms.DialogResult]::Cancel
     $dialog.Controls.Add($cancelButton)
@@ -1044,10 +1090,15 @@ function Show-BotCountDialog {
     $dialog.CancelButton = $cancelButton
 
     $result = $dialog.ShowDialog()
-    $chosen = $bar.Value
+    $chosen = @{
+        Count   = [int]$bar.Value
+        Minutes = [int]$dialog.Controls['minutesBox'].Value
+        Late    = [int]$dialog.Controls['lateBox'].Value
+        Hours   = [int]$dialog.Controls['hoursBox'].Value
+    }
     $dialog.Dispose()
     if ($result -ne [Windows.Forms.DialogResult]::OK) { return $null }
-    return [int]$chosen
+    return $chosen
 }
 
 function Get-GuiTargetVolume {
@@ -1717,17 +1768,20 @@ $folderButton.Add_Click({
 })
 $botCountButton.Add_Click({
     $current = Get-BotCountFromEnv
-    $count = Show-BotCountDialog -Current $current
-    if ($null -eq $count) { return }
+    $plan = Get-SpawnPlanFromEnv
+    $chosen = Show-BotCountDialog -Current $current -Plan $plan
+    if ($null -eq $chosen) { return }
+    $count = [int]$chosen.Count
+    $extra = @('-BotCount', "$count", '-SpawnMinutes', "$($chosen.Minutes)", '-LateJoiners', "$($chosen.Late)", '-LateHours', "$($chosen.Hours)")
     $answer = [Windows.Forms.MessageBox]::Show(
-        "Ustawić $count grających botów i zrestartować serwer teraz, aby zastosować? Baza i postęp botów pozostaną bez zmian.",
+        "Ustawić $count grających botów (wejście w $($chosen.Minutes) min, $($chosen.Late) dodatkowych w ciągu $($chosen.Hours) h) i zrestartować serwer teraz, aby zastosować? Baza i postęp botów pozostaną bez zmian.",
         'Liczba botów', 'YesNoCancel', 'Question')
     if ($answer -eq [Windows.Forms.DialogResult]::Cancel) { return }
     if ($answer -eq [Windows.Forms.DialogResult]::Yes) {
-        Start-LauncherAction -Action 'SetBots' -Yes -ExtraArgs @('-BotCount', "$count")
+        Start-LauncherAction -Action 'SetBots' -Yes -ExtraArgs $extra
     }
     else {
-        Start-LauncherAction -Action 'SetBots' -ExtraArgs @('-BotCount', "$count")
+        Start-LauncherAction -Action 'SetBots' -ExtraArgs $extra
     }
 })
 $difficultyButton.Add_Click({

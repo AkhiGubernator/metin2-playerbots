@@ -52,6 +52,12 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		// sectree, and the rescue puts it back at its own map's start.
 		bool	TransferBot(LPCHARACTER bot, LPCHARACTER to);
 
+		// The operator's spawn plan (input_db.cpp through playerbotify.py): the
+		// window the cohort arrives over, and a second cohort that joins one at
+		// a time over hours - scheduled here, spawned from Update.
+		void	SetSpawnWindow(DWORD dwWindowMs);
+		size_t	ScheduleLateJoiners(size_t count, BYTE bEmpire, DWORD dwWindowMs);
+
 		// The three things the F10 bot-admin window asks for. The data behind
 		// the last two lives in playerbot_admin.h, inside the anonymous
 		// namespace of playerbot_manager.cpp that no engine translation unit
@@ -88,6 +94,12 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		// SpawnPendingBatch/TopUpMissingBots never bring it back, so a ban is no
 		// longer undone by the top-up a minute later (mateuszp211).
 		void	RefreshBannedBots(DWORD dwNow);
+		// The late joiners whose moment has come (ScheduleLateJoiners).
+		void	SpawnLateJoiners(DWORD dwNow);
+		// "Boty graja jak zywi ludzie": sessions, log-outs and the rests the
+		// top-up must not cut short (the LIFE switch of the weights file).
+		void	ManageLifeSchedule(DWORD dwNow);
+		bool	IsRestingBot(DWORD dwPlayerID) const;
 
 		TPlayerBotMap		m_mapBots;
 		THandleToPlayerMap	m_mapHandles;
@@ -115,6 +127,19 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		// The medal droppers' cohort and its level (SpawnMedalDropperCohort).
 		std::set<DWORD>		m_setMedalDropperCohort;
 		BYTE			m_bMedalDropperCohortLevel = 0;
+		// The spawn plan: how long the cohort takes to arrive, and who joins
+		// later - (when, pid) ascending, spawned by SpawnLateJoiners.
+		DWORD			m_dwSpawnWindowMs = 60000;
+		std::deque<std::pair<DWORD, DWORD> >	m_dequeLateJoiners;
+		size_t			m_uLateJoinersTotal = 0;
+		// The life schedule: when each live bot's session ends, until when a
+		// logged-out bot rests (kept out of the world and out of the top-up),
+		// and who is on the way back from a rest.
+		std::map<DWORD, DWORD>	m_mapLifeSessionEnd;
+		std::map<DWORD, DWORD>	m_mapLifeRestEnd;
+		std::set<DWORD>		m_setLifeReturning;
+		DWORD			m_dwNextLifeCheckTime = 0;
+		DWORD			m_dwNextLifeCensusTime = 0;
 };
 
 // The AI weights, for the F9 GM panel's "Sterowanie Serwerem" tab.

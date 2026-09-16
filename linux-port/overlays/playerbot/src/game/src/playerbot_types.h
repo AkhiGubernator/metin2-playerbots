@@ -543,6 +543,32 @@ namespace
 	// hundred and fifty arriving, and three hundred and fifty an hour later -
 	// and nothing in the core would have noticed any of that.
 	const DWORD PLAYERBOT_TOPUP_INTERVAL = 60000;
+	// The operator's spawn plan (PLAYERBOT_SPAWN_WINDOW_MINUTES,
+	// PLAYERBOT_LATE_JOINERS, PLAYERBOT_LATE_JOIN_HOURS, read by the bootstrap
+	// in input_db.cpp): the cohort may be asked to arrive over a quarter of an
+	// hour instead of the minute above, and a second cohort may join one at a
+	// time over a day - "1000 wbija w ciagu 15 minut, a dodatkowe 500 dolacza
+	// stopniowo w ciagu 24 godzin" (Tieru, 16 September), the day a player
+	// started two thousand at once and the square "looked like a hospital".
+	// These are the bounds; the defaults are the minute above and nobody late.
+	const DWORD PLAYERBOT_SPAWN_WINDOW_MAX_MINUTES = 180;
+	const DWORD PLAYERBOT_LATE_JOIN_MAX_HOURS = 168;
+	// "Boty graja jak zywi ludzie": the LIFE switch of the weights file, off
+	// by default and experimental. A bot plays a session, logs out for a
+	// rest, and the top-up brings it back afterwards. The first session after
+	// a start is drawn from half an hour up, so the log-outs spread over the
+	// day instead of the whole cohort leaving together hours after a restart.
+	// At these figures about two bots in five are online at any moment, which
+	// is the price of the thing.
+	const DWORD PLAYERBOT_LIFE_CHECK_INTERVAL = 60 * 1000;
+	const DWORD PLAYERBOT_LIFE_FIRST_SESSION_MIN_MS = 30 * 60 * 1000;
+	const DWORD PLAYERBOT_LIFE_SESSION_MIN_MS = 3 * 60 * 60 * 1000;
+	const DWORD PLAYERBOT_LIFE_SESSION_MAX_MS = 6 * 60 * 60 * 1000;
+	const DWORD PLAYERBOT_LIFE_REST_MIN_MS = 3 * 60 * 60 * 1000;
+	const DWORD PLAYERBOT_LIFE_REST_MAX_MS = 9 * 60 * 60 * 1000;
+	// A bot beside a player is not logged out from under them; it waits.
+	const DWORD PLAYERBOT_LIFE_POSTPONE_MS = 10 * 60 * 1000;
+	const DWORD PLAYERBOT_LIFE_CENSUS_INTERVAL = 10 * 60 * 1000;
 	// And the same spread for a bot's own first heavy passes - the refine, the
 	// gear pass, the shopping decision - which all had timers of zero and so
 	// all ran on the bot's first tick, whichever second it logged in.
@@ -577,14 +603,21 @@ namespace
 	const int PLAYERBOT_STONE_SUPPORT_RANGE = 2200;
 	// A stone is broken together, not claimed. Up to this many bots may be on
 	// one before the next is sent elsewhere; a bot joins a stone others are
-	// already breaking up to this many levels over its own, whatever its band
-	// says ("jesli nie da sobie rady, niech dolacza", Tieru, 16 September);
-	// a stone only a player is hitting is left to the player unless the switch
+	// already breaking up to PLAYERBOT_STONE_JOIN_LEVEL_DELTA over its own
+	// ("jesli nie da sobie rady, niech dolacza", Tieru, 16 September) and
+	// nobody fights one more than PLAYERBOT_STONE_OUTGROWN_LEVELS under itself:
+	// the band of characters on an ordinary stone is sixteen levels either
+	// way ("przedzial postaci bijacych metina niech wynosi maksymalnie 16
+	// poziomow", Tieru, 16 September - the drop curve is 1% at fifteen over,
+	// so past that a stone gives nothing). A Demon Tower stone is not a Metin
+	// but a floor's objective and has no band: IsPlayerBotDungeonStoneObjective.
+	// A stone only a player is hitting is left to the player unless the switch
 	// says otherwise, because the drop goes to whoever dealt the most damage.
 	// Every bot scores a stone in its band above the sweet-spot monster, and a
 	// stone somebody is already on gets the join bonus on top.
 	const BYTE PLAYERBOT_STONE_MAX_ATTACKERS = 6;
-	const int PLAYERBOT_STONE_JOIN_LEVEL_DELTA = 30;
+	const int PLAYERBOT_STONE_JOIN_LEVEL_DELTA = 16;
+	const int PLAYERBOT_STONE_OUTGROWN_LEVELS = 16;
 	const bool PLAYERBOT_STONE_JOIN_PLAYERS = false;
 	const int PLAYERBOT_STONE_BASE_SCORE = 500000;
 	const int PLAYERBOT_STONE_JOIN_BONUS = 600000;
@@ -2431,7 +2464,9 @@ namespace
 	// left for its village inside those six seconds takes the village instead -
 	// which is the shape of "stalem afk pod lochem malp w m2, gdy nagle
 	// przeteleportowalo mnie do DT" (sizowski, 14 September). The other four
-	// stand only inside the instance. None of them is a bot's to break.
+	// stand only inside the instance. None of them is a bot's to break on its
+	// own; climbing with a player they are the floor's objective, no level band
+	// (IsPlayerBotDungeonStoneObjective in playerbot_movement.h).
 	const DWORD PLAYERBOT_DEVIL_TOWER_STONE_FIRST = 8015;
 	const DWORD PLAYERBOT_DEVIL_TOWER_STONE_LAST = 8019;
 	bool IsPlayerBotDungeonTriggerStone(DWORD race)

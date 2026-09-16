@@ -580,6 +580,74 @@ def main(root):
          '\t\t\tif (want[empire] <= 0)\n'
          '\t\t\t\tcontinue;\n',
          marker='(CPlayerBotManager::SpawnMedalDropperCohort). Zero by default.')
+    # The spawn plan: the window the cohort arrives over, and a second cohort
+    # joining one at a time over hours (CPlayerBotManager::SetSpawnWindow,
+    # ScheduleLateJoiners). Read beside the medal droppers, scheduled after
+    # the cohort of each kingdom, because the late ones are "the next
+    # identities after the scheduled".
+    edit(p,
+         '\t\telse if (medalDropperLevel > 120)\n'
+         '\t\t\tmedalDropperLevel = 120;\n'
+         '\n'
+         '\t\tfor (int empire = playerbot_empire_rules::EMPIRE_SHINSOO;\n',
+         '\t\telse if (medalDropperLevel > 120)\n'
+         '\t\t\tmedalDropperLevel = 120;\n'
+         '\t\t// The spawn plan: the window the cohort arrives over, and a second\n'
+         '\t\t// cohort joining one at a time over hours (CPlayerBotManager::\n'
+         '\t\t// SetSpawnWindow, ScheduleLateJoiners). A minute and nobody by default.\n'
+         '\t\tint spawnWindowMinutes = 1;\n'
+         '\t\tconst char* configuredWindow = std::getenv("PLAYERBOT_SPAWN_WINDOW_MINUTES");\n'
+         '\t\tif (configuredWindow && *configuredWindow)\n'
+         '\t\t\tspawnWindowMinutes = std::atoi(configuredWindow);\n'
+         '\t\tif (spawnWindowMinutes < 1)\n'
+         '\t\t\tspawnWindowMinutes = 1;\n'
+         '\t\telse if (spawnWindowMinutes > 180)\n'
+         '\t\t\tspawnWindowMinutes = 180;\n'
+         '\t\tCPlayerBotManager::instance().SetSpawnWindow((DWORD)spawnWindowMinutes * 60U * 1000U);\n'
+         '\t\tint lateJoiners = 0;\n'
+         '\t\tconst char* configuredLate = std::getenv("PLAYERBOT_LATE_JOINERS");\n'
+         '\t\tif (configuredLate && *configuredLate)\n'
+         '\t\t\tlateJoiners = std::atoi(configuredLate);\n'
+         '\t\tif (lateJoiners < 0)\n'
+         '\t\t\tlateJoiners = 0;\n'
+         '\t\telse if (lateJoiners > autoSpawnCeiling)\n'
+         '\t\t\tlateJoiners = autoSpawnCeiling;\n'
+         '\t\tint lateJoinHours = 24;\n'
+         '\t\tconst char* configuredLateHours = std::getenv("PLAYERBOT_LATE_JOIN_HOURS");\n'
+         '\t\tif (configuredLateHours && *configuredLateHours)\n'
+         '\t\t\tlateJoinHours = std::atoi(configuredLateHours);\n'
+         '\t\tif (lateJoinHours < 1)\n'
+         '\t\t\tlateJoinHours = 1;\n'
+         '\t\telse if (lateJoinHours > 168)\n'
+         '\t\t\tlateJoinHours = 168;\n'
+         '\t\t// Split between the kingdoms like the cohort, over the identities\n'
+         '\t\t// the cohort leaves them.\n'
+         '\t\tint registeredLeft[playerbot_empire_rules::EMPIRE_COUNT];\n'
+         '\t\tint lateWant[playerbot_empire_rules::EMPIRE_COUNT];\n'
+         '\t\tfor (int e = 0; e < playerbot_empire_rules::EMPIRE_COUNT; ++e)\n'
+         '\t\t\tregisteredLeft[e] = registered[e] > want[e] ? registered[e] - want[e] : 0;\n'
+         '\t\tplayerbot_empire_rules::SplitPopulation(lateJoiners, registeredLeft, lateWant);\n'
+         '\n'
+         '\t\tfor (int empire = playerbot_empire_rules::EMPIRE_SHINSOO;\n',
+         marker='CPlayerBotManager::instance().SetSpawnWindow(')
+    edit(p,
+         '\t\t\tsys_log(0, "PLAYERBOT: autospawn empire=%d village=%ld requested=%d registered=%d started=%u",\n'
+         '\t\t\t\t\tempire, lVillage, want[empire], registered[empire],\n'
+         '\t\t\t\t\t(unsigned int)spawned);\n'
+         '\t\t}\n'
+         '\t}\n'
+         '}\n',
+         '\t\t\tsys_log(0, "PLAYERBOT: autospawn empire=%d village=%ld requested=%d registered=%d started=%u",\n'
+         '\t\t\t\t\tempire, lVillage, want[empire], registered[empire],\n'
+         '\t\t\t\t\t(unsigned int)spawned);\n'
+         '\t\t\tif (lateWant[empire] > 0)\n'
+         '\t\t\t\tCPlayerBotManager::instance().ScheduleLateJoiners(\n'
+         '\t\t\t\t\t\t(size_t)lateWant[empire], (BYTE)empire,\n'
+         '\t\t\t\t\t\t(DWORD)lateJoinHours * 60U * 60U * 1000U);\n'
+         '\t\t}\n'
+         '\t}\n'
+         '}\n',
+         marker='CPlayerBotManager::instance().ScheduleLateJoiners(')
     edit(p,
          '\tcase HEADER_DG_PLAYER_LOAD_FAILED:\n'
          '\t\t//sys_log(0, "PLAYER_LOAD_FAILED");\n'

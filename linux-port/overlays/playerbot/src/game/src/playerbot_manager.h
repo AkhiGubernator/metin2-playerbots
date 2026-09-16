@@ -4,6 +4,8 @@
 #include <set>
 #include <deque>
 
+class CGuild;
+
 class CPlayerBotManager : public singleton<CPlayerBotManager>
 {
 	public:
@@ -51,6 +53,9 @@ class CPlayerBotManager : public singleton<CPlayerBotManager>
 		// answer in the GM's chat. The engine's WarpSet only takes a bot off its
 		// sectree, and the rescue puts it back at its own map's start.
 		bool	TransferBot(LPCHARACTER bot, LPCHARACTER to);
+		// A player invited a bot into a guild (CGuild::Invite, mt2009 via
+		// playerbotify.py): answered on the spot, while the invitation lives.
+		void	OnGuildInvite(CGuild* guild, LPCHARACTER inviter, LPCHARACTER invitee);
 
 		// The operator's spawn plan (input_db.cpp through playerbotify.py): the
 		// window the cohort arrives over, and a second cohort that joins one at

@@ -74,6 +74,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "pvp.h"
 #include "playerbot_types.h"
 #include "playerbot_price_tables.h"
+#include "playerbot_item_tiers.h"
 #include "playerbot_weapon_atlas.h"
 #include "playerbot_log.h"
 #include "playerbot_config.h"
@@ -4165,6 +4166,13 @@ bool CPlayerBotManager::TransferBot(LPCHARACTER bot, LPCHARACTER to)
 			bot->GetPlayerID(), bot->GetName(), to->GetName(), mapIndex, to->GetX(), to->GetY(),
 			refusal ? refusal : "ok");
 	return refusal == NULL;
+}
+
+void CPlayerBotManager::OnGuildInvite(CGuild* guild, LPCHARACTER inviter, LPCHARACTER invitee)
+{
+	if (!guild || !invitee || !IsRegisteredBotPID(invitee->GetPlayerID()))
+		return;
+	AcceptPlayerBotGuildInvite(invitee, guild, inviter);
 }
 
 // --- The F10 bot-admin window -----------------------------------------------

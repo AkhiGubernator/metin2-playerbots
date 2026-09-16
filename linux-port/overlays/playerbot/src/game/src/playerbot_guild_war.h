@@ -218,7 +218,11 @@ namespace
 				continue;
 			if (s_adwPlayerBotNextGuildWarTime[empire] == 0)
 			{
-				s_adwPlayerBotNextGuildWarTime[empire] = dwNow + PLAYERBOT_GUILD_WAR_FIRST_DELAY;
+				// One kingdom after another, PLAYERBOT_GUILD_WAR_KINGDOM_STAGGER
+				// apart, so there is a war to watch somewhere for most of the
+				// time and not three at once followed by ninety quiet minutes.
+				s_adwPlayerBotNextGuildWarTime[empire] = dwNow + PLAYERBOT_GUILD_WAR_FIRST_DELAY +
+						(DWORD)(empire - playerbot_empire_rules::EMPIRE_SHINSOO) * PLAYERBOT_GUILD_WAR_KINGDOM_STAGGER;
 				continue;
 			}
 			if (dwNow < s_adwPlayerBotNextGuildWarTime[empire])
@@ -240,7 +244,28 @@ namespace
 			s_mapPlayerBotGuildWars[(BYTE)empire] = war;
 			sys_log(0, "PLAYERBOT_GUILD: war declared %s -> %s empire=%d online=%d/%d",
 					a->GetName(), b->GetName(), empire, CountPlayerBotGuildOnline(a), CountPlayerBotGuildOnline(b));
+			// Said a minute or two before the blows, so a player who wants to
+			// watch has the time to get to the guild map.
+			char notice[200];
+			snprintf(notice, sizeof(notice), "Za chwile wojna gildii botow (%s): %s kontra %s. Pole bitwy: mapa gildyjna.",
+					GetPlayerBotKingdomName((BYTE)empire), a->GetName(), b->GetName());
+			BroadcastNotice(notice);
 		}
+	}
+
+	// Seconds until this kingdom's next war for the guild report: 0 while one
+	// is declared or under way, -1 when none is scheduled (the switch is off,
+	// the map is not hosted here, or the clock has not been set yet).
+	int GetPlayerBotNextGuildWarInSeconds(BYTE empire, DWORD dwNow)
+	{
+		if (empire >= playerbot_empire_rules::EMPIRE_COUNT)
+			return -1;
+		if (s_mapPlayerBotGuildWars.find(empire) != s_mapPlayerBotGuildWars.end())
+			return 0;
+		if (!IsPlayerBotGuildWarsEnabled() || s_adwPlayerBotNextGuildWarTime[empire] == 0)
+			return -1;
+		const DWORD at = s_adwPlayerBotNextGuildWarTime[empire];
+		return dwNow >= at ? 0 : (int)((at - dwNow) / 1000U);
 	}
 
 	// ------------------------------------------------------------ the ground

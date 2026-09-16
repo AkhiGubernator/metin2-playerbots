@@ -767,6 +767,28 @@ namespace
 					heir.m_best->GetName());
 	}
 
+	// A player's invitation. CGuild::Invite sends the invitee a packet a bot
+	// has no client to answer, so the invitation event expired after ten
+	// seconds and inviting a bot did nothing at all ("niech boty akceptuja
+	// zaproszenia jesli nie sa w zadnej gildii a my je zapraszamy", Tieru,
+	// 16 September). The engine hands the invitation to the manager on the
+	// same call (playerbotify.py, apply_playerbot_guild_invites) and this
+	// answers it at once, while the event is alive: yes for any bot with no
+	// guild, dropper or not. The engine's own conditions - one kingdom, no
+	// guild yet, room, no war, no withdrawal penalty - were checked by
+	// Invite before the packet and are checked again by InviteAccept.
+	bool AcceptPlayerBotGuildInvite(LPCHARACTER bot, CGuild* guild, LPCHARACTER inviter)
+	{
+		if (!bot || !guild || bot->GetGuild())
+			return false;
+		guild->InviteAccept(bot);
+		sys_log(0, "PLAYERBOT_GUILD: accepted a player's invitation pid=%u name=%s guild=%s inviter=%s",
+				bot->GetPlayerID(), bot->GetName(), guild->GetName(), inviter ? inviter->GetName() : "?");
+		if (inviter)
+			inviter->ChatPacket(CHAT_TYPE_INFO, "%s przyjmuje zaproszenie do gildii %s.", bot->GetName(), guild->GetName());
+		return true;
+	}
+
 	// ------------------------------------------------------------- the report
 	//
 	// playerbot_guild_status.tsv beside playerbot_status.tsv, once a minute:
@@ -774,6 +796,8 @@ namespace
 	// of it in this core's world and their strength, the war it is in. The
 	// classic panel's guild page reads the three cores' files.
 	DWORD s_dwNextPlayerBotGuildStatusTime = 0;
+	// Defined in playerbot_guild_war.h, which comes after targeting.h.
+	int GetPlayerBotNextGuildWarInSeconds(BYTE empire, DWORD dwNow);
 
 	void WritePlayerBotGuildStatus(DWORD dwNow)
 	{
@@ -788,7 +812,7 @@ namespace
 		FILE* f = fopen(tempPath, "wb");
 		if (!f)
 			return;
-		fprintf(f, "guild_id\tname\tempire\ttier\tlevel\tmembers\tonline\tmaster_pid\tmaster\tladder\twins\tdraws\tlosses\tavg_strength\twar_with\twar_score\twar_enemy_score\texp_offered_here\n");
+		fprintf(f, "guild_id\tname\tempire\ttier\tlevel\tmembers\tonline\tmaster_pid\tmaster\tladder\twins\tdraws\tlosses\tavg_strength\twar_with\twar_score\twar_enemy_score\texp_offered_here\tnext_war_in_s\n");
 		for (std::map<DWORD, TPlayerBotGuildInfo>::const_iterator it = s_mapPlayerBotGuildInfo.begin();
 				it != s_mapPlayerBotGuildInfo.end(); ++it)
 		{
@@ -800,7 +824,7 @@ namespace
 			LPCHARACTER master = g->GetMasterCharacter();
 			const DWORD opp = g->UnderAnyWar(GUILD_WAR_TYPE_FIELD);
 			CGuild* enemy = opp ? CGuildManager::instance().FindGuild(opp) : NULL;
-			fprintf(f, "%u\t%s\t%u\t%u\t%u\t%d\t%d\t%u\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%llu\n",
+			fprintf(f, "%u\t%s\t%u\t%u\t%u\t%d\t%d\t%u\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%llu\t%d\n",
 					it->first, g->GetName(), (unsigned int)it->second.bEmpire, (unsigned int)it->second.bTier,
 					(unsigned int)g->GetLevel(), g->GetMemberCount(), online, g->GetMasterPID(),
 					master ? master->GetName() : "", g->GetLadderPoint(), g->GetGuildWarWinCount(),
@@ -808,7 +832,8 @@ namespace
 					online > 0 ? (int)(strengthSum / online) : 0,
 					enemy ? enemy->GetName() : "", opp ? g->GetWarScoreAgainstTo(opp) : 0,
 					enemy ? enemy->GetWarScoreAgainstTo(g->GetID()) : 0,
-					s_ullPlayerBotGuildExpOffered);
+					s_ullPlayerBotGuildExpOffered,
+					GetPlayerBotNextGuildWarInSeconds(it->second.bEmpire, dwNow));
 		}
 		fclose(f);
 		rename(tempPath, finalPath);
@@ -833,16 +858,26 @@ namespace
 				state.bFoundedGuild = FoundPlayerBotGuild(ch, tier);
 			return;
 		}
+		const TPlayerBotGuildInfo* info = GetPlayerBotGuildInfo(guild);
+		// A player's guild (no bot master, so never adopted): the bot was
+		// invited into it and stays - a dropper too, because a player chose
+		// it - and offers its hour's share of experience at the ordinary
+		// guild's rate, which is what a member of a player's guild is for.
+		// Nothing else here is a bot's to decide about somebody else's guild.
+		if (!info)
+		{
+			if (!CPlayerBotManager::instance().IsRegisteredBotPID(guild->GetMasterPID()))
+			{
+				static TPlayerBotGuildInfo s_playersGuild = { (BYTE)GUILD_TIER_ORDINARY, 0, 0 };
+				ManagePlayerBotGuildExp(ch, state, guild, s_playersGuild, dwNow);
+			}
+			return;
+		}
 		if (IsPlayerBotDropper(state.bPersonality))
 		{
 			LeavePlayerBotGuildAsDropper(ch, guild);
 			return;
 		}
-		// A player's guild, or one of ours before the first census: nothing is
-		// done to it from here.
-		const TPlayerBotGuildInfo* info = GetPlayerBotGuildInfo(guild);
-		if (!info)
-			return;
 
 		ManagePlayerBotGuildExp(ch, state, guild, *info, dwNow);
 

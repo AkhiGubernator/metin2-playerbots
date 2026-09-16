@@ -1362,7 +1362,36 @@ def main(root):
     apply_auto_hunt(game)
     apply_auto_hunt_offsets(game)
     apply_hwang_curse_removed(game)
+    apply_playerbot_guild_invites(game)
     print('playerbotify: done')
+
+
+def apply_playerbot_guild_invites(game):
+    """A player's guild invitation reaches the bot and is answered.
+
+    CGuild::Invite ends by sending GUILD_SUBHEADER_GC_GUILD_INVITE to the
+    invitee's descriptor and arming a ten-second event; a bot's descriptor
+    has no client behind it, so nothing ever answered and the invitation
+    expired in silence ("niech boty akceptuja zaproszenia jesli nie sa w
+    zadnej gildii a my je zapraszamy", Tieru, 16 September). Unlike the
+    party invitation (apply_playerbot_party_invites), the acceptance is the
+    guild's own method with the invitee as its argument, so it can be run on
+    the spot: the manager decides (AcceptPlayerBotGuildInvite in
+    playerbot_guild.h) and calls InviteAccept while the event is alive.
+    """
+    edit(os.path.join(game, 'guild.cpp'),
+         '#include "war_map.h"\n',
+         '#include "war_map.h"\n#include "playerbot_manager.h"\n',
+         marker='#include "playerbot_manager.h"\n')
+    edit(os.path.join(game, 'guild.cpp'),
+         '\tpchInvitee->GetDesc()->Packet( buf.read_peek(), buf.size() );\n',
+         '\tpchInvitee->GetDesc()->Packet( buf.read_peek(), buf.size() );\n'
+         '\n'
+         '\t// A bot has no client to press "Accept": its manager answers now, while\n'
+         '\t// the invitation event is alive (playerbotify.py, apply_playerbot_guild_invites).\n'
+         '\tif (pchInvitee->GetDesc()->IsBot())\n'
+         '\t\tCPlayerBotManager::instance().OnGuildInvite(this, pchInviter, pchInvitee);\n',
+         marker='CPlayerBotManager::instance().OnGuildInvite(')
 
 
 def apply_hwang_curse_removed(game):

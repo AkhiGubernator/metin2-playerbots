@@ -17,6 +17,136 @@ every version here.
 
 ---
 
+## 2.0.60 — 2026-09-16
+
+Serwer 2.0.60; klient bez zmian (2.0.11). Wydanie do testów systemu gildii i zakupów botów w ItemShopie —
+prosimy o zgłoszenia na Discordzie.
+
+### Gildie botów: klasy, rekrutacja według siły, exp dla gildii, umiejętności gildyjne
+
+Dotąd gildia bota była nazwą i listą: bot zakładał ją losowo, zapraszał
+kogo spotkał na placu, a gildia nigdy nie dostała punktu doświadczenia
+(na serwerze testowym 25 gildii, wszystkie na poziomie 1). Teraz:
+
+- **Siła bota** to jedna liczba: poziom, cios broni w ręce, poziomy
+  umiejętności buildu, koń i zbroja. Co 10 minut rdzeń spisuje siłę botów
+  każdego królestwa i dzieli je na percentyle (log
+  `PLAYERBOT_GUILD: strength census`); pierwszy spis 10 minut po starcie.
+- **Klasa gildii** wynika z percentyla założyciela: **Elitarna** (górne
+  3 % królestwa), **Silna** (górne 15 %), **Średnia** (górna połowa),
+  **Zwykła** (reszta). Elitarnych jest najwyżej 2 na królestwo, silnych 6;
+  gdy klasa jest pełna, założyciel schodzi o jedną niżej. Elitarna ma 24
+  miejsca, silna 40, pozostałe tyle, ile daje gra (48 + 4 na poziom).
+- **Rekrutacja**: mistrz zaprasza najsilniejszych botów bez gildii z całego
+  swojego królestwa (nie tylko z zasięgu wzroku), wyłącznie powyżej progu
+  swojej klasy, po trzech na przebieg. W gildii nadal tylko jedno
+  królestwo; dropki nadal poza gildiami.
+- **Awans**: członek, którego siła przerosła klasę jego gildii, odchodzi do
+  lepszej gildii z wolnym miejscem (raz na 6 godzin, najwyżej 3 na
+  królestwo na spis). Mistrz nie odchodzi.
+- **Exp dla gildii**: co godzinę członek oddaje gildii część doświadczenia
+  zdobytego od poprzedniej ofiary — 15 % w gildii elitarnej, 12 % w silnej,
+  10 % w pozostałych; co najmniej 10 000, nigdy więcej niż ma na bieżącym
+  poziomie, więc bot nie traci poziomu. Gildia dostaje setną część oddanego
+  expa, dokładnie jak u gracza (tabela poziomów gry: 15 000 na 2. poziom,
+  685 000 na 10.). Log: `PLAYERBOT_GUILD: offered exp`,
+  `PLAYERBOT_GUILD: guild X reached level N`.
+- **Umiejętności gildyjne**: punkt z każdego poziomu mistrz wydaje
+  schodkowo: Krew Smoczego Boga, Święta Zbroja, Gniew, Przyspieszenie,
+  Błogosławieństwo, Pomoc w Rzucaniu. Uwaga: w tej wersji gry umiejętność
+  gildyjną można użyć tylko na arenie wojennej, więc w wojnach polowych
+  botów nie działa — punkty służą graczom w gildii bota i arenom.
+- **Istniejące gildie botów** (założone przed 2.0.60) dostają klasę przy
+  pierwszym sprawdzeniu po spisie, według siły mistrza. Klasa i królestwo
+  gildii trzymane są w nowej tabeli `player.playerbot_guild` (tworzy ją
+  migrator przy starcie).
+
+### Wojny gildii botów (przełącznik „Wojny gildii botów”, domyślnie włączony)
+
+- Mniej więcej **co 2 godziny** w każdym królestwie dwie gildie botów
+  (co najmniej 8 botów online w każdej, najbliższe sobie klasy, rotacja)
+  toczą **wojnę polową silnika**: wypowiedzenie przez jednego mistrza,
+  przyjęcie przez drugiego, 30 minut, zabójstwa liczone przez grę,
+  rozliczenie i ranking (ladder ±7 %) przez rdzeń bazy. Pierwsza wojna
+  pół godziny po starcie serwera.
+- **Pole bitwy** to mapa gildyjna królestwa (Waryong i jej odpowiedniki):
+  komunikat na czacie „Wojna gildii: A kontra B! Pole bitwy: mapa gildyjna
+  (Chunjo), 30 minut.”, zbiórka na najbliższym otwartym terenie przy punkcie
+  wejścia mapy (na mapach Chunjo i Jinno sam punkt wejścia leży w strefie
+  bez PvP, gdzie gra nie liczy żadnego ciosu), strony 700 jednostek od
+  siebie. Boty schodzą z konia transportowego i biją
+  najbliższego wroga tak jak w pojedynku (bufy, dystans casterów, szarża
+  wojownika, skille, cios), polegli wracają z wioski na pole; po wojnie
+  wszyscy wracają do drugiej wioski. Status nad głową: „Wojna gildii z X”.
+  Bot w drużynie gracza na wojnę nie idzie.
+- Wojna wypowiedziana gildii bota przez gracza nie jest przyjmowana (to
+  osobna decyzja na później). Wyłączenie przełącznika wstrzymuje nowe
+  wypowiedzenia; trwająca wojna dobiega końca. Log: `PLAYERBOT_GUILD: war
+  declared / accepted / on / over`.
+
+### Boty korzystają z ItemShopu (przełącznik „Boty kupują w ItemShopie”, domyślnie włączony)
+
+Kupony SM (z metinów i bossów, stawki `M2_DRAGON_COIN_STONE_PERMILLE` i
+`M2_DRAGON_COIN_BOSS_PERMILLE` w `.env`) leżały dotąd w torbach botów bez
+użytku — na serwerze testowym 97 sztuk po trzech dniach. Teraz:
+
+- **Kupon** bot wymienia od razu na Smocze Monety swojego konta, tą samą
+  drogą co gracz (doładowanie przez rdzeń db, wpis w logu kuponów), tylko bez
+  okienka. Saldo trzyma w pamięci i odczytuje z konta raz na godzinę.
+- **Zakup** to zwykły zakup w sklepie gry (poziom, cena, log zakupów silnika,
+  towar do torby), najwyżej raz na godzinę, i tylko to, z czego bot naprawdę
+  korzysta: **Kamień Duchowy** (49 SM) dla bota z umiejętnością Wielkiego
+  Mistrza gotową do treningu; **Zaczarowanie Przedmiotu** (69 SM) dla bota,
+  którego noszona broń jest jeszcze warta losowania bonusów, a w torbie nie
+  ma kamienia; za Smocze Znaki (naliczane 1:1 za wydane monety) **Zwój
+  Błogosławieństwa** przy pracy pod zwój i **Atak Boga Smoków** x5; oraz
+  **fryzura** (39 SM) — raz, dla jednego bota na czterech, gdy nic innego nie
+  jest potrzebne.
+- Bot nie kupuje przedmiotów VIP ani Przepustki Triumfu: każdy bot ma
+  subskrypcję premium od zawsze (5 lat od spawnu), a sklep i tak odmawia
+  VIP-a subskrybentowi. Nie kupuje resetów, Wykrywacza Metinów ani Magicznego
+  Metalu.
+- Naprawa poza botami: silnik logował każdy zakup w sklepie do tabeli
+  `log.itemshop`, której paczka nigdy nie miała — migrator ją tworzy, więc
+  zakupy graczy przestaną kończyć się błędem SQL w syserr.
+- Log: `PLAYERBOT_ISHOP: voucher cashed / bought / census`, także w pakiecie
+  wsparcia. Przy domyślnych stawkach bot znajduje kupon raz na miesiąc, więc
+  zakupów jest ok. 30 dziennie na tysiąc botów; kto chce częściej, podnosi
+  stawki w `.env`. Na serwerze testowym (30 ‰ z metinów): 97 kuponów
+  wymienionych w minutę po starcie, 20 fryzur kupionych i założonych w 11
+  minut przez boty z 50 SM, wpisy w logu sklepu, zero błędów.
+
+### Biolog: żaden etap nie jest „za niski dla bota”
+
+Bot robił misje Biologa tylko w swoim paśmie poziomów, a wiersze, z których
+wyrósł, pomijał — stąd „Ząb Orka 4/10 • za niskie dla bota, pominięte: 4”
+nad botem 78 poziomu, który ani zębów nie dokończył, ani do ziół nie
+wrócił. Teraz wiersze idą po kolei niezależnie od poziomu: bot kończy ten,
+którego okazy nosi, potem pierwszy nieukończony. Po okaz jedzie tam, gdzie
+stoi potwór: po ziołowe wiersze do pierwszej wioski (i tam poluje w paśmie
+wiersza, nie swoim), po Ząb Orka i Księgę Klątw do Doliny Orków, po
+Pamiątkę po Demonie do Wieży Demonów. Okaz daje własny hak questa, więc
+różnica poziomów nie przeszkadza. Panel nie pokazuje już „pominięte”.
+
+### Koń bojowy: bot 70+ z koniem na 10. poziomie robi próbę na pustyni
+
+Na serwerze testowym 161 ze 178 botów 70+ z koniem na 10. poziomie nie
+miało ani jednego zabójstwa z próby konia bojowego: polityka walki
+odrzucała skorpiony i węże pustyni jako bezwartościowe dla tak wysokiego
+bota, więc bot na pustyni nic nie bił i wracał do miasta. Potwory próby
+(dwóch łuczników pustyni; dla konia wojskowego cztery demony Wieży) są
+teraz celem questowym — bite bez względu na poziom — a pustynia jest dla
+takiego bota mapą pogranicza, dopóki nie zbierze stu zabójstw; potem
+Stajenny za 500 000 yang wydaje konia bojowego jak dotąd.
+
+### Panel klasyczny: strona „Gildie”
+
+- Karta na pulpicie i przycisk na stronie zachowania botów: lista gildii
+  botów z królestwem, klasą, poziomem, liczbą członków i botów online,
+  mistrzem, średnią siłą, rankingiem, bilansem wojen (Z/R/P), expem
+  otrzymanym od startu rdzeni i toczoną wojną z wynikiem. Rdzenie zapisują
+  `playerbot_guild_status.tsv` co minutę; panel składa trzy pliki.
+
 ## 2.0.59 — 2026-09-16
 
 Serwer 2.0.59; klient bez zmian (2.0.11).

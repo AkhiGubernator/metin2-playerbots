@@ -17,6 +17,49 @@ every version here.
 
 ---
 
+## 2.0.58 — 2026-09-16
+
+Serwer 2.0.58; klient bez zmian (2.0.11).
+
+### Bot w drużynie gracza nie zmienia podziału doświadczenia
+
+Bot dodany do drużyny gracza przy każdym sprawdzeniu drużyny (co
+kilkanaście sekund) ustawiał podział z powrotem na równy, choć liderem był
+gracz — reguła pisana dla drużyn botów była pytana także o drużynę gracza
+(Dearminder). W drużynie prowadzonej przez gracza podział ustawia wyłącznie
+lider; drużyny botów dalej dzielą po równo.
+
+### Boty nie wykupują wszystkich Szkatułek Blasku Księżyca
+
+Od 2.0.53 bot bez szkatułek kupował je z lad, i tysiąc botów opróżniało
+wszystkie lady świata (sizowski: „wykupują dosłownie WSZYSTKIE”). Dwa
+hamulce: gdy księga rynku liczy 30 lub mniej szkatułek na wszystkich ladach
+świata, żaden bot nie kupuje kolejnej, a bot, który kupił jedną, czeka
+20 minut przed następną. Otwieranie szkatułek z własnych dropów bez zmian.
+
+### Druga wioska: boty docierają do jej drugiej połowy
+
+Boty z Shinsoo omijały północ Jayang, a z Jinno południe Bakry (blasty).
+Mosty i granice map są w porządku — sprawdzone na plikach map, z miasta
+osiągalne jest 99,9 % terenu i 100 % grup spawnu. Bot wchodził bramą (na
+Jayang na południu, na Bakrze na północy), zaczynał bić to, co miał pod
+nosem, i tak rozchodził się od bramy do końca życia: tabela miejsc łowów
+drugiej wioski nie miała pasm poziomów, a przejście do kolejnego miejsca
+uruchamia się tylko wtedy, gdy nic w zasięgu nie jest warte bicia — bot na
+33 poziomie dalej bił tygrysy z 18. Druga połowa mapy (Wielka Banda,
+29–36 lvl) stała pusta.
+
+- Każde miejsce łowów w M2 (Jayang, Bokjung, Bakra) ma zmierzone pasmo
+  poziomu (mediana potworów w promieniu 25 m) i bot idzie tylko na miejsca
+  swojego pasma (a gdy pasmo ma ich mniej niż cztery, dobiera najbliższe);
+  tabele urosły z 12 do 24 miejsc na mapę. Dwanaście ręcznych miejsc
+  Bokjung zmierzono przy okazji: trzy stały 2–4 km od najbliższego spawnu,
+  dwa przy kilkunastu punktach.
+- Potwór 6 i więcej poziomów pod botem, dalej niż 8 m, przestaje być celem
+  także w drugiej wiosce (tak jak w pierwszej) — dzięki temu bot, który
+  wyrósł z terenu przy bramie, rusza na teren swojego pasma. Obrona,
+  zadania, materiały i sprzęt jak dotąd mają pierwszeństwo.
+
 ## 2.0.57 — 2026-09-16
 
 Serwer 2.0.57; klient bez zmian (2.0.11).

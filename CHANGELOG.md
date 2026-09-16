@@ -17,6 +17,67 @@ every version here.
 
 ---
 
+## 2.0.59 — 2026-09-16
+
+Serwer 2.0.59; klient bez zmian (2.0.11).
+
+### Stopniowe wpuszczanie botów
+
+Dotąd cała kohorta wchodziła w ciągu minuty od startu, a gracz, który
+uruchomił 2000 botów, dostał plac „jak w szpitalu”. Teraz w launcherze
+(przycisk **LICZBA BOTÓW**, pozycja 13 menu tekstowego) obok liczby botów
+ustawia się plan wejścia, w `.env` jako `PLAYERBOT_SPAWN_WINDOW_MINUTES`,
+`PLAYERBOT_LATE_JOINERS` i `PLAYERBOT_LATE_JOIN_HOURS`:
+
+- **okno wejścia** — w ciągu ilu minut od startu wchodzi kohorta
+  (1–180; 1 = jak dotąd);
+- **dodatkowi boty** — ilu botów ponad liczbę kohorty dołącza później,
+  pojedynczo i równomiernie, w ciągu ilu godzin (1–168). Np. 1000 botów
+  w 15 minut i 500 kolejnych w ciągu doby.
+
+Dodatkowi dołączają jako „następne postacie za kohortą” każdego królestwa
+(w proporcji do zarejestrowanych), a od chwili wejścia są traktowani jak
+reszta: uzupełnianie po wypadnięciu i bany działają tak samo. Log:
+`PLAYERBOT: late joiners`, `PLAYERBOT: late joiner`.
+
+### Boty grają jak żywi ludzie (eksperymentalne, domyślnie wyłączone)
+
+Na stronie zachowania botów panelu klasycznego doszedł przełącznik
+**„Boty grają jak żywi ludzie”**. Włączony: każdy bot gra sesję 3–6 godzin
+(pierwszą po starcie serwera od pół godziny wzwyż, żeby wylogowania
+rozłożyły się w czasie), wylogowuje się, odpoczywa 3–9 godzin i wraca —
+w danej chwili online jest około dwóch botów na pięć. Bot w drużynie gracza
+czeka z wylogowaniem; jego stragan (sklep offline) stoi dalej jak u gracza.
+Wyłączenie sprowadza odpoczywające boty z powrotem w kilka minut. Działa
+w ciągu minuty od zapisania, bez restartu. Log: `PLAYERBOT_LIFE`, także
+w pakiecie wsparcia.
+
+### Stajenny: zmiana poziomu trudności skraca też trwające czekanie
+
+Postać, która zamówiła konia (kucyka, Księgę Konia) albo trening pod
+dłuższym czekaniem — np. 12 h z poziomu hard — czekała dalej stary czas
+po przełączeniu na easy czy medium; 2.0.57 obiecywało inaczej (Hiob:
+„zmieniałem tryby na łatwy, własny, dalej trzeba czekać”). Teraz przy
+logowaniu i przy każdej rozmowie ze Stajennym pozostałe czekanie jest
+przycinane do bieżącego ustawienia: na easy koń jest od razu (Stajenny
+mówi „Gotowe! Porozmawiaj ze mną jeszcze raz”), na medium co najwyżej
+4 h od tej chwili. Dotyczy pięciu questów konia: kucyk, dwie Księgi
+Konia, treningi 1–10 i 11–19. Sama zmiana poziomu nadal wymaga restartu
+serwera (`reload q` nie odświeża flag trudności).
+
+### Metiny: przedział 16 poziomów, a kamienie Wieży Demonów jako cel
+
+Przedział postaci bijących zwykły kamień Metin to najwyżej 16 poziomów
+w każdą stronę: bot dołącza do bitego kamienia najwyżej 16 poziomów ponad
+sobą (dotąd 30) i nie bije kamienia, z którego wyrósł o więcej niż 16
+(krzywa dropu daje 1 % przy piętnastu poziomach przewagi — z takiego
+kamienia nic już nie leci). Sam zaczyna kamień do 9 poziomów ponad sobą,
+jak dotąd. Kamienie Wieży Demonów (8015–8019) to nie metiny, tylko cel
+piętra: bot wspinający się z graczem (w jego drużynie, gracz na tej samej
+mapie) bije je bez względu na poziom, a splash i zamach w ich pobliżu nie
+są już wstrzymywane; bot sam omija je jak dotąd, bo ich rozbicie
+teleportuje wszystkich z mapy.
+
 ## 2.0.58 — 2026-09-16
 
 Serwer 2.0.58; klient bez zmian (2.0.11).

@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T09:18:45Z",
-  "statusMessage": "2.0.56: **Zwoje Błogosławieństwa trafiają na lady (bot zostawia sobie trzy, resztę wystawia po 1–5), dropek medali z pełnym zapasem nie wraca co minutę do Lochu Małp, stosy liczone według limitu przedmiotu, stajenny wydaje konia od razu, w panelu przełącznik dropu szkatułek.** Serwer; klient bez zmian (2.0.11).",
+  "publishedAt": "2026-09-16T11:14:28Z",
+  "statusMessage": "2.0.57: **Poziom trudności świata (easy / medium / hard / własny — czekanie u Biologa i Stajennego, przycisk w launcherze), eventy w panelu (Szkatułki Blasku Księżyca i wyższe raty o wybranych porach, ogłoszenie na czacie, „Aktywuj teraz”), metiny bite razem przez boty, loot po bossie.** Serwer; klient bez zmian (2.0.11).",
   "server": {
-    "version": "2.0.56",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.56/metin2-server-update-2.0.56.zip",
-    "sha256": "672DC74400C9E82EFC12DD38744BCFDDF79AA314C901E0D4106DF2732E2C5589"
+    "version": "2.0.57",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.57/metin2-server-update-2.0.57.zip",
+    "sha256": "6A1D9A0AECADF91BCC7A9B1F93227E0A56018BB112F30E94A2636396034E949C"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

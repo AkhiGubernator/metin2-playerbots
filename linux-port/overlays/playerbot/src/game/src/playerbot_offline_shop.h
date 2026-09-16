@@ -361,10 +361,29 @@ namespace {
         LPITEM item = ch->GetInventoryItem(cell);
         if (!item) return -1;
         const int units = GetPlayerBotStallLineUnitsFor(ch, item);
+        if (IsPlayerBotSafeRefineScroll(item->GetVnum())) {
+            // A scroll line is what the bot holds over its own keep
+            // (GetPlayerBotStallBaseKeep), up to the line: a stack of five
+            // with a keep of three is a line of two, never the whole stack.
+            // The keep is counted over every stack of the kind, so a line
+            // already cut off (BotOfflinePrepareVisitLine) goes up whole while
+            // the rest of the scrolls stay in the stack it came from.
+            const int keep = GetPlayerBotStallBaseKeep(ch, item);
+            const int spare = (int)ch->CountSpecifyItem(item->GetVnum()) - keep;
+            const int take = std::min(units, std::min((int)item->GetCount(), spare));
+            if (take <= 0) return -1;
+            if (take >= (int)item->GetCount()) return cell;
+            if (CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS) return -1;
+            const int to = ch->GetEmptyInventory(item->GetSize());
+            if (to < 0 || !ch->MoveItem(TItemPos(INVENTORY, cell), TItemPos(INVENTORY, (WORD)to), take))
+                return -1;
+            sys_log(0, "PLAYERBOT_OFFLINE: cut a line pid=%u name=%s vnum=%u units=%d left=%u keep=%d",
+                ch->GetPlayerID(), ch->GetName(), item->GetVnum(), take, (unsigned int)item->GetCount(), keep);
+            return to;
+        }
         const bool cut = units == PLAYERBOT_SHOP_HOARD_PACK_UNITS ||
             (units == 1 && item->GetType() == ITEM_TREASURE_KEY) ||
-            item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM ||
-            IsPlayerBotSafeRefineScroll(item->GetVnum());
+            item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM;
         if (!cut || (int)item->GetCount() <= units) return cell;
         if ((int)item->GetCount() - units < GetPlayerBotStallBaseKeep(ch, item) ||
                 CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS)
@@ -375,6 +394,41 @@ namespace {
         sys_log(0, "PLAYERBOT_OFFLINE: cut a line pid=%u name=%s vnum=%u units=%d left=%u",
             ch->GetPlayerID(), ch->GetName(), item->GetVnum(), units, (unsigned int)item->GetCount());
         return to;
+    }
+    // The line this visit will add, cut out of its stack while the bot can
+    // still handle its bag. Once the board is open - looking at the shop, its
+    // safebox, edit mode - IsBusy is true and MoveItem refuses through
+    // CanHandleItem, so every cut in the add loop failed silently: not one
+    // scroll, hoard pack or chest pack was ever cut on a service visit, and
+    // the diag lines of 16 September read score 800, a slot, a keep of three
+    // and lineCell=-1 for every scroll. Remembered by item id and cell for the
+    // add of the same visit; a cut left behind by a visit that ended early is
+    // an ordinary split stack, poured back by the merge pass.
+    void BotOfflinePrepareVisitLine(LPCHARACTER ch, TPlayerBotAIState& state, NativeShop shop) {
+        auto& o = state.offlineShop;
+        o.preparedItem = 0;
+        if (!ch || !shop || shop->GetDuration() == 0) return;
+        int lowGear = 0;
+        BotOfflineUnwantedLine(shop, lowGear);
+        std::vector<std::pair<int, WORD> > scored;
+        CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state), lowGear);
+        for (auto [score, cell] : scored) {
+            LPITEM item = ch->GetInventoryItem(cell);
+            if (!item || BotOfflineSlot(ch, shop, item) < 0) continue;
+            if (IsPlayerBotHoardedMaterial(ch, item) &&
+                    BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_SHOP_HOARD_LINES) continue;
+            if (item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM &&
+                    BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_CHEST_COUNTER_LINES) continue;
+            if (IsPlayerBotSafeRefineScroll(item->GetVnum()) &&
+                    BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_SHOP_SCROLL_LINES) continue;
+            const int lineCell = BotOfflinePrepareLine(ch, cell);
+            if (lineCell < 0) continue;
+            LPITEM line = ch->GetInventoryItem((WORD)lineCell);
+            if (!line) continue;
+            o.preparedItem = line->GetID();
+            o.preparedCell = (uint32_t)lineCell;
+            return;
+        }
     }
     // A name for what the shop holds now, by Iwakura's rules over previews of
     // its own lines.
@@ -479,6 +533,7 @@ namespace {
         if (!Due(now, o.nextStep)) return true;
         o.nextStep = now + 3000;
         if (!BotOfflineBudget(now)) return true;
+        BotOfflinePrepareVisitLine(ch, state, shop);
         ch->SetLookingShopOwner(true);
         manager.RecvShopSafeboxOpenClientPacket(ch);
         auto box = ch->GetIkarusShopSafebox();
@@ -566,6 +621,16 @@ namespace {
         }
         std::vector<std::pair<int, WORD> > scored;
         CollectPlayerBotShopItems(ch, scored, IsPlayerBotStallKeeper(state), lowGearOnCounter);
+        // The line cut before the board opened goes first, whatever it scores
+        // now: it is exactly a line, so BotOfflinePrepareLine below hands it
+        // back as it is. A stale cell (the item gone, or another in its
+        // place) is simply not it.
+        if (o.preparedItem) {
+            LPITEM line = ch->GetInventoryItem((WORD)o.preparedCell);
+            if (line && line->GetID() == o.preparedItem)
+                scored.insert(scored.begin(), std::make_pair(1000000, (WORD)o.preparedCell));
+            o.preparedItem = 0;
+        }
         bool sent = false;
         for (auto [score, cell] : scored) {
             auto item = ch->GetInventoryItem(cell);

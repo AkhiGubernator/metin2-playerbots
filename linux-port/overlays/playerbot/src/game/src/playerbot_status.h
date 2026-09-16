@@ -531,7 +531,14 @@ namespace
 					snprintf(status, statusSize, "%sIde do miasta po ekwipunek", prefix);
 				else
 				{
-					const long wantMap = GetPlayerBotFrontierMapForLevel(ch);
+					// The frontier only for a bot the travel would actually
+					// send there: a medal dropper never leaves for it
+					// (ShouldPlayerBotLeaveForFrontier), and eleven of them at
+					// thirty-three read "Ide na Pustynie Yongbi (cel: rozwoj
+					// konia)" in Bokjung while riding to the Monkey Dungeon
+					// (16 September).
+					const long wantMap = ShouldPlayerBotLeaveForFrontier(ch)
+							? GetPlayerBotFrontierMapForLevel(ch) : 0;
 					const char* where = wantMap != 0 && wantMap != ch->GetMapIndex()
 							? GetPlayerBotMapDestinationPl(wantMap) : "";
 					// The frontier is reached from Bokjung through the

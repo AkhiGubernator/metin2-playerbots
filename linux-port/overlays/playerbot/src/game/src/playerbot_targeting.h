@@ -1507,7 +1507,13 @@ namespace
 		LPITEM weapon = ch->GetWear(WEAR_WEAPON);
 		const bool isBow = (weapon && weapon->GetType() == ITEM_WEAPON && weapon->GetSubType() == WEAPON_BOW);
 		LPITEM arrow = NULL;
-		if (isBow && ch->GetArrowAndBow(&weapon, &arrow, 1) != 1)
+		// A quiver the last shot emptied is nocked again from the bag before
+		// the shot is refused: seven archers of the test world stood with a bow,
+		// nothing in the arrow slot and a thousand arrows in the bag, and only
+		// the skill path put them back (16 September). No arrow anywhere, no
+		// shot - the engine's GetArrowAndBow is the rule for a player too.
+		if (isBow && (!EnsurePlayerBotArrowsEquipped(ch) ||
+				ch->GetArrowAndBow(&weapon, &arrow, 1) != 1))
 			return 0;
 
 		int iDamage = isBow ? CalcArrowDamage(ch, primary, weapon, arrow, false) : CalcMeleeDamage(ch, primary, false, false);

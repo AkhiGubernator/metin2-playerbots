@@ -310,11 +310,16 @@ namespace
 			if (!box->IsValidPosition(pos))
 				continue;
 			LPITEM held = box->Get(pos);
+			// The item's own limit (PlayerBotMaxStack): SetCount clamps to it
+			// silently, so a pour measured against two hundred into a stack
+			// of twenty would remove the bag stack and keep nothing of it.
 			if (!held || !PlayerBotStacksTogether(held, item) ||
-					(int)held->GetCount() >= PLAYERBOT_STACK_MAX)
+					(int)held->GetCount() >= PlayerBotMaxStack(held))
 				continue;
-			const int moved = std::min(PLAYERBOT_STACK_MAX - (int)held->GetCount(),
+			const int moved = std::min(PlayerBotMaxStack(held) - (int)held->GetCount(),
 					(int)item->GetCount());
+			if (moved <= 0)
+				continue;
 			char szHint[128];
 			snprintf(szHint, sizeof(szHint), "%s %d", item->GetName(), moved);
 			LogManager::instance().ItemLog(ch, item, "SAFEBOX PUT", szHint);
@@ -340,7 +345,7 @@ namespace
 			if (!box->IsValidPosition(i))
 				continue;
 			LPITEM item = box->Get(i);
-			if (!item || (int)item->GetCount() >= PLAYERBOT_STACK_MAX)
+			if (!item || (int)item->GetCount() >= PlayerBotMaxStack(item))
 				continue;
 			for (DWORD j = i + 1; j < SAFEBOX_MAX_NUM && merged < maxMerges; ++j)
 			{
@@ -349,7 +354,7 @@ namespace
 				LPITEM other = box->Get(j);
 				if (!other || !PlayerBotStacksTogether(item, other))
 					continue;
-				const int moved = std::min(PLAYERBOT_STACK_MAX - (int)item->GetCount(),
+				const int moved = std::min(PlayerBotMaxStack(item) - (int)item->GetCount(),
 						(int)other->GetCount());
 				if (moved <= 0)
 					break;
@@ -360,7 +365,7 @@ namespace
 				else
 					other->SetCount(other->GetCount() - moved);
 				++merged;
-				if ((int)item->GetCount() >= PLAYERBOT_STACK_MAX)
+				if ((int)item->GetCount() >= PlayerBotMaxStack(item))
 					break;
 			}
 		}
@@ -1775,6 +1780,17 @@ namespace
 		return false;
 	}
 
+	// The scrolls a bot keeps for its own anvil: PLAYERBOT_REFINE_SCROLL_KEEP
+	// while a worn piece can still use one (one bot in five, the resource
+	// trader, keeps a single), none once nothing worn wants a scroll.
+	int GetPlayerBotRefineScrollKeep(LPCHARACTER ch)
+	{
+		if (!ch || !PlayerBotWearsScrollWork(ch))
+			return 0;
+		return IsPlayerBotResourceTrader(ch->GetPlayerID())
+				? PLAYERBOT_REFINE_SCROLL_TRADER_KEEP : PLAYERBOT_REFINE_SCROLL_KEEP;
+	}
+
 	// Scrolls lying in cells before this one: the ones the keep counts first.
 	int CountPlayerBotSafeRefineScrollsAhead(LPCHARACTER ch, LPITEM item)
 	{
@@ -1874,10 +1890,16 @@ namespace
 			// scrolls reach the market instead of sitting in bags until every
 			// worn piece is at +9 - which for a bot that keeps re-gearing is
 			// never ("zaden bot nie sprzedaje zwojow blogoslawienstwa").
-			const int keep = IsPlayerBotResourceTrader(ch->GetPlayerID())
-					? PLAYERBOT_REFINE_SCROLL_TRADER_KEEP : PLAYERBOT_REFINE_SCROLL_KEEP;
-			if (PlayerBotWearsScrollWork(ch) &&
-					CountPlayerBotSafeRefineScrollsAhead(ch, item) < keep)
+			// The keep is a count of scrolls, not of cells before this one: a
+			// stack is goods when it and the scrolls ahead of it hold more than
+			// the keep, and the cut (GetPlayerBotStallBaseKeep) leaves the keep
+			// in it. Asking only whether enough lay *ahead* kept a bot's one
+			// stack whole whatever its size, and the service visit never
+			// splits: 294 bots held 1 405 scrolls, 289 of them in one stack,
+			// 116 of those over the keep, and 5 stood on the counters of the
+			// whole world ("A bodzi jak nie bylo tak nie ma", 16 September).
+			const int keep = GetPlayerBotRefineScrollKeep(ch);
+			if (CountPlayerBotSafeRefineScrollsAhead(ch, item) + (int)item->GetCount() <= keep)
 				return -1;
 			return 800;
 		}
@@ -2482,10 +2504,16 @@ namespace
 		{
 			LPITEM item = ch->GetInventoryItem(scored[i].second);
 			const int units = item ? GetPlayerBotStallLineUnitsFor(ch, item) : 0;
-			if (units <= 0 || (int)item->GetCount() <= units || item->isLocked())
+			if (units <= 0 || item->isLocked())
+				continue;
+			// A scroll stack is cut down to the bot's own keep whatever its
+			// size - a stack of five with a keep of three is a line of two,
+			// not a line of five that leaves the anvil nothing.
+			const bool scroll = IsPlayerBotSafeRefineScroll(item->GetVnum());
+			if (!scroll && (int)item->GetCount() <= units)
 				continue;
 			const int wantLines = units == 1 ? PLAYERBOT_SHOP_SINGLE_UNITS
-					: IsPlayerBotSafeRefineScroll(item->GetVnum()) ? PLAYERBOT_SHOP_SCROLL_LINES
+					: scroll ? PLAYERBOT_SHOP_SCROLL_LINES
 					: units == PLAYERBOT_SHOP_HOARD_PACK_UNITS ? PLAYERBOT_SHOP_HOARD_LINES
 					: PLAYERBOT_SHOP_PACK_LINES;
 			int lines = 0;
@@ -2501,12 +2529,14 @@ namespace
 			// what the bot came to the counter to buy.
 			const int keep = GetPlayerBotStallBaseKeep(ch, item);
 			int split = 0;
-			while (lines < wantLines && (int)item->GetCount() - units >= keep &&
+			while (lines < wantLines &&
+					(scroll ? (int)item->GetCount() - keep >= 1 : (int)item->GetCount() - units >= keep) &&
 					CountPlayerBotFreeInventoryCells(ch) > PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS)
 			{
+				const int take = scroll ? std::min(units, (int)item->GetCount() - keep) : units;
 				const int to = ch->GetEmptyInventory(item->GetSize());
 				if (to < 0 || !ch->MoveItem(TItemPos(INVENTORY, item->GetCell()),
-						TItemPos(INVENTORY, (WORD)to), (BYTE)units))
+						TItemPos(INVENTORY, (WORD)to), (BYTE)take))
 					break;
 				++lines;
 				++split;

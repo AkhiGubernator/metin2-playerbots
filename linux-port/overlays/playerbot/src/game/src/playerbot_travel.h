@@ -700,6 +700,15 @@ namespace
 		{
 			if (ch->IsItemLoaded() && ch->GetEmptyInventory(1) < 0)
 				return false;
+			// And not with its stock in the bag: the dungeon's exit rule sends
+			// a dropper out at PLAYERBOT_MEDAL_DROPPER_MEDAL_STOCK medals
+			// (DecideMonkeyExit, MEDAL_READY) and this gate used to send it
+			// straight back - 703 of 854 visits under ten seconds in an hour on
+			// the test world, one bot every fifty seconds (16 September). It
+			// hunts on its village's ground until a counter line sells.
+			if (ch->IsItemLoaded() &&
+					ch->CountSpecifyItem(PLAYERBOT_HORSE_MEDAL_VNUM) >= PLAYERBOT_MEDAL_DROPPER_MEDAL_STOCK)
+				return false;
 			return GetPlayerBotMonkeyMapFor(ch) != 0;
 		}
 		// A medal needs a cell. This gate is what the Monkey Dungeon's exit

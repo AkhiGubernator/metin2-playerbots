@@ -152,18 +152,42 @@ namespace
 		return true;
 	}
 
+	// The stack an item can grow to. mt2009 keeps one per proto (dwMaxStack:
+	// twenty for a Medal Konny or a Blessing Scroll, a thousand for arrows,
+	// two hundred for most things); r40250 has the one ITEM_MAX_COUNT. Every
+	// count the fragments compared with PLAYERBOT_STACK_MAX read a full stack
+	// of twenty medals as room for a hundred and eighty more: MoveItem into a
+	// full stack moves nothing and still answers true, so ten stacks of twenty
+	// were "merged" four at a time every five seconds for ever - 110 bots and
+	// 14 321 lines in ten minutes on the test world, every medal dropper among
+	// them (16 September). SetCount clamps to the same limit, silently, which
+	// is what the safebox top-up below has to know before it removes the bag
+	// stack it thinks it poured in.
+	int PlayerBotMaxStack(LPITEM item)
+	{
+#if defined(PLAYERBOT_ENGINE_MT2009)
+		return item ? (int)item->GetMaxStack() : PLAYERBOT_STACK_MAX;
+#else
+		(void)item;
+		return PLAYERBOT_STACK_MAX;
+#endif
+	}
+
 	// Pour split stacks together, a few at a time. MoveItem with a count of
 	// zero moves as much of the source as the destination has room for and
 	// removes the source when it is emptied - the same thing a player's drag
-	// does, packets and item log included.
+	// does, packets and item log included. A merge is counted only when the
+	// destination grew: a MoveItem that moved nothing is not work done.
 	int MergePlayerBotStacks(LPCHARACTER ch, int maxMerges)
 	{
 		int merged = 0;
 		for (WORD i = 0; i < PLAYERBOT_BAG_CELLS && merged < maxMerges; ++i)
 		{
 			LPITEM item = ch->GetInventoryItem(i);
-			if (!item || item->IsEquipped() || item->isLocked() ||
-					item->GetCount() >= PLAYERBOT_STACK_MAX)
+			if (!item || item->IsEquipped() || item->isLocked())
+				continue;
+			const int maxStack = PlayerBotMaxStack(item);
+			if ((int)item->GetCount() >= maxStack)
 				continue;
 			for (WORD j = i + 1; j < PLAYERBOT_BAG_CELLS && merged < maxMerges; ++j)
 			{
@@ -171,9 +195,11 @@ namespace
 				if (!other || other->IsEquipped() || other->isLocked() ||
 						!PlayerBotStacksTogether(item, other))
 					continue;
-				if (ch->MoveItem(TItemPos(INVENTORY, j), TItemPos(INVENTORY, i), 0))
+				const DWORD before = item->GetCount();
+				if (ch->MoveItem(TItemPos(INVENTORY, j), TItemPos(INVENTORY, i), 0) &&
+						item->GetCount() > before)
 					++merged;
-				if (item->GetCount() >= PLAYERBOT_STACK_MAX)
+				if ((int)item->GetCount() >= maxStack)
 					break;
 			}
 		}
@@ -615,12 +641,25 @@ namespace
 				? PLAYERBOT_SHOP_HOARD_PACK_UNITS : units;
 	}
 
+	// The refine scrolls a bot keeps for its own anvil (defined in
+	// playerbot_town.h beside the rule that asks it).
+	int GetPlayerBotRefineScrollKeep(LPCHARACTER ch);
+
 	// What the stack a counter's lines are cut from keeps back: the anvil's
-	// reserve of a material, the keys the bot holds on to, one of anything else.
+	// reserve of a material, the keys the bot holds on to, the scrolls of its
+	// own scroll work, one of anything else.
 	int GetPlayerBotStallBaseKeep(LPCHARACTER ch, LPITEM item)
 	{
 		if (!item)
 			return 1;
+		// Asked before the materials: the Blessing Scroll is what recipe 501
+		// consumes, so it is a tradeable material too, and the anvil's reserve
+		// of it - twice the recipe count of every piece under scroll work - is
+		// larger than most stacks. Measured against that, no cut ever had a
+		// scroll to spare: a bot with twenty-six put a marble up instead
+		// (16 September). The scroll's keep is the scroll rule's.
+		if (IsPlayerBotSafeRefineScroll(item->GetVnum()))
+			return GetPlayerBotRefineScrollKeep(ch);
 		if (IsPlayerBotTradeableMaterial(item))
 			return std::max(1, GetPlayerBotRefineMaterialReserve(ch, item->GetVnum()));
 		if (item->GetType() == ITEM_TREASURE_KEY)

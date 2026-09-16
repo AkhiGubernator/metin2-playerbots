@@ -382,6 +382,19 @@ namespace
 		return IsPlayerBotBiologistKeyPhase(ch, missionIndex) ? mission->keyMobVnum : mission->mobVnum;
 	}
 
+	// A first-village herb row is being hunted: the reason to go to a first
+	// village (NeedsPlayerBotM1OnlyServices) and, once there, the reason to
+	// stay. The M1 branch of the world travel did not ask, and a bot of forty
+	// with a place on the herb errand crossed Joan <-> Bokjung every four
+	// seconds - "level_to_m2" out, "m1_only_service" back - because both
+	// gates' arrival points stand beside the return gate (Greess, Logi.txt,
+	// 16 September, "nie przechodza przez teleporty").
+	bool PlayerBotHuntsVillageHerbs(LPCHARACTER ch)
+	{
+		const DWORD mob = GetPlayerBotBiologistHuntMob(ch);
+		return mob != 0 && mob < 500;
+	}
+
 	// The level the first village's hubs are chosen for: the active herb row's
 	// own level while its monster is wanted - a bot of seventy-eight after the
 	// Gango Root stands where the Gango Root's monster is, not with the

@@ -623,6 +623,22 @@ namespace
 		}
 	}
 
+	// The M3 dropper is on the guild map for the level-30 weapons it will
+	// sell, so a weapon in its bag is goods and never the reason to leave;
+	// it farms while the exp lock's band still holds it. Both the door
+	// (ShouldPlayerBotVisitM3) and the exit (the M3 branch of the world
+	// travel) ask this, because they used to disagree: the door sent a
+	// dropper by level alone and the exit sent any bot holding a weapon
+	// home, and the Teleporter's arrival stands beside the return gate,
+	// so four droppers of seban latino's world crossed M2 <-> M3 every
+	// five seconds for as long as the log runs (16 September).
+	bool IsPlayerBotM3DropperOnFarm(LPCHARACTER ch)
+	{
+		return ch &&
+				GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_M3_DROPPER &&
+				ch->GetLevel() <= PLAYERBOT_EXP_LOCK_M3_DROPPER + PLAYERBOT_DROPPER_OUTGROWN_LEVELS;
+	}
+
 	bool ShouldPlayerBotVisitM3(LPCHARACTER ch)
 	{
 		if (!ch || !HasPlayerBotM3ReadyEquipment(ch))
@@ -633,7 +649,7 @@ namespace
 		// The M3 dropper is there for the weapons it will sell, so owning one
 		// changes nothing, and it stays as long as the map can still be hunted.
 		if (GetPlayerBotPersonalityByPID(ch->GetPlayerID()) == BOT_PERSONALITY_M3_DROPPER)
-			return ch->GetLevel() <= 32;
+			return IsPlayerBotM3DropperOnFarm(ch);
 		if (HasPlayerBotSpecialLevel30Weapon(ch, true))
 			return false;
 		// Twenty-four was the cap, and it made the weapon a thing a bot either
@@ -1557,8 +1573,11 @@ namespace
 			// The soft needs get one town visit to be met. If the bot has just
 			// been shopping and still wants something, the town cannot supply it,
 			// and standing here is worse than moving on.
+			// A herb row of the Biologist is hunted here and nowhere else, so it
+			// holds the bot exactly as the errand that brought it (see
+			// PlayerBotHuntsVillageHerbs for the four-second Joan <-> Bokjung loop).
 			if (holdsMedalToHandIn || BlocksPlayerBotTravel(ch) || needsM1OnlyServices ||
-					HasPlayerBotExcessPotions(ch) ||
+					PlayerBotHuntsVillageHerbs(ch) || HasPlayerBotExcessPotions(ch) ||
 					((needsTownPreparation || needsCriticalTownServices) &&
 					 !townVisitRecentlyCompleted))
 				return false;
@@ -1821,10 +1840,13 @@ namespace
 			// gate. So it stood on the arrival point with "going to town for
 			// supplies" over its head until the twenty-minute visit timer ran
 			// out. Two of them were photographed doing exactly that.
+			// The weapon is what everybody else came for; the M3 dropper came
+			// for the ones it will sell (see IsPlayerBotM3DropperOnFarm).
+			const bool weaponFound = !IsPlayerBotM3DropperOnFarm(ch) &&
+					HasPlayerBotSpecialLevel30Weapon(ch, true);
 			if (!visitExpired && !state.bVisitingShop &&
 					!needsCriticalTownServices && !needsM1OnlyServices &&
-					!scheduledRemoteRefine &&
-					!HasPlayerBotSpecialLevel30Weapon(ch, true))
+					!scheduledRemoteRefine && !weaponFound)
 				return false;
 
 			// The walk does not own the goal - see the desert crossing above. This

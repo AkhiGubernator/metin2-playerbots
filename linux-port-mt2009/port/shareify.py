@@ -298,6 +298,26 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
  && echo "share: Metin2 SinglePlayer in the quest texts"
 """
 
+# The Biologist's wait between two hand-ins - a day, `time_until_hour` in
+# collect_data.lua, which every collect_quest_lv* asks through
+# collect_data.is_wait - is gone for players ("Usuniecie limitu czasu dla
+# biologa", namiot_, 15 September); the bots' own hand-in never kept it.
+# is_research_in_progress answers false, so is_wait, the quest clock and the
+# "come back in" line never fire, and take_chance never consumes the
+# Researcher's Elixir (AFFECT_COLLECT_NO_TIME) for a wait that is not there.
+# The file is CRLF, hence the optional carriage return in the anchor.
+DOCKERFILE_BIOLOGIST_ANCHOR = ' && echo "share: Metin2 SinglePlayer in the quest texts"\n'
+DOCKERFILE_BIOLOGIST_MARKER = 'echo "share: Biologist hand-ins without the wait"'
+DOCKERFILE_BIOLOGIST_STEP = r"""
+# The Biologist takes the next specimen at once (port/shareify.py renders this
+# step): collect_data.lua's is_research_in_progress answers false for a player
+# the way the bots' hand-in never waited (namiot_, 15 September).
+RUN set -eu; F=/opt/metin2/share/locale/poland/quest/libs/other/collect_data.lua \
+ && LC_ALL=C sed -i 's/^\(collect_data\.is_research_in_progress = function()\)\(\r\{0,1\}\)$/\1\2\n    do return false end -- playerbot: no wait between hand-ins\2/' "$F" \
+ && LC_ALL=C grep -q 'playerbot: no wait between hand-ins' "$F" \
+ && echo "share: Biologist hand-ins without the wait"
+"""
+
 
 def main():
     items = dump_vnums('item_proto')
@@ -350,6 +370,12 @@ def main():
         assert s.count(DOCKERFILE_BRAND_ANCHOR) == 1, s.count(DOCKERFILE_BRAND_ANCHOR)
         s = s.replace(DOCKERFILE_BRAND_ANCHOR, DOCKERFILE_BRAND_ANCHOR + DOCKERFILE_BRAND_STEP)
         print('shareify: Metin2 SinglePlayer step added')
+    if DOCKERFILE_BIOLOGIST_MARKER in s:
+        print('shareify: Dockerfile already drops the Biologist wait')
+    else:
+        assert s.count(DOCKERFILE_BIOLOGIST_ANCHOR) == 1, s.count(DOCKERFILE_BIOLOGIST_ANCHOR)
+        s = s.replace(DOCKERFILE_BIOLOGIST_ANCHOR, DOCKERFILE_BIOLOGIST_ANCHOR + DOCKERFILE_BIOLOGIST_STEP)
+        print('shareify: Biologist wait step added')
     io.open(dockerfile, 'w', encoding='utf-8', newline='').write(s)
 
 

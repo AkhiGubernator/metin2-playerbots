@@ -724,6 +724,18 @@ def main(root):
          # apply_gm_gameplay puts the GM's lines above these, so the whole
          # block is no longer there on a second run; this sentence still is.
          marker='A playerbot trades from the start')
+    # 2.0.55 a player's counter opens at level fifteen too. The eight hundred
+    # kills were the public server's gate for a private shop, and on a world
+    # of one player they only kept a new character from trading ("jezeli
+    # chcemy edytowac otwarcie tobolka i nie zabijac 800 mobow ... Liczbe 800
+    # na 0", gregoszky, 14 September). The line sits below the bot's and the
+    # GM's early returns, so both still read as they did.
+    edit(os.path.join(game, 'char_shop.cpp'),
+         '\treturn GetLevel() >= 15 && GetSpecialFlag(PLAYER_STATS_MONSTER_FLAG) >= 800;\n',
+         '\t// playerbot: no kill count for a player either - the eight hundred\n'
+         '\t// kills were the public server\'s gate (gregoszky, 14 September).\n'
+         '\treturn GetLevel() >= 15;\n',
+         marker='no kill count for a player either')
 
     # ======================================================================
     # 2.0.16 the Metin stone's skill book stops fifteen levels above it.

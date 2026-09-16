@@ -316,6 +316,14 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
     done \
  && echo "share: Metin2 SinglePlayer in the quest texts"
 
+# The Biologist takes the next specimen at once (port/shareify.py renders this
+# step): collect_data.lua's is_research_in_progress answers false for a player
+# the way the bots' hand-in never waited (namiot_, 15 September).
+RUN set -eu; F=/opt/metin2/share/locale/poland/quest/libs/other/collect_data.lua \
+ && LC_ALL=C sed -i 's/^\(collect_data\.is_research_in_progress = function()\)\(\r\{0,1\}\)$/\1\2\n    do return false end -- playerbot: no wait between hand-ins\2/' "$F" \
+ && LC_ALL=C grep -q 'playerbot: no wait between hand-ins' "$F" \
+ && echo "share: Biologist hand-ins without the wait"
+
 # The cores run unprivileged and read this tree by path; a directory only root
 # can enter costs every quest below it, silently. Repair, then assert.
 RUN set -eu; \

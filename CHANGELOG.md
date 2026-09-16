@@ -17,6 +17,83 @@ every version here.
 
 ---
 
+## 2.0.57 — 2026-09-16
+
+Serwer 2.0.57; klient bez zmian (2.0.11).
+
+### Poziom trudności świata: easy / medium / hard / własny
+
+W launcherze doszedł przycisk **POZIOM TRUDNOŚCI** (i pozycja 22 w menu
+tekstowym), a w `.env` klucze `M2_DIFFICULTY`, `M2_BIOLOGIST_WAIT_HOURS`
+i `M2_HORSE_WAIT_HOURS`. Poziom mówi, ile gracz czeka u Biologa między
+oddaniami i u Stajennego (kucyk, każda Księga Konia, treningi medalami
+poziomów 1–10 i 11–19):
+
+| poziom | Biolog | kucyk i Księgi Konia | treningi 1–10 / 11–19 |
+|---|---|---|---|
+| easy (domyślnie, jak dotąd) | 0 | 0 | 0 |
+| medium | 8 h | 4 h | 6 h / 7 h |
+| hard (jak w oryginale) | 24 h | 12 h | 18 h / 21 h |
+| custom | własna liczba godzin | własna liczba godzin (jedna na wszystko) | jak obok |
+
+Zmiana działa od następnego startu serwera (migrator zapisuje flagi
+zdarzeń, questy je czytają). Postać, która już czeka, dostaje konia po
+upływie nowego czasu. Botów to nie dotyczy — ich Biolog i stajenny nigdy
+nie czekali. Z dyskusji na ogólnym („z harda na easy nieeee”).
+
+### Eventy: szkatułki i raty o wybranych porach
+
+W panelu klasycznym doszła strona **Eventy** (karta na pulpicie i przycisk
+na stronie zachowania botów). Harmonogram to okna tygodniowe: dni, od
+której do której, a dla rat o ile procent ponad ustawione raty serwera:
+
+- **Szkatułki Blasku Księżyca** — gdy w harmonogramie jest choć jedno okno
+  szkatułek, szkatułki dropią wyłącznie w oknach (suwaki na stronie AI
+  mówią, jak często w oknie). Bez okna wszystko działa jak dotąd.
+- **Doświadczenie, drop, yang** — w oknie raty serwera rosną o podany
+  procent (50 = +50%) i wracają po jego końcu; raty ustawione ręcznie w
+  trakcie eventu zostają, jak je ustawiono.
+- **Aktywuj teraz** — włącza event na wybraną liczbę minut (15–360), z
+  własnym procentem; przycisk **Zakończ** kończy go wcześniej.
+- Na czacie pojawia się ogłoszenie na początku eventu, co piętnaście minut
+  w jego trakcie i na końcu („Event: +50% doswiadczenia do 21:00!”).
+
+Rdzeń gry odczytuje harmonogram w pięć sekund; nic się nie restartuje.
+Status („aktywny do”, „następny”) pokazuje strona Eventy.
+
+### Metiny dla każdego bota, bite razem
+
+Zajęty kamień nie odstrasza już reszty: dotąd cel jednego bota był celem
+zajętym, więc przy jednym metinie bił jeden bot, a reszta szła dalej
+(Kiciamol). Kamień może bić do sześciu botów naraz. Każdy bot ocenia metin w
+swoim paśmie wyżej niż zwykłe potwory, a kamień, który już ktoś bije, staje
+się najważniejszym celem w zasięgu — bot dołącza nawet do metina do 30
+poziomów ponad sobą, jeśli bije go inny bot. Kamień, który bije tylko gracz,
+boty zostawiają graczowi (drop idzie do tego, kto zadał najwięcej obrażeń).
+
+### Loot po bossie
+
+Po zabiciu bossa bot dostaje takie samo okno na loot jak po rozbitym metinie:
+przez 20 sekund zbiera, co leży w promieniu 15 m, zanim raid „wróci do pracy”.
+Zgłoszenie Ciapka: skrzynia Umarłego Rozpruwacza (bronie 75 ze średnimi)
+zostawiona na śniegu.
+
+### Księgi Kombo i Dowodzenia
+
+Sztuka Combo (trzy księgi) i Sztuka Wojny Sun Zi / Wu Zi / WeiLiao Zi
+(Dowodzenie) szły do handlarza za tysiąc yang, bo nie są zwykłymi księgami
+umiejętności. Bot czyta je teraz, gdy może (Kombo od 30 i od 50 poziomu,
+Dowodzenie po dwadzieścia poziomów na księgę), zostawia sobie do trzech
+sztuk, a resztę wystawia na straganie; handlarz ich nie dostaje. Kombo daje
+botowi cios w więcej celów naraz, Dowodzenie liczy się dla bonusów grupy.
+Zgłoszenie sizowskiego.
+
+### Drobne
+
+- Linia „login phase does not handle this packet! header 100” w syserr
+  rdzenia logowania zniknęła: to logowanie osobnego połączenia klienta po
+  znaki gildii, nie błąd (sizowski, wątek o logowaniu).
+
 ## 2.0.56 — 2026-09-16
 
 Serwer (rdzeń gry i AI botów); klient bez zmian (2.0.11).

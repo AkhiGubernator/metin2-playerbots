@@ -280,8 +280,24 @@ namespace
 		// Measured from the pack when there is one, so everybody picks the same
 		// thing; from the bot itself on the ground floor and when alone.
 		const bool fromPack = onFloor && scan && scan->packN >= 2;
-		const long fromX = fromPack ? scan->packX : ch->GetX();
-		const long fromY = fromPack ? scan->packY : ch->GetY();
+		long fromX = fromPack ? scan->packX : ch->GetX();
+		long fromY = fromPack ? scan->packY : ch->GetY();
+		// On a floor the stone turns (the seventh: the Metin of Murder drops
+		// the chest) the pack fights its way to the stone: the monsters are
+		// ranked from the stone, so the ground round it is what gets cleared,
+		// and the stone becomes a candidate the moment nothing stands there.
+		// Ranked from the pack alone it drifted after whatever was nearest and
+		// the stone stood untouched for nine minutes (17 September, 00:05).
+		if (fromPack && level == 5)
+		{
+			for (size_t i = 0; i < scan->entities.size(); ++i)
+				if (scan->entities[i].stone && scan->entities[i].race != PLAYERBOT_DEVIL_TOWER_STONE_FIRST)
+				{
+					fromX = scan->entities[i].x;
+					fromY = scan->entities[i].y;
+					break;
+				}
+		}
 		// A stone cannot hit back: on a floor still full of monsters it waits,
 		// or the pack walks into two hundred demons to reach it (the fourth
 		// floor has no monsters, only its stones).

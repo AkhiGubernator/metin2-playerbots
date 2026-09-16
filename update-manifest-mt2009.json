@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T20:10:50Z",
-  "statusMessage": "2.0.61 (serwer) i klient 2.0.12: **Tiery ekwipunku i bonusów Iwakury (boty wiedzą, co warto nosić w PvE), cennik 1.2; boty przyjmują zaproszenia do gildii od graczy; wojny gildii botów rozłożone między królestwa z zapowiedzią i „następną wojną” w panelu; Pierścień Teleportacji działa u gracza; bot 70+ najpierw robi konia bojowego, potem zioła Biologa; niesprzedany towar na ladach tanieje z czasem.** Klient 2.0.12: dopisek przy przełączaniu tytułów botów. Kliknij ZAINSTALUJ AKTUALIZACJE i AKTUALIZUJ KLIENTA.",
+  "publishedAt": "2026-09-16T21:49:30Z",
+  "statusMessage": "2.0.62 (serwer; do testów): **Gildie botów chodzą do Wieży Demonów — jedna gildia naraz zwołuje zbiórkę na parterze, razem rozbija Metin Twardości i przechodzi piętra jak gracze (klucze, kowal, bossy); kto stoi na parterze, wchodzi z nimi. Naprawione 5. piętro Wieży (quest paczki liczył potwora, którego tam nie ma). Bot przechodzi przez każdy warp gry.** Przełącznik i „Wyprawa teraz” w panelu. Kliknij ZAINSTALUJ AKTUALIZACJE; klient bez zmian (2.0.12).",
   "server": {
-    "version": "2.0.61",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.61/metin2-server-update-2.0.61.zip",
-    "sha256": "873C08AAC8271C335C4ED2E0090A79B7FB59BE504D1445BE04572DD35767A5CB"
+    "version": "2.0.62",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.62/metin2-server-update-2.0.62.zip",
+    "sha256": "BF97A90C2D13B7AF165D6C2990E0D6B2BDB1BB56588F8844CDA6BAADC7F6AF67"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

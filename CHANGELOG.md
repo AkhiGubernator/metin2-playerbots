@@ -17,6 +17,49 @@ every version here.
 
 ---
 
+## 2.0.55 — 2026-09-16
+
+Serwer (rdzeń gry i AI botów) i klient 2.0.11.
+
+### Zwoje Błogosławieństwa w liniach po 1–5
+
+Sklep offline bota wystawiał przy wizycie serwisowej cały stos — 20 zwojów za
+4,7 mln w jednej linii, których nikt nie kupi do jednego ulepszenia. Bezpieczne
+zwoje ulepszania (Zwój Błogosławieństwa, Magiczny Kamień, Zwój Boga Wojny +10 i
++15) idą teraz w liniach po najwyżej 5 sztuk, do 3 takich linii na jednym
+straganie. Linia większa niż 5, która już stoi, wraca do torby przy najbliższej
+wizycie serwisowej i wchodzi z powrotem podzielona. Zgłoszenie jaksiezabic.
+
+### Sklep gracza od 15 poziomu bez 800 zabójstw
+
+Silnik wymagał od gracza ośmiuset zabitych potworów, zanim otworzył „tobołek”,
+jak na serwerze publicznym. Boty i GM-owie byli już zwolnieni, teraz gracz też:
+wystarczy 15 poziom. Zgłoszenie gregoszky.
+
+### Biolog bez limitu czasu również dla gracza
+
+Doba oczekiwania między kolejnymi oddaniami okazów jest wyłączona; kolejny okaz
+można oddać od razu. Eliksir Poszukiwacza nie jest już zużywany, bo nie ma czego
+skracać. Boty nigdy tego czasu nie trzymały. Zgłoszenie namiot_.
+
+### Tytuły botów do wyboru (klient 2.0.11)
+
+W opcjach gry jest nowy wiersz „Tytuły botów”: Osobowość (jak od 2.0.53) albo
+Klasyczne (tytuł rangi). Wybór zapisuje się w pliku `playerbot_titles.cfg`
+obok klienta. Po przełączeniu na Klasyczne tytuł osobowości znika przy
+najbliższej zmianie rangi bota, czyli po jego następnym zabiciu potwora.
+Propozycja NerrVoVy. Sprawdzone kompilacją i testami, nie w grze — dajcie
+znać, czy wiersz jest widoczny i przełącza.
+
+### Panel Sebana 1.54.1
+
+Aktualizator Seban dla VPS (skrypty hosta w `seban-panel/updater/`), wersja
+mobilna, rankingi z prawdziwymi graczami, poprawiony ranking +9 i skuteczności
+ulepszeń, liczba transakcji w gospodarce sklepów. Trzy nowe odczyty jego panelu
+sięgały do tabeli, którą ma tylko jego serwer, i strona główna, `/manage` oraz
+rankingi odpowiadały błędem 500 — panel tworzy ją teraz sam przy starcie.
+Nasze poprawki z 2.0.47–2.0.49 zachowane.
+
 ## 2.0.54 — 2026-09-16
 
 Serwer (rdzeń gry i AI botów) i klient 2.0.10.

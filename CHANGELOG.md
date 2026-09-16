@@ -67,10 +67,18 @@ zgłoszenia na Discordzie.
   piętrze, połowa w pętli śmierć/wskrzeszenie, 6 minut bez zabójstwa. Stąd
   walka w grupie w tym wydaniu: cel wybierany od środka gildii (wszyscy biją
   tego samego demona), kamienie piętra dopiero gdy zostanie najwyżej 25
-  potworów, maruder bez celu wraca do grupy. Ta walka grupowa jest w tym
-  wydaniu nowa i w chwili wydania była dopiero w pierwszym teście na
-  serwerze testowym — Wieża idzie jako nowość do testów; piętra 7–9 prosimy
-  zgłaszać na Discordzie.
+  potworów, maruder bez celu wraca do grupy. Wieża idzie jako nowość do
+  testów; piętra 7–9 prosimy zgłaszać na Discordzie.
+
+- **Po pierwszym teście na serwerze testowym boty walczą na piętrach w
+  grupie**: cel jest wybierany od środka grupy, więc szesnastka bije tego
+  samego demona, a maruder bez celu wraca do reszty — na 7. piętrze zgony
+  spadły z 253 na 43 na dziesięć minut, a zabójstwa z zera do piętnastu na
+  minutę. Kamień piętra (Metin Morderstwa, Metiny Śmierci) jest rozbijany,
+  gdy grupa oczyści teren wokół niego, bo regen 7. piętra dorzuca potwory
+  szybciej, niż da się je wybić do końca. Drugi przebieg z walką w grupie:
+  piętra 2–6 w 222/256/153/206/156 s, kowal przepuścił bota 76. poziomu;
+  7. piętro było w toku w chwili wydania.
 
 ### Koniec pętli Joan↔Bokjung u botów z ziołowym wierszem Biologa
 

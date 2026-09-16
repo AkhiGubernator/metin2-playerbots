@@ -17,6 +17,23 @@ every version here.
 
 ---
 
+## 2.0.63 — 2026-09-17
+
+Serwer 2.0.63; klient bez zmian (2.0.12). Ostatnie poprawki nocy po
+pierwszych testach Wieży Demonów z 2.0.62.
+
+### Wieża Demonów: na 7. piętrze grupa toruje sobie drogę do Metina Morderstwa
+
+Na 7. piętrze grupa toruje sobie drogę do Metina Morderstwa: potwory są
+wybierane od kamienia, więc czyszczony jest teren wokół niego i kamień jest
+rozbijany, gdy nic przy nim nie stoi. Dotąd grupa szła za najbliższym
+demonem i kamień stał nietknięty, choć boty żyły i zabijały (na serwerze
+testowym: 9 minut, 63 zgony, cztery Metiny Śmierci rozbite w 49 s, Metin
+Morderstwa nietknięty). Ta poprawka została skompilowana i przeczytana, ale
+nie obejrzana na żywo — serwer testowy był już wyłączany; skrzynia i mapa z
+7. piętra, klucz z 8. i Rozpruwacz z 9. nie były jeszcze osiągnięte przez
+żadnego bota. Prosimy o zgłoszenia z pięter 7–9 na Discordzie.
+
 ## 2.0.62 — 2026-09-16
 
 Serwer 2.0.62; klient bez zmian. Wydanie do testów Wieży Demonów — prosimy o

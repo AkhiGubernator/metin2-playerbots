@@ -4601,6 +4601,67 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   build after every update, one file at a time. The answer is a search over
   `game/src` for the symbol and the stock file from the full package for
   each hit; a launcher that named the files itself would be the real fix.
+- **A rule written for bot parties was asked of a player's.** `ManagePlayerBotParty`
+  put every party it checked back on `PARTY_EXP_DISTRIBUTION_PARITY`, the
+  player's included, on every check ("boty dodane do PT zawsze same zmieniaja
+  podzial na rowny nawet gdy to nie one sa liderem", Dearminder, 15 September).
+  A human-led party's split is the leader's, so the pass returns before it for
+  `IsPlayerBotHumanLedParty`; the three `SetParameter` calls left all stand on
+  bot-led parties. Compiled and deployed, not watched: the test world has no
+  person in a party. Grep every `SetParameter(PARTY_EXP_DISTRIBUTION` before
+  writing a rule about a party's split, the way `->Quit(` is grepped for who
+  stays.
+- **A purchase every bot wants is a market emptied in an hour.**
+  `WantsPlayerBotMoonlightChest` (2.0.53) made every non-trader short of chests
+  a buyer, and a thousand buyers took every chest off every counter ("boty
+  wykupuja doslownie WSZYSTKIE szkatulki bez opamietania", sizowski, 16
+  September). Two brakes now: `PLAYERBOT_CHEST_MARKET_RESERVE` - no bot buys
+  while the ledger counts thirty or fewer on the counters of the whole world -
+  and `PLAYERBOT_CHEST_BUY_COOLDOWN` per bot (`s_mapPlayerBotChestBoughtAt`,
+  stamped by the offline and the classic purchase path both). The ledger is
+  refreshed once a minute, so a minute's purchases can still dip under the
+  reserve; that is the size of the overshoot, not a hole. Anything else the
+  whole population wants off the counters at once needs the same two.
+- **A second village is entered at one end, and the bots stayed at that end.**
+  "Boty z Shinsoo omijaja gorna czesc Jayang, z Jinno dolna czesc Bakra - moze
+  mosty albo granice mapy sa zle okreslone?" (blasty, 16 September). Not the
+  map: `tools/analyse_map_bridges.py` on each map's own server_attr (mt2009's,
+  in docker with python-lzo) reaches 99.9% of the ground and every spawn group
+  of a3 and c3 from the town point under the BLOCK|OBJECT rule. What kept the
+  bots off was that Jayang's gate from Yongan opens in its south and Bakra's
+  from Pyongmoo in its north, each onto the tigers of 18-20 and the Black Wind
+  of 26-30, and a bot chain-kills outward from where it stands: the wander
+  pass runs only on a tick nothing was worth attacking, the outgrown-prey rule
+  stopped at the first villages, and `PLAYERBOT_GROUND_HUBS_3/43` were twelve
+  hubs by pid with `mobLevel` 0 - so the 501-504 ground of 29-36 that fills
+  the far half of each map had nobody on it. Measured on m2zip before the
+  change: every bot south of y 280 000 on map 43 was passing through ("Ide do
+  Biologa", "Ide do Doliny Orkow"), and the map's richest cell,
+  (848000,291200) at 78 monsters a look, had 793 looks and not one fight.
+  Every M2 hub carries its band now (`tools/generate_wander_hubs.py <map>
+  --count 24 --band --spacing 4500`; its first twelve rows for 3 and 43 are
+  the 2.0.8 tables to the unit, which says those came from it with `--count
+  12`), the M2 branch of `ManagePlayerBotWandering` takes
+  `CollectPlayerBotM1HubsForLevel` like the first villages, and `outgrownPrey`
+  in `BuildPlayerBotCombatContext` is set on `IsPlayerBotM2Map` too. Bokjung's
+  twelve hand-placed hubs went with it: measured against regen.txt
+  (`scratchpad/measure_hub_bands.py` is the shape), three stood two to four
+  kilometres from the nearest spawn rectangle and two beside fewer than
+  fifteen points. The bands come out as 27, 29-30 and 35 - the tigers are
+  nowhere a majority, so a bot under 26 takes the nearest band and kills them
+  on the way - and Jayang has one hub of band 27, so
+  `CollectPlayerBotM2HubsForLevel` fills the choice set up to
+  `PLAYERBOT_M2_HUB_CHOICES_MIN` from the nearest bands. Measure it as bots
+  in `BOT_ACTION_FIGHT` per 10 000-unit band of y in `playerbot_status.tsv`
+  on maps 3 and 43 **by level**, never as the count of bots there. Fifteen
+  minutes after the deploy on m2zip: every fighter under 26 on both maps
+  stood on the low ground by its gate (Jayang 850-870k, Bakra 220-270k),
+  the 33-35s on the middle ground, and the far halves held 66 and 102 bots
+  of 36+ standing between errands and not fighting - on a unified world a
+  bot past the M2 ceiling is SERVICE_ONLY, and the band choice now parks
+  them on the band-35 hubs instead of anywhere. The far-half hunting
+  itself needs a split world, where a Shinsoo or Jinno bot of 36+ has
+  nowhere else to go; m2zip cannot show it.
 
 ## Engine facts worth not re-deriving
 

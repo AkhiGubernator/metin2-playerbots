@@ -251,6 +251,20 @@ namespace
 		return bestVid ? CHARACTER_MANAGER::instance().Find(bestVid) : NULL;
 	}
 
+	// Monsters standing within radius of a point: a stone with none about it
+	// is broken without being surrounded.
+	int CountPlayerBotTowerMonstersNear(const TPlayerBotTowerScan* scan, long x, long y, int radius)
+	{
+		int n = 0;
+		for (size_t i = 0; scan && i < scan->entities.size(); ++i)
+		{
+			const TPlayerBotTowerEntity& e = scan->entities[i];
+			if (!e.npc && !e.stone && DISTANCE_APPROX(x - e.x, y - e.y) <= radius)
+				++n;
+		}
+		return n;
+	}
+
 	// The floor's objective for this bot: the nearest thing that has to die
 	// on it. On the ground floor only the Metin of Toughness; inside, that
 	// stone never (breaking it there does nothing), the fourth and seventh
@@ -285,7 +299,12 @@ namespace
 			const int distance = DISTANCE_APPROX(ch->GetX() - e.x, ch->GetY() - e.y);
 			if (maxDistance > 0 && distance > maxDistance)
 				continue;
-			if (!parterStone && e.stone && !stonesNow)
+			// A stone on a floor still full of monsters is broken only once nothing
+			// stands about it: the seventh floor's regen refills faster than a pack
+			// kills (140-170 alive for ten minutes), so "the floor is clear" would
+			// never come, while the ground round the stone does clear.
+			if (!parterStone && e.stone && !stonesNow &&
+					CountPlayerBotTowerMonstersNear(scan, e.x, e.y, PLAYERBOT_TOWER_STONE_CLEAR_RADIUS) > 0)
 				continue;
 			int score = -DISTANCE_APPROX(fromX - e.x, fromY - e.y);
 			if (!parterStone && e.stone)

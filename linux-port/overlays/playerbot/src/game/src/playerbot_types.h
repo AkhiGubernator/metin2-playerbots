@@ -1031,6 +1031,8 @@ namespace
 	const int PLAYERBOT_TOWER_PACK_RADIUS = 2500;
 	const int PLAYERBOT_TOWER_PACK_FIGHT_RANGE = 700;
 	const int PLAYERBOT_TOWER_STONE_CLEAR_LIMIT = 25;
+	// ... or with no monster this close to the stone itself.
+	const int PLAYERBOT_TOWER_STONE_CLEAR_RADIUS = 1500;
 	// metin2_map_deviltower1's base in cells (Setting.txt), the ground
 	// floor's entrance the quest warps a player to, and the Metin of
 	// Toughness's spawn point (regen.txt: cell 195,690 off the base).

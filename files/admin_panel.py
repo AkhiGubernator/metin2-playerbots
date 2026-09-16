@@ -1035,6 +1035,7 @@ def read_ai_weights():
     vals["LIFE"] = 0
     # Guild wars between the bots' guilds (playerbot_guild_war.h). On.
     vals["WARS"] = 1
+    vals["TOWER"] = 1
     # The bots' ItemShop purchases (playerbot_itemshop.h). On.
     vals["ISHOP"] = 1
     vals["SCRAP"] = 0
@@ -1074,6 +1075,8 @@ def read_ai_weights():
                     continue
                 if name == "WARS":
                     vals["WARS"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
+                if name == "TOWER":
+                    vals["TOWER"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
                     continue
                 if name == "ISHOP":
                     vals["ISHOP"] = 0 if parts[1].strip() in ("0", "off", "no") else 1
@@ -1145,6 +1148,7 @@ def write_ai_weights(vals):
     body.append("LIFE\t%d" % (1 if vals.get("LIFE", 0) else 0))
     # Not a weight: whether the bots' guilds fight field wars.
     body.append("WARS\t%d" % (1 if vals.get("WARS", 1) else 0))
+    body.append("TOWER\t%d" % (1 if vals.get("TOWER", 1) else 0))
     # Not a weight: whether the bots cash their vouchers and buy in the ItemShop.
     body.append("ISHOP\t%d" % (1 if vals.get("ISHOP", 1) else 0))
     # Percent of stall keepers that sell scrap gear; 0 is off.
@@ -1355,6 +1359,7 @@ def read_guild_status():
                         g[key] = 0
                 g["war_with"] = row.get("war_with", "")
                 g["next_war_in_s"] = None
+                g["tower_raid"] = 0
                 guilds[gid] = g
             # The kingdom's next war, as the core that hosts its guild map
             # counts it (0 = under way, -1 = none scheduled); a core that
@@ -1369,6 +1374,8 @@ def read_guild_status():
                 g["master"] = row["master"]
             if not g["war_with"] and row.get("war_with"):
                 g["war_with"] = row["war_with"]
+            if row.get("tower_raid", "0").strip() == "1":
+                g["tower_raid"] = 1
             g["online"] += online
             g["strength_sum"] += avg * online
             g["exp_offered"] += offered
@@ -3319,6 +3326,15 @@ T.update({
                   "de":"Etwa alle zwei Stunden führen zwei Bot-Gilden eines Königreichs einen Feldkrieg auf der Gildenkarte dieses Königreichs: dreißig Minuten, Kriegserklärung und Wertung des Spiels selbst, eine Meldung im Chat beim Start. Eine Gilde braucht acht Bots online, um gewählt zu werden. Aus: kein neuer Krieg wird erklärt; ein laufender wird zu Ende gekämpft.",
                   "tr":"Yaklaşık iki saatte bir, aynı krallıktan iki bot loncası o krallığın lonca haritasında bir saha savaşı yapar: otuz dakika, oyunun kendi ilanı ve puanlaması, başlangıçta sohbette bir duyuru. Bir loncanın seçilmesi için sekiz botu çevrimiçi olmalı. Kapalı: yeni savaş ilan edilmez; süren savaş sonuna kadar oynanır."},
  "ai_wars_on":   {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
+ "ai_tower":     {"en":"Bot guilds climb the Demon Tower","pl":"Gildie botów chodzą do Wieży Demonów","de":"Bot-Gilden steigen in den Dämonenturm","tr":"Bot loncaları Şeytan Kulesi'ne çıkar"},
+ "ai_tower_help": {"en":"About every hour and a half one bot guild of this core calls its members of level 40 and up to the tower's ground floor (the game says it on the chat), they break the Metin of Toughness together after four minutes and climb the floors: monsters, stones, keys and seals as in the game; from the sixth floor on a bot of 75 is needed, as for players. Whoever stands on the ground floor when the stone breaks - a bot on its errand, a player who came to watch - goes in with them. 'Now' calls a raid on the core's next check when none is under way.",
+                  "pl":"Mniej więcej co półtorej godziny jedna gildia botów tego rdzenia zwołuje członków od 40. poziomu na parter Wieży (ogłoszenie na czacie), po czterech minutach razem rozbijają Metin Twardości i przechodzą piętra: potwory, kamienie, klucze i pieczęcie jak w grze; od 6. piętra potrzebny jest bot z 75. poziomem, tak jak u graczy. Kto stoi na parterze, gdy pęka kamień — bot na własnej misji albo gracz, który przyszedł popatrzeć — wchodzi razem z nimi. „Teraz” zwołuje wyprawę przy najbliższym sprawdzeniu rdzenia, jeśli żadna nie trwa.",
+                  "de":"Etwa alle anderthalb Stunden ruft eine Bot-Gilde dieses Kerns ihre Mitglieder ab Stufe 40 ins Erdgeschoss des Turms (Ansage im Chat), nach vier Minuten zerschlagen sie gemeinsam den Metin der Härte und steigen die Etagen hinauf: Monster, Steine, Schlüssel und Siegel wie im Spiel; ab der sechsten Etage wird ein Bot mit Stufe 75 gebraucht, wie bei Spielern. Wer beim Zerbrechen des Steins im Erdgeschoss steht - ein Bot auf seinem Botengang, ein zuschauender Spieler - geht mit hinein. 'Jetzt' ruft beim nächsten Check des Kerns eine Expedition, wenn keine läuft.",
+                  "tr":"Yaklaşık her bir buçuk saatte bu çekirdeğin bir bot loncası 40 ve üzeri üyelerini kulenin zemin katına çağırır (sohbette duyurulur), dört dakika sonra Sertlik Metini'ni birlikte kırar ve katları çıkarlar: canavarlar, taşlar, anahtarlar ve mühürler oyundaki gibi; 6. kattan itibaren oyuncularda olduğu gibi 75 seviye bir bot gerekir. Taş kırıldığında zemin katta duran herkes - görevindeki bir bot, izlemeye gelen bir oyuncu - onlarla girer. 'Şimdi', hiçbiri sürmüyorsa çekirdeğin bir sonraki kontrolünde bir sefer çağırır."},
+ "ai_tower_on":  {"en":"Enabled","pl":"Włączone","de":"Eingeschaltet","tr":"Açık"},
+ "ai_tower_now": {"en":"Call a Demon Tower raid now","pl":"Wyprawa do Wieży Demonów teraz","de":"Jetzt eine Turm-Expedition rufen","tr":"Şimdi bir Kule seferi çağır"},
+ "ai_tower_now_done": {"en":"Requested: the core calls a raid on its next check (within a minute) if none is under way.","pl":"Zlecone: rdzeń zwoła wyprawę przy najbliższym sprawdzeniu (do minuty), jeśli żadna nie trwa.","de":"Angefordert: der Kern ruft beim nächsten Check (binnen einer Minute) eine Expedition, wenn keine läuft.","tr":"İstendi: hiçbiri sürmüyorsa çekirdek bir sonraki kontrolde (bir dakika içinde) bir sefer çağırır."},
+ "gl_tower":     {"en":"in the Demon Tower","pl":"w Wieży Demonów","de":"im Dämonenturm","tr":"Şeytan Kulesi'nde"},
  "ai_ishop":     {"en":"Bots buy in the ItemShop","pl":"Boty kupują w ItemShopie","de":"Bots kaufen im ItemShop","tr":"Botlar ItemShop'tan alır"},
  "ai_ishop_help":{"en":"A bot cashes the Kupon SM vouchers it finds (Metin stones and bosses drop them, M2_DRAGON_COIN_*_PERMILLE) into its account's Dragon Coins and buys, at most once an hour, only what its own rules would use: a Kamień Duchowy for a Grand Master skill, a change stone for a worn weapon still worth rerolling, with Dragon Marks a Blessing Scroll or the Dragon God's attack potions, and one bot in four a hairstyle, once. No VIP items and no pass: every bot already holds the premium subscription. Off: the vouchers stay in the bags.",
                   "pl":"Bot wymienia znalezione Kupony SM (dropią z metinów i bossów, M2_DRAGON_COIN_*_PERMILLE) na Smocze Monety swojego konta i kupuje, najwyżej raz na godzinę, tylko to, z czego jego własne reguły korzystają: Kamień Duchowy do umiejętności Wielkiego Mistrza, kamień zmiany bonusów do noszonej broni wartej jeszcze losowania, za Smocze Znaki Zwój Błogosławieństwa albo mikstury ataku Boga Smoków, a jeden bot na czterech fryzurę, raz. Bez przedmiotów VIP i bez przepustki: każdy bot ma już subskrypcję premium. Wyłączone: kupony zostają w torbach.",
@@ -5307,7 +5323,7 @@ TPL_GUILDS = BASE.replace("__BODY__", """
   <td>{{g.ladder}}</td>
   <td>{{g.wins}}/{{g.draws}}/{{g.losses}}</td>
   <td>{{g.exp_offered}}</td>
-  <td>{% if g.war_with %}\u2694 {{t('gl_war_with')}} <b>{{g.war_with}}</b> {{g.war_score}}:{{g.war_enemy_score}}{% endif %}</td>
+  <td>{% if g.war_with %}\u2694 {{t('gl_war_with')}} <b>{{g.war_with}}</b> {{g.war_score}}:{{g.war_enemy_score}}{% endif %}{% if g.tower_raid %} \u26e9 {{t('gl_tower')}}{% endif %}</td>
 </tr>
 {% endfor %}
 </table>
@@ -5353,6 +5369,12 @@ TPL_AI = BASE.replace("__BODY__", """
   <h3 style="margin:0 0 2px">🛡 {{t('ai_wars')}}</h3>
   <p class="muted" style="margin:0 0 6px">{{t('ai_wars_help')}}</p>
   <label><input type="checkbox" name="WARS" value="1" {% if cur.get('WARS', 1) %}checked{% endif %}> {{t('ai_wars_on')}}</label>
+</div>
+<div style="margin-bottom:18px">
+  <h3 style="margin:0 0 2px">⛩ {{t('ai_tower')}}</h3>
+  <p class="muted" style="margin:0 0 6px">{{t('ai_tower_help')}}</p>
+  <label><input type="checkbox" name="TOWER" value="1" {% if cur.get('TOWER', 1) %}checked{% endif %}> {{t('ai_tower_on')}}</label>
+  <div style="margin-top:6px"><button type="submit" formaction="{{url_for('ai_tower_now')}}" formmethod="post">{{t('ai_tower_now')}}</button></div>
 </div>
 <div style="margin-bottom:18px">
   <h3 style="margin:0 0 2px">🛒 {{t('ai_ishop')}}</h3>
@@ -12539,6 +12561,7 @@ def ai_weights():
         vals["NIGHT"] = 1 if request.form.get("NIGHT") else 0
         vals["LIFE"] = 1 if request.form.get("LIFE") else 0
         vals["WARS"] = 1 if request.form.get("WARS") else 0
+        vals["TOWER"] = 1 if request.form.get("TOWER") else 0
         vals["ISHOP"] = 1 if request.form.get("ISHOP") else 0
         try:
             vals["SCRAP"] = max(0, min(100, int(request.form.get("SCRAP", 0))))
@@ -12593,6 +12616,23 @@ def ai_weights():
     return render_template_string(TPL_AI, cur=cur, chest_off=chest_off,
                                   keys=keys, wmin=AI_W_MIN,
                                   wmax=AI_W_MAX, wneutral=AI_W_NEUTRAL)
+
+
+@app.route("/ai/tower_now", methods=["POST"])
+@login_required
+def ai_tower_now():
+    """"Now" for the bot guilds' Demon Tower: the core watches this file's
+    mtime (PLAYERBOT_TOWER_NOW_PATH in playerbot_types.h) and calls a raid on
+    its next check when none is under way."""
+    path = os.path.join(AI_SPOOL, "playerbot_tower_now")
+    try:
+        with open(path, "a", encoding="utf-8"):
+            pass
+        os.utime(path, None)
+        flash(t("ai_tower_now_done"))
+    except OSError as e:
+        flash("%s: %s" % (t("ai_tower_now"), e))
+    return redirect(url_for("ai_weights"))
 
 
 @app.route("/ai/items", methods=["GET", "POST"])

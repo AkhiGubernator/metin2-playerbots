@@ -680,7 +680,28 @@ namespace {
                 auto preview = BotOfflinePreview(*it->second);
                 if (preview) {
                     ikashop::TPriceInfo price{};
-                    price.yang = std::max(GetPlayerBotShopAskingPrice(preview), GetPlayerBotRefineInvestment(preview));
+                    // A line nobody has bought comes down a step for every
+                    // PLAYERBOT_OFFLINE_UNSOLD_STEP_MS it has stood, to the ceiling
+                    // the classic stall's markdown has and never under what the
+                    // blacksmith was paid (Tieru, 16 September). The clock is the
+                    // listing's own (o.listed); a line from before this core
+                    // started is clocked from the first visit that sees it.
+                    auto listed = o.listed.find(it->first);
+                    if (listed == o.listed.end())
+                        listed = o.listed.emplace(it->first, playerbot_offline::ListedLine{
+                                preview->GetVnum(),
+                                preview->GetType() == ITEM_SKILLBOOK ? (uint32_t)preview->GetSocket(0) : 0u,
+                                now, (uint8_t)preview->GetRefineLevel() }).first;
+                    const uint32_t standing = now - listed->second.when;
+                    int discount = (int)(standing / PLAYERBOT_OFFLINE_UNSOLD_STEP_MS) * PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT;
+                    if (discount > PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_TOTAL)
+                        discount = PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_TOTAL;
+                    const long long asking = (long long)GetPlayerBotShopAskingPrice(preview) * (100 - discount) / 100;
+                    price.yang = std::max(asking, (long long)GetPlayerBotRefineInvestment(preview));
+                    if (discount > 0 && price.yang != it->second->GetPrice().yang)
+                        PlayerBotLogThrottled("offline_markdown", now, "PLAYERBOT_OFFLINE: marked down pid=%u name=%s item=%u vnum=%u standing_min=%u discount=%d%% price=%lld",
+                                ch->GetPlayerID(), ch->GetName(), it->first, preview->GetVnum(),
+                                standing / 60000U, discount, (long long)price.yang);
                     M2_DELETE(preview);
                     if (price.yang > 0 && price.yang < GOLD_MAX && price.yang != it->second->GetPrice().yang &&
                             Begin(ch->GetPlayerID(), Edit, it->first, now)) {

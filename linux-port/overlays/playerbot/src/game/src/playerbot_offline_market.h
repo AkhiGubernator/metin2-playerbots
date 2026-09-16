@@ -83,6 +83,8 @@ namespace {
         // Read before the request: the log line below must not touch the shop
         // line once the purchase is in the engine's hands.
         const DWORD boughtVnum = line->GetInfo().vnum;
+        if (boughtVnum == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
+            NotePlayerBotChestBought(ch->GetPlayerID(), now);
         if (Begin(ch->GetPlayerID(), Buy, o.buyItem, now)) {
             auto& request = requests.at(ch->GetPlayerID());
             request.vnum = line->GetInfo().vnum;

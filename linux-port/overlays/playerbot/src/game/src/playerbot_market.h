@@ -97,8 +97,31 @@ namespace
 	// trader, which sells them; nobody under PLAYERBOT_CHEST_BUY_MIN_LEVEL or
 	// holding PLAYERBOT_CHEST_BUY_HOLD already; and only into a bag that takes
 	// the chest's whole group and the engine's free column of three.
+	// When each bot last bought a chest, for PLAYERBOT_CHEST_BUY_COOLDOWN.
+	std::map<DWORD, DWORD> s_mapPlayerBotChestBoughtAt;
+
+	void NotePlayerBotChestBought(DWORD dwPlayerID, DWORD dwNow)
+	{
+		s_mapPlayerBotChestBoughtAt[dwPlayerID] = dwNow;
+	}
+
 	bool WantsPlayerBotMoonlightChest(LPCHARACTER ch)
 	{
+		// The counters are not emptied for the players' sake: while the ledger
+		// counts no more than the reserve on every counter of the world, or this
+		// bot bought one within the cooldown, the answer is no.
+		if (ch)
+		{
+			const TPlayerBotMarketLedgerEntry* chests =
+					GetPlayerBotMarketLedgerEntry(PLAYERBOT_MOONLIGHT_CHEST_VNUM);
+			if (chests && chests->dwSupplyUnits <= PLAYERBOT_CHEST_MARKET_RESERVE)
+				return false;
+			std::map<DWORD, DWORD>::const_iterator bought =
+					s_mapPlayerBotChestBoughtAt.find(ch->GetPlayerID());
+			if (bought != s_mapPlayerBotChestBoughtAt.end() &&
+					get_dword_time() - bought->second < PLAYERBOT_CHEST_BUY_COOLDOWN)
+				return false;
+		}
 		if (!ch || !ch->IsItemLoaded() || (int)ch->GetLevel() < PLAYERBOT_CHEST_BUY_MIN_LEVEL ||
 				IsPlayerBotResourceTrader(ch->GetPlayerID()) ||
 				IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID())) ||
@@ -481,6 +504,8 @@ namespace
 		RememberPlayerBotSale(pick.dwVnum, pick.bRefine,
 				(DWORD)paid / std::max<DWORD>(1, pick.wCount), get_dword_time(),
 				pick.dwSkillVnum);
+		if (pick.dwVnum == PLAYERBOT_MOONLIGHT_CHEST_VNUM)
+			NotePlayerBotChestBought(ch->GetPlayerID(), get_dword_time());
 		sys_log(0, "PLAYERBOT_MARKET: bought pid=%u name=%s from=%s slot=%u vnum=%u refine=%u count=%u asked=%u paid=%lld gold=%lld",
 				ch->GetPlayerID(), ch->GetName(), pick.keeper->GetName(),
 				(unsigned int)pick.bSlot, pick.dwVnum, (unsigned int)pick.bRefine,

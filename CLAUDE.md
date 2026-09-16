@@ -4383,6 +4383,113 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `updater/` is a host-side systemd service for a VPS and nothing in our
   images runs it; the panel only shows its state. His `web_admin.quest` has
   a `NOTICE` command ours lacks, gated off in public builds.
+- **A stack's ceiling is the item's, and two of the fragments' loops were
+  measured against the wrong one.** mt2009 keeps `dwMaxStack` per proto -
+  twenty for Medal Konny (50050) and the Blessing Scroll, a thousand for
+  arrows, two hundred for most - and `CItem::SetCount` clamps to it silently.
+  `MergePlayerBotStacks` compared with `PLAYERBOT_STACK_MAX` (200), so ten full
+  stacks of twenty medals were "merged" four at a time every five seconds for
+  ever: MoveItem into a full stack moves nothing and answers true, the pass
+  counted four merges, used its budget and came straight back - 110 bots and
+  14 321 `PLAYERBOT_BAG: merged` lines in ten minutes, every medal dropper
+  among them. `PlayerBotMaxStack` (economy.h) is the item's own limit on both
+  engines, a merge counts only when the destination grew, and the safebox
+  top-up and merge measure with it too: a pour of twenty into a box stack of
+  twenty measured against two hundred would have removed the bag stack and
+  kept nothing of it. Medal Konny came only in stacks of twenty for the same
+  reason: that is the engine's pickup, not a split.
+- **A dropper with its stock in the bag was sent back for more.** The
+  dungeon's exit rule sends a medal dropper out at
+  `PLAYERBOT_MEDAL_DROPPER_MEDAL_STOCK` medals (`DecideMonkeyExit`,
+  MEDAL_READY) and `ShouldPlayerBotPursueHorseExpedition` sent it straight
+  back, because its dropper branch asked only for a free cell: 703 of 854
+  dungeon visits under ten seconds in an hour on the test world, one bot
+  every fifty seconds, `horse_to_monkey_medium` and `monkey_medal_found_direct`
+  by turns. The pursue rule asks for the stock too; a full dropper hunts on
+  its village's ground until a counter line sells (they sell slowly: 1 704
+  medals stood on 42 counters in lines of twenty). Two rules that decide one
+  errand from two sides have to read the same number.
+- **The travel status named a frontier the traveller was refused.** The
+  `BOT_ACTION_TRAVEL` fallback printed `GetPlayerBotFrontierMapForLevel`, so
+  eleven medal droppers of thirty-three read "Ide na Pustynie Yongbi (cel:
+  rozwoj konia)" in Bokjung while riding to the Monkey Dungeon - the same
+  three bots the `ShouldPlayerBotLeaveForFrontier` comment describes, seen
+  again from the panel. The status asks that rule first now.
+- **The basic shot refused a bow whose quiver had just emptied.**
+  `ExecutePlayerBotBasicAttack` asked `GetArrowAndBow` and gave up; only the
+  skill path nocked arrows from the bag. Seven of 127 archers of the test
+  world stood with a bow, nothing in the arrow slot and a thousand arrows in
+  the bag (16 September). It nocks first now. No bot shoots without arrows -
+  the engine's `GetArrowAndBow` is the rule for a bot as for a player, and
+  the one archer with none anywhere was walking to the weapon merchant; a
+  report of "shooting without arrows" is worth checking against the arrow
+  slot (`EQUIPMENT` position 9), which a bag view does not show.
+- **A keep is a count of scrolls, not of cells before this one.** The
+  scroll rule in `ScorePlayerBotShopStock` held a stack back while fewer
+  than `PLAYERBOT_REFINE_SCROLL_KEEP` scrolls lay in the cells *ahead* of
+  it - written for the classic stall, which split singles off first so the
+  base stack always had cut lines behind it. The offline stand's service
+  visit splits nothing before it scores, so a bot's one stack was kept whole
+  whatever it held: 294 bots with 1 405 scrolls, 289 of them in a single
+  stack, 116 of those over the keep, and 5 on the counters of the whole
+  world ("A bodzi jak nie bylo tak nie ma", 16 September - and the 2.0.55
+  cut into fives could never run, because the scorer never handed it a
+  stack). A stack is goods when it and the scrolls ahead of it exceed the
+  keep (`GetPlayerBotRefineScrollKeep`, three, one for a resource trader,
+  none without scroll work); `GetPlayerBotStallBaseKeep` leaves the keep in
+  the base stack, and both cuts - `BotOfflinePrepareLine` and
+  `SplitPlayerBotStallSingles` - take what is over it up to the line, so a
+  stack of five with a keep of three is a line of two, never a line of five
+  that leaves the anvil nothing. And the base keep has to ask the scroll rule
+  *before* the material rule: the Blessing Scroll is what recipe 501 consumes,
+  so `IsPlayerBotTradeableMaterial` is true of it and
+  `GetPlayerBotStallBaseKeep` answered with the anvil's reserve - twice the
+  recipe count of every piece under scroll work, larger than most stacks -
+  and the first deploy of the count rule still cut nothing: a bot with
+  twenty-six scrolls put a marble up instead. Any rule that keeps "the first
+  N" of a kind has to be re-read for the path that never splits, and any
+  item that is two things at once for the one that answers first.
+- **A service visit could never cut a line, because the board was already
+  open.** `MoveItem` asks `CanHandleItem`, which is false while `IsBusy` -
+  looking at a shop, its safebox open, edit mode - and the visit set all of
+  that before the add loop asked `BotOfflinePrepareLine` to cut. Every cut
+  since 2.0.26 failed silently and the loop moved to the next item: the diag
+  lines of 16 September read score 800, a slot, a keep of three and
+  `lineCell=-1` for every scroll, and `cut a line` had never once been
+  logged that morning for a hoard or a chest either - what the notes above
+  call "packs cut here" were whole stacks going up. `BotOfflinePrepareVisitLine`
+  collects, chooses and cuts before `SetLookingShopOwner(true)`, keeps the
+  line by item id and cell in `playerbot_offline::State`, and the add loop
+  takes it first; a line left behind by a visit that ended early is a split
+  stack the merge pass pours back. The scroll cut measures its keep over the
+  whole kind (`CountSpecifyItem`), so the cut line itself goes up whole.
+  Anything the engine refuses while "busy" - a move, an equip, a use - has to
+  happen before the board opens, never between its packets.
+- **The stable keeper's waits live in four stock quests, not in ours.**
+  `pony_levelup` (ours since 2.0.12) has no wait for levels 1-10, but the
+  package's `quest/systems/horse/` still made a player wait: `pony_buy` and
+  the two `horse_upgrade` quests set `make_time` twelve hours ahead in their
+  `report` state and left a `wait` state for the next login, and
+  `horse_levelup` kept twenty-one hours (`next_time`) between two trainings
+  of levels 11-19 ("Zniesienie czasu oczekiwania na 1lv konia", greess;
+  "niezaleznie od poziomu konia", Tieru, 16 September). The four ship as our
+  copies in `linux-port-mt2009/docker/game/quest/` - report goes straight to
+  `buy`, the training's clock is an `elseif false` like pony_levelup's - and
+  compile in the Dockerfile loop beside pony_levelup, their objects landing
+  over the stock ones. Two things the first build taught: the loop's
+  `[ -f ... ] || continue` skips a quest the build context lacks without a
+  word, so a deploy that copies the Dockerfile and not the new files builds
+  the old objects (check `object/20349/chat/pony_buy.report.1.script` for
+  `setstate ( "buy" )`); and the `gameforge.horse_levelup.*` names in qc's
+  output for pony_levelup are translate keys, not a second quest of that name.
+- **The chest switch is a side file of the panel, not a weights key.** The
+  weights file is re-read every five seconds and an unknown key costs the
+  core a log line each time, so "Wylacz drop Szkatulek Blasku Ksiezyca" on
+  the AI page (`CHEST_OFF`, Tieru, 16 September) writes CHEST 0 and
+  CHEST_STONE 0 into the weights file and keeps the sliders' own values in
+  `playerbot_chest_switch.tsv` beside it; unticking writes them back. Tried
+  on the test world through the page's own form: off wrote the zeros and the
+  core reloaded within the five seconds, on put 10 and 300 back.
 - **A mod in an engine file survives an update and breaks the next build.**
   The package replaces our files and leaves everything else, so a fork's
   edit in `guild.cpp` or `messenger_manager.cpp` calling a manager method we

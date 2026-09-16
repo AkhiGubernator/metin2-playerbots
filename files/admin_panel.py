@@ -1155,6 +1155,130 @@ def write_ai_weights(vals):
 # on every re-read.
 CHEST_SWITCH = os.path.join(AI_SPOOL, "playerbot_chest_switch.tsv")
 
+# The timed events the game core runs (playerbot_events.h): chest windows,
+# rate windows, and "activate now" lines. Same shape as the weights: the
+# panel writes, the core stats the file every five seconds. The core answers
+# with playerbot_events_status.tsv beside its playerbot_status.tsv.
+EVENTS_FILE = os.path.join(AI_SPOOL, "playerbot_events.tsv")
+EVENT_KINDS = ("chest", "exp", "drop", "yang")
+EVENTS_STATUS_FILES = [
+    "/opt/metin2/var/channel1/game1/playerbot_events_status.tsv",
+    "/opt/metin2/var/channel1/first/playerbot_events_status.tsv",
+    "/opt/metin2/var/channel1/game2/playerbot_events_status.tsv",
+]
+EVENT_NOW_MINUTES = (15, 30, 60, 120, 180, 360)
+_EVENT_HHMM = re.compile(r"^([01]?\d|2[0-4]):([0-5]\d)$")
+
+
+def event_hhmm(text):
+    """'HH:MM' normalised, or None. 24:00 is a valid end."""
+    m = _EVENT_HHMM.match((text or "").strip())
+    if not m:
+        return None
+    h, mi = int(m.group(1)), int(m.group(2))
+    if h == 24 and mi != 0:
+        return None
+    return "%02d:%02d" % (h, mi)
+
+
+def read_events():
+    """The file as the page shows it: rows (a row switched off is kept as a
+    '#off' line the core skips) and the 'now' lines by kind."""
+    rows, nows = [], {}
+    try:
+        with open(EVENTS_FILE, "r", encoding="utf-8", errors="replace") as fh:
+            lines = fh.read().splitlines()
+    except OSError:
+        return rows, nows
+    for line in lines:
+        line = line.rstrip("\r")
+        if not line.strip():
+            continue
+        on = True
+        if line.startswith("#off\t"):
+            on = False
+            line = line[len("#off\t"):]
+        elif line.startswith("#"):
+            continue
+        f = line.split("\t")
+        if f[0] == "now" and len(f) >= 4 and f[1] in EVENT_KINDS:
+            try:
+                nows[f[1]] = {"until": int(f[2]), "value": int(f[3])}
+            except ValueError:
+                pass
+            continue
+        if len(f) < 5 or f[0] not in EVENT_KINDS:
+            continue
+        days = [d for d in range(1, 8) if f[1] == "*" or str(d) in f[1].split(",")]
+        start, end = event_hhmm(f[2]), event_hhmm(f[3])
+        if not start or not end:
+            continue
+        try:
+            value = int(f[4])
+        except ValueError:
+            value = 0
+        rows.append({"kind": f[0], "days": days, "start": start, "end": end,
+                     "value": value, "on": on})
+    return rows, nows
+
+
+def write_events(rows, nows):
+    """Replace the file in one step, written beside and renamed over, because
+    the core reads it on its own clock and must never see half of it."""
+    body = ["# Metin2 playerbots -- timed events (the panel's Events page).",
+            "# kind<TAB>days<TAB>from<TAB>to<TAB>value  |  now<TAB>kind<TAB>until_epoch<TAB>value",
+            "# days: * or 1..7 (1 = Monday); a '#off' line is a row switched off.",
+            ""]
+    for r in rows:
+        days = "*" if len(r["days"]) == 7 else (",".join(str(d) for d in r["days"]) or "-")
+        line = "%s\t%s\t%s\t%s\t%d" % (r["kind"], days, r["start"], r["end"], int(r["value"]))
+        body.append(line if r.get("on", True) else "#off\t" + line)
+    for kind in EVENT_KINDS:
+        n = nows.get(kind)
+        if n and int(n.get("until", 0)) > time.time():
+            body.append("now\t%s\t%d\t%d" % (kind, int(n["until"]), int(n.get("value", 0))))
+    tmp = EVENTS_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(body) + "\n")
+    os.replace(tmp, EVENTS_FILE)
+
+
+def read_events_status():
+    """What the core last wrote, by kind; {} when no core has written for five
+    minutes (an older core, or none running)."""
+    best, best_written = {}, 0
+    for path in EVENTS_STATUS_FILES:
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as fh:
+                lines = fh.read().splitlines()
+        except OSError:
+            continue
+        cur, written = {}, 0
+        for line in lines[1:]:
+            f = line.rstrip("\r").split("\t")
+            if len(f) < 8 or f[0] not in EVENT_KINDS:
+                continue
+            try:
+                cur[f[0]] = {"scheduled": f[1] == "1", "active": f[2] == "1", "value": int(f[3]),
+                             "until": int(f[4]), "next_start": int(f[5]), "next_value": int(f[6])}
+                written = int(f[7])
+            except ValueError:
+                continue
+        if cur and written > best_written:
+            best, best_written = cur, written
+    if not best or time.time() - best_written > 300:
+        return {}
+    now = time.localtime()
+    for st in best.values():
+        for key in ("until", "next_start"):
+            stamp = st.get(key, 0)
+            if stamp:
+                lt = time.localtime(stamp)
+                same_day = (lt.tm_year, lt.tm_yday) == (now.tm_year, now.tm_yday)
+                st[key + "_text"] = time.strftime("%H:%M" if same_day else "%d.%m %H:%M", lt)
+    return best
+
+
 
 def read_chest_switch():
     """(off, saved_kill, saved_stone); the saved values are None until set."""
@@ -3111,6 +3235,42 @@ T.update({
                   "pl":"Jak często wypada szkatułka, w promilach: z zabitego potwora i z rozbitego Metina. Domyślnie w grze 10‰ (1%) i 300‰ (30%); więcej szkatułek to więcej zwojów bonusów, mikstur szybkości i Zwojów Błogosławieństwa u botów. Działa w pięć sekund, dla botów i graczy tak samo.",
                   "de":"Wie oft eine Truhe fällt, in Promille: pro getötetem Monster und pro zerstörtem Metin. Spielstandard 10‰ (1%) und 300‰ (30%); mehr Truhen heißt mehr Bonusrollen, Tempotränke und Segensrollen bei den Bots. Gilt binnen fünf Sekunden, für Bots wie Spieler.",
                   "tr":"Sandığın ne sıklıkla düştüğü, binde olarak: öldürülen canavar başına ve kırılan Metin başına. Oyun varsayılanı 10‰ (%1) ve 300‰ (%30); daha çok sandık, botlarda daha çok bonus parşömeni, hız iksiri ve Kutsama Parşömeni demek. Beş saniye içinde, bot ve oyuncu için aynı şekilde uygulanır."},
+ "ev_nav":       {"en":"\U0001F389 Events","pl":"\U0001F389 Eventy","de":"\U0001F389 Events","tr":"\U0001F389 Etkinlikler"},
+ "ev_open":      {"en":"\U0001F389 Open events","pl":"\U0001F389 Otw\u00f3rz eventy","de":"\U0001F389 Events \u00f6ffnen","tr":"\U0001F389 Etkinlikleri a\u00e7"},
+ "ev_dash_hint": {"en":"Timed windows: Moonlight chests drop only while their event runs; more experience, drop or yang at chosen hours. \u201cActivate now\u201d switches an event on for a number of minutes.","pl":"Okna czasowe: Szkatu\u0142ki Blasku Ksi\u0119\u017cyca dropi\u0105 tylko wtedy, gdy trwa ich event; wi\u0119cej expa, dropu albo yang o wybranych porach. \u201eAktywuj teraz\u201d w\u0142\u0105cza event na podan\u0105 liczb\u0119 minut.","de":"Zeitfenster: Mondschein-Truhen fallen nur w\u00e4hrend ihres Events; mehr Erfahrung, Drop oder Yang zu gew\u00e4hlten Stunden. \u201eJetzt aktivieren\u201c schaltet ein Event f\u00fcr einige Minuten ein.","tr":"Zaman pencereleri: Ay I\u015f\u0131\u011f\u0131 Sand\u0131klar\u0131 yaln\u0131zca etkinlik s\u00fcrerken d\u00fc\u015fer; se\u00e7ilen saatlerde daha fazla tecr\u00fcbe, drop veya yang. \u201c\u015eimdi etkinle\u015ftir\u201d bir etkinli\u011fi belirli dakika a\u00e7ar."},
+ "ev_intro":     {"en":"A row is a weekly window: which days, from what hour to what hour, and for a rate how many percent over the server's own rates (50 = +50%). The game core reads this within five seconds; nothing restarts. A window past midnight (22:00-02:00) runs into the next day.","pl":"Wiersz to okno tygodniowe: w jakie dni, od kt\u00f3rej do kt\u00f3rej, a dla rat o ile procent ponad ustawione raty serwera (50 = +50%). Rdze\u0144 gry odczytuje to w pi\u0119\u0107 sekund; nic si\u0119 nie restartuje. Okno przez p\u00f3\u0142noc (22:00-02:00) trwa do nast\u0119pnego dnia.","de":"Eine Zeile ist ein w\u00f6chentliches Fenster: welche Tage, von wann bis wann, und bei einer Rate wie viel Prozent \u00fcber den Serverraten (50 = +50%). Der Spielkern liest das binnen f\u00fcnf Sekunden; nichts startet neu. Ein Fenster \u00fcber Mitternacht (22:00-02:00) l\u00e4uft in den n\u00e4chsten Tag.","tr":"Bir sat\u0131r haftal\u0131k bir penceredir: hangi g\u00fcnler, saat ka\u00e7tan ka\u00e7a ve oran i\u00e7in sunucu oranlar\u0131n\u0131n y\u00fczde ka\u00e7 \u00fcst\u00fc (50 = +%50). Oyun \u00e7ekirde\u011fi bunu be\u015f saniyede okur; hi\u00e7bir \u015fey yeniden ba\u015flamaz. Gece yar\u0131s\u0131n\u0131 ge\u00e7en pencere (22:00-02:00) ertesi g\u00fcne sarkar."},
+ "ev_chest_note":{"en":"Once a single chest window is in the schedule, the chests drop only inside the windows; the two sliders on the bot behaviour page say how often they drop then.","pl":"Gdy w harmonogramie jest cho\u0107 jedno okno szkatu\u0142ek, poza oknami szkatu\u0142ki nie dropi\u0105 wcale; dwa suwaki na stronie zachowania bot\u00f3w m\u00f3wi\u0105, jak cz\u0119sto dropi\u0105 w oknie.","de":"Sobald ein Truhenfenster im Plan steht, fallen die Truhen nur innerhalb der Fenster; die zwei Regler auf der Seite Bot-Verhalten sagen, wie oft sie dann fallen.","tr":"Planda tek bir sand\u0131k penceresi bile varsa sand\u0131klar yaln\u0131zca pencereler i\u00e7inde d\u00fc\u015fer; bot davran\u0131\u015f\u0131 sayfas\u0131ndaki iki kayd\u0131r\u0131c\u0131 o s\u0131rada ne s\u0131kl\u0131kta d\u00fc\u015ft\u00fc\u011f\u00fcn\u00fc s\u00f6yler."},
+ "ev_notice_note":{"en":"The chat gets a notice when an event starts, every fifteen minutes while it runs, and when it ends.","pl":"Na czacie pojawia si\u0119 og\u0142oszenie na pocz\u0105tku eventu, co pi\u0119tna\u015bcie minut w jego trakcie i na ko\u0144cu.","de":"Der Chat bekommt eine Meldung zum Start eines Events, alle f\u00fcnfzehn Minuten w\u00e4hrenddessen und zum Ende.","tr":"Etkinlik ba\u015flad\u0131\u011f\u0131nda, s\u00fcrerken her on be\u015f dakikada ve bitti\u011finde sohbete duyuru d\u00fc\u015fer."},
+ "ev_status_title":{"en":"Right now","pl":"Teraz","de":"Gerade jetzt","tr":"\u015eu anda"},
+ "ev_status_stale":{"en":"The game core has not written an event status yet (it does so within a minute of starting with this version).","pl":"Rdze\u0144 gry nie zapisa\u0142 jeszcze statusu event\u00f3w (robi to w ci\u0105gu minuty od startu z t\u0105 wersj\u0105).","de":"Der Spielkern hat noch keinen Event-Status geschrieben (er tut es binnen einer Minute nach dem Start mit dieser Version).","tr":"Oyun \u00e7ekirde\u011fi hen\u00fcz etkinlik durumu yazmad\u0131 (bu s\u00fcr\u00fcmle ba\u015flad\u0131ktan bir dakika i\u00e7inde yazar)."},
+ "ev_active":    {"en":"Active until","pl":"Aktywny do","de":"Aktiv bis","tr":"\u015eu saate kadar aktif:"},
+ "ev_next":      {"en":"Next","pl":"Nast\u0119pny","de":"N\u00e4chstes","tr":"Sonraki"},
+ "ev_inactive":  {"en":"Not running","pl":"Nieaktywny","de":"L\u00e4uft nicht","tr":"\u00c7al\u0131\u015fm\u0131yor"},
+ "ev_none":      {"en":"No window scheduled","pl":"Brak zaplanowanych okien","de":"Kein Fenster geplant","tr":"Planlanm\u0131\u015f pencere yok"},
+ "ev_kind_chest":{"en":"Moonlight chests","pl":"Szkatu\u0142ki Blasku Ksi\u0119\u017cyca","de":"Mondschein-Truhen","tr":"Ay I\u015f\u0131\u011f\u0131 Sand\u0131klar\u0131"},
+ "ev_kind_exp":  {"en":"Experience","pl":"Do\u015bwiadczenie","de":"Erfahrung","tr":"Tecr\u00fcbe"},
+ "ev_kind_drop": {"en":"Item drop","pl":"Drop przedmiot\u00f3w","de":"Item-Drop","tr":"E\u015fya d\u00fc\u015fmesi"},
+ "ev_kind_yang": {"en":"Yang","pl":"Yang","de":"Yang","tr":"Yang"},
+ "ev_schedule":  {"en":"Schedule","pl":"Harmonogram","de":"Zeitplan","tr":"Zaman \u00e7izelgesi"},
+ "ev_col_kind":  {"en":"Event","pl":"Event","de":"Event","tr":"Etkinlik"},
+ "ev_col_days":  {"en":"Days","pl":"Dni","de":"Tage","tr":"G\u00fcnler"},
+ "ev_col_from":  {"en":"From","pl":"Od","de":"Von","tr":"Ba\u015flang\u0131\u00e7"},
+ "ev_col_to":    {"en":"To","pl":"Do","de":"Bis","tr":"Biti\u015f"},
+ "ev_col_value": {"en":"+% (rates)","pl":"+% (raty)","de":"+% (Raten)","tr":"+% (oranlar)"},
+ "ev_col_on":    {"en":"On","pl":"W\u0142.","de":"An","tr":"A\u00e7\u0131k"},
+ "ev_col_del":   {"en":"Delete","pl":"Usu\u0144","de":"L\u00f6schen","tr":"Sil"},
+ "ev_days":      {"en":"Mo,Tu,We,Th,Fr,Sa,Su","pl":"Pn,Wt,\u015ar,Cz,Pt,Sb,Nd","de":"Mo,Di,Mi,Do,Fr,Sa,So","tr":"Pt,Sa,\u00c7a,Pe,Cu,Ct,Pz"},
+ "ev_save":      {"en":"Save the schedule","pl":"Zapisz harmonogram","de":"Zeitplan speichern","tr":"Zaman \u00e7izelgesini kaydet"},
+ "ev_saved":     {"en":"Schedule saved; the game core reads it within five seconds.","pl":"Harmonogram zapisany; rdze\u0144 gry odczyta go w pi\u0119\u0107 sekund.","de":"Zeitplan gespeichert; der Spielkern liest ihn binnen f\u00fcnf Sekunden.","tr":"Zaman \u00e7izelgesi kaydedildi; oyun \u00e7ekirde\u011fi be\u015f saniyede okur."},
+ "ev_failed":    {"en":"Could not write the events file.","pl":"Nie uda\u0142o si\u0119 zapisa\u0107 pliku event\u00f3w.","de":"Die Event-Datei konnte nicht geschrieben werden.","tr":"Etkinlik dosyas\u0131 yaz\u0131lamad\u0131."},
+ "ev_bad_row":   {"en":"Row %d: the hours must be HH:MM (the start before 24:00) and the value 0-1000.","pl":"Wiersz %d: godziny musz\u0105 by\u0107 HH:MM (pocz\u0105tek przed 24:00), a warto\u015b\u0107 0-1000.","de":"Zeile %d: die Stunden m\u00fcssen HH:MM sein (Beginn vor 24:00), der Wert 0-1000.","tr":"Sat\u0131r %d: saatler SS:DD olmal\u0131 (ba\u015flang\u0131\u00e7 24:00 \u00f6ncesi), de\u011fer 0-1000."},
+ "ev_value_help":{"en":"The value is a percentage over the server's rates (50 = +50% experience); the chest rows ignore it. Untick every day to keep a row without running it.","pl":"Warto\u015b\u0107 to procent ponad raty serwera (50 = +50% expa); wiersze szkatu\u0142ek j\u0105 ignoruj\u0105. Odznacz wszystkie dni, by zachowa\u0107 wiersz bez uruchamiania.","de":"Der Wert ist ein Prozentsatz \u00fcber den Serverraten (50 = +50% Erfahrung); Truhenzeilen ignorieren ihn. Alle Tage abw\u00e4hlen, um eine Zeile zu behalten, ohne sie laufen zu lassen.","tr":"De\u011fer, sunucu oranlar\u0131n\u0131n \u00fcst\u00fcndeki y\u00fczdedir (50 = +%50 tecr\u00fcbe); sand\u0131k sat\u0131rlar\u0131 bunu yok sayar. Bir sat\u0131r\u0131 \u00e7al\u0131\u015ft\u0131rmadan saklamak i\u00e7in t\u00fcm g\u00fcnlerin i\u015faretini kald\u0131r\u0131n."},
+ "ev_now_minutes":{"en":"for minutes","pl":"na minut","de":"f\u00fcr Minuten","tr":"dakika boyunca"},
+ "ev_now_value": {"en":"+%","pl":"+%","de":"+%","tr":"+%"},
+ "ev_now_go":    {"en":"Activate now","pl":"Aktywuj teraz","de":"Jetzt aktivieren","tr":"\u015eimdi etkinle\u015ftir"},
+ "ev_now_started":{"en":"Event switched on for %d minutes; the chat is told within seconds.","pl":"Event w\u0142\u0105czony na %d minut; czat dowie si\u0119 w kilka sekund.","de":"Event f\u00fcr %d Minuten eingeschaltet; der Chat erf\u00e4hrt es binnen Sekunden.","tr":"Etkinlik %d dakikal\u0131\u011f\u0131na a\u00e7\u0131ld\u0131; sohbet saniyeler i\u00e7inde \u00f6\u011frenir."},
+ "ev_stop":      {"en":"End now","pl":"Zako\u0144cz","de":"Jetzt beenden","tr":"\u015eimdi bitir"},
+ "ev_stopped":   {"en":"The event switched on by hand is over.","pl":"Event w\u0142\u0105czony r\u0119cznie zako\u0144czony.","de":"Das von Hand eingeschaltete Event ist beendet.","tr":"Elle a\u00e7\u0131lan etkinlik bitti."},
  "ai_chest_off":  {"en":"Turn the Moonlight chest drop off","pl":"Wyłącz drop Szkatułek Blasku Księżyca","de":"Mondschein-Truhen nicht fallen lassen","tr":"Ay Işığı Sandığı düşmesini kapat"},
  "ai_chest_off_help":{"en":"Ticked and saved, no chest drops from monsters or Metin stones (both figures go to 0‰); the sliders keep what you set and come back when you untick. Applies within five seconds.",
                   "pl":"Zaznaczone i zapisane: żadna szkatułka nie wypada z potworów ani z Metinów (obie wartości idą na 0‰); suwaki pamiętają Twoje ustawienie i wracają po odznaczeniu. Działa w pięć sekund.",
@@ -4547,6 +4707,11 @@ TPL_DASH = BASE.replace("__BODY__", """
 <a class="btn" href="{{url_for('ai_weights')}}">{{t('ai_open')}}</a>
 </div>
 <div class="card">
+<h3 class="help">{{t('ev_nav')}}</h3>
+<p class="muted">{{t('ev_dash_hint')}}</p>
+<a class="btn" href="{{url_for('events_page')}}">{{t('ev_open')}}</a>
+</div>
+<div class="card">
 <h3 class="help" title="{{t('tip_reset')}}">🔗 {{t('reset_title')}}</h3>
 <p class="muted">{{t('reset_hint')}}</p>
 <form method="post" action="{{url_for('admin_resetlink')}}">
@@ -4875,12 +5040,85 @@ TPL_SEASON = BASE.replace("__BODY__", """
 # that says what it actually changes -- an unlabelled slider called "BIOLOG" is
 # a number, not a control. No %-formatting anywhere in here: BASE is full of
 # CSS percentages and would eat it.
+TPL_EVENTS = BASE.replace("__BODY__", """
+<p><a href="{{url_for('dash')}}">{{t('back_players')}}</a></p>
+<div class="card">
+<h3>{{t('ev_nav')}}</h3>
+<p class="muted">{{t('ev_intro')}}</p>
+<p class="muted">{{t('ev_chest_note')}}</p>
+<p class="muted">{{t('ev_notice_note')}}</p>
+</div>
+
+<div class="card">
+<h3>{{t('ev_status_title')}}</h3>
+{% if not status %}<p class="muted">{{t('ev_status_stale')}}</p>{% endif %}
+<table>
+{% for k in kinds %}{% set s = status.get(k) %}
+<tr>
+<td><b>{{t('ev_kind_' + k)}}</b></td>
+<td>
+{% if s and s.active %}<span class="badge">{{t('ev_active')}} {{s.until_text}}{% if s.value and k != 'chest' %} (+{{s.value}}%){% endif %}</span>
+{% elif s and s.next_start %}{{t('ev_next')}}: {{s.next_start_text}}{% if s.next_value and k != 'chest' %} (+{{s.next_value}}%){% endif %}
+{% elif s and s.scheduled %}{{t('ev_inactive')}}
+{% elif s %}{{t('ev_none')}}
+{% else %}-{% endif %}
+</td>
+<td>
+<form method="post" style="display:inline">
+<input type="hidden" name="_csrf" value="{{csrf_token}}">
+<input type="hidden" name="action" value="now">
+<input type="hidden" name="kind" value="{{k}}">
+{{t('ev_now_minutes')}}
+<select name="minutes">{% for m in minutes %}<option value="{{m}}" {% if m == 60 %}selected{% endif %}>{{m}}</option>{% endfor %}</select>
+{% if k != 'chest' %}{{t('ev_now_value')}} <input type="number" name="value" min="1" max="1000" value="50" style="width:70px">{% endif %}
+<button class="btn" type="submit">{{t('ev_now_go')}}</button>
+</form>
+{% if nows.get(k) and nows[k].until > now_epoch %}
+<form method="post" style="display:inline">
+<input type="hidden" name="_csrf" value="{{csrf_token}}">
+<input type="hidden" name="action" value="stop">
+<input type="hidden" name="kind" value="{{k}}">
+<button class="btn" type="submit">{{t('ev_stop')}}</button>
+</form>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+
+<div class="card">
+<h3>{{t('ev_schedule')}}</h3>
+<p class="muted">{{t('ev_value_help')}}</p>
+<form method="post">
+<input type="hidden" name="_csrf" value="{{csrf_token}}">
+<input type="hidden" name="action" value="save">
+<table>
+<tr><th>{{t('ev_col_kind')}}</th><th>{{t('ev_col_days')}}</th><th>{{t('ev_col_from')}}</th><th>{{t('ev_col_to')}}</th><th>{{t('ev_col_value')}}</th><th>{{t('ev_col_on')}}</th><th>{{t('ev_col_del')}}</th></tr>
+{% for r in rows %}{% set i = loop.index0 %}
+<tr>
+<td><select name="r{{i}}_kind"><option value="">-</option>{% for k in kinds %}<option value="{{k}}" {% if r.kind == k %}selected{% endif %}>{{t('ev_kind_' + k)}}</option>{% endfor %}</select></td>
+<td>{% for d in range(1, 8) %}<label style="margin-right:6px"><input type="checkbox" name="r{{i}}_d{{d}}" value="1" {% if d in r.days %}checked{% endif %}>{{day_names[d - 1]}}</label>{% endfor %}</td>
+<td><input type="text" name="r{{i}}_start" value="{{r.start}}" size="5" placeholder="20:00"></td>
+<td><input type="text" name="r{{i}}_end" value="{{r.end}}" size="5" placeholder="21:00"></td>
+<td><input type="number" name="r{{i}}_value" value="{{r.value}}" min="0" max="1000" style="width:70px"></td>
+<td><input type="checkbox" name="r{{i}}_on" value="1" {% if r.on %}checked{% endif %}></td>
+<td>{% if r.kind %}<input type="checkbox" name="r{{i}}_del" value="1">{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+<p><button class="btn" type="submit">{{t('ev_save')}}</button></p>
+</form>
+</div>
+""")
+
 TPL_AI = BASE.replace("__BODY__", """
 <p><a href="{{url_for('dash')}}">{{t('back_players')}}</a></p>
 <div class="card">
 <h3>{{t('ai_nav')}}</h3>
 <p class="muted">{{t('ai_intro')}}</p>
-<p><a class="btn" href="{{url_for('ai_item_policy')}}">{{t('ai_items_open')}}</a></p>
+<p><a class="btn" href="{{url_for('ai_item_policy')}}">{{t('ai_items_open')}}</a>
+   <a class="btn" href="{{url_for('events_page')}}">{{t('ev_open')}}</a></p>
 </div>
 
 <div class="card">
@@ -11955,6 +12193,84 @@ def rates():
                                   intro_key="rates_intro_mt2009" if ENGINE_MT2009 else "rates_intro",
                                   state_msg=t("rates_st_" + st) if st in RATE_STATES else "")
 
+
+
+@app.route("/events", methods=["GET", "POST"])
+@login_required
+def events_page():
+    """Timed events: chest windows, rate windows, and "activate now".
+
+    The page only writes the file; the game core reads it within five seconds,
+    gates the chest odds, moves the rate flags from ONE core and speaks on the
+    chat (playerbot_events.h). Nothing restarts.
+    """
+    rows, nows = read_events()
+    if request.method == "POST":
+        # (the global before_request hook has already checked the CSRF token)
+        action = request.form.get("action", "")
+        if action == "save":
+            new_rows = []
+            for i in range(0, 64):
+                kind = request.form.get("r%d_kind" % i)
+                if kind is None:
+                    break
+                if kind not in EVENT_KINDS or request.form.get("r%d_del" % i):
+                    continue
+                start = event_hhmm(request.form.get("r%d_start" % i))
+                end = event_hhmm(request.form.get("r%d_end" % i))
+                try:
+                    value = max(0, min(1000, int(request.form.get("r%d_value" % i) or 0)))
+                except ValueError:
+                    value = -1
+                if not start or not end or start == "24:00" or value < 0:
+                    flash(t("ev_bad_row") % (i + 1), "error")
+                    return redirect(url_for("events_page"))
+                days = [d for d in range(1, 8) if request.form.get("r%d_d%d" % (i, d))]
+                new_rows.append({"kind": kind, "days": days, "start": start, "end": end,
+                                 "value": 0 if kind == "chest" else value,
+                                 "on": bool(request.form.get("r%d_on" % i))})
+            try:
+                write_events(new_rows, nows)
+            except OSError:
+                flash(t("ev_failed"), "error")
+                return redirect(url_for("events_page"))
+            flash(t("ev_saved"))
+            return redirect(url_for("events_page"))
+        kind = request.form.get("kind", "")
+        if kind not in EVENT_KINDS:
+            return redirect(url_for("events_page"))
+        if action == "now":
+            try:
+                minutes = max(5, min(1440, int(request.form.get("minutes") or 60)))
+                value = max(1, min(1000, int(request.form.get("value") or 50)))
+            except ValueError:
+                minutes, value = 60, 50
+            nows[kind] = {"until": int(time.time()) + minutes * 60,
+                          "value": 0 if kind == "chest" else value}
+            try:
+                write_events(rows, nows)
+            except OSError:
+                flash(t("ev_failed"), "error")
+                return redirect(url_for("events_page"))
+            flash(t("ev_now_started") % minutes)
+            return redirect(url_for("events_page"))
+        if action == "stop":
+            nows.pop(kind, None)
+            try:
+                write_events(rows, nows)
+            except OSError:
+                flash(t("ev_failed"), "error")
+                return redirect(url_for("events_page"))
+            flash(t("ev_stopped"))
+            return redirect(url_for("events_page"))
+        return redirect(url_for("events_page"))
+
+    # Two empty rows after the saved ones: a new window needs no script.
+    shown = list(rows) + [{"kind": "", "days": list(range(1, 8)), "start": "20:00",
+                           "end": "21:00", "value": 50, "on": True} for _ in range(2)]
+    return render_template_string(TPL_EVENTS, rows=shown, nows=nows, kinds=EVENT_KINDS,
+                                  status=read_events_status(), minutes=EVENT_NOW_MINUTES,
+                                  day_names=t("ev_days").split(","), now_epoch=int(time.time()))
 
 @app.route("/ai", methods=["GET", "POST"])
 @login_required

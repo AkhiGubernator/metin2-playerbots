@@ -2,6 +2,7 @@
 #include "playerbot_manager.h"
 #include "playerbot_empire_rules.h"
 #include "playerbot_world_rules.h"
+#include "playerbot_event_rules.h"
 
 #include "char.h"
 #include "skill.h"
@@ -76,6 +77,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_weapon_atlas.h"
 #include "playerbot_log.h"
 #include "playerbot_config.h"
+#include "playerbot_events.h"
 #include "playerbot_swing_timing.h"
 #include "playerbot_navigation.h"
 #include "playerbot_world_memory.h"
@@ -1547,6 +1549,49 @@ namespace
 				bestSocket, after, bestScore);
 	}
 
+	// Sztuka Combo and the Leadership books, read the way the engine's own use
+	// path reads them (char_item.cpp, 50301-50306): Combo from level 30 and
+	// again from 50, Leadership twenty levels a book. The day the engine puts
+	// between two reads of one skill is waved away like the class books' while
+	// the BOOKS switch is on; a read costs 20 000 experience, which a bot of
+	// thirty has. Combo widens what a swing hits (GetShootMaxTargetCount is
+	// 3 + the Combo level) and Leadership is what a party's bonuses ask of
+	// their leader. Asked from ManagePlayerBotSkillBooks when no class book
+	// is due, on its clock (sizowski, 16 September: "dodanie korzystania z
+	// combo i dowodzenia botom").
+	bool ReadPlayerBotGeneralSkillBook(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
+	{
+		if (!ch || ch->IsPolymorphed())
+			return false;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM item = ch->GetInventoryItem(cell);
+			if (!item || item->GetCell() != cell || !IsPlayerBotGeneralSkillBook(item->GetVnum()) ||
+					!CanPlayerBotReadGeneralSkillBookNow(ch, item->GetVnum()))
+				continue;
+			const DWORD skill = GetPlayerBotGeneralSkillBookSkill(item->GetVnum());
+			if (IsPlayerBotFastBooksEnabled() && get_global_time() < ch->GetSkillNextReadTime(skill))
+#if defined(PLAYERBOT_ENGINE_MT2009)
+				ch->SetSkillNextReadTime(skill, get_global_time(), true);
+#else
+				ch->SetSkillNextReadTime(skill, get_global_time());
+#endif
+			if (get_global_time() < ch->GetSkillNextReadTime(skill) &&
+					!ch->FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
+				return false;
+			const BYTE oldLevel = ch->GetSkillLevel(skill);
+			const DWORD vnum = item->GetVnum();
+			if (!ch->UseItem(TItemPos(INVENTORY, cell)))
+				return false;
+			SetPlayerBotAction(state, BOT_ACTION_READ_BOOK, dwNow);
+			sys_log(0, "PLAYERBOT_AI: read general book pid=%u name=%s vnum=%u skill=%u old_level=%u new_level=%u success=%d",
+					ch->GetPlayerID(), ch->GetName(), vnum, skill, oldLevel, ch->GetSkillLevel(skill),
+					ch->GetSkillLevel(skill) > oldLevel ? 1 : 0);
+			return true;
+		}
+		return false;
+	}
+
 	void ManagePlayerBotSkillBooks(LPCHARACTER ch, TPlayerBotAIState& state, DWORD dwNow)
 	{
 		if (!ch || !ch->IsItemLoaded() || ch->GetSkillGroup() == 0 ||
@@ -1584,7 +1629,10 @@ namespace
 		}
 
 		if (bestCell < 0 || bestSkillVnum == 0)
+		{
+			ReadPlayerBotGeneralSkillBook(ch, state, dwNow);
 			return;
+		}
 
 		if (get_global_time() < ch->GetSkillNextReadTime(bestSkillVnum))
 		{
@@ -2799,6 +2847,9 @@ void CPlayerBotManager::Update()
 	RefreshPlayerBotWeights(dwNow);
 	RefreshPlayerBotItemPolicy(dwNow);
 	ManagePlayerBotNight(dwNow);
+	// The timed events: chest windows, rate windows, "activate now" - and the
+	// notices that go with them (playerbot_events.h).
+	ManagePlayerBotEvents(dwNow);
 	// The ore veins, once a minute for the whole world. A vein deletes itself
 	// after 7-15 minutes and nothing in this world's regen files puts one back -
 	// there are no vein spawns on any of its maps at all - so the sites are
@@ -3194,7 +3245,8 @@ void CPlayerBotManager::Update()
 		// Only trigger when NOT in the middle of fighting an active Metin stone!
 		LPCHARACTER curTarget = state.dwTargetVID != 0 ? CHARACTER_MANAGER::instance().Find(state.dwTargetVID) : NULL;
 		if (curTarget && curTarget->IsStone() && !curTarget->IsDead() &&
-				!IsPlayerBotMetinWorthFighting(ch, curTarget))
+				!IsPlayerBotMetinWorthFighting(ch, curTarget) &&
+				!IsPlayerBotStoneJoinable(ch, curTarget))
 		{
 			ReleasePlayerBotMetinReservation(ch, curTarget);
 			sys_log(0, "PLAYERBOT_METIN: skipped obsolete stone pid=%u name=%s level=%u stone=%s stone_level=%u",
@@ -3219,6 +3271,20 @@ void CPlayerBotManager::Update()
 			// gets its window to go for what lies round it.
 			state.dwStoneBrokenTime = dwNow;
 			ResetPlayerBotStoneProgress(state);
+		}
+
+		// A boss that fell leaves its casket where it stood, and the raid's next
+		// step is "boss down, going back to work": the killer walked off and the
+		// Umarly Rozpruwacz's casket lay on the snow (Ciapek, 16 September). The
+		// loot window a broken stone gets - PLAYERBOT_METIN_LOOT_DASH_TIME within
+		// PLAYERBOT_METIN_LOOT_DASH_RANGE, whatever else is going on - is its.
+		if (state.dwFightProgressVID != 0 && state.bFightProgressBoss &&
+				(curTarget == NULL || curTarget->IsDead()) &&
+				(state.dwStoneBrokenTime == 0 || dwNow - state.dwStoneBrokenTime > PLAYERBOT_METIN_LOOT_DASH_TIME))
+		{
+			state.dwStoneBrokenTime = dwNow;
+			sys_log(0, "PLAYERBOT_LOOT: boss down, loot window pid=%u name=%s map=%ld",
+					ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex());
 		}
 
 		// And the same question for an ordinary monster, which until now could
@@ -3619,7 +3685,15 @@ void CPlayerBotManager::Update()
 			if (target)
 			{
 				if (target->IsStone())
+				{
 					ReservePlayerBotMetin(ch, target, dwNow);
+					int stoneBots = 0, stonePlayers = 0;
+					CountPlayerBotStoneAttackersByKind(target, ch, stoneBots, stonePlayers);
+					if (stoneBots > 0 || stonePlayers > 0)
+						sys_log(0, "PLAYERBOT_METIN: joined a stone pid=%u name=%s level=%u stone=%s stone_level=%u bots_on_it=%d players_on_it=%d",
+								ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), target->GetName(),
+								target->GetLevel(), stoneBots, stonePlayers);
+				}
 				sys_log(1, "PLAYERBOT_AI: target acquired pid=%u name=%s level=%u target_vid=%u target=%s target_level=%u is_stone=%d recent_death=%d",
 						ch->GetPlayerID(), ch->GetName(), ch->GetLevel(), state.dwTargetVID,
 						target->GetName(), target->GetLevel(), target->IsStone() ? 1 : 0, bRecentDeath ? 1 : 0);

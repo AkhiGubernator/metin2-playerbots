@@ -377,6 +377,10 @@ namespace
 	// -1 for the two chest keys while no file has set them: the chest odds then
 	// come from CONFIG and the panel must show "-" rather than a number it did
 	// not choose, or the first slider drag would silently take them over.
+	// The chest figures are the sliders' own, not the zero the event gate
+	// (playerbot_events.h, later in the include order) may be holding the
+	// engine's variables at while no chest window is open.
+	int GetPlayerBotChestWantedPermille(bool stone);
 	long GetPlayerBotPanelWeightValue(const char* szKey)
 	{
 		if (PlayerBotWeightNameEquals(szKey, "CHAT"))
@@ -392,9 +396,11 @@ namespace
 		if (PlayerBotWeightNameEquals(szKey, "KINGDOMPVP"))
 			return s_iPlayerBotKingdomPvpPercent;
 		if (PlayerBotWeightNameEquals(szKey, "CHEST"))
-			return s_bPlayerBotChestFromFile ? g_iMoonlightChestPermille : -1;
+			return !s_bPlayerBotChestFromFile ? -1 :
+					(GetPlayerBotChestWantedPermille(false) >= 0 ? GetPlayerBotChestWantedPermille(false) : g_iMoonlightChestPermille);
 		if (PlayerBotWeightNameEquals(szKey, "CHEST_STONE"))
-			return s_bPlayerBotChestFromFile ? g_iMoonlightChestStonePermille : -1;
+			return !s_bPlayerBotChestFromFile ? -1 :
+					(GetPlayerBotChestWantedPermille(true) >= 0 ? GetPlayerBotChestWantedPermille(true) : g_iMoonlightChestStonePermille);
 		for (size_t i = 0; i < sizeof(PLAYERBOT_WEIGHT_NAMES) /
 				sizeof(PLAYERBOT_WEIGHT_NAMES[0]); ++i)
 		{

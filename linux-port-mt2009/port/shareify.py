@@ -298,24 +298,31 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
  && echo "share: Metin2 SinglePlayer in the quest texts"
 """
 
-# The Biologist's wait between two hand-ins - a day, `time_until_hour` in
-# collect_data.lua, which every collect_quest_lv* asks through
-# collect_data.is_wait - is gone for players ("Usuniecie limitu czasu dla
-# biologa", namiot_, 15 September); the bots' own hand-in never kept it.
-# is_research_in_progress answers false, so is_wait, the quest clock and the
-# "come back in" line never fire, and take_chance never consumes the
-# Researcher's Elixir (AFFECT_COLLECT_NO_TIME) for a wait that is not there.
-# The file is CRLF, hence the optional carriage return in the anchor.
+# The world's difficulty. 2.0.55 took the Biologist's wait between two
+# hand-ins out for everybody (a day, `time_until_hour` in collect_data.lua,
+# asked through collect_data.is_wait; namiot_, 15 September) with a sed that
+# made is_research_in_progress answer false. Since 2.0.57 that is "easy":
+# quest/m2_difficulty.lua overrides the two collect_data functions with the
+# event flags the migrator writes from M2_DIFFICULTY, and gives the horse
+# quests m2_horse_wait(). The file is copied into the libs and dofile'd
+# after them from _otherModuleLoader.lua (CRLF, stripped first). The bots'
+# own hand-in and stable keeper never kept a wait.
 DOCKERFILE_BIOLOGIST_ANCHOR = ' && echo "share: Metin2 SinglePlayer in the quest texts"\n'
-DOCKERFILE_BIOLOGIST_MARKER = 'echo "share: Biologist hand-ins without the wait"'
+DOCKERFILE_BIOLOGIST_MARKER = 'echo "share: difficulty hooked into the quest libraries"'
 DOCKERFILE_BIOLOGIST_STEP = r"""
-# The Biologist takes the next specimen at once (port/shareify.py renders this
-# step): collect_data.lua's is_research_in_progress answers false for a player
-# the way the bots' hand-in never waited (namiot_, 15 September).
-RUN set -eu; F=/opt/metin2/share/locale/poland/quest/libs/other/collect_data.lua \
- && LC_ALL=C sed -i 's/^\(collect_data\.is_research_in_progress = function()\)\(\r\{0,1\}\)$/\1\2\n    do return false end -- playerbot: no wait between hand-ins\2/' "$F" \
- && LC_ALL=C grep -q 'playerbot: no wait between hand-ins' "$F" \
- && echo "share: Biologist hand-ins without the wait"
+# The world's difficulty (port/shareify.py renders this step): m2_difficulty.lua
+# is dofile'd after the quest libraries and puts the Biologist's wait and the
+# stable keeper's waits on event flags the migrator writes from M2_DIFFICULTY.
+# It replaces the 2.0.55 sed that made collect_data.is_research_in_progress
+# answer false for everybody (namiot_, 15 September): that is what "easy" is.
+COPY quest/m2_difficulty.lua /opt/metin2/share/locale/poland/quest/libs/other/m2_difficulty.lua
+RUN set -eu; L=/opt/metin2/share/locale/poland/quest/libs/other/_otherModuleLoader.lua \
+ && LC_ALL=C grep -q 'other/collect_data.lua' "$L" \
+ && LC_ALL=C sed -i 's/\r$//' "$L" \
+ && printf '\ndofile( LIBDIR .. "other/m2_difficulty.lua")\n' >> "$L" \
+ && LC_ALL=C grep -q 'other/m2_difficulty.lua' "$L" \
+ && test -s /opt/metin2/share/locale/poland/quest/libs/other/m2_difficulty.lua \
+ && echo "share: difficulty hooked into the quest libraries"
 """
 
 
@@ -371,11 +378,11 @@ def main():
         s = s.replace(DOCKERFILE_BRAND_ANCHOR, DOCKERFILE_BRAND_ANCHOR + DOCKERFILE_BRAND_STEP)
         print('shareify: Metin2 SinglePlayer step added')
     if DOCKERFILE_BIOLOGIST_MARKER in s:
-        print('shareify: Dockerfile already drops the Biologist wait')
+        print('shareify: Dockerfile already hooks the difficulty into the quest libraries')
     else:
         assert s.count(DOCKERFILE_BIOLOGIST_ANCHOR) == 1, s.count(DOCKERFILE_BIOLOGIST_ANCHOR)
         s = s.replace(DOCKERFILE_BIOLOGIST_ANCHOR, DOCKERFILE_BIOLOGIST_ANCHOR + DOCKERFILE_BIOLOGIST_STEP)
-        print('shareify: Biologist wait step added')
+        print('shareify: difficulty step added')
     io.open(dockerfile, 'w', encoding='utf-8', newline='').write(s)
 
 

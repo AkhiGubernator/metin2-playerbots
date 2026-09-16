@@ -425,6 +425,38 @@ before=$(db -e "
      WHERE id BETWEEN $first_pid AND $last_pid;
 ")
 
+# The world's difficulty, as event flags in seconds (player.quest, dwPID 0 -
+# what the db core loads at boot and pushes to every game core, the package's
+# own idiom for a world-wide switch). quest/m2_difficulty.lua reads them: the
+# Biologist's wait between two hand-ins and the stable keeper's four waits
+# (the pony, each Horse Book, the medal trainings of 1-10 and of 11-19). The
+# presets scale the package's own numbers - hard is what it shipped with,
+# medium a third of it, easy none (what 2.0.55 and 2.0.56 gave everybody) -
+# and custom takes the two hour counts from .env, the horse's for every wait.
+# Written before the seed, which may leave early on a foreign cohort.
+difficulty=$(printf '%s' "${M2_DIFFICULTY:-easy}" | tr 'A-Z' 'a-z' | tr -d ' \r')
+case "$difficulty" in
+    medium) dlevel=1; bio=28800; hbuy=14400; hup=14400; htr=21600; htr2=25200 ;;
+    hard)   dlevel=2; bio=86400; hbuy=43200; hup=43200; htr=64800; htr2=75600 ;;
+    custom)
+        dlevel=3
+        bio=$(printf '%s' "${M2_BIOLOGIST_WAIT_HOURS:-0}" | tr -d ' \r' | awk '{ h = $1 + 0; if (h < 0) h = 0; printf "%d", h * 3600 }')
+        hbuy=$(printf '%s' "${M2_HORSE_WAIT_HOURS:-0}" | tr -d ' \r' | awk '{ h = $1 + 0; if (h < 0) h = 0; printf "%d", h * 3600 }')
+        hup=$hbuy; htr=$hbuy; htr2=$hbuy ;;
+    *)      difficulty=easy; dlevel=0; bio=0; hbuy=0; hup=0; htr=0; htr2=0 ;;
+esac
+if db -e "REPLACE INTO player.quest (dwPID, szName, szState, lValue) VALUES
+        (0, 'm2_difficulty', '', $dlevel),
+        (0, 'm2_biologist_wait', '', $bio),
+        (0, 'm2_horse_buy_wait', '', $hbuy),
+        (0, 'm2_horse_upgrade_wait', '', $hup),
+        (0, 'm2_horse_train_wait', '', $htr),
+        (0, 'm2_horse_train2_wait', '', $htr2);"; then
+    echo "[playerbot-migrate] difficulty: $difficulty (Biologist wait ${bio}s, horse: buy ${hbuy}s upgrade ${hup}s train ${htr}s/${htr2}s)"
+else
+    echo "[playerbot-migrate] WARNING: could not write the difficulty flags; the quests keep the last ones" >&2
+fi
+
 echo "[playerbot-migrate] applying deterministic Playerbot seed (PID $first_pid..$last_pid)"
 result=/tmp/playerbot-seed.out
 trap 'rm -f "$result"' EXIT HUP INT TERM

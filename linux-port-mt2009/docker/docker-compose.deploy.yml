@@ -78,6 +78,11 @@ services:
       PLAYERBOT_EXPECT_MIN_EXISTING_BOTS: "${PLAYERBOT_EXPECT_MIN_EXISTING_BOTS:-0}"
       M2_PLAYERBOT_KINGDOMS: "${M2_PLAYERBOT_KINGDOMS:-1}"
       M2_PLAYERBOT_HUMAN_NAMES: "${M2_PLAYERBOT_HUMAN_NAMES:-1}"
+      # The world's difficulty: apply.sh turns it into the event flags the
+      # Biologist and the stable keeper read (quest/m2_difficulty.lua).
+      M2_DIFFICULTY: "${M2_DIFFICULTY:-easy}"
+      M2_BIOLOGIST_WAIT_HOURS: "${M2_BIOLOGIST_WAIT_HOURS:-0}"
+      M2_HORSE_WAIT_HOURS: "${M2_HORSE_WAIT_HOURS:-0}"
 
     entrypoint: ["/bin/sh", "/opt/playerbot/apply.sh"]
 
@@ -155,6 +160,8 @@ services:
       # frontier on game1, so every bot reaches 1..104 (m2-render-config reads
       # this). One core carries every bot then - keep the population modest.
       M2_PLAYERBOT_WORLD_LAYOUT: "${M2_PLAYERBOT_WORLD_LAYOUT:-split}"
+      # Only said in the start log here; the migrate service is what acts on it.
+      M2_DIFFICULTY: "${M2_DIFFICULTY:-easy}"
       TZ: "${M2_TZ:-UTC}"
 
     ports:

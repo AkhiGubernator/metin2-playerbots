@@ -225,6 +225,8 @@ $script:Strings = @{
         ready        = 'Gotowy.'
         footer       = '"Zatrzymaj i zapisz" nie usuwa postaci ani postepu botow. Nigdy nie uzywa docker compose down -v.'
         botDialog    = 'Liczba grajacych botow'
+        difficulty   = 'POZIOM TRUDNOSCI'
+        difficultyDialog = 'Poziom trudnosci swiata'
         apply        = 'Zastosuj'
         cancel       = 'Anuluj'
         panelDialog  = 'Ktory panel otworzyc?'
@@ -278,6 +280,8 @@ $script:Strings = @{
         ready        = 'Ready.'
         footer       = '"Stop and save" never deletes characters or bot progress. It never uses docker compose down -v.'
         botDialog    = 'Number of playing bots'
+        difficulty   = 'DIFFICULTY'
+        difficultyDialog = 'World difficulty'
         apply        = 'Apply'
         cancel       = 'Cancel'
         panelDialog  = 'Which panel should open?'
@@ -669,6 +673,144 @@ function Get-BotCountFromEnv {
         if ($match.Success) { return [int]$match.Groups[1].Value }
     }
     return 350
+}
+
+function Get-DifficultyFromEnv {
+    # M2_DIFFICULTY and the two hour counts, as .env has them; easy/0/0 when the
+    # keys are not there yet (an older .env, which start-server.ps1 fills in).
+    $envPath = Join-Path $root 'linux-port\docker\.env'
+    $level = 'easy'; $bio = '0'; $horse = '0'
+    if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+        $content = [IO.File]::ReadAllText($envPath)
+        $m = [Regex]::Match($content, '(?m)^M2_DIFFICULTY=(\S+)\s*$')
+        if ($m.Success) { $level = $m.Groups[1].Value.Trim().ToLowerInvariant() }
+        $m = [Regex]::Match($content, '(?m)^M2_BIOLOGIST_WAIT_HOURS=(\S+)\s*$')
+        if ($m.Success) { $bio = $m.Groups[1].Value.Trim() }
+        $m = [Regex]::Match($content, '(?m)^M2_HORSE_WAIT_HOURS=(\S+)\s*$')
+        if ($m.Success) { $horse = $m.Groups[1].Value.Trim() }
+    }
+    if ($level -notin @('easy', 'medium', 'hard', 'custom')) { $level = 'easy' }
+    return @{ Level = $level; Biologist = $bio; Horse = $horse }
+}
+
+function Show-DifficultyDialog {
+    # Four presets as radio buttons and the two hour counts custom reads; the
+    # numbers are what the migrate service turns into the quests' event flags
+    # at the next start (quest/m2_difficulty.lua), so the dialog says a restart
+    # is needed. Returns @{ Level; Biologist; Horse } or $null.
+    param([hashtable]$Current)
+    $dialog = [Windows.Forms.Form]::new()
+    $dialog.Text = (T 'difficultyDialog')
+    $dialog.Size = [Drawing.Size]::new(560, 400)
+    $dialog.StartPosition = 'CenterParent'
+    $dialog.FormBorderStyle = 'FixedDialog'
+    $dialog.MaximizeBox = $false
+    $dialog.MinimizeBox = $false
+
+    $info = [Windows.Forms.Label]::new()
+    $info.Text = "Ile gracz czeka u Biologa między oddaniami i u Stajennego (kucyk, Księgi Konia, treningi medalami)?`r`nBotów to nie dotyczy. Zmiana wymaga restartu serwera."
+    $info.Location = [Drawing.Point]::new(14, 12)
+    $info.Size = [Drawing.Size]::new(520, 44)
+    $dialog.Controls.Add($info)
+
+    $labels = @{
+        easy   = 'Łatwy - bez czekania u Biologa i Stajennego (tak jak dotąd)'
+        medium = 'Średni - Biolog 8 h; kucyk i Księgi Konia 4 h; treningi konia 6 h (1-10) i 7 h (11-19)'
+        hard   = 'Trudny - jak w oryginale: Biolog 24 h; kucyk i Księgi 12 h; treningi 18 h i 21 h'
+        custom = 'Własny - godziny poniżej (Biolog, i jedna liczba na każde czekanie u Stajennego)'
+    }
+    $radios = @{}
+    $y = 64
+    foreach ($level in @('easy', 'medium', 'hard', 'custom')) {
+        $radio = [Windows.Forms.RadioButton]::new()
+        $radio.Name = "level_$level"
+        $radio.Text = $labels[$level]
+        $radio.Location = [Drawing.Point]::new(18, $y)
+        $radio.Size = [Drawing.Size]::new(516, 26)
+        $radio.Checked = ($Current.Level -eq $level)
+        $dialog.Controls.Add($radio)
+        $radios[$level] = $radio
+        $y += 30
+    }
+
+    $bioLabel = [Windows.Forms.Label]::new()
+    $bioLabel.Text = 'Biolog: godzin między oddaniami'
+    $bioLabel.Location = [Drawing.Point]::new(40, $y + 8)
+    $bioLabel.Size = [Drawing.Size]::new(260, 22)
+    $dialog.Controls.Add($bioLabel)
+    $bioBox = [Windows.Forms.NumericUpDown]::new()
+    $bioBox.Name = 'bioHours'
+    $bioBox.DecimalPlaces = 1
+    $bioBox.Increment = 0.5
+    $bioBox.Minimum = 0
+    $bioBox.Maximum = 720
+    $bioBox.Location = [Drawing.Point]::new(310, $y + 5)
+    $bioBox.Size = [Drawing.Size]::new(90, 24)
+    $dialog.Controls.Add($bioBox)
+
+    $horseLabel = [Windows.Forms.Label]::new()
+    $horseLabel.Text = 'Stajenny: godzin na kucyka, Księgę i trening'
+    $horseLabel.Location = [Drawing.Point]::new(40, $y + 38)
+    $horseLabel.Size = [Drawing.Size]::new(260, 22)
+    $dialog.Controls.Add($horseLabel)
+    $horseBox = [Windows.Forms.NumericUpDown]::new()
+    $horseBox.Name = 'horseHours'
+    $horseBox.DecimalPlaces = 1
+    $horseBox.Increment = 0.5
+    $horseBox.Minimum = 0
+    $horseBox.Maximum = 720
+    $horseBox.Location = [Drawing.Point]::new(310, $y + 35)
+    $horseBox.Size = [Drawing.Size]::new(90, 24)
+    $dialog.Controls.Add($horseBox)
+
+    $toDecimal = {
+        param([string]$Text)
+        $n = 0.0
+        if ([double]::TryParse("$Text".Trim().Replace(',', '.'), [Globalization.NumberStyles]::Float,
+                [Globalization.CultureInfo]::InvariantCulture, [ref]$n)) {
+            return [decimal][Math]::Max(0, [Math]::Min(720, $n))
+        }
+        return [decimal]0
+    }
+    $bioBox.Value = & $toDecimal $Current.Biologist
+    $horseBox.Value = & $toDecimal $Current.Horse
+
+    # The hour boxes belong to "custom"; the presets say their numbers themselves.
+    $sync = {
+        $form = $this.FindForm()
+        if (-not $form) { return }
+        $custom = $form.Controls['level_custom'].Checked
+        $form.Controls['bioHours'].Enabled = $custom
+        $form.Controls['horseHours'].Enabled = $custom
+    }
+    foreach ($radio in $radios.Values) { $radio.Add_CheckedChanged($sync) }
+    $bioBox.Enabled = $radios['custom'].Checked
+    $horseBox.Enabled = $radios['custom'].Checked
+
+    $okButton = [Windows.Forms.Button]::new()
+    $okButton.Text = (T 'apply')
+    $okButton.Location = [Drawing.Point]::new(332, $y + 82)
+    $okButton.Size = [Drawing.Size]::new(100, 32)
+    $okButton.DialogResult = [Windows.Forms.DialogResult]::OK
+    $dialog.Controls.Add($okButton)
+
+    $cancelButton = [Windows.Forms.Button]::new()
+    $cancelButton.Text = (T 'cancel')
+    $cancelButton.Location = [Drawing.Point]::new(438, $y + 82)
+    $cancelButton.Size = [Drawing.Size]::new(96, 32)
+    $cancelButton.DialogResult = [Windows.Forms.DialogResult]::Cancel
+    $dialog.Controls.Add($cancelButton)
+    $dialog.AcceptButton = $okButton
+    $dialog.CancelButton = $cancelButton
+
+    $result = $dialog.ShowDialog()
+    $chosen = 'easy'
+    foreach ($level in $radios.Keys) { if ($radios[$level].Checked) { $chosen = $level } }
+    $bio = $bioBox.Value.ToString([Globalization.CultureInfo]::InvariantCulture)
+    $horse = $horseBox.Value.ToString([Globalization.CultureInfo]::InvariantCulture)
+    $dialog.Dispose()
+    if ($result -ne [Windows.Forms.DialogResult]::OK) { return $null }
+    return @{ Level = $chosen; Biologist = $bio; Horse = $horse }
 }
 
 function Get-LauncherFingerprint {
@@ -1137,31 +1279,34 @@ if ($script:clientUpdateIsPlain) { $gmPanelButton.Text = (T 'updateClient') }
 # Discord as "the launcher can import a database but nothing says how to
 # export one", together with a wish to get back to a fresh install.
 $worldBackupButton = New-Button (T 'worldBackup') 496 418 230 32 ([Drawing.Color]::FromArgb(70, 120, 90))
+# The world's difficulty - the waits at the Biologist and the stable keeper -
+# chosen here and applied at the next start (M2_DIFFICULTY in .env).
+$difficultyButton = New-Button (T 'difficulty') 28 456 218 32 ([Drawing.Color]::FromArgb(120, 95, 40))
 
 # The language switch sits with the other small buttons rather than in a menu:
 # somebody who cannot read the window needs to find it without reading anything.
 $languageButton = New-Button (T 'language') 508 702 218 28 ([Drawing.Color]::FromArgb(60, 70, 95))
 $languageButton.Add_Click({ Switch-LauncherLanguage })
 
-foreach ($button in @($installButton, $playButton, $dockerButton, $stopButton, $panelButton, $clientButton, $updateButton, $bundleButton, $diagnosticsButton, $openLogButton, $folderButton, $botCountButton, $importDbButton, $repairDbButton, $dbAccessButton, $gmPanelButton, $worldBackupButton, $languageButton)) {
+foreach ($button in @($installButton, $playButton, $dockerButton, $stopButton, $panelButton, $clientButton, $updateButton, $bundleButton, $diagnosticsButton, $openLogButton, $folderButton, $botCountButton, $importDbButton, $repairDbButton, $dbAccessButton, $gmPanelButton, $worldBackupButton, $difficultyButton, $languageButton)) {
     $script:form.Controls.Add($button)
 }
 
 $script:actionStatus = [Windows.Forms.Label]::new()
 $script:actionStatus.Text = (T 'ready')
-$script:actionStatus.Location = [Drawing.Point]::new(28, 462)
+$script:actionStatus.Location = [Drawing.Point]::new(28, 500)
 $script:actionStatus.Size = [Drawing.Size]::new(690, 24)
 $script:actionStatus.Font = [Drawing.Font]::new('Segoe UI Semibold', 9)
 $script:form.Controls.Add($script:actionStatus)
 
 $script:progress = [Windows.Forms.ProgressBar]::new()
-$script:progress.Location = [Drawing.Point]::new(28, 490)
+$script:progress.Location = [Drawing.Point]::new(28, 528)
 $script:progress.Size = [Drawing.Size]::new(698, 12)
 $script:form.Controls.Add($script:progress)
 
 $script:logBox = [Windows.Forms.TextBox]::new()
-$script:logBox.Location = [Drawing.Point]::new(28, 518)
-$script:logBox.Size = [Drawing.Size]::new(698, 122)
+$script:logBox.Location = [Drawing.Point]::new(28, 550)
+$script:logBox.Size = [Drawing.Size]::new(698, 104)
 $script:logBox.Multiline = $true
 $script:logBox.ReadOnly = $true
 $script:logBox.ScrollBars = 'Vertical'
@@ -1172,7 +1317,7 @@ $script:form.Controls.Add($script:logBox)
 
 $footer = [Windows.Forms.Label]::new()
 $footer.Text = (T 'footer')
-$footer.Location = [Drawing.Point]::new(28, 640)
+$footer.Location = [Drawing.Point]::new(28, 660)
 $footer.Size = [Drawing.Size]::new(700, 25)
 $footer.ForeColor = [Drawing.Color]::DarkGray
 $script:form.Controls.Add($footer)
@@ -1583,6 +1728,28 @@ $botCountButton.Add_Click({
     }
     else {
         Start-LauncherAction -Action 'SetBots' -ExtraArgs @('-BotCount', "$count")
+    }
+})
+$difficultyButton.Add_Click({
+    $current = Get-DifficultyFromEnv
+    $chosen = Show-DifficultyDialog -Current $current
+    if ($null -eq $chosen) { return }
+    $what = switch ($chosen.Level) {
+        'easy' { 'łatwy (bez czekania)' }
+        'medium' { 'średni (Biolog 8 h, koń 4-7 h)' }
+        'hard' { 'trudny (Biolog 24 h, koń 12-21 h)' }
+        default { "własny (Biolog $($chosen.Biologist) h, Stajenny $($chosen.Horse) h)" }
+    }
+    $answer = [Windows.Forms.MessageBox]::Show(
+        "Ustawić poziom trudności: $what i zrestartować serwer teraz, aby zastosować? Baza i postęp botów pozostaną bez zmian.",
+        'Poziom trudności', 'YesNoCancel', 'Question')
+    if ($answer -eq [Windows.Forms.DialogResult]::Cancel) { return }
+    $extra = @('-Difficulty', $chosen.Level, '-BiologistHours', "$($chosen.Biologist)", '-HorseHours', "$($chosen.Horse)")
+    if ($answer -eq [Windows.Forms.DialogResult]::Yes) {
+        Start-LauncherAction -Action 'SetDifficulty' -Yes -ExtraArgs $extra
+    }
+    else {
+        Start-LauncherAction -Action 'SetDifficulty' -ExtraArgs $extra
     }
 })
 $importDbButton.Add_Click({

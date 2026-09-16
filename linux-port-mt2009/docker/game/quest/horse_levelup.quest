@@ -1,9 +1,12 @@
--- metin2-suite 2.0.56: the package's horse_levelup with the wait for the horse taken
--- out - twelve hours for the pony and each upgrade, twenty-one between
--- two trainings - "niezaleznie od poziomu konia" (Tieru, 16 September,
--- greess's "Zniesienie czasu oczekiwania na 1lv konia"). Compiled by
--- the game Dockerfile beside pony_levelup; its objects land over the
--- stock ones. Everything else byte for byte as the package has it.
+-- metin2-suite: the package's horse_levelup with the wait for the horse taken
+-- from the world's difficulty (m2_difficulty.lua, M2_DIFFICULTY in .env)
+-- instead of the twelve hours for the pony and each upgrade and the
+-- twenty-one between two trainings that the package wrote in. 2.0.56
+-- took the wait out for everybody ("niezaleznie od poziomu konia",
+-- Tieru, 16 September; greess's "Zniesienie czasu oczekiwania na 1lv
+-- konia"); 2.0.57 gives it back to whoever chooses hard. Compiled by the
+-- game Dockerfile beside pony_levelup; its objects land over the stock
+-- ones. Everything else byte for byte as the package has it.
 quest horse_levelup begin
 	state training1 begin
 		when letter begin
@@ -404,8 +407,9 @@ quest horse_levelup begin
 				say_title(gameforge.horse_levelup._240_sayTitle)
 				say(gameforge.horse_levelup._260_say)
 				setstate(need_item50050)
-			-- metin2-suite: no twenty-one hours between two trainings
-			elseif false then
+			-- metin2-suite: the wait between two trainings is the world's
+			-- difficulty (m2_horse_wait("train2") below; the package's twenty-one hours)
+			elseif get_time()<pc.getqf("next_time") then
 				say_title(gameforge.horse_levelup._240_sayTitle)
 				say(gameforge.horse_levelup._270_say)
 			elseif horse.get_stamina_pct()<=10 then
@@ -424,7 +428,7 @@ quest horse_levelup begin
 					say_reward("BETA: czas skrocony do 90s")
 					pc.setqf("next_time", get_time()+90)
 				else
-					pc.setqf("next_time", get_time())
+					pc.setqf("next_time", get_time()+m2_horse_wait("train2"))
 				end
 				if horse.get_level()==11 then
 					setstate(training1)

@@ -320,13 +320,19 @@ RUN set -eu; L=/opt/metin2/share/locale/poland \
     done \
  && echo "share: Metin2 SinglePlayer in the quest texts"
 
-# The Biologist takes the next specimen at once (port/shareify.py renders this
-# step): collect_data.lua's is_research_in_progress answers false for a player
-# the way the bots' hand-in never waited (namiot_, 15 September).
-RUN set -eu; F=/opt/metin2/share/locale/poland/quest/libs/other/collect_data.lua \
- && LC_ALL=C sed -i 's/^\(collect_data\.is_research_in_progress = function()\)\(\r\{0,1\}\)$/\1\2\n    do return false end -- playerbot: no wait between hand-ins\2/' "$F" \
- && LC_ALL=C grep -q 'playerbot: no wait between hand-ins' "$F" \
- && echo "share: Biologist hand-ins without the wait"
+# The world's difficulty (port/shareify.py renders this step): m2_difficulty.lua
+# is dofile'd after the quest libraries and puts the Biologist's wait and the
+# stable keeper's waits on event flags the migrator writes from M2_DIFFICULTY.
+# It replaces the 2.0.55 sed that made collect_data.is_research_in_progress
+# answer false for everybody (namiot_, 15 September): that is what "easy" is.
+COPY quest/m2_difficulty.lua /opt/metin2/share/locale/poland/quest/libs/other/m2_difficulty.lua
+RUN set -eu; L=/opt/metin2/share/locale/poland/quest/libs/other/_otherModuleLoader.lua \
+ && LC_ALL=C grep -q 'other/collect_data.lua' "$L" \
+ && LC_ALL=C sed -i 's/\r$//' "$L" \
+ && printf '\ndofile( LIBDIR .. "other/m2_difficulty.lua")\n' >> "$L" \
+ && LC_ALL=C grep -q 'other/m2_difficulty.lua' "$L" \
+ && test -s /opt/metin2/share/locale/poland/quest/libs/other/m2_difficulty.lua \
+ && echo "share: difficulty hooked into the quest libraries"
 
 # The cores run unprivileged and read this tree by path; a directory only root
 # can enter costs every quest below it, silently. Repair, then assert.

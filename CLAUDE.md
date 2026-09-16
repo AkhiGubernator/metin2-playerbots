@@ -5121,6 +5121,31 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   Biologist's yield agree. Anything that names a map a bot must reach has
   to ask whether this core hosts it before it becomes a status line.
 
+- **A tower floor's stone is broken once nothing stands about it, not once
+  the floor is clear.** The pack rule (above) kept sixteen bots alive on
+  the seventh floor - 43 deaths in ten minutes against 253 in eight, 1200
+  to 1400 attacks a minute against 20 - and killed fifteen demons a minute,
+  but the floor's regen refilled faster: 140 to 170 alive for ten minutes,
+  so "PLAYERBOT_TOWER_STONE_CLEAR_LIMIT or fewer" never came and the Metin
+  of Murder, which drops the Unknown Old Chest the floor turns on, was never
+  touched. A stone is a candidate when no monster stands within
+  PLAYERBOT_TOWER_STONE_CLEAR_RADIUS of it (`CountPlayerBotTowerMonstersNear`),
+  so the pack clears the ground round the stone and breaks it; the fourth
+  floor, stones only, keeps stone-first. The second run with the pack rule
+  measured floors 2-6 at 222, 256, 153, 206 and 156 seconds, the smith
+  passed by a bot of 76 at 23:35:43 - the same shape as the first run, which
+  says the pack costs no time on the floors it never needed it on. And the
+  radius alone was not enough either: ranked from the pack's own centroid
+  the objective drifted after whatever demon was nearest, and the Metin of
+  Murder stood untouched for nine minutes among the respawns (17 September,
+  00:05-00:14, 63 deaths, the pack alive and killing). On a stone floor the
+  monsters are ranked from the stone (c532942), so the ground round it is
+  what gets cleared and the stone becomes a candidate the moment nothing
+  stands there. Compiled and committed, not watched: the test machine was
+  shut down before the next raid. The seventh floor's chest and map, the
+  eighth's key to Sa-Soe and the ninth's Reaper have never been reached by
+  a bot; watch `key used`, `key handed ... npc=20366` and `floor 9` first.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

@@ -101,8 +101,9 @@ dependency order at the top of `playerbot_manager.cpp`:
 | `playerbot_bonus.h` | The bonus lines on worn gear: what a line is worth, what finishes an item, and what a bot will pay to change it. |
 | `playerbot_travel.h` | Where a bot ought to be, and crossing between maps. |
 | `playerbot_planner.h` | Which long-term goal wins: the candidates, their base priorities, and the three gates no weight can touch. |
-| `playerbot_guild.h` | Founding and recruiting a guild, and who a bot has got on with. |
+| `playerbot_guild.h` | Guilds by tier: a bot's strength, the kingdom's percentiles, founding, recruiting, promotion, the hourly experience offer, the master's skill points, the guild report - and who a bot has got on with. |
 | `playerbot_town.h` | A town visit end to end, as a state machine that survives being interrupted. |
+| `playerbot_itemshop.h` | The 2.x line's in-game ItemShop: the Kupon SM vouchers cashed, the account's Dragon Coins and Marks, and the few things a bot buys with them. Empty on r40250. |
 | `playerbot_market.h` | Buying from another bot's counter: what is worth having, the walk to the stall, and the purchase. |
 | `playerbot_chat_trade.h` | Trading over the chat: what a bot shouts about its counter and its wants, and the whisper it answers a player's "Kupie"/"Sprzedam" with. Fed by patch 0007. |
 | `playerbot_loot.h` | Picking things up, in and out of a fight, without sweeping the floor. |
@@ -110,6 +111,7 @@ dependency order at the top of `playerbot_manager.cpp`:
 | `playerbot_wandering.h` | What a bot does on a hunting map when nothing is asking for its attention. |
 | `playerbot_status.h` | What a bot shows above its head, and the words for it. |
 | `playerbot_targeting.h` | Choosing what to hit and hitting it, including the claim that keeps hundreds of bots off the same monster. |
+| `playerbot_guild_war.h` | The bots' guild wars: the pair picked per kingdom, the engine's field war declared and accepted, the rally on the guild map and the fight there. After targeting.h because the blows are its. |
 | `playerbot_manager.cpp` | Personality, party, upkeep, the watchdog - and `CPlayerBotManager` with the tick. |
 
 These are fragments, not normal headers: each defines objects, relies on the
@@ -2697,6 +2699,127 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `PLAYERBOT_GUILD_FOUNDER_SHARE`), 24 members three minutes later through
   `RequestAddMember`, `player.guild` and `guild_member` filled. `gold=` in
   the founding line is in thousands.
+- **A guild has a tier, and the tier is a percentile, not a threshold.**
+  Since 2.0.60 (`playerbot_guild.h`): `GetPlayerBotStrength` is one number a
+  bot (level, the hand weapon's blow from `GetPlayerBotWeaponHitDamageAt`,
+  the build's skill levels, the horse, the body armour's score);
+  `RefreshPlayerBotStrengths` cuts each kingdom's bots into percentiles every
+  ten minutes (`PLAYERBOT_GUILD_TIER_PERCENT`: elite 3, strong 15, medium 50)
+  and the first census waits one interval, because the first minute after a
+  start holds the spawn window's first bots and not the kingdom. A guild is
+  founded at its founder's tier, stepped down while the kingdom's elite or
+  strong count is full (`PLAYERBOT_GUILD_TIER_MAX_PER_KINGDOM`); a bot guild
+  from before the tiers is adopted at its master's tier on the first check
+  after the census, and only while the master is in this core's world - a
+  master counted at zero would make every old guild ordinary. The tier lives
+  in `player.playerbot_guild` (apply.sh creates it; `DBManager::DirectQuery`
+  reads it once, an INSERT ... ON DUPLICATE KEY writes it) because a guild
+  outlives every restart. Recruiting is the whole roster of the kingdom,
+  strongest first, above the tier's floor - not a sector sweep - so a guild
+  of the strong is not a guild of whoever stood at the pitch; a member whose
+  own tier is better than its guild's leaves for a better one with room
+  (`TryPlayerBotGuildPromotion`, one in six hours, three a kingdom a census).
+  The experience offer is `CGuild::OfferExp`, which on both engines takes
+  the amount off the member and gives the guild a hundredth: the hourly
+  share (`PLAYERBOT_GUILD_EXP_OFFER_PERCENT` of what was gained since the
+  last offer, never more than the level holds) is what makes twenty-five
+  guilds of level one - none of them had ever been offered a point - into
+  guilds that level: on m2zip the first offers came an hour after the
+  census (2 100 435 exp, ten percent of the 21 million a bot of seventy had
+  gained in the hour), four guilds reached level two within a minute of
+  them and every one of the twenty-five held experience five minutes later.
+  The first census on that world cut 366 bots a kingdom at floors of about
+  91 500 (elite), 87 500 (strong) and 74-79 000 (medium), adopted all
+  twenty-five guilds in a minute - three elite, four strong - and moved
+  nine bots to better guilds. `AFFECT_EXP_BLOCK` exists on mt2009 and not on r40250;
+  OfferExp itself refuses it where it exists, so the fragment does not ask.
+  `CGuild::UseSkill` works only inside a war arena (`IsWarMap`), so the
+  points the master spends (`SpendPlayerBotGuildSkillPoints`, a staircase
+  from Blood of the Dragon God) are for the guild's sake and for players in
+  a bot guild; the bots' own wars cannot use them.
+- **A bots' guild war is the engine's field war on the kingdom's guild
+  map.** `playerbot_guild_war.h`, after targeting.h: GUILD_WAR_TYPE_FIELD
+  needs no map (`GuildWar_IsWarMap` says so), which matters because the
+  arena maps 110/111 are hosted on `first` in both layouts and a bot cannot
+  reach them. A war is `RequestDeclareWar` from one master, then the same
+  call from the other once its guild reports GUILD_WAR_RECV_DECLARE (a
+  round trip through the db core, so a minute later), thirty minutes on the
+  db core's clock, kills counted by `CGuildManager::Kill` and the ladder
+  settled by the db core; `UnderAnyWar()` with no argument means any type
+  (its default is GUILD_WAR_TYPE_MAX_NUM). One war a kingdom at a time,
+  the pair the closest tiers of the guilds with `PLAYERBOT_GUILD_WAR_MIN_ONLINE`
+  bots in this core's world, the rally the open, fightable ground nearest the
+  map's Town.txt point (`GetTeleportArrival(TELEPORT_GUILD_MAP)`), a side
+  apart. **Two of the three Town.txt points are inside the map's safe zone**:
+  on metin2_map_guild_02 and _03 the cell carries ATTR_BANPK for about two
+  kilometres around (measured on the mt2009 server_attr, 16 September), and
+  `battle_is_attackable` refuses every blow on it, so the first wars there
+  ended 0:0 after thirty minutes while Shinsoo's on guild_01, whose point is
+  open ground, ran to 17074:14107; the sides 1500 units off were blocked
+  cells on two maps besides. `FindPlayerBotWarGround` walks the sectree's
+  attributes in rings from the point and refuses BLOCK, OBJECT and BANPK;
+  `GetPlayerBotWarRally` keeps the two sides per map. Any other "meet here"
+  point on a guild map wants the same test. The fight is the
+  duel's shape (buffs, the caster's range, the gap closer, the basic blow);
+  the foe in hand is kept while it stands and the roster searched only when
+  it is lost, because that search is every bot in the world on every tick.
+  The WARS key of the weights file switches new declarations off; a war
+  under way is fought out. No bot master accepts a player's declaration.
+- **The 2.x line's ItemShop is in the game, and a bot buys there as a client
+  would.** Not the PHP shop of `linux-port/docker/itemshop` (that one writes
+  `player.item_award`): mt2009 has `CItemShopManager` (`/itemshop open`,
+  `/itemshop buy <index> <qty>` from the client, `common.itemshop_items` -
+  150 lines on this package), priced in Dragon Coins (`account.account.cash`)
+  and Dragon Marks (`cash_mark`, credited one for one for every coin spent).
+  The coins enter the world as Kupon SM vouchers (80014-80018, ITEM_QUEST,
+  the drop `CreateDropItem` rolls by `M2_DRAGON_COIN_*_PERMILLE`) and the
+  package's compiled `itemshop_manage` quest cashes one on use:
+  `pc.charge_cash` -> `CItemShopManager::AddCash` -> HEADER_GD_REQUEST_CHARGE_CASH
+  -> the db core's `ChargeCash` (`update account set cash = cash + n`), plus a
+  row in `log.itemshop_dragon_scroll`. Its `item.remove()` takes the whole
+  stack for one charge, so `playerbot_itemshop.h` cashes a voucher itself,
+  one unit at a time, through the same AddCash and the same log row. The
+  charge is asynchronous, so the account is read *before* a voucher is
+  cashed and a purchase waits for the next look ten minutes later: the
+  first build read the account right after the charge, put the old balance
+  back over the coins just added, and would have bought nothing for an hour.
+  And the wishes are a list, not a pick: the first build chose one wish by
+  priority and a bot whose first wish was the marks' Blessing Scroll, with
+  no marks to its name, never reached the hairstyle its fifty coins would
+  have bought - eighty-five accounts at fifty coins and not one purchase in
+  fifteen minutes. `CollectPlayerBotItemShopWishes` lists them all and the
+  buyer takes the first the balance pays for; `saving_looks=` in the census
+  counts the looks that found a wish and no money for it. With that in
+  place on m2zip (30 permille from stones): eighty-seven vouchers cashed in
+  the minute after a start, twenty hairstyles bought in eleven minutes by
+  the one-in-four bots holding fifty coins, each worn on the next look
+  (`EquipItem` refuses inside a second and a half of a blow, so the wear is
+  retried every look), three "cannot buy now" for a full bag, no refusal
+  from BuyItem, the rows in `log.itemshop`. No Kamien Duchowy was bought:
+  the wish mirrors the training pass, which wants a skill already at
+  G1..G9, and no bot on that world had one.
+  A purchase is `BuyItem` behind `playerData->SetItemShopBrowse(true)` - the
+  flag the window sets and `IsBusy` reads, so it goes back off on the same
+  tick - and the goods come by `AutoGiveItem` (a full bag goes to
+  `item_award`, which the bot asks about first with `HasSlotForItem`). What
+  the shop holds and what each premium does, measured on 16 September: the
+  VIP items (USE_VIP, value0 the PREMIUM_* type, value1 the hours) and the
+  Przepustka Triumfu (72199, 299 coins, `premium_expire` for 720 hours) buy
+  the engine's premium - `GetPremiumRemainSeconds`: +50 to the exp
+  `rateFactor`, the `*_buyer` twin rates, a doubled gold-drop percent,
+  autoloot, +10 to the fishing chance, the offline shop's premium slots and
+  limit, emotions, the premium channel and NPC 20088's zone without the
+  71095 ticket. **Every bot already holds the subscription for five years**
+  (`SpawnBot` sets `iPremium`), so a bot never buys VIP - `BuyItem` refuses a
+  VIP item to a subscriber anyway - and what it buys is Kamien Duchowy,
+  the change stone, with marks the Blessing Scroll and the Dragon God's
+  potions, and one bot in four a hairstyle (ITEM_COSTUME/COSTUME_HAIR, which
+  the junk rule now keeps and the costume block lets through). The engine's
+  own purchase log is `INSERT INTO itemshop` in the log database, a table no
+  dump ever defined; logschemify makes it. At the default permilles a bot
+  finds a fifty-coin voucher about once a month - 97 vouchers in three days
+  across a thousand bots - so the switch shows itself on a world whose
+  operator raised `M2_DRAGON_COIN_STONE_PERMILLE`, not on the defaults.
 - **"Not scrap" is not "worth a refine".** The junk rule keeps a great deal
   on purpose - a collector's stock, +4 counter goods, prize lines - and
   `IsPlayerBotRefineBagCandidate` was "equipment and not junk", so the
@@ -4244,6 +4367,37 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   minutes. Iwakura's sheet 1.1 dropped its "do handlarki" bands and says the
   bots may list +0..+3; the operator's rules above are what the code keeps
   until he says otherwise.
+- **No Biologist row is "too low", and the bot goes where the row's monster
+  stands.** Until 2.0.60 `GetActivePlayerBotBiologistMission` stepped over a
+  row more than `PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS` under the bot, and the
+  panel counted them: "Zab Orka 4/10, za niskie dla bota, pominiete: 4" over
+  a bot of seventy-eight that would finish neither ("nie ma czegos takiego
+  jak za niskie dla bota", Tieru, 16 September). Rows are done in order at
+  any level now - the row whose specimens the bag holds first, then the
+  first open row - and the travel takes the bot to the monster:
+  `GetPlayerBotBiologistHuntMob` names it (the key's monster in the key
+  phase, nothing while the bag holds the hand-in), `GetPlayerBotHuntingMobHome`
+  makes the valley or the tower the frontier draw for the three collect rows
+  (`GetPlayerBotFrontierMapForLevelRaw`, ahead of the level draw and behind
+  the horse trials), the six herb rows send a bot anywhere but a first
+  village there through `NeedsPlayerBotM1OnlyServices`, and in the village
+  the hubs are chosen for the row's level (`GetPlayerBotVillageHuntLevel`),
+  because a bot of seventy-eight at the tigers' hub never meets the Gango
+  Root's monster. The specimen is the quest's own kill hook, which asks
+  nothing about the level gap, and ALLOW_QUEST in the value policy outranks
+  the outgrown-prey rule.
+- **The horse trial's monsters are quest targets, or the trial never
+  happens.** 161 of the 178 bots of seventy and up with a horse at ten on
+  the test world had never made one kill of the desert trial (the
+  `playerbot.battle_horse_kills` flag absent): the frontier draw sent them
+  to the desert, the value policy refused every scorpion as worthless
+  experience for a bot that high, and the frontier visit expired with
+  nothing killed. `IsPlayerBotHorseTrialTarget` (playerbot_targeting.h)
+  marks the battle trial's two archers and the military trial's four demons
+  as quest targets in `BuildPlayerBotCombatContext` and in the collector's
+  score, for a bot on that trial. Everything else was already there: the
+  draw, the `outOfBand` return from any other frontier map, the stable
+  keeper's hand-over for 500 000 yang.
 - **The three collect rows are one chain, started in order.**
   `EnsurePlayerBotBiologistMissionStarted` sets a row's state directly, and
   `GetActivePlayerBotBiologistMission` took any row the bot was old enough

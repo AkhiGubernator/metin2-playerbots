@@ -17,6 +17,62 @@ every version here.
 
 ---
 
+## 2.0.56 — 2026-09-16
+
+Serwer (rdzeń gry i AI botów); klient bez zmian (2.0.11).
+
+### Zwoje Błogosławieństwa trafiają na lady
+
+Boty miały zwoje (na świecie testowym 1405 w torbach 294 botów), a na ladach
+stało 5. Reguła „zostaw trzy dla własnego kowala” liczyła zwoje leżące w
+torbie *przed* danym stosem, a wizyta serwisowa sklepu offline niczego wcześniej
+nie dzieli — więc jedyny stos bota był zatrzymywany w całości niezależnie od
+wielkości, a cięcie po 5 z 2.0.55 nie miało czego ciąć. Teraz zapas to liczba
+zwojów: bot zostawia sobie trzy (handlarz surowcami jeden, bot bez pracy dla
+zwoju żadnego), a nadwyżkę wystawia w liniach po 1–5. Zgłoszenie z kanału
+ogólnego („A bodzi jak nie było tak nie ma”).
+
+### Dropek medali z pełnym zapasem nie wraca do lochu
+
+Dropek medali z pełnym zapasem (200 medali w torbie) wychodził z Lochu Małp
+regułą wyjścia i w tej samej minucie wracał regułą wyprawy: na świecie
+testowym 703 z 854 wizyt w godzinę trwały poniżej dziesięciu sekund, jeden
+bot co pięćdziesiąt sekund. Reguła wyprawy pyta teraz o zapas tak jak reguła
+wyjścia; pełny dropek poluje na ziemi swojej wioski, aż linia na jego ladzie
+się sprzeda.
+
+### Scalanie stosów według limitu przedmiotu
+
+Medal Konny i Zwój Błogosławieństwa mają w tej wersji silnika stos po 20, strzały
+po 1000. Scalanie stosów w torbie liczyło wszystko do 200, więc pełne stosy
+medali były „scalane” bez skutku co pięć sekund u 110 botów (14 321 wpisów w
+logu w dziesięć minut). Torba i magazyn liczą teraz według limitu przedmiotu;
+zabezpiecza to też wpłatę do magazynu, która przy złym limicie mogła zgubić
+stos.
+
+### Drobne
+
+- Łucznik zakłada strzały z torby przed zwykłym strzałem, nie dopiero przy
+  umiejętności. Bot nigdy nie strzela bez strzał — silnik tego nie pozwala;
+  zgłoszenie o strzelaniu bez strzał najpewniej brało się z widoku torby,
+  który nie pokazuje kołczanu.
+- Status podróży nie ogłasza już pustyni ani Doliny Orków botowi, którego
+  podróż tam nie wysyła (dropki medali w drodze do Lochu Małp).
+
+### Stajenny wydaje konia od razu
+
+Kupno kucyka i każde ulepszenie konia (Księga Konia Wojskowego) kazało czekać
+dwanaście godzin i wrócić po odbiór, a trening poziomów 11–19 — dwadzieścia
+jeden godzin między dwoma treningami. Wszystkie te czasy są zniesione,
+niezależnie od poziomu konia; poziomy 1–10 nie czekały już od 2.0.12.
+Zgłoszenie greess.
+
+### Panel: wyłącznik dropu Szkatułek Blasku Księżyca
+
+Na stronie AI panelu (pod suwakami szkatułek) jest pole „Wyłącz drop Szkatułek
+Blasku Księżyca”. Zaznaczone i zapisane zeruje oba suwaki dla gry (działa w
+pięć sekund), a ich ustawienie pamięta i przywraca po odznaczeniu.
+
 ## 2.0.55 — 2026-09-16
 
 Serwer (rdzeń gry i AI botów) i klient 2.0.11.

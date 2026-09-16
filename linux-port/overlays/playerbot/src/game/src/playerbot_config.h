@@ -136,6 +136,12 @@ namespace
 	// CPlayerBotManager::ManageLifeSchedule. Off until the panel says so.
 	bool s_bPlayerBotLifeSchedule = false;
 	bool s_bPlayerBotLifeScheduleReported = false;
+	// Guild wars between the bots' guilds (the WARS key), playerbot_guild_war.h.
+	bool s_bPlayerBotGuildWars = true;
+	bool s_bPlayerBotGuildWarsReported = true;
+	// The bots' ItemShop purchases (the ISHOP key), playerbot_itemshop.h.
+	bool s_bPlayerBotItemShop = true;
+	bool s_bPlayerBotItemShopReported = true;
 	// What the clock last asked the DB core for, so a request is not repeated
 	// every minute while the round trip is still in flight, and so switching
 	// the clock off in the middle of a night lowers the flag it raised.
@@ -176,6 +182,8 @@ namespace
 		s_bPlayerBotFastBooks = true;
 		s_bPlayerBotNight = true;
 		s_bPlayerBotLifeSchedule = false;
+		s_bPlayerBotGuildWars = true;
+		s_bPlayerBotItemShop = true;
 		if (s_iPlayerBotChestConfigPermille < 0)
 		{
 			s_iPlayerBotChestConfigPermille = g_iMoonlightChestPermille;
@@ -259,6 +267,28 @@ namespace
 				s_bPlayerBotLifeScheduleReported = enabled;
 			}
 			s_bPlayerBotLifeSchedule = enabled;
+			return;
+		}
+		if (PlayerBotWeightNameEquals(szKey, "WARS"))
+		{
+			const bool enabled = value != 0;
+			if (enabled != s_bPlayerBotGuildWarsReported)
+			{
+				sys_log(0, "PLAYERBOT_CONFIG: guild wars %s", enabled ? "on" : "off");
+				s_bPlayerBotGuildWarsReported = enabled;
+			}
+			s_bPlayerBotGuildWars = enabled;
+			return;
+		}
+		if (PlayerBotWeightNameEquals(szKey, "ISHOP"))
+		{
+			const bool enabled = value != 0;
+			if (enabled != s_bPlayerBotItemShopReported)
+			{
+				sys_log(0, "PLAYERBOT_CONFIG: itemshop %s", enabled ? "on" : "off");
+				s_bPlayerBotItemShopReported = enabled;
+			}
+			s_bPlayerBotItemShop = enabled;
 			return;
 		}
 		if (PlayerBotWeightNameEquals(szKey, "CHEST") || PlayerBotWeightNameEquals(szKey, "CHEST_STONE"))
@@ -407,6 +437,10 @@ namespace
 			return s_bPlayerBotNight ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "LIFE"))
 			return s_bPlayerBotLifeSchedule ? 1 : 0;
+		if (PlayerBotWeightNameEquals(szKey, "WARS"))
+			return s_bPlayerBotGuildWars ? 1 : 0;
+		if (PlayerBotWeightNameEquals(szKey, "ISHOP"))
+			return s_bPlayerBotItemShop ? 1 : 0;
 		if (PlayerBotWeightNameEquals(szKey, "SCRAP"))
 			return s_iPlayerBotScrapPercent;
 		if (PlayerBotWeightNameEquals(szKey, "REST"))
@@ -453,7 +487,9 @@ namespace
 		if (PlayerBotWeightNameEquals(szKey, "CHAT") ||
 				PlayerBotWeightNameEquals(szKey, "BOOKS") ||
 				PlayerBotWeightNameEquals(szKey, "NIGHT") ||
-				PlayerBotWeightNameEquals(szKey, "LIFE"))
+				PlayerBotWeightNameEquals(szKey, "LIFE") ||
+				PlayerBotWeightNameEquals(szKey, "WARS") ||
+				PlayerBotWeightNameEquals(szKey, "ISHOP"))
 		{
 			value = value ? 1 : 0;
 			return true;
@@ -811,6 +847,18 @@ namespace
 	bool IsPlayerBotLifeScheduleEnabled()
 	{
 		return s_bPlayerBotLifeSchedule;
+	}
+
+	// The WARS switch, asked by ManagePlayerBotGuildWars.
+	bool IsPlayerBotGuildWarsEnabled()
+	{
+		return s_bPlayerBotGuildWars;
+	}
+
+	// The ISHOP switch, asked by ManagePlayerBotItemShop.
+	bool IsPlayerBotItemShopEnabled()
+	{
+		return s_bPlayerBotItemShop;
 	}
 
 	bool IsPlayerBotFastBooksEnabled()

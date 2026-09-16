@@ -105,6 +105,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_town.h"
 #include "playerbot_shop_signs.h"
 #include "playerbot_offline_shop.h"
+#include "playerbot_itemshop.h"
 #include "playerbot_weapon_goal.h"
 #include "playerbot_market.h"
 #include "playerbot_offline_market.h"
@@ -114,6 +115,7 @@ extern void SendShout(const char* szText, BYTE bEmpire);
 #include "playerbot_wandering.h"
 #include "playerbot_status.h"
 #include "playerbot_targeting.h"
+#include "playerbot_guild_war.h"
 #include "playerbot_lure.h"
 #include "playerbot_admin.h"
 
@@ -3052,6 +3054,13 @@ void CPlayerBotManager::Update()
 	// The timed events: chest windows, rate windows, "activate now" - and the
 	// notices that go with them (playerbot_events.h).
 	ManagePlayerBotEvents(dwNow);
+	// The guilds: the population's strength census and the tier floors, the
+	// wars, and the guild report the panel reads (playerbot_guild.h,
+	// playerbot_guild_war.h).
+	RefreshPlayerBotStrengths(dwNow);
+	ManagePlayerBotGuildWars(dwNow);
+	WritePlayerBotGuildStatus(dwNow);
+	WritePlayerBotItemShopCensus(dwNow);
 	// The ore veins, once a minute for the whole world. A vein deletes itself
 	// after 7-15 minutes and nothing in this world's regen files puts one back -
 	// there are no vein spawns on any of its maps at all - so the sites are
@@ -3191,6 +3200,11 @@ void CPlayerBotManager::Update()
 		// to the blacksmith instead is what "bot zaakceptowal PvP ale mnie nie
 		// bije" was.
 		if (ManagePlayerBotDuelCombat(ch, state, dwNow))
+			continue;
+
+		// The guild war the bot's guild is in, ahead of every errand: the walk
+		// to the kingdom's guild map and the fight there (playerbot_guild_war.h).
+		if (ManagePlayerBotGuildWar(ch, state, dwNow))
 			continue;
 
 		// Before anything that can claim the tick. An open stall is engine state
@@ -3356,6 +3370,8 @@ void CPlayerBotManager::Update()
 		ManagePlayerBotSkillBooks(ch, state, dwNow);
 		ManagePlayerBotSoulStones(ch, state, dwNow);
 		ManagePlayerBotGrandMasterTraining(ch, state, dwNow);
+		// The vouchers cashed and the shop's goods bought (playerbot_itemshop.h).
+		ManagePlayerBotItemShop(ch, state, dwNow);
 		ManagePlayerBotZenBeans(ch, dwNow);
 		ManagePlayerBotThirdHand(ch, state, dwNow);
 		// Rings and gloves on the clock while the bot hunts and off in town,

@@ -236,6 +236,13 @@ namespace
 
 		const char* prefix = ch->GetParty() ? "[PT] " : "";
 		const char* goal = GetPlayerBotGoalLabel(state.bLongTermGoal);
+		// A guild war outranks every errand while it lasts (playerbot_guild_war.h).
+		if (state.dwGuildWarEnemyGID != 0)
+		{
+			CGuild* enemy = CGuildManager::instance().FindGuild(state.dwGuildWarEnemyGID);
+			snprintf(status, statusSize, "%sWojna gildii z %s", prefix, enemy ? enemy->GetName() : "?");
+			return;
+		}
 		if (state.bVisitingShop)
 		{
 			// "Handluje bronia (cel: zapasy)" says what the bot is standing at

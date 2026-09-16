@@ -4891,6 +4891,99 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   $'\r$'` under the Bash tool's sh does not say which is which. Compiled
   in the image (the objects carry `m2_horse_wait`), not driven in a client.
 
+- **The Biologist's herb row sent a bot of seventy-seven away from its horse
+  trial.** The frontier draw put the desert first for a battle-horse candidate
+  since 2.0.60, but `NeedsPlayerBotM1OnlyServices` runs before the frontier
+  branch and the Gango Root's monster stands in the first village, so 35 bots
+  on Jayang alone read "Zdobywam konia bojowego na pustyni (0/100)" with the
+  Biologist as their goal, riding to the M1 gate and back between town visits
+  (Tieru, 16 September, screenshot). `GetPlayerBotBiologistHuntMob` answers
+  nothing while a horse trial is open - the row waits, the hand-in still
+  walks - and every travel rule that asks it follows. Two rules that both
+  claim "hunt here" want an order, and the status line must name the one the
+  travel takes.
+- **A rule that sends "every bot with X" somewhere sends them all at once.**
+  2.0.60 made the herb rows a destination for every bot that had outgrown
+  them - which was nearly every bot past forty, because those rows had
+  been skipped for weeks - and half the world left for the first villages
+  within the hour: M2 -> M1 crossings 300/h -> 2 766/h on the test world,
+  580 of 1 099 bots in M1, and the players filmed the crowd riding into
+  the gates ("masa botow na koniach wchodzacych do portalu"; "boty 40-50+
+  expia w m1"). `PlayerBotMayTakeHerbErrand` (playerbot_missions.h) gives
+  `PLAYERBOT_BIOLOGIST_HERB_TRIP_PER_MILLE` of the live population a place
+  on the errand at a time; a bot without one steps over the outgrown herb
+  row in every pass of `GetActivePlayerBotBiologistMission` - in the first
+  village too, or the 483 bots already drawn there stayed for all six
+  rows (measured after the first build). Same shape as the M3 crowd share and the
+  chest market reserve: an errand that names one map takes a share of the
+  population, never the population.
+- **Pierscien Teleportacji did nothing because of one flag.** 70058 is an
+  ITEM_QUEST whose proto carries ITEM_FLAG_APPLICABLE (8192), and under
+  `ENABLE_QUEST_DND_EVENT` the ITEM_QUEST case of `UseItemEx` takes that flag
+  as "drop it onto another item": a plain use finds no target cell and returns
+  before `CQuestManager::UseItem` is asked, so the compiled `teleport_ring`
+  quest (loaded fine, `object/state/teleport_ring` returns 0) never ran, with
+  nothing in any log. `apply.sh` clears the flag in `world.item_proto`, which
+  is read from the database on this line. When an item-use quest is "not
+  working", read the `case ITEM_QUEST` branch for the flags before the quest.
+- **A player's guild invitation reaches the bot on the same call.**
+  `CGuild::Invite` sends the invitee a packet a bot's descriptor never answers,
+  so the invitation event expired in silence. Unlike the party invitation, the
+  acceptance is the guild's own method with the invitee as its argument
+  (`InviteAccept`), so `apply_playerbot_guild_invites` (playerbotify.py) has the
+  engine hand the invitation to `CPlayerBotManager::OnGuildInvite` right after
+  the packet, and `AcceptPlayerBotGuildInvite` (playerbot_guild.h) accepts it
+  while the event is alive - any bot with no guild, a dropper too. A bot in a
+  player's guild offers its hour's share of experience at the ordinary rate
+  and is otherwise left alone (`ManagePlayerBotGuild` returns before the
+  dropper rule for a guild whose master is not a bot). `guild.cpp` ships
+  staged in `server-update-files.mt2009.txt` for it.
+- **Iwakura's tier list is a nudge on top of the measured scores, not a
+  ranking of its own.** `data/iwakura_tiery.txt` (16 September) rates every
+  family of bracelets, earrings, necklaces, boots and weapons and every bonus
+  line 1..6 for PvE and PvP, with "+1 dla Wojownika" notes;
+  `tools/generate_iwakura_tiers.py` renders it into `playerbot_item_tiers.h`
+  (161 families, 45 bonuses; unbound names abort like the price generator,
+  and it reuses the price generator's aliases). The PvE column is used:
+  `GetPlayerBotEquipmentScore` moves the whole score
+  `PLAYERBOT_TIER_SCORE_PERCENT` a step from the neutral 3 and scales every
+  line by `PLAYERBOT_BONUS_TIER_PERCENT`, `ScorePlayerBotBonusLine` scales the
+  reroll weights the same way, and `IsPlayerBotHigherTierSpare` counts a bag
+  piece of a better tier as the spare the blacksmith works on - his own
+  instruction: refine and bonus it first, do not swap Miedziane Kolczyki +9
+  for Ebonitowe +1 because a table says so. The PvP column is rendered and
+  unused until the second set exists. Body armour, helmets and shields are not
+  in his list on purpose (judged by level and lines).
+- **Cennik 1.2 has two rows for one item, and the generator now says which it
+  skips.** "Waleczna Dusza Zaprzys" (1.1) and "Waleczna dusza" (1.2) both bind
+  to 30356, "Wyuszone Oczy" is a typo beside "Wysuszone Oczy"; `SKIPPED_ROWS`
+  names them with the reason, because every other unbound name still aborts.
+  1.2 also fixed his spellings (Mikstur, wachlarze) - both spellings are
+  understood - and added [Szkatulki], [Ulepszanie], [Pasywne], [Kon] and
+  [Lowienie], all goods sections now. `PLAYERBOT_PRICE_TABLE_VERSION` 7.
+- **An offline stand's line that does not sell comes down on a clock.** The
+  service visit recomputed a line's price from market policy and never from
+  how long it had stood; the classic stall's per-stand markdown had no offline
+  twin. The reprice step takes `PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT` off
+  for every `PLAYERBOT_OFFLINE_UNSOLD_STEP_MS` the line has been listed
+  (`o.listed`, clocked from the first visit that sees a line the core does not
+  remember), to `PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_TOTAL` and never under
+  `GetPlayerBotRefineInvestment` (Tieru, 16 September). `PLAYERBOT_OFFLINE:
+  marked down` is the line.
+- **Three kingdoms' wars on one clock is ninety quiet minutes.** The first
+  wars all began thirty minutes after the start and ended together, so the
+  operator who came to watch one an hour later found none. The first war is
+  `PLAYERBOT_GUILD_WAR_KINGDOM_STAGGER` later for each kingdom after Shinsoo
+  and the interval after a war is ninety minutes (a two-hour period), so a war
+  stands somewhere for ninety minutes of every two hours; a notice at the
+  declaration names the pair and the map a minute before the blows, and the
+  guild report carries `next_war_in_s` (0 = under way, -1 = none) which the
+  panel's guilds page turns into "Nastepna wojna gildii botow" per kingdom.
+- **The client's title switch shows on the next login, and the client says
+  so.** textTail has no detach, so a switch in the options changes what is
+  drawn only once a title is attached again; `__OnClickBotTitleButton`
+  (clientrootify.py, client 2.0.12) writes one chat line saying it.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

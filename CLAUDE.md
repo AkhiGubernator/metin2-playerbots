@@ -4662,6 +4662,80 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   them on the band-35 hubs instead of anywhere. The far-half hunting
   itself needs a split world, where a Shinsoo or Jinno bot of 36+ has
   nowhere else to go; m2zip cannot show it.
+- **The cohort's window is the operator's, and so is the second cohort.**
+  `SpawnRegistered` drained its queue over `PLAYERBOT_SPAWN_WINDOW` (a minute)
+  and that was the whole plan: a player who started two thousand at once had
+  the square "jak w szpitalu" (Ciapek, 16 September; "nie trzeba ich pchac
+  2k na serwer", seban). `PLAYERBOT_SPAWN_WINDOW_MINUTES`,
+  `PLAYERBOT_LATE_JOINERS` and `PLAYERBOT_LATE_JOIN_HOURS` come from `.env`
+  through both compose files into the bootstrap in `input_db.cpp`
+  (playerbotify.py): `CPlayerBotManager::SetSpawnWindow` stretches the
+  cohort's batches, `ScheduleLateJoiners` takes the next identities of each
+  kingdom after the scheduled ones (`SplitPopulation` over what the cohort
+  leaves each kingdom) and gives each its moment spread evenly over the
+  hours, `SpawnLateJoiners` spawns them from the tick. A late joiner is in
+  `m_setScheduledBots` only from its moment on, so `TopUpMissingBots` neither
+  counts nor hurries it; a kingdom whose cohort share is zero gets no late
+  joiners either. The launcher's LICZBA BOTOW asks for the three beside the
+  count (text menu: Enter keeps the value; GUI: three boxes under the
+  slider, passed as `-SpawnMinutes -LateJoiners -LateHours`).
+- **"Boty graja jak zywi ludzie" is a switch, off, and a rest is a ban the
+  top-up honours.** The `LIFE` key of the weights file (the classic panel's
+  AI page, experimental, default 0; `IsPlayerBotLifeScheduleEnabled`) runs
+  `CPlayerBotManager::ManageLifeSchedule` once a minute: every live bot gets a
+  session end (`PLAYERBOT_LIFE_SESSION_MIN..MAX`, the first after a start from
+  `PLAYERBOT_LIFE_FIRST_SESSION_MIN_MS` so the log-outs spread), at its end it
+  is `Despawn`ed and put in `m_mapLifeRestEnd` for `PLAYERBOT_LIFE_REST_MIN..MAX`,
+  and `IsRestingBot` keeps it out of `SpawnPendingBatch`, `TopUpMissingBots`
+  and `SpawnLateJoiners` exactly as the ban set does. When the rest ends the
+  pid goes to `m_setLifeReturning` (a whole session next time, not a first
+  one) and the top-up is asked at once. A bot in a player's party is
+  postponed `PLAYERBOT_LIFE_POSTPONE_MS`; its offline shop stands on, being
+  an entity of its own. Switching off clears both maps and the top-up fills
+  the world within its window. Measure it as `PLAYERBOT_LIFE: census
+  online= resting=` every ten minutes, never as the panel's bot count, which
+  is meant to fall. Tieru's brief (16 September): "graja np kilka godzin
+  dziennie, wyloguja sie i graja znow po odpoczynku", experimental, off for
+  everybody. The whole cycle was run on m2zip through the panel's own form:
+  on at 14:40, the first log-outs at 15:13 (fourteen by 15:15, rests of 184
+  to 500 minutes), not one "topping up" line while they rested, off at 15:15
+  and "schedule off, 14 resting come back" with `topping up ... missing=14`
+  on the next minute, all fourteen back. A restart forgets the rest map, so
+  everybody returns at a start whatever the switch says. And the spawn plan
+  the same afternoon: a window of three minutes took the 1099 in 180 s
+  against 64, and sixty late joiners over an hour came one every minute
+  (`late joiner pid= ... left=`), the top-up counting each from its moment.
+- **A stone's band is sixteen levels either way, and a tower stone is a
+  floor's objective, not a Metin.** `PLAYERBOT_STONE_JOIN_LEVEL_DELTA` was
+  thirty from 2.0.57 (a bot joined a stone thirty levels over itself) and the
+  outgrown side ten; both are sixteen now, in `IsPlayerBotMetinWorthFighting`
+  and `IsPlayerBotStoneJoinable` ("przedzial postaci bijacych metina niech
+  wynosi maksymalnie 16 poziomow", Tieru, 16 September) - the drop curve is
+  1% at fifteen over, so past that nothing comes out of a stone; alone a bot
+  still starts one only up to nine over itself. The Demon Tower's 8015-8019
+  are refused everywhere for a bot on its own (breaking one warps every PC
+  on the map), and `IsPlayerBotDungeonStoneObjective` - the bot in a
+  player's party with the player on the same map, `IsPlayerBotClimbingWithPlayer`
+  in `playerbot_movement.h` - lifts that refusal, the join rule, the sweep's
+  and the splash's avoidance, with no band at all: "takie metiny sie zbija by
+  zaliczyc kolejne pietra". Compiled and read, not watched: the test world
+  has no player climbing with bots.
+- **A quest's wait state remembers the wait it was entered under.** The
+  difficulty flags (2.0.57) reach `m2_horse_wait` at once, but a character
+  already in `pony_buy`'s `wait` carries the `make_time` set on entry - twelve
+  hours under hard - and the state only tested `get_time() >= make_time`, so
+  switching to easy changed nothing for anybody already waiting ("dalej
+  trzeba czekac", Hiob, 16 September, with the wait state's own dialog in
+  the screenshot), while 2.0.57's changelog had promised the opposite. The
+  five horse quests cap the stored deadline at `now + m2_horse_wait(kind)`
+  on login and on every talk (`make_time` in the three wait states,
+  `next_time` at the top of the two training talk handlers), so the wait
+  can never be longer than the setting says now and zero means at once.
+  `reload q` recompiles nothing here and reads no flag: the flags are the
+  migrator's, at a start. `horse_levelup.quest` is LF where the other four
+  are CRLF - a patch has to take each file's own ending, and `grep -c
+  $'\r$'` under the Bash tool's sh does not say which is which. Compiled
+  in the image (the objects carry `m2_horse_wait`), not driven in a client.
 
 ## Engine facts worth not re-deriving
 

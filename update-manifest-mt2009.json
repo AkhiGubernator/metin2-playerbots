@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T11:14:28Z",
-  "statusMessage": "2.0.57: **Poziom trudności świata (easy / medium / hard / własny — czekanie u Biologa i Stajennego, przycisk w launcherze), eventy w panelu (Szkatułki Blasku Księżyca i wyższe raty o wybranych porach, ogłoszenie na czacie, „Aktywuj teraz”), metiny bite razem przez boty, loot po bossie.** Serwer; klient bez zmian (2.0.11).",
+  "publishedAt": "2026-09-16T12:17:42Z",
+  "statusMessage": "2.0.58: **Bot w drużynie gracza nie zmienia podziału doświadczenia; boty nie wykupują wszystkich Szkatułek Blasku Księżyca (rezerwa 30 na ladach świata, 20 min przerwy); w drugiej wiosce boty docierają do jej drugiej połowy (miejsca łowów z pasmami poziomów, 24 na mapę).** Serwer; klient bez zmian (2.0.11).",
   "server": {
-    "version": "2.0.57",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.57/metin2-server-update-2.0.57.zip",
-    "sha256": "6A1D9A0AECADF91BCC7A9B1F93227E0A56018BB112F30E94A2636396034E949C"
+    "version": "2.0.58",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.58/metin2-server-update-2.0.58.zip",
+    "sha256": "DA0EC2F945DDB3D026EB182A5CD226CE5A0DC365E2DCB22554152583263DEEB6"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

@@ -64,7 +64,7 @@ namespace
 	//
 	// The scoring stays coarse on purpose: it tells "worth keeping" from "roll
 	// it again", it does not model the damage formula.
-	int ScorePlayerBotBonusLine(LPCHARACTER ch, BYTE wearCell, BYTE type, short value)
+	int ScorePlayerBotBonusLineRaw(LPCHARACTER ch, BYTE wearCell, BYTE type, short value)
 	{
 		// A negative roll exists (movement speed on some sets) and is worth less
 		// than nothing, so it must not be able to prop up a bad item's total.
@@ -226,6 +226,18 @@ namespace
 			// minor for a bot that only grinds. Never zero: a line is still a line.
 			default:                            return value;
 		}
+	}
+
+	// The measured weight above, scaled by Iwakura's PvE tier of the line
+	// (playerbot_item_tiers.h, PLAYERBOT_BONUS_TIER_PERCENT): what he calls
+	// wspanialy is worth a third more, what he calls bardzo zly a quarter.
+	// The equipment score scales its lines the same way
+	// (ScorePlayerBotApplyTiered), so buying and rerolling agree.
+	int ScorePlayerBotBonusLine(LPCHARACTER ch, BYTE wearCell, BYTE type, short value)
+	{
+		const int raw = ScorePlayerBotBonusLineRaw(ch, wearCell, type, value);
+		const int tier = ch ? GetPlayerBotBonusTier(type, (int)ch->GetJob(), false) : 0;
+		return tier > 0 ? raw * PLAYERBOT_BONUS_TIER_PERCENT[tier] / 100 : raw;
 	}
 
 	// The one roll that finishes an item, and it is a different roll for every

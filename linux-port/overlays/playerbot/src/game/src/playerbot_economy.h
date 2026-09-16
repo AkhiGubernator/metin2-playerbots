@@ -832,6 +832,20 @@ namespace
 	// upgrade yet, but one the blacksmith can make into one, so neither the
 	// merchant nor the refine pass treats it as scrap. Only the best such
 	// spare per slot counts; the rest are still scrap.
+	// A candidate that outranks the worn piece: by the engine's level limit,
+	// or by Iwakura's PvE tier where his list rates both families - a bot
+	// wearing Miedziane Kolczyki with Ebonitowe in the bag has an upgrade to
+	// make whatever the level limits say, and his instruction is to refine
+	// and bonus it before wearing it, not to swap blindly (16 September).
+	bool PlayerBotOutranksWornTier(LPCHARACTER ch, LPITEM cand, LPITEM worn)
+	{
+		if (cand->GetLevelLimit() > worn->GetLevelLimit())
+			return true;
+		const int candTier = GetPlayerBotItemTierOf(cand, ch);
+		const int wornTier = GetPlayerBotItemTierOf(worn, ch);
+		return candTier > 0 && wornTier > 0 && candTier > wornTier;
+	}
+
 	bool IsPlayerBotHigherTierSpare(LPCHARACTER ch, LPITEM item)
 	{
 		if (!ch || !item || !IsPlayerBotEquipmentCandidate(ch, item))
@@ -842,7 +856,7 @@ namespace
 		if (item->GetLevelLimit() > ch->GetLevel())
 			return false;
 		LPITEM worn = ch->GetWear(wearCell);
-		if (!worn || item->GetLevelLimit() <= worn->GetLevelLimit())
+		if (!worn || !PlayerBotOutranksWornTier(ch, item, worn))
 			return false;
 		const long long itemScore = GetPlayerBotEquipmentScore(item, ch);
 		for (WORD otherCell = 0; otherCell < PLAYERBOT_BAG_CELLS; ++otherCell)
@@ -850,7 +864,7 @@ namespace
 			LPITEM other = ch->GetInventoryItem(otherCell);
 			if (!other || other == item || !IsPlayerBotEquipmentCandidate(ch, other) ||
 					other->GetLevelLimit() > ch->GetLevel() ||
-					other->GetLevelLimit() <= worn->GetLevelLimit() ||
+					!PlayerBotOutranksWornTier(ch, other, worn) ||
 					other->FindEquipCell(ch) != wearCell)
 				continue;
 			const long long otherScore = GetPlayerBotEquipmentScore(other, ch);

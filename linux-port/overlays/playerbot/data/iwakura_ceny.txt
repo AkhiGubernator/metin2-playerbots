@@ -24,8 +24,8 @@ Kamień Duszy Śmierci +3 		– 1.4
 
 Kamień Duszy Przyspieszenia +4  – 1.4
 Kamień Duszy Potwora +4			- 1.8
-Kamień Duszy Śmierci +4 		– 1.7
-Kamień Duszy Uchylenia +4 		– 1.7
+Kamień Duszy Śmierci +4 		– 1.6
+Kamień Duszy Uchylenia +4 		– 1.6
 Kamień Duszy Penetracji	+4		- 1.4
 Kamień Duszy Powtórki +4        - 1.2
 Kamień Duszy Witalności +4		- 1.3
@@ -47,12 +47,12 @@ oddzielone od siebie pionową kreską (np. 2.5 | 1.7).
 Oznaczają one odpowiednio: [Wartość MAKSYMALNA ] | [ Dowolna INNA wartość ])
 
 > HEŁM
-Silny przeciwko ludziom 			2.3 | 1.15 
+Silny przeciwko ludziom 			2.0 | 1.15 
 Odpornosc na magie					1.7	| 1.15
 Regeneracja ST (staminy) 			1.3 | 1.1
 Maks. Stamina 						1.4 | 1.1 
-Regeneracja Mistur PŻ				1.3	| 1.1 
-Regeneracja Mistur PE 				1.0 | 1.0
+Regeneracja Mikstur PŻ				1.3	| 1.1 
+Regeneracja Mikstur PE 				1.0 | 1.0
 Czas trwania umiejętności			1.3 | 1.1
 x% obrażen dodanych do PE 			1.0 | 1.0
 Szybkość ataku						2.0 | 1.2
@@ -83,23 +83,23 @@ Szansa na dobicie ciosu				1.3 | 1.15
 Odporność na magie					1.5 | 1.2
 Odporność na sztylety				1.6 | 1.2
 Odporność na strzały				2.4 | 1.3 
-Odporność na wahlarze				1.5 | 1.05			
+Odporność na wachlarze				1.5 | 1.05			
 Odporność na dzwony					1.5 | 1.05
 Odporność na miecze					1.6 | 1.2
 Odrponość na broń dwuręczną			1.6 | 1.2
 Czas trwania umiejętności			1.3 | 1.1
 
 > TARCZA
-Niewrażliwy na omdlenie				3.0 | 3.0
+Niewrażliwy na omdlenie				2.5 | 2.5
 Niewrażliwy na spowolnienie			1.2 | 1.2
-Szansa na blok ciosu				2.5 | 1.5
+Szansa na blok ciosu				2.0 | 1.5
 Szansa na odbicie ciosu				1.6 | 1.1
 Szansa na podwójną ilość yang		2.5 | 1.7
-Siła								2.0 | 1.4
-Inteligencja						2.0 | 1.4
-Zręczność							2.0 | 1.4	
-Witalność							2.0 | 1.4
-Silny przeciwko ludziom				2.5 | 1.4
+Siła								1.7 | 1.4
+Inteligencja						1.6 | 1.4
+Zręczność							1.7 | 1.4	
+Witalność							1.6 | 1.4
+Silny przeciwko ludziom				1.7 | 1.4
 Silny przeciwko mistykom			1.5 | 1.1
 silny przeciwko diablom				2.4 | 1.5
 Silny przeciwko nieumarlym  		
@@ -113,33 +113,33 @@ dla itemów powyżej 33 lvl			2.2 | 1.3
 dla itemów poniżej 33 lvl 			1.8 | 1.1
 				
 > BUTY
-Maks. PŻ							2.5 | 1.8
+Maks. PŻ							1.9 | 1.8
 Maks. PE							1.3 | 1.1
 Szansa na cios krytyczny			2.0 | 1.6
 Punkty doświadczenia +%				1.6 | 1.25
 Szansa na omdlenie					1.8 | 1.5
-Szansa na spowoleninie				1.0 | 1.0
+Szansa na spowolninie				1.0 | 1.0
 Szansa na unik. strzały 			1.6 | 1.2
-Szansa na podwojna ilosc yang		2.5 | 1.5
+Szansa na podwojna ilosc yang		2.0 | 1.5
 Szbykość ataku						1.7 | 1.3
-Odporność na sztylety				1.8 | 1.2
-Odporność na strzały				2.4 | 1.3 
-Odporność na wahlarze				1.5 | 1.05			
+Odporność na sztylety				1.6 | 1.2
+Odporność na strzały				1.6 | 1.3 
+Odporność na wachlarze				1.5 | 1.05			
 Odporność na dzwony					1.5 | 1.05
-Odporność na miecze					1.8 | 1.2
-Odrponość na broń dwuręczną			1.8 | 1.2
+Odporność na miecze					1.6 | 1.2
+Odrponość na broń dwuręczną			1.6 | 1.2
 
 > BRANSOLETA
-Maks. PŻ							2.5 | 1.8
+Maks. PŻ							1.9 | 1.8
 Maks. PE							1.3 | 1.1
-x% obrażen dodanych do PŻ			2.0 | 1.6
+x% obrażen dodanych do PŻ			1.7 | 1.6
 Regeneracja ST (staminy)			1.3 | 1.1
 Szansa na kradzież PE 				1.2	| 1.0
-Szansa na przeszywające uderzenie	1.7 | 1.3
+Szansa na przeszywające uderzenie	1.6 | 1.3
 Szansa na odbicie pocisku			1.4 | 1.1
-Odporność na magie					1.8 | 1.2
+Odporność na magie					1.6 | 1.2
 Czas trwania umiejętności			1.3 | 1.1
-Silny przeciwko ludziom				2.5 | 1.4
+Silny przeciwko ludziom				1.9 | 1.4
 Silny przeciwko mistykom			1.5 | 1.1
 silny przeciwko diablom				2.4 | 1.5
 Silny przeciwko nieumarlym  		
@@ -153,32 +153,32 @@ dla itemów powyżej 33 lvl			2.2 | 1.3
 dla itemów poniżej 33 lvl 			1.8 | 1.1
 
 > NASZYJNIK
-Maks. PŻ							2.5 | 1.8
+Maks. PŻ							1.9 | 1.8
 Maks. PE							1.3 | 1.1
 x% obrażen dodanych do PE 			1.0 | 1.0
-Regeneracja Mistur PŻ				1.3	| 1.1 
-Regeneracja Mistur PE 				1.0 | 1.0
+Regeneracja Mikstur PŻ				1.3	| 1.1 
+Regeneracja Mikstur PE 				1.0 | 1.0
 Szansa na omdlenie					1.8 | 1.5
 Szansa na cios krytyczny			2.0 | 1.6
 Szansa na przeszywające uderzenie	1.7 | 1.3	
-Szansa na podwojna ilosc yang		2.5 | 1.5
+Szansa na podwojna ilosc yang		2.2 | 1.5
 Punkty doświadczenia +%				1.6 | 1.25			
 Odporność na sztylety				1.8 | 1.2
 Odporność na strzały				2.4 | 1.3 
-Odporność na wahlarze				1.5 | 1.05			
+Odporność na wachlarze				1.5 | 1.05			
 Odporność na dzwony					1.5 | 1.05
 Odporność na miecze					1.8 | 1.2
 Odrponość na broń dwuręczną			1.8 | 1.2
 
 > KOLCZYKI
 Szybkość ruchu						2.5 | 1.6
-Odporność na strzały				2.4 | 1.3
+Odporność na strzały				1.8 | 1.15
 Szansa na odbicie pocisku			1.4 | 1.1
 Szansa na kradzież PE 				1.2	| 1.0
 Odporność na trucizny 				1.1	| 1.0
 Silny przeciwko ludziom				2.5 | 1.4
 Odporność na sztylety				1.8 | 1.2 
-Odporność na wahlarze				1.5 | 1.05			
+Odporność na wachlarze				1.5 | 1.05			
 Odporność na dzwony					1.5 | 1.05
 Odporność na miecze					1.8 | 1.2
 Odrponość na broń dwuręczną			1.8 | 1.2 
@@ -201,28 +201,28 @@ Zakres od 0  do  9					1.0
 Zakres od 10 do 19					1.2
 Zakres od 20 do 29					1.5	
 Zakres od 30 do 39					2.5
-Zakres od 40 do 45					6.0
-Zakres od 46 do 50					9.0
-Zakres od 51 do 55					14.0
-Zakres od 56 do 59					28.0
-Maks. wartosc 60					70.0
+Zakres od 40 do 45					4.5
+Zakres od 46 do 50					8.0
+Zakres od 51 do 55					12.0
+Zakres od 56 do 59					24.0
+Maks. wartosc 60					50.0
 [Obrażenia umięjętności]
 Zakres od 1  do 10					1.2
 Zakres od 11 do 19					2.0
 Zakres od 20 do 24					4.0
 Zakres od 25 do 29					14.0
-Maks. wartosc 30					40.0
-Siła								2.0 | 1.4
-Inteligencja						2.0 | 1.4
-Zręczność							2.0 | 1.4	
-Witalność							1.5 | 1.1
-Szansa na cios krytyczny			2.0 | 1.6
+Maks. wartosc 30					30.0
+Siła								1.5 | 1.1
+Inteligencja						1.4 | 1.1
+Zręczność							1.5 | 1.1	
+Witalność							1.4 | 1.1
+Szansa na cios krytyczny			1.7 | 1.4
 Szansa na przeszywające uderzenie	1.4 | 1.15
 Szansa na otrucie 					1.4 | 1.2
 Szybkość zaklęcia					1.3 | 1.05 
-Szansa na omdlenie					2.0 | 1.5
+Szansa na omdlenie					1.7 | 1.5
 Szansa na spowolnienie				1.0 | 1.0
-Silny przeciwko ludziom				1.8 | 1.3
+Silny przeciwko ludziom				1.6 | 1.2
 Silny przeciwko mistykom			1.5 | 1.1
 silny przeciwko diablom				2.4 | 1.5
 Silny przeciwko nieumarlym  		
@@ -263,211 +263,271 @@ Kawałek Płótna +                - 26680
 Kawałek Zepsutej Zbroi          - 38686
 Kłąb                            - 12006
 Klejnot Demona                  - 53360
-Klejnot Demona +                - 24012
-Krem Do Twarzy                  - 17342
+Klejnot Demona +                - 34012
+Krem Do Twarzy                  - 27342
 Krwawa Perła                    - 750500
 Księga Klątw                    - 112056
-Księga Klątw +                  - 24012
-Liść                            - 13340
+Księga Klątw +                  - 34012
+Liść                            - 23340
 Matowy Lód                      - 120716
-Matowy Lód +                    - 20010
-Lodowy Róg Wieloryba            - 16008
-Małż                            - 183280
+Matowy Lód +                    - 30010
+Lodowy Róg Wieloryba            - 26008
+Małż                            - 213280
 Niebieska Perła                 - 1027280
-Niedźwiedzia Skóra              - 28014
-Niedźwiedzia Skóra +            - 18676
-Nieznane Lekarstwo              - 41354
-Nieznane Lekarstwo +            - 46690
-Nieznany Talizman               - 58696
-Nieznany Talizman +             - 65366
-Nogi Pająka                     - 22678
-Nos Świni                       - 12670
-Oczy Pająka                     - 54694
-Ogon Skorpiona                  - 33350
-Ogon Skorpiona +                - 17342
-Ogon Węża                       - 53360
-Ogon Węża +                     - 26680
-Ornament                        - 30682
-Ozdobna Spinka Do Włosów        - 18676
-Pajęcza Sieć                    - 25346
-Pamiątka Po Demonie             - 100050
+Niedźwiedzia Skóra              - 38014
+Niedźwiedzia Skóra +            - 38676
+Nieznane Lekarstwo              - 61354
+Nieznane Lekarstwo +            - 66690
+Nieznany Talizman               - 68696
+Nieznany Talizman +             - 75366
+Nogi Pająka                     - 42678
+Nos Świni                       - 22670
+Oczy Pająka                     - 64694
+Ogon Skorpiona                  - 43350
+Ogon Skorpiona +                - 27342
+Ogon Węża                       - 63360
+Ogon Węża +                     - 36680
+Ornament                        - 40682
+Ozdobna Spinka Do Włosów        - 28676
+Pajęcza Sieć                    - 35346
+Pamiątka Po Demonie             - 110050
 Pamiątka Po Demonie +           - 40020
-Pazur Tygrysa                   - 20010
+Pazur Tygrysa                   - 30010
 Płonąca Grzywa                  - 60030
-Rybia Ość                       - 76038
-Shuriken                        - 34684
-Shuriken +                      - 122728
-Skóra Węża                      - 16008
-Stłuczona Porcelana             - 20010
+Rybia Ość                       - 98038
+Shuriken                        - 39684
+Shuriken +                      - 172728
+Skóra Węża                      - 26008
+Stłuczona Porcelana             - 35010
 Symbol Wojownika                - 74704
 Szpon Skorpiona                 - 92046
-Szpon Tygrysa                   - 15338
-Szpon Wilka                     - 12670
-Szpon Wilka +                   - 12670
-Worek Z Pajęczą Trucizną        - 33350
-Worek Z Pajęczymi Jajami        - 48024
-Zardzewiałe Ostrze              - 21344
-Ząb Dzika                       - 15004
-Ząb Orka                        - 126730
-Ząb Orka +                      - 21344
-Zdobycz Dzikusa                 - 13340
-Żabie Udka                      - 44022
-Żółć Niedźwiedzia               - 36018
-Żółć Niedźwiedzia +             - 19008
+Szpon Tygrysa                   - 25338
+Szpon Wilka                     - 25670
+Szpon Wilka +                   - 25670
+Worek Z Pajęczą Trucizną        - 53350
+Worek Z Pajęczymi Jajami        - 68024
+Zardzewiałe Ostrze              - 41344
+Ząb Dzika                       - 25004
+Ząb Orka                        - 136730
+Ząb Orka +                      - 41344
+Zdobycz Dzikusa                 - 31340
+Żabie Udka                      - 54022
+Żółć Niedźwiedzia               - 46018
+Żółć Niedźwiedzia +             - 29008
+
 Wysuszone Oczy                  - 75000
 Pazury Małpy					- 55000
+Ogon Małpy						- 55000
 Orkowe Jądra					- 50000
-Zgniłe Mięso					- 45000
+Zgniłe Mięso					- 65000
 Lodowata Maź					- 95000
 Żywe Drzewo						- 78000
-Serce Wojownika					- 54000
 Waleczna Dusza Zaprzys			- 32500
-Łuski Smoka						- 99000
+Łuski Smoka						- 89000
 Gourou							- 40000
+Niedźwiedzina					- 29000
+Wieprzowina						- 30000
+Waleczna dusza					- 40000
+Amulet Wojownika				- 35000
+Serce Wojownika					- 54000
+Piasek Pustyni					- 42000
+Wyuszone Oczy					- 50000
+Ezoteryczne drewno				- 60000
+Mięso demona					- 65000
+Czerwone nasiono				- 80000
 
 [KSIĘGI UMIEJĘTNOŚCI]
-Aura Miecza - 180810
-Berserk - 73710
-Wir Miecza - 53235
-Szarża - 22113
-Trzystronne Cięcie - 17199
-Silne Ciało - 95130
-Duchowe Uderzenie - 53235
-Walnięcie - 22932
-Tąpnięcie - 12285
-Uderzenie Miecza - 12285
-Zasadzka - 36855
-Wirujący Sztylet - 36855
-Krycie Się - 20475
-Szybki Atak - 13104
-Trująca Chmura - 13104
-Ognista Strzała - 45045
-Trująca Strzała - 36855
-Powtarzalny Strzał - 13104
-Deszcz Strzał - 10647
-Bezszelestny Chód - 8190
-Czarowane Ostrze - 119700
-Strach - 78120
-Czarowana Zbroja - 36855
-Rozproszenie Magii - 20475
-Smoczy Wir - 13104
-Uderzenie Palcem - 7371
-Ognisty Duch - 36855
-Mroczna Ochrona - 32760
-Ogniste Uderzenie - 21294
-Mroczne Uderzenie - 18018
-Duchowy Cios - 9828
-Mroczny Kamień - 8190
-Pomoc Smoka - 61425
-Błogosławieństwo - 57330
-Smoczy Skowyt - 25389
-Odbicie - 16380
-Strzelający Smok - 9828
-Latający Talizman - 7371
-Leczenie - 36855
-Przywołanie Błyskawicy - 20475
-Błyskawiczny Rzut - 12285
-Burza - 9009
-Zwinność - 14742
-Szpon Błyskawicy - 14742
+Aura Miecza - 262175
+Berserk - 106880
+Wir Miecza - 77191
+Szarża - 32064
+Trzystronne Cięcie - 24939
+Silne Ciało - 137939
+Duchowe Uderzenie - 77191
+Walnięcie - 33251
+Tąpnięcie - 17813
+Uderzenie Miecza - 17813
+Zasadzka - 53440
+Wirujący Sztylet - 53440
+Krycie Się - 29689
+Szybki Atak - 19001
+Trująca Chmura - 19001
+Ognista Strzała - 65315
+Trująca Strzała - 53440
+Powtarzalny Strzał - 19001
+Deszcz Strzał - 15438
+Bezszelestny Chód - 11876
+Czarowane Ostrze - 173565
+Strach - 113274
+Czarowana Zbroja - 53440
+Rozproszenie Magii - 29689
+Smoczy Wir - 19001
+Uderzenie Palcem - 10688
+Ognisty Duch - 53440
+Mroczna Ochrona - 47502
+Ogniste Uderzenie - 30876
+Mroczne Uderzenie - 26126
+Duchowy Cios - 14251
+Mroczny Kamień - 11876
+Pomoc Smoka - 89066
+Błogosławieństwo - 83129
+Smoczy Skowyt - 36814
+Odbicie - 23751
+Strzelający Smok - 14251
+Latający Talizman - 10688
+Leczenie - 53440
+Przywołanie Błyskawicy - 29689
+Błyskawiczny Rzut - 17813
+Burza - 13063
+Zwinność - 21376
+Szpon Błyskawicy - 21376
 
 [Opaski zapomnienia]
-OZ Aura Miecza – do sprzedaży u handlarki
-OZ Berserk – 136550
-OZ Wir Miecza – 62250
-OZ Szarża – 58500
-OZ Trzystronne Cięcie – 52500
-OZ Silne Ciało – do sprzedaży u handlarki
-OZ Duchowe Uderzenie – 79750
-OZ Walnięcie – 58200
-OZ Tąpnięcie – 52250
-OZ Uderzenie Miecza – 45500
-OZ Zasadzka – 60400
-OZ Wirujący Sztylet – 60400
-OZ Krycie Się – 56250
-OZ Szybki Atak – 59250
-OZ Trująca Chmura – 79250
-OZ Ognista Strzała – do sprzedaży u handlarki
-OZ Trująca Strzała – 42450
-OZ Powtarzalny Strzał – 40400
-OZ Deszcz Strzał – 39250
-OZ Bezszelestny Chód – 35750
-OZ Czarowane Ostrze – do sprzedaży u handlarki
-OZ Strach – 105000
-OZ Czarowana Zbroja – 66250
-OZ Rozproszenie Magii – 59250
-OZ Smoczy Wir – 52000
-OZ Uderzenie Palcem – 65000
-OZ Ognisty Duch – do sprzedaży u handlarki
-OZ Mroczna Ochrona – 76800
-OZ Ogniste Uderzenie – 44300
-OZ Mroczne Uderzenie – 46900
-OZ Duchowy Cios – 36000
-OZ Mroczny Kamień – 49250
-OZ Pomoc Smoka – do sprzedaży u handlarki
-OZ Błogosławieństwo – 92800
-OZ Smoczy Skowyt – 35000
-OZ Odbicie – 70150
-OZ Strzelający Smok – 45500
-OZ Latający Talizman – 48750
-OZ Leczenie – do sprzedaży u handlarki
-OZ Przywołanie Błyskawicy – 41700
-OZ Błyskawiczny Rzut – 35150
-OZ Burza – 31750
-OZ Zwinność – 56250
-OZ Szpon Błyskawicy – 49250
+OZ Aura Miecza – 10000
+OZ Berserk – 162495
+OZ Wir Miecza – 74078
+OZ Szarża – 69615
+OZ Trzystronne Cięcie – 62475
+OZ Silne Ciało – 10000
+OZ Duchowe Uderzenie – 94903
+OZ Walnięcie – 69258
+OZ Tąpnięcie – 62178
+OZ Uderzenie Miecza – 54145
+OZ Zasadzka – 71876
+OZ Wirujący Sztylet – 71876
+OZ Krycie Się – 66938
+OZ Szybki Atak – 70508
+OZ Trująca Chmura – 94308
+OZ Ognista Strzała – 10000
+OZ Trująca Strzała – 50516
+OZ Powtarzalny Strzał – 48076
+OZ Deszcz Strzał – 46708
+OZ Bezszelestny Chód – 42543
+OZ Czarowane Ostrze – 10000
+OZ Strach – 124950
+OZ Czarowana Zbroja – 78838
+OZ Rozproszenie Magii – 70508
+OZ Smoczy Wir – 61880
+OZ Uderzenie Palcem – 77350
+OZ Ognisty Duch – 10000
+OZ Mroczna Ochrona – 91392
+OZ Ogniste Uderzenie – 52717
+OZ Mroczne Uderzenie – 55811
+OZ Duchowy Cios – 42840
+OZ Mroczny Kamień – 58608
+OZ Pomoc Smoka – 10000
+OZ Błogosławieństwo – 110432
+OZ Smoczy Skowyt – 41650
+OZ Odbicie – 83479
+OZ Strzelający Smok – 54145
+OZ Latający Talizman – 58013
+OZ Leczenie – 10000
+OZ Przywołanie Błyskawicy – 49623
+OZ Błyskawiczny Rzut – 41829
+OZ Burza – 37783
+OZ Zwinność – 66938
+OZ Szpon Błyskawicy – 58608
 
 [Kamienie duszy]
-Kamienie Duszy +0 (wszystkie)	- 12500
-Kamienie Duszy +1 (wszystkie)	- 21000
-Kamienie Duszy +2 (wszystkie)	- 29000
+Kamienie Duszy +0 (wszystkie)	- 18750
+Kamienie Duszy +1 (wszystkie)	- 31500
+Kamienie Duszy +2 (wszystkie)	- 43500
 /Wyjątki/
-Kamień Duszy Przyspieszenia +2	- 70000
-Kamienie Duszy +3 (wszystkie)	- 45000
+Kamień Duszy Przyspieszenia +2	- 105000
+Kamienie Duszy +3 (wszystkie)	- 67500
 /Wyjątki/
-Kamień Duszy Przyspieszenia +3	- 100000
-Kamień Duszy Potwora +3			- 80000
-Kamień Duszy Śmierci +3			- 75000
+Kamień Duszy Przyspieszenia +3	- 150000
+Kamień Duszy Potwora +3			- 120000
+Kamień Duszy Śmierci +3			- 112500
 Kamienie Duszy +4
-Kamień Duszy Przyspieszenia +4  - 180000
-Kamień Duszy Magii +4			- 50000
-Kamień Duszy Witalności +4		- 85000
-Kamień Duszy Uchylenia +4		- 70000
-Kamień Duszy Uniku +4			- 76000
-Kamień Duszy Obrony +4			- 61000
-Kamień Duszy Potwora +4			- 350000
-Kamień Duszy Powtórki +4		- 72000
-Kamień Duszy Penetracji +4		- 65000
-Kamień Duszy Śmierci +4			- 250000
-Kamień Duszy Wojownika +4		- 70000
-Kamień Duszy Ninja +4			- 60000
-Kamień Duszy Szamana +4			- 60000
-Kamień Duszy Sury +4			- 68000
+Kamień Duszy Przyspieszenia +4  - 418500
+Kamień Duszy Magii +4			- 106250
+Kamień Duszy Witalności +4		- 197625
+Kamień Duszy Uchylenia +4		- 162750
+Kamień Duszy Uniku +4			- 176700
+Kamień Duszy Obrony +4			- 141825
+Kamień Duszy Potwora +4			- 968750
+Kamień Duszy Powtórki +4		- 167400
+Kamień Duszy Penetracji +4		- 251125
+Kamień Duszy Śmierci +4			- 736250
+Kamień Duszy Wojownika +4		- 262750
+Kamień Duszy Ninja +4			- 239500
+Kamień Duszy Szamana +4			- 239500
+Kamień Duszy Sury +4			- 258100
 
 [Marmury Polimorfi]
-Wszystkie rodzaje		- od 15000 - 35000 (losowo)
+Wszystkie rodzaje		- od 65000 - 85000 (losowo)
 (Dziki Pies, Głodny Zabłąkany Pies, Wilk, Głodny Wilk, Alfa Wilk, Głodny Alfa Wilk, Nieb. Wilk, Głodny Alfa Wilk, Nieb. Wilk, Głodny Nieb. Wilk, Dzik, Głodny Dzik, Nieb. Alfa Wilk, Głodny Nieb. Alfa Wilk, Niedźw., Głodny Niedźw., Głodny Szary Wilk, Szary Wilk, 	Głodny Szary Wilk, Tygrys, Głodny Tygrys, Czar. Niedźw., Głodni cyk dzieki tobie ceny ulepów w gore, zapomnialem o tym systemiey Czar. Niedźw., Brąz. Niedźw., Zły Czar. Burz. Żołnierz, Żołnierz Czarn. Wiatru, Maniak Czarnego Wiatru, Dziki Żołnierz Piechoty, Silny Dziki Piechur, Ork Zwiadowca, Duży Łysy Ork, Elit. Ork, 	Best. Człowiek Skorpion, Best. Arahan, Mroźny Lodowy Człowiek, Lodowy Golem, Słaby Małpi Żołnierz, 	Słaby Małpi Miotacz, Małpi Żołnierz, Zły Silny Małpi Żołnierz, Silny Małpi Żołnierz, Pniak Drzewa Duchów, Podziemny Yeti)
 /Wyjątki/
-Ezoteryczny Fanatyk				- 50000
-Wysoki Fanatyk					- 50000
-Elit. Ezot. Fanatyk				- 55000
-Best. Fanatyk					- 55000
-Dziki Sługa						- 65000
-Młody Pająk						- 65000
-Trujący Pająk					- 70000
-Mały Trujący Pająk v2			- 75000
-Podły Młody Truj. Pająk			- 65000
-Podły Śmier. Truj. Pająk		- 65000
-Ogr Wojownik					- 45000
-Wojownik Z Toporem				- 40000
-Tysięczny Wojownik				- 50000
+Ezoteryczny Fanatyk				- 165000
+Wysoki Fanatyk					- 165000
+Elit. Ezot. Fanatyk				- 187500
+Best. Fanatyk					- 187500
+Dziki Sługa						- 162500
+Młody Pająk						- 162500
+Trujący Pająk					- 175000
+Mały Trujący Pająk v2			- 187500
+Podły Młody Truj. Pająk			- 162500
+Podły Śmier. Truj. Pająk		- 162500
+Ogr Wojownik					- 112500
+Wojownik Z Toporem				- 100000
+Tysięczny Wojownik				- 125000
 	            
-[Inne]                
+[Szkatułki]                
 Szkat. Blasku Księżyca			- 85000
-Zwój Błogosławieństwa			- 170000
-Medal konny						- 180000
+Heksagonalna Szkatułka			- 54000
+Róża							- 45000
+Czekolada						- 45000
+Srebrna Szkatułka				- 35000
+Złota Szkatułka					- 55000
+Złota Szkatułka	+				- 85000
 Złoty klucz						- 90000
 Srebrny klucz					- 72000
+
+[Inne]
+Kamień duchowy					- 500000
+Fasolka zen						- 100000
+Zwój Kamienia Duszy				- 40000
+Pigułka Krwi					- 25000
+Pierścień Doświadczenia			- 500000
+Biała Flaga						- 50000
+Rękawica Złodzieja				- 750000
+Zaczarowana Rękawica			- 300000
+Peleryna Męstwa					- 45000
+Księga Misji (Łatwa)			- 50000
+Księga Misji (Normalna)			- 90000
+Księga Misji (Trudna)			- 130000
+Księga Misji (ekspert)			- 250000
+
+[Ulepszanie]
+Zwój Błogosławieństwa			- 180000
+Podręcznik Kowala				- 1000000
+Zwój Wojny						- 250000
+Zwój Boga Smoków				- 450000
+Zaczarowanie Przedmiotu			- 1200000
+Wzmocnienie Przedmiotu			- 1900000
+
+[Pasywne]
+Przewodnik do zbieractwa		- 90000
+Sztuka Wojny Sun Zi				- 60000
+Sztuka Wojny Wu Zi				- 60000
+WeiLiao Zi						- 60000
+Sztuka Combo					- 95000
+Zaaw. Sztuka Combo				- 125000
+Mistrz. Sztuka Combo			- 150000
+Księga Polimorfii				- 75000
+Zaaw. Ks. Polimorfii 			- 95000
+Mistrz. Ks. Polimorfii			- 125000
+
+[Koń]
+Medal konny						- 180000
+Instr. Jazdy Konnej				- 95000
+Instr. Oswajania Konia			- 135500
+Instr. Walki Konno				- 125000
+Siano							- 10000
+Marchewka						- 65000
+Czerwony Żeń-szeń				- 115000
+Materiały Rzemieślnicze			- 200000
 
 [Łowienie]
 Wybielacz						- 20000
@@ -475,16 +535,39 @@ Biała Farba Do Włosów			- 25000
 Blond Farba Do Włosów			- 12000
 Brązowa Farba Do Włosów			- 11000
 Czerwona Farba Do Włosów		- 25000
+Pierścień Niejawności			- 75000
+Rękawica Króla Przepow.			- 65000
+Symb. Króla Przepowiedni		- 65000
+Płaszcz Uciekiniera				- 70000
+Pierścien Lucy					- 82000
+Skamieniała Krewetka			- 15000
 
 [Zielarstwo]
-Kwiat Brzoskwini				- 1000
-Róża Alpejska                   - 950
-Morwa                           - 900
-Pokrzywa						- 500
-Bez                             - 600
-Grzyb Tue	                    - 500
-Korzeń Gango                    - 350
-Kwiat Kaki                      - 550
+Kwiat Brzoskwini				- 2000
+Róża Alpejska                   - 1250
+Morwa                           - 1200
+Pokrzywa						- 900
+Bez                             - 1200
+Grzyb Tue	                    - 1000
+Korzeń Gango                    - 750
+Kwiat Kaki                      - 950
+Oset							- 1500
+Mniszek Lekarski				- 4000
+
+Gwiazda Nocy					- 10000
+Śnieżny Kwiat					- 10000
+Bursztynowy Płatek				- 10000
+Perłowe Wiechy					- 10000
+Korzeń Węża						- 10000
+
+Receptura Zielony Wywar			- 350000
+Receptura Platynowy Wywar		- 350000
+Receptura Fioletowy Wywar		- 350000
+Receptura Karmazynowy Wywar		- 350000
+Receptura Różowy Wywar			- 250000	
+Receptura Brązowy Wywar	   		- 250000
+Receptura Beżowy Wywar		    - 250000
+Receptura Szary Wywar	  		- 250000
 
 [Gildia]
 Dykta							- 10000
@@ -492,53 +575,53 @@ Pień							- 2000
 Kamień Węgielny					- 5000
 
 [RUDY]
-Diamentowy Kamień				- 900
-Diament							- 200000
-Skamieniały Pień                - 82
-Skamieniałe Drewno				- 45500
-Ruda Miedzi                     - 84
-Miedź                           - 47000
-Ruda Srebra						- 328
-Srebro                          - 68000
-Ruda Złota                      - 123
-Złoto                           - 25600
-Ruda Jadeitu                    - 82 
-Jadeit                          - 44900
-Ruda Ebonitu					- 656
-Ebonit                          - 180400
-Kawałek Perły                   - 340
-Perła                           - 110000
-Ruda Białego Złota              - 620
-Białe Złoto                     - 138000
-Ruda Kryształu					- 287
-Kryształ                        - 95000
-Ruda Ametystu                   - 295
-Ametyst                         - 105000
-Ruda Niebiańskich Łez           - 697
-Niebiańskie Łzy                 - 188600
+Diamentowy Kamień				- 1197
+Diament							- 266000
+Skamieniały Pień                - 109
+Skamieniałe Drewno				- 60515
+Ruda Miedzi                     - 112
+Miedź                           - 62510
+Ruda Srebra						- 436
+Srebro                          - 90440
+Ruda Złota                      - 164
+Złoto                           - 34048
+Ruda Jadeitu                    - 109
+Jadeit                          - 59717
+Ruda Ebonitu					- 872
+Ebonit                          - 239932
+Kawałek Perły                   - 452
+Perła                           - 146300
+Ruda Białego Złota              - 825
+Białe Złoto                     - 183540
+Ruda Kryształu					- 382
+Kryształ                        - 126350
+Ruda Ametystu                   - 392
+Ametyst                         - 139650
+Ruda Niebiańskich Łez           - 927
+Niebiańskie Łzy                 - 250838
 
 [[BRONIE]]
 [BRONIE JEDNORECZNE]
 Miecz
 Od +0 do +3 - 9000
 Od +4 do +6 - 25000
-+7 - 55000
-+8 - 75000
-+9 - 120000
++7 - 75000
++8 - 105000
++9 - 250000
 
 Długi Miecz 
 Od +0 do +3 - 12500
 Od +4 do +6 - 50000
-+7 - 67000
-+8 - 105000
-+9 - 160000
++7 - 87000
++8 - 175000
++9 - 320000
 
 Sejmitar
 Od +0 do +3 - 18000
 Od +4 do +6 - 30000
-+7 - 79000
-+8 - 140000
-+9 - 205000
++7 - 99000
++8 - 240000
++9 - 425000
 
 Stożkowy Miecz
 Od +0 do +3 - 25000
@@ -671,92 +754,78 @@ Sztylet
 Od +0 do +3 - 6800
 Od +4 do +6 - 19000
 +7 - 40000
-+8 - 58500
-+9 - 90000
++8 - 88500
++9 - 160000
 
 Amija
 Od +0 do +3 - 9500
 Od +4 do +6 - 39000
-+7 - 50500
-+8 - 81000
-+9 - 120000
++7 - 66500
++8 - 122000
++9 - 240000
 
-Dziewięć Ostrzy 
+Sztylet Kobry
+Od +0 do +3 - 15000
+Od +4 do +6 - 39000
++7 - 60000
++8 - 121000
++9 - 178000
+
+Dziewięć Ostrzy
 Od +0 do +3 - 19000
 Od +4 do +6 - 39000
-+7 - 67500
-+8 - 169000
-+9 - 296000
++7 - 87500
++8 - 209000
++9 - 356000
 
 Krótki Nóż
 Od +0 do +3 - 22500
-Od +4 do +6 - 80000
-+7 - 142000
-+8 - 210000
-+9 - 379000
-
-Sztylet Kobry
-Od +0 do +3 - 9500
-Od +4 do +6 - 39000
-+7 - 50000
-+8 - 81000
-+9 - 118000
-
-Sztylet Nożycowy
-Od +0 do +3 - 13500
-Od +4 do +6 - 23500
-+7 - 57500
-+8 - 105000
-+9 - 155000
-
-Nóż Szczęścia
-Od +0 do +3 - 18500
-Od +4 do +6 - 40000
-+7 - 69000
-+8 - 165000
-+9 - 300000
+Od +4 do +6 - 60000
++7 - 192000
++8 - 260000
++9 - 409000
 
 Ukąszenie Kota
 Od +0 do +3 - 24000
-Od +4 do +6 - 69000
-+7 - 113000
-+8 - 208000
-+9 - 315000
+Od +4 do +6 - 72000
++7 - 203000
++8 - 328000
++9 - 485000
 
 Twarz Diabła
 Od +0 do +3 - 23000
 Od +4 do +6 - 83000
-+7 - 140000
-+8 - 210000
-+9 - 394000
++7 - 220000
++8 - 350000
++9 - 544000
 
-Sztylet Pięści Diab.
+Sztylet Pięści Diab
 Od +0 do +3 - 45000
 Od +4 do +6 - 93500
-+7 - 175000
-+8 - 289000
-+9 - 407000
++7 - 255000
++8 - 389000
++9 - 727000
 
-Krwawy Sztylet
+Krwawy Sztylet 
 Od +0 do +3 - 53000
-Od +4 do +6 - 104000
-+7 - 229000
-+8 - 337500
-+9 - 494000
+Od +4 do +6 - 124000
++7 - 329000
++8 - 567500
++9 - 894000
 
 Żebrowy Nóż
 Od +0 do +3 - 55000
-Od +4 do +6 - 114000
-+7 - 259000
-+8 - 351000
-+9 - 532000
+Od +4 do +6 - 144000
++7 - 359000
++8 - 651000
++9 - 932000
 
 Chakram
 Od +0 do +3 - 57000
-Od +4 do +6 - 122000
-+7 - 322000
-+8 - 553000
-+9 - 874000
+Od +4 do +6 - 162000
++7 - 422000
++8 - 853000
++9 - 1400000
 
 Smoczy Nóż 
 Od +0 do +3 - 112000
@@ -803,106 +872,106 @@ Od +0 do +3 - 227000
 Od +0 do +3 - 7300
 Od +4 do +6 - 21000
 +7 - 45000
-+8 - 59000
-+9 - 99000
++8 - 99000
++9 - 150000
 
 Długi Łuk
 Od +0 do +3 - 10200
 Od +4 do +6 - 41000
 +7 - 54500
 +8 - 85000
-+9 - 130000
++9 - 190000
 
 Kompozytowy Łuk
 Od +0 do +3 - 14800
 Od +4 do +6 - 24500
 +7 - 64000
-+8 - 113000
-+9 - 165000
++8 - 143000
++9 - 245000
 
 Bojowy Łuk
 Od +0 do +3 - 20500
 Od +4 do +6 - 41000
 +7 - 73500
 +8 - 178000
-+9 - 320000
++9 - 360000
 
 Długi Łuk Jeźdźcy
 Od +0 do +3 - 20000
 Od +4 do +6 - 72000
 +7 - 125000
 +8 - 220000
-+9 - 340000
++9 - 420000
 
 Bojowy Łuk Jeźdźcy
 Od +0 do +3 - 24500
 Od +4 do +6 - 85000
 +7 - 154000
 +8 - 225000
-+9 - 405000
++9 - 505000
 
 Miedziany Łuk
 Od +0 do +3 - 49000
 Od +4 do +6 - 98000
 +7 - 195000
 +8 - 310000
-+9 - 450000
++9 - 600000
 
 Łuk Czarnych Ruin
 Od +0 do +3 - 57000
 Od +4 do +6 - 110000
 +7 - 235000
-+8 - 365000
-+9 - 525000
++8 - 425000
++9 - 695000
 
 Łuk Czerwonego Oka
 Od +0 do +3 - 56000
 Od +4 do +6 - 121000
-+7 - 285000
-+8 - 360000
-+9 - 575000
++7 - 335000
++8 - 520000
++9 - 725000
 
 Łuk Kolczastego Liś.
 Od +0 do +3 - 58000
 Od +4 do +6 - 135000
 +7 - 350000
 +8 - 565000
-+9 - 935000
++9 - 1235000
 
 Łuk z rogu byka
 Od +0 do +3 - 61000
 Od +4 do +6 - 138000
 +7 - 380000
 +8 - 715000
-+9 - 1010000
++9 - 1410000
 
 Łuk Jednorożca
 Od +0 do +3 - 60000
 Od +4 do +6 - 145000
 +7 - 520000
 +8 - 770000
-+9 - 1300000
++9 - 1600000
 
 Olbrz. Skrzydl. Łuk
 Od +0 do +3 - 63500
 Od +4 do +6 - 154000
 +7 - 635000
-+8 - 1090000
-+9 - 1820000
++8 - 1590000
++9 - 2520000
 
 Boski Łuk Moreli 
 Od +0 do +3 - 114000
 Od +4 do +6 - 260000
 +7 - 810000
 +8 - 1540000
-+9 - 2850000
++9 - 3250000
 
 Olbrz. Łuk Żółt. Smoka 
 Od +0 do +3 - 122000
 Od +4 do +6 - 285000
 +7 - 970000
 +8 - 2020000
-+9 - 3650000
++9 - 4250000
 
 Łuk Z Rogu Jelenia 
 Od +0 do +3 - 225000
@@ -917,8 +986,8 @@ Olbrz. Łuk Diabła
 Od +0 do +3 - 90000
 Od +4 do +6 - 228000
 +7 - 980000
-+8 - 1460000
-+9 - 2100000
++8 - 1860000
++9 - 3100000
 
 Stalowy Łuk Kruka
 Od +0 do +3 - 1140000
@@ -945,112 +1014,112 @@ Od +0 do +3 - 8000
 Od +4 do +6 - 22500
 +7 - 50000
 +8 - 67000
-+9 - 108000
++9 - 198000
 
 Włócznia
 Od +0 do +3 - 11000
 Od +4 do +6 - 44000
 +7 - 59000
-+8 - 92000
-+9 - 140000
++8 - 122000
++9 - 240000
 
 Gilotynowe Ostrze
 Od +0 do +3 - 16500
 Od +4 do +6 - 27500
 +7 - 72000
-+8 - 128000
-+9 - 188000
++8 - 155000
++9 - 298000
 
 Pajęcza Włócznia
 Od +0 do +3 - 22000
 Od +4 do +6 - 44500
 +7 - 80000
-+8 - 195000
-+9 - 350000
++8 - 275000
++9 - 550000
 
 Gizarma
 Od +0 do +3 - 29000
 Od +4 do +6 - 81000
 +7 - 141000
 +8 - 245000
-+9 - 382000
++9 - 432000
 
 Kosa Bojowa
 Od +0 do +3 - 26000
 Od +4 do +6 - 91000
 +7 - 164000
 +8 - 243000
-+9 - 439000
++9 - 479000
 
 Trójząb
 Od +0 do +3 - 54000
 Od +4 do +6 - 108000
 +7 - 216000
 +8 - 342000
-+9 - 495000
++9 - 595000
 
 Halabarda
 Od +0 do +3 - 61000
 Od +4 do +6 - 116000
 +7 - 249000
 +8 - 387000
-+9 - 559000
++9 - 659000
 
 Olbrz. Topór
 Od +0 do +3 - 67000
 Od +4 do +6 - 139000
 +7 - 325000
 +8 - 418000
-+9 - 660000
++9 - 760000
 
 Lodowa Iglica
 Od +0 do +3 - 65000
 Od +4 do +6 - 145000
 +7 - 378000
 +8 - 616000
-+9 - 1012000
++9 - 1212000
 
 Miecz Dwunastu Duchów
 Od +0 do +3 - 68000
 Od +4 do +6 - 154000
 +7 - 427000
-+8 - 800000
-+9 - 1137000
++8 - 820000
++9 - 1537000
 
 Ostrze Zbawienia
 Od +0 do +3 - 68500
 Od +4 do +6 - 160000
 +7 - 569000
-+8 - 845000
-+9 - 1424000
++8 - 955000
++9 - 1724000
 
 Zabójca Lwów
 Od +0 do +3 - 71000
 Od +4 do +6 - 174000
 +7 - 717000
 +8 - 1242000
-+9 - 2070000
++9 - 2270000
 
 Partyzana 
 Od +0 do +3 - 135000
 Od +4 do +6 - 315000
 +7 - 1080000
 +8 - 2250000
-+9 - 4050000
++9 - 5050000
 
 Magnetyczne Ostrze 
 Od +0 do +3 - 114000
 Od +4 do +6 - 246000
 +7 - 880000
 +8 - 1930000
-+9 - 3080000
++9 - 3580000
 
 Złodziej Dusz
 Od +0 do +3 - 94000
 Od +4 do +6 - 240000
 +7 - 1030000
 +8 - 1540000
-+9 - 2230000
++9 - 4030000
 
 Miecz Żalu
 Od +0 do +3 - 1300000
@@ -1076,8 +1145,8 @@ Miedziany Dzwon
 Od +0 do +3 - 6300
 Od +4 do +6 - 17500
 +7 - 38500
-+8 - 52500
-+9 - 84000
++8 - 62500
++9 - 114000
 
 Srebrny Dzwon
 Od +0 do +3 - 17500
@@ -1091,70 +1160,70 @@ Od +0 do +3 - 22400
 Od +4 do +6 - 62300
 +7 - 108500
 +8 - 189000
-+9 - 294000
++9 - 394000
 
 Jadeitowy Dzwon
 Od +0 do +3 - 21000
 Od +4 do +6 - 73500
 +7 - 132300
-+8 - 196000
-+9 - 353500
++8 - 216000
++9 - 423500
 
 Dzwon Fontanny
 Od +0 do +3 - 42000
 Od +4 do +6 - 84000
 +7 - 168000
-+8 - 266000
-+9 - 385000
++8 - 316000
++9 - 535000
 
 Morelowy Dzwon
 Od +0 do +3 - 50400
 Od +4 do +6 - 94500
 +7 - 203000
-+8 - 315000
-+9 - 455000
++8 - 355000
++9 - 625000
 
 Magiczny Dzwon
 Od +0 do +3 - 51100
 Od +4 do +6 - 105000
 +7 - 245000
-+8 - 315000
-+9 - 497000
++8 - 355000
++9 - 755000
 
 Złoty Robaczy
 Od +0 do +3 - 51800
 Od +4 do +6 - 115500
 +7 - 301000
-+8 - 490000
-+9 - 805000
++8 - 510000
++9 - 925000
 
 Stalowy Robaczy Dzwon
 Od +0 do +3 - 52500
 Od +4 do +6 - 119000
-+7 - 329000
-+8 - 616000
-+9 - 875000
++7 - 379000
++8 - 716000
++9 - 1225000
 
 Dzwon Burzowego Ptaka
 Od +0 do +3 - 53900
 Od +4 do +6 - 126000
-+7 - 448000
-+8 - 665000
-+9 - 1120000
++7 - 578000
++8 - 865000
++9 - 1420000
 
 Dzwon Nieba I Ziemi
 Od +0 do +3 - 91000
 Od +4 do +6 - 196000
 +7 - 700000
 +8 - 1540000
-+9 - 2450000
++9 - 2850000
 
 Dzwon Śmierci
 Od +0 do +3 - 77000
 Od +4 do +6 - 196000
 +7 - 840000
 +8 - 1260000
-+9 - 1820000
++9 - 2620000
 
 Antyczny Dzwon
 Od +0 do +3 - 169000
@@ -1181,112 +1250,112 @@ Od +0 do +3 - 6300
 Od +4 do +6 - 17500
 +7 - 38500
 +8 - 52500
-+9 - 84000
++9 - 124000
 
 Żelazny Wachlarz 
 Od +0 do +3 - 8500
 Od +4 do +6 - 34000
 +7 - 45500
-+8 - 71400
-+9 - 109000
++8 - 99400
++9 - 209000
 
 Wachlarz Czarn. Tygr. 
 Od +0 do +3 - 13000
 Od +4 do +6 - 21500
-+7 - 57000
-+8 - 101000
-+9 - 148000
++7 - 87000
++8 - 121000
++9 - 248000
 
 Żurawi Wachlarz 
 Od +0 do +3 - 16000
 Od +4 do +6 - 32500
-+7 - 58500
-+8 - 143000
-+9 - 257000
++7 - 98500
++8 - 183000
++9 - 327000
 
 Pawi Wachlarz 
 Od +0 do +3 - 23500
 Od +4 do +6 - 66000
-+7 - 115000
-+8 - 200000
-+9 - 311000
++7 - 155000
++8 - 300000
++9 - 431000
 
 Wodny Wachlarz 
 Od +0 do +3 - 20500
 Od +4 do +6 - 72500
-+7 - 130000
-+8 - 193000
-+9 - 348000
++7 - 230000
++8 - 393000
++9 - 558000
 
 Kamienny Wachlarz 
 Od +0 do +3 - 42500
 Od +4 do +6 - 85000
 +7 - 170000
-+8 - 270000
-+9 - 390000
++8 - 370000
++9 - 670000
 
 Oceaniczny Wachlarz 
 Od +0 do +3 - 48000
 Od +4 do +6 - 90500
-+7 - 194000
-+8 - 301000
-+9 - 435000
++7 - 224000
++8 - 401000
++9 - 735000
 
 Żądłowy Wachlarz 
 Od +0 do +3 - 53000
 Od +4 do +6 - 109000
-+7 - 255000
-+8 - 328000
-+9 - 518000
++7 - 275000
++8 - 428000
++9 - 808000
 
 Wachlarz Feniksa
 Od +0 do +3 - 49000
 Od +4 do +6 - 109000
-+7 - 284000
-+8 - 462000
-+9 - 759000
++7 - 322000
++8 - 562000
++9 - 959000
 
 Potrójny Wachlarz
 Od +0 do +3 - 52500
 Od +4 do +6 - 119000
-+7 - 329000
-+8 - 616000
-+9 - 875000
++7 - 429000
++8 - 716000
++9 - 1075000
 
 Brwisty Wachlarz
 Od +0 do +3 - 53000
 Od +4 do +6 - 124000
-+7 - 442000
-+8 - 655000
-+9 - 1100000
++7 - 662000
++8 - 955000
++9 - 1350000
 
 Czarny Słon. Wachlarz
 Od +0 do +3 - 57500
 Od +4 do +6 - 140000
-+7 - 577000
-+8 - 999000
-+9 - 1665000
++7 - 767000
++8 - 1299000
++9 - 2065000
 
 Niebiań. Ptasi Wachl.
 Od +0 do +3 - 95000
 Od +4 do +6 - 218000
-+7 - 680000
-+8 - 1290000
-+9 - 2380000
++7 - 880000
++8 - 1590000
++9 - 3380000
 
 Wachlarz Zbawienia
 Od +0 do +3 - 106500
 Od +4 do +6 - 248500
 +7 - 852000
-+8 - 1775000
-+9 - 3200000
++8 - 1875000
++9 - 4200000
 
 Ekstazyjny Wachlarz
-Od +0 do +3 - 79000
-Od +4 do +6 - 202000
-+7 - 864000
-+8 - 1300000
-+9 - 1870000
+Od +0 do +3 - 115000
+Od +4 do +6 - 222000
++7 - 1264000
++8 - 2200000
++9 - 3570000
 
 Wachlarz Jes. Wiatru
 Od +0 do +3 - 120000

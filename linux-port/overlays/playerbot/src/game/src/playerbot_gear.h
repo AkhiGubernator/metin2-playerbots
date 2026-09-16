@@ -534,6 +534,31 @@ namespace
 		return GetPlayerBotWeaponHitDamageAt(item, item->GetProto(), ch);
 	}
 
+	// Iwakura's PvE tier of this piece's family for this character, or 0
+	// when his list does not rate the family (body armour, helmets, shields,
+	// everything he judges by level and lines). The family is the +0 vnum,
+	// the same arithmetic the price table uses.
+	int GetPlayerBotItemTierOf(LPITEM item, LPCHARACTER ch)
+	{
+		if (!item || (item->GetType() != ITEM_WEAPON && item->GetType() != ITEM_ARMOR))
+			return 0;
+		const BYTE refine = item->GetRefineLevel();
+		if (refine > 9)
+			return 0;
+		return GetPlayerBotItemTier(item->GetVnum() - refine, ch ? (int)ch->GetJob() : -1, false);
+	}
+
+	// A line's worth, scaled by Iwakura's PvE tier of that kind of line
+	// (PLAYERBOT_BONUS_TIER_PERCENT) - the same scale the reroll pass applies
+	// in ScorePlayerBotBonusLine, so the pass that buys a piece and the pass
+	// that rerolls it agree about what a line is worth.
+	long long ScorePlayerBotApplyTiered(BYTE bType, long lValue, LPCHARACTER ch)
+	{
+		const long long raw = ScorePlayerBotApply(bType, lValue, ch);
+		const int tier = ch ? GetPlayerBotBonusTier(bType, (int)ch->GetJob(), false) : 0;
+		return tier > 0 ? raw * PLAYERBOT_BONUS_TIER_PERCENT[tier] / 100 : raw;
+	}
+
 	long long GetPlayerBotEquipmentScore(LPITEM item, LPCHARACTER ch = NULL)
 	{
 		if (!item || !item->GetProto())
@@ -626,14 +651,14 @@ namespace
 			const BYTE t = item->GetProto()->aApplies[i].bType;
 			if (bWeaponHitDone && IsPlayerBotHitModelApply(t, ch))
 				continue;
-			score += ScorePlayerBotApply(t, item->GetProto()->aApplies[i].lValue, ch);
+			score += ScorePlayerBotApplyTiered(t, item->GetProto()->aApplies[i].lValue, ch);
 		}
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 		{
 			const BYTE t = item->GetAttributeType(i);
 			if (bWeaponHitDone && IsPlayerBotHitModelApply(t, ch))
 				continue;
-			score += ScorePlayerBotApply(t, item->GetAttributeValue(i), ch);
+			score += ScorePlayerBotApplyTiered(t, item->GetAttributeValue(i), ch);
 		}
 
 		if (item->GetImmuneFlag() != 0)
@@ -667,6 +692,18 @@ namespace
 						score += (long long)item->GetProto()->aApplies[i].lValue * perPoint;
 				}
 			}
+		}
+
+		// Iwakura's tier of the family, as a nudge on the whole: the family's
+		// own lines are already in the score, so this is his verdict on what
+		// they are worth together, not a second count of them. Bounded by
+		// PLAYERBOT_TIER_SCORE_PERCENT a step so that a +9 with lines still
+		// beats a +1 of a better family with none.
+		if (ch)
+		{
+			const int tier = GetPlayerBotItemTierOf(item, ch);
+			if (tier > 0)
+				score = score * (100 + (tier - 3) * PLAYERBOT_TIER_SCORE_PERCENT) / 100;
 		}
 
 		return score;

@@ -866,6 +866,13 @@ namespace
 	// through it would either be swallowed or would drag every other counter
 	// with it. This moves what this keeper asks, not what the market believes.
 	const int PLAYERBOT_SHOP_UNSOLD_DISCOUNT_MAX_TOTAL = 50;
+	// The offline stand's version of the same markdown: a line nobody has
+	// bought comes down PLAYERBOT_SHOP_UNSOLD_DISCOUNT_PERCENT for every
+	// PLAYERBOT_OFFLINE_UNSOLD_STEP_MS it has stood, to the same ceiling and
+	// never under the blacksmith's bill (Tieru, 16 September: "jesli nie
+	// schodza po obecnych cenach to zmniejszaj ceny stopniowo do jakiegos
+	// stopnia minimalnego").
+	const DWORD PLAYERBOT_OFFLINE_UNSOLD_STEP_MS = 2 * 60 * 60 * 1000;
 	const int PLAYERBOT_MARKET_DEMAND_MIN_PERCENT = 10;
 	const int PLAYERBOT_MARKET_DEMAND_MAX_PERCENT = 25;
 	// A stand runs PLAYERBOT_SHOP_MIN..MAX_DURATION (10-25 min), so "went at
@@ -974,8 +981,17 @@ namespace
 	// minutes by the engine's own clock; the first one half an hour after a
 	// start, and a kingdom with no pair ready asks again after the retry.
 	const DWORD PLAYERBOT_GUILD_WAR_CHECK_INTERVAL = 60 * 1000;
-	const DWORD PLAYERBOT_GUILD_WAR_INTERVAL = 2 * 60 * 60 * 1000;
+	// A kingdom's wars: the first PLAYERBOT_GUILD_WAR_FIRST_DELAY after the
+	// core's start plus one PLAYERBOT_GUILD_WAR_KINGDOM_STAGGER per kingdom,
+	// then PLAYERBOT_GUILD_WAR_INTERVAL after each war's end - a war of thirty
+	// minutes every two hours in each kingdom, and with the stagger a war
+	// somewhere in the world for ninety minutes of every two hours. The
+	// first wars all began thirty minutes after the start and ended together,
+	// so a player who came to watch half an hour later found none (Tieru,
+	// 16 September).
+	const DWORD PLAYERBOT_GUILD_WAR_INTERVAL = 90 * 60 * 1000;
 	const DWORD PLAYERBOT_GUILD_WAR_FIRST_DELAY = 30 * 60 * 1000;
+	const DWORD PLAYERBOT_GUILD_WAR_KINGDOM_STAGGER = 40 * 60 * 1000;
 	const DWORD PLAYERBOT_GUILD_WAR_RETRY_MS = 10 * 60 * 1000;
 	const DWORD PLAYERBOT_GUILD_WAR_DECLARE_TIMEOUT = 3 * 60 * 1000;
 	const int PLAYERBOT_GUILD_WAR_MIN_ONLINE = 8;
@@ -1568,7 +1584,16 @@ namespace
 	// so a rate moved in the panel reprices every stand, not only a new table.
 	// 5: a weapon's damage lines are read between the sheet's bands
 	// (GetPlayerBotDamageTierPct), so a 19% average asks more than a 10% one.
-	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 6;
+	const DWORD PLAYERBOT_PRICE_TABLE_VERSION = 7;
+	// Iwakura's tier list (playerbot_item_tiers.h, 16 September): a family's
+	// PvE tier moves the whole equipment score by this much per step from
+	// the neutral 3 (tier 6 is +24%, tier 1 is -16%), and a bonus line's PvE
+	// tier scales its weight in both the equipment score and the reroll
+	// pass. A nudge, not a verdict, on purpose: "zeby na slepo nie zamienial
+	// Miedzianych Kolczykow +9 na Ebo +1 bez bonow mimo, ze tabela tak
+	// sugeruje" - the refine and the lines stay what decides.
+	const int PLAYERBOT_TIER_SCORE_PERCENT = 8;
+	const int PLAYERBOT_BONUS_TIER_PERCENT[7] = { 100, 25, 50, 80, 100, 115, 130 };
 	// Iwakura's upgrade-material prices ("ULEPSZACZE") and the goods he prices
 	// by name are generated into playerbot_price_tables.h from his sheet. A name
 	// is not an item: where the game has two vnums under one name (Nieznany
@@ -3657,6 +3682,19 @@ namespace
 	// what the Discord saw: a Sura of forty-two with "Korzen Gango 0/5" as its
 	// stated goal, hitting Orcs, for ever.
 	const int PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS = 10;
+	// A first-village herb row a bot has outgrown is a trip to Joan, and
+	// 2.0.60 sent every such bot at once: on the test world the M2 -> M1
+	// crossings went from three hundred an hour to 2 766, 580 of 1 099 bots
+	// stood in the first villages and the players filmed the crowd riding
+	// into the gates ("masa botow na koniach wchodzacych do portalu",
+	// "boty 40-50+ expia w m1", 16 September). The rows are still done in
+	// order at any level, but a bot that has outgrown a herb row takes the
+	// row only when a place in this share of the live population is free -
+	// wherever it stands, or the bots already in the villages stay for all
+	// six rows - and a place is held for at most
+	// PLAYERBOT_BIOLOGIST_HERB_ERRAND_MAX_MS.
+	const int PLAYERBOT_BIOLOGIST_HERB_TRIP_PER_MILLE = 25;
+	const DWORD PLAYERBOT_BIOLOGIST_HERB_ERRAND_MAX_MS = 60 * 60 * 1000;
 	// From this row up a specimen is a refine material too - the Orc Tooth,
 	// the Curse Book, the Demon Souvenir - and a bot of any level may carry
 	// one. Such a row is taken for a hand-in whatever the bot has outgrown,

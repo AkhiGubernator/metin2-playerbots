@@ -1875,10 +1875,20 @@ namespace
 	// six or more levels under the bot, a level in the teens every two hours.
 	// What is within PLAYERBOT_OUTGROWN_CHAIN_RANGE is killed on the way, as
 	// a player would; beyond it the wander pass gets the tick and walks the
-	// bot to its band's hub. First villages only, where the 1-31 spread is;
-	// defence, quest, material and equipment errands come before it.
+	// bot to its band's hub. The first villages, where the 1-31 spread is,
+	// and since 2.0.58 the second: their gates open onto the low ground
+	// (Jayang's in its south, Bakra's in its north) and a bot chain-killed
+	// outward from the gate for the rest of its life, so the 501-504 half of
+	// 29-36 had nobody on it (blasty, 16 September). Defence, quest,
+	// material and equipment errands come before it.
 	const int PLAYERBOT_VILLAGE_OUTGROWN_LEVELS = 6;
 	const int PLAYERBOT_OUTGROWN_CHAIN_RANGE = 800;
+	// A second village's hubs fall into three bands - 27, 29-30 and 35 - and
+	// a bot under twenty-five matches none of them; the nearest band is the
+	// 402/403 edge, of which Jayang has one hub. The M2 wander fills its
+	// choice set up to this many from the nearest bands, so the youngest
+	// cohort is spread over several rectangles instead of one.
+	const int PLAYERBOT_M2_HUB_CHOICES_MIN = 4;
 	// How often the monster a bot is already fighting is asked again whether
 	// it is still worth fighting. Not every tick: the answer needs the bot's
 	// material shortages, which cost a walk of the bag.
@@ -2238,6 +2248,12 @@ namespace
 	// ledger says the chests are short, and a bot sent to the market for a chest
 	// it could not pay for would walk there for nothing.
 	const long long PLAYERBOT_CHEST_BUY_PRICE_MULTIPLE = 3;
+	// What the counters keep for the players: no bot buys a chest while the
+	// ledger counts this many or fewer on every counter of the world, and a
+	// bot that bought one waits this long before the next ("boty wykupuja
+	// doslownie WSZYSTKIE bez opamietania", sizowski, 16 September).
+	const DWORD PLAYERBOT_CHEST_MARKET_RESERVE = 30;
+	const DWORD PLAYERBOT_CHEST_BUY_COOLDOWN = 20 * 60 * 1000;
 	// A counter line of Moonlight chests is a pack of this many, cut off the
 	// stack (BotOfflinePrepareLine). A stack went up whole, and the counters of
 	// the test world carried 22 lines of eleven to thirty chests that no
@@ -3774,12 +3790,24 @@ namespace
 		{ 439800, 930300 }, { 500600, 930700 }, { 464900, 933200 }
 	};
 
-	// Shinsoo M2, metin2_map_a3
-	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_3[12] = {
-		{ 394500, 848100, 0 }, { 355800, 855300, 0 }, { 386500, 855000, 0 },
-		{ 368100, 854200, 0 }, { 337000, 899900, 0 }, { 335900, 836400, 0 },
-		{ 348700, 860300, 0 }, { 329200, 842600, 0 }, { 323300, 846100, 0 },
-		{ 329700, 853900, 0 }, { 329100, 887500, 0 }, { 330100, 836000, 0 }
+	// Shinsoo M2, metin2_map_a3. tools/generate_wander_hubs.py 3 --count 24
+	// --band --spacing 4500: the richest 6400-unit cells of regen.txt, each hub
+	// on the real spawn point nearest the cell's centre, standable and outside
+	// the safe zone; the third number is the median monster level within 2500
+	// units. The first twelve are the table 2.0.8 shipped, which that tool made
+	// with --count 12 and no band. Bands here are 27 (the 402/403 edge), 29-30
+	// (the Black Wind ground of 27-33) and 35 (the 501-504 ground of 29-36);
+	// the tigers of 18-20 are nowhere a majority and get no hub of their own -
+	// a bot under 26 takes the nearest band and kills them on the way.
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_3[24] = {
+		{ 394500, 848100, 30 }, { 355800, 855300, 29 }, { 386500, 855000, 30 },
+		{ 368100, 854200, 30 }, { 337000, 899900, 30 }, { 335900, 836400, 35 },
+		{ 348700, 860300, 29 }, { 329200, 842600, 35 }, { 323300, 846100, 35 },
+		{ 329700, 853900, 35 }, { 329100, 887500, 30 }, { 330100, 836000, 35 },
+		{ 329700, 849500, 35 }, { 386800, 835500, 30 }, { 328700, 879800, 30 },
+		{ 341300, 910900, 30 }, { 342200, 835900, 35 }, { 341300, 841000, 35 },
+		{ 323100, 879900, 29 }, { 368000, 834700, 29 }, { 360900, 853400, 30 },
+		{ 331100, 897900, 30 }, { 341700, 905300, 30 }, { 393700, 867400, 27 }
 	};
 	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_3[12] = {
 		{ 321300, 886400 }, { 387300, 898400 }, { 320700, 829700 },
@@ -3791,13 +3819,21 @@ namespace
 		{ 330100, 875300 }, { 339400, 887400 }
 	};
 
-	// Chunjo M2, metin2_map_b3: the twelve spawn clusters Bokjung has rotated
-	// since before this table had a name.
-	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_23[12] = {
-		{ 173800, 218500, 0 }, { 182500, 224300, 0 }, { 188900, 234700, 0 },
-		{ 190000, 250200, 0 }, { 187300, 263200, 0 }, { 185500, 278700, 0 },
-		{ 175000, 286500, 0 }, { 162200, 288900, 0 }, { 149200, 289900, 0 },
-		{ 136900, 287300, 0 }, { 125700, 286800, 0 }, { 116500, 279800, 0 }
+	// Chunjo M2, metin2_map_b3. Until 2.0.58 this was twelve hand-placed
+	// points "Bokjung has rotated since before this table had a name"; measured
+	// against regen.txt on 16 September, three of them stood two to four
+	// kilometres from the nearest spawn rectangle and two more beside fewer
+	// than fifteen points, with no band on any. Generated like the other two
+	// now, same tool, same arguments.
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_23[24] = {
+		{ 125800, 264800, 29 }, { 150300, 280600, 30 }, { 177200, 233900, 30 },
+		{ 130500, 258900, 27 }, { 163100, 222500, 30 }, { 145600, 285700, 29 },
+		{ 123900, 251700, 29 }, { 164000, 273600, 29 }, { 156700, 285500, 29 },
+		{ 118400, 265300, 30 }, { 156300, 272000, 30 }, { 176200, 241800, 30 },
+		{ 124900, 245500, 27 }, { 171000, 225500, 30 }, { 125800, 271600, 30 },
+		{ 187200, 253800, 29 }, { 139800, 251700, 27 }, { 155900, 226000, 29 },
+		{ 176400, 226000, 29 }, { 189200, 233200, 35 }, { 168500, 290700, 35 },
+		{ 184100, 265200, 29 }, { 191300, 246600, 35 }, { 170200, 272700, 29 }
 	};
 	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_23[12] = {
 		{ 152600, 225700 }, { 135400, 263200 }, { 161400, 228700 },
@@ -3827,12 +3863,18 @@ namespace
 		{ 991000, 246800 }, { 963300, 250100 }, { 956500, 251700 }
 	};
 
-	// Jinno M2, metin2_map_c3
-	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_43[12] = {
-		{ 835800, 246500, 0 }, { 906700, 283800, 0 }, { 905700, 279400, 0 },
-		{ 873400, 291600, 0 }, { 834300, 227300, 0 }, { 848300, 290300, 0 },
-		{ 834600, 265800, 0 }, { 835200, 231900, 0 }, { 834900, 239100, 0 },
-		{ 878900, 272800, 0 }, { 892600, 271000, 0 }, { 898600, 285000, 0 }
+	// Jinno M2, metin2_map_c3, the same way. Its band-35 hubs are all in the
+	// south (y 283-292k) and Bakra's gate from Pyongmoo is in the north; that
+	// half was empty until the band choice below sent the 33+ there.
+	const TPlayerBotVillageHub PLAYERBOT_GROUND_HUBS_43[24] = {
+		{ 835800, 246500, 30 }, { 906700, 283800, 35 }, { 905700, 279400, 30 },
+		{ 873400, 291600, 35 }, { 834300, 227300, 30 }, { 848300, 290300, 35 },
+		{ 834600, 265800, 29 }, { 835200, 231900, 30 }, { 834900, 239100, 30 },
+		{ 878900, 272800, 30 }, { 892600, 271000, 30 }, { 898600, 285000, 29 },
+		{ 899600, 246200, 27 }, { 841900, 289900, 35 }, { 855000, 272000, 29 },
+		{ 878900, 291600, 35 }, { 866800, 278200, 29 }, { 855400, 267100, 30 },
+		{ 879900, 232200, 27 }, { 900300, 252900, 27 }, { 848000, 284500, 35 },
+		{ 854800, 284500, 35 }, { 905300, 289700, 35 }, { 834800, 220900, 30 }
 	};
 	const TPlayerBotMapPoint PLAYERBOT_GROUND_METINS_43[12] = {
 		{ 886100, 218700 }, { 837900, 219400 }, { 860400, 217600 },
@@ -3917,18 +3959,18 @@ namespace
 		static const TPlayerBotVillageGround rows[] = {
 			{ 1, PLAYERBOT_GROUND_HUBS_1, 32, PLAYERBOT_GROUND_HUBS_1, 8,
 				PLAYERBOT_GROUND_METINS_1, 12, NULL, { 0, 0 } },
-			{ 3, PLAYERBOT_GROUND_HUBS_3, 12, NULL, 0,
+			{ 3, PLAYERBOT_GROUND_HUBS_3, 24, NULL, 0,
 				PLAYERBOT_GROUND_METINS_3, 12, PLAYERBOT_GROUND_BESTIALS_3, { 369700, 906200 } },
 			{ 4, PLAYERBOT_GROUND_HUBS_4, 10, NULL, 0, NULL, 0, NULL, { 0, 0 } },
 			{ 21, PLAYERBOT_GROUND_HUBS_21, 32, PLAYERBOT_GROUND_CAMPS_21, 8,
 				PLAYERBOT_METIN_HOTSPOTS, 12, NULL, { 0, 0 } },
-			{ 23, PLAYERBOT_GROUND_HUBS_23, 12, NULL, 0,
+			{ 23, PLAYERBOT_GROUND_HUBS_23, 24, NULL, 0,
 				PLAYERBOT_GROUND_METINS_23, 12, PLAYERBOT_M2_BESTIAL_HOTSPOTS,
 				{ PLAYERBOT_M2_CAPTAIN_X, PLAYERBOT_M2_CAPTAIN_Y } },
 			{ 24, PLAYERBOT_GROUND_HUBS_24, 10, NULL, 0, NULL, 0, NULL, { 0, 0 } },
 			{ 41, PLAYERBOT_GROUND_HUBS_41, 32, PLAYERBOT_GROUND_HUBS_41, 8,
 				PLAYERBOT_GROUND_METINS_41, 12, NULL, { 0, 0 } },
-			{ 43, PLAYERBOT_GROUND_HUBS_43, 12, NULL, 0,
+			{ 43, PLAYERBOT_GROUND_HUBS_43, 24, NULL, 0,
 				PLAYERBOT_GROUND_METINS_43, 12, PLAYERBOT_GROUND_BESTIALS_43, { 899600, 287800 } },
 			{ 44, PLAYERBOT_GROUND_HUBS_44, 10, NULL, 0, NULL, 0, NULL, { 0, 0 } },
 		};

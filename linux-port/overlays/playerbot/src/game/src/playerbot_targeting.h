@@ -754,8 +754,11 @@ namespace
 			// Outgrown prey across the field. The level table is too kind to
 			// catch it (see PLAYERBOT_VILLAGE_OUTGROWN_LEVELS), so the rule is
 			// the level difference itself, and it only applies where the walk
-			// would take the bot away from its own band's ground.
-			if (IsPlayerBotM1Map(ch->GetMapIndex()) &&
+			// would take the bot away from its own band's ground: the villages,
+			// first and second. The second joined in 2.0.58, when the bots were
+			// found chain-killing outward from the gate they came in by and the
+			// far half of Jayang and Bakra stood empty.
+			if ((IsPlayerBotM1Map(ch->GetMapIndex()) || IsPlayerBotM2Map(ch->GetMapIndex())) &&
 					(int)ch->GetLevel() - (int)candidate->GetLevel() >=
 						PLAYERBOT_VILLAGE_OUTGROWN_LEVELS &&
 					DISTANCE_APPROX(ch->GetX() - candidate->GetX(),

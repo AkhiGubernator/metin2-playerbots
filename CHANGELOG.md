@@ -17,6 +17,115 @@ every version here.
 
 ---
 
+## 2.0.61 — 2026-09-16
+
+Serwer 2.0.61 i klient 2.0.12. Wydanie z tabelą tierów Iwakury, cennikiem 1.2 i
+poprawkami z wieczoru 16 września.
+
+### Tiery ekwipunku i bonusów Iwakury (PvE)
+
+Iwakura ocenił każdą rodzinę bransolet, kolczyków, naszyjników, butów i broni
+oraz każdy bonus w skali 1 (bardzo zły) – 6 (wspaniały), osobno do PvE i do
+PvP, z dopiskami „+1 dla Wojownika” itp. (`data/iwakura_tiery.txt`; zbroje,
+hełmy i tarcze ocenia po poziomie i bonusach, więc nie są w tabeli). Boty
+używają kolumny PvE:
+
+- **Ocena sprzętu** przesuwa się o 8 % na stopień od neutralnej trójki
+  (tier 6 to +24 %, tier 1 to −16 %), a każda linia bonusu na przedmiocie liczy
+  się z wagą tieru (wspaniały ×1,3 … bardzo zły ×0,25). To dopisek do
+  dotychczasowej, mierzonej oceny, nie nowy ranking: bot nadal nie zamieni
+  Miedzianych Kolczyków +9 z bonusami na Ebonitowe +1 bez bonusów.
+- **Losowanie bonusów** (kamienie i marmury) używa tych samych wag, więc to,
+  co kowal losuje, i to, co bot zakłada, ocenia jedna tabela.
+- **Zapas lepszego tieru** w torbie (np. Ebonitowe Kolczyki u bota w
+  Miedzianych) jest traktowany jak zapas wyższego poziomu: nie idzie do
+  handlarza, kowal go ulepsza i bonuje, a założony zostaje dopiero wtedy, gdy
+  naprawdę wygrywa — zgodnie z instrukcją Iwakury „najpierw ulepszyć i
+  wybonować”.
+- Kolumna PvP jest w tabeli, ale jeszcze nieużywana — czeka na drugi zestaw
+  ekwipunku botów.
+- Narzędzie: `tools/generate_iwakura_tiers.py` renderuje
+  `playerbot_item_tiers.h` (161 rodzin, 45 bonusów) i przerywa, gdy jakiejś
+  nazwy nie da się związać z przedmiotem — jak generator cennika.
+
+### Cennik Iwakury 1.2
+
+Nowe pozycje (m.in. szkatułki i klucze, zwoje ulepszeń, księgi pasywne,
+przedmioty konia, przedmioty z łowienia, receptury) i dostrojone ceny;
+poprawione pisownie. Wszystkie lady przeceniają towar według nowej tabeli
+w ciągu kilku wizyt serwisowych.
+
+### Boty przyjmują zaproszenia do gildii od graczy
+
+Zaproszenie do gildii wysłane botowi trafiało do deskryptora bez klienta i po
+dziesięciu sekundach wygasało — zaproszenie bota nie robiło nic. Teraz bot bez
+gildii przyjmuje zaproszenie od gracza od razu (każdy bot, także dropki),
+zapraszający widzi na czacie „X przyjmuje zaproszenie do gildii Y”, a bot w
+gildii gracza co godzinę oddaje jej część zdobytego doświadczenia (10 %, jak
+w zwykłej gildii botów) i poza tym niczego w niej nie zmienia. Warunki silnika
+bez zmian: to samo królestwo, wolne miejsce, gildia nie w wojnie.
+
+### Wojny gildii botów rozłożone między królestwa, z zapowiedzią
+
+Wszystkie trzy królestwa zaczynały wojnę pół godziny po starcie serwera i
+kończyły razem, a potem przez dwie godziny nie było czego oglądać. Teraz
+pierwsza wojna Shinsoo jest po 30 minutach, Chunjo po 70, Jinno po 110, a
+kolejne 90 minut po zakończeniu poprzedniej (co 2 h w królestwie) — w
+świecie prawie zawsze gdzieś trwa wojna. Przy wypowiedzeniu, minutę–dwie
+przed pierwszymi ciosami, idzie ogłoszenie „Za chwile wojna gildii botow
+(Chunjo): A kontra B. Pole bitwy: mapa gildyjna.”, a strona **Gildie** w
+panelu klasycznym pokazuje „Następna wojna gildii botów: Shinsoo za ok. N
+min, …” (trwa teraz / niezaplanowana).
+
+### Pierścień Teleportacji działa u gracza
+
+Przedmiot 70058 ma w tej paczce flagę APPLICABLE, przez którą gra traktuje
+go jak „przeciągnij na inny przedmiot” i przy zwykłym użyciu w ogóle nie
+pyta questu — dlatego quest z 2.0.52 nigdy nie odpalał. Migrator zdejmuje
+flagę przy starcie; pierścień otwiera okno z listą miejsc jak Teleporter
+(za tę samą opłatę, od 11 poziomu).
+
+### Biolog: ziołowe wyprawy po trochu, koń bojowy przed nimi
+
+2.0.60 kazało botom robić wiersze Biologa po kolei bez względu na poziom
+— i każdy bot z nieskończonym ziołowym wierszem ruszył do pierwszej
+wioski naraz: na serwerze testowym przejścia M2→M1 skoczyły z ok. 300 na
+godzinę do 1 826 i 2 766, w pierwszych wioskach stało 580 z 1 099 botów,
+a gracze nagrali tłum botów na koniach wjeżdżających w bramy i „boty
+40–50+ expiące w M1” (uxietoszef, Bierzyn, 16 września). Wiersze nadal
+idą po kolei, ale bot, który przerósł ziołowy wiersz o więcej niż 10
+poziomów, jedzie po niego do wioski tylko wtedy, gdy ma wolne miejsce w
+puli 2,5 % żywych botów (miejsce trzymane najwyżej godzinę, oddawane po
+skończeniu ziół); bez miejsca robi następny wiersz w kolejności (Ząb Orka
+w Dolinie) — także bot, który już stoi w pierwszej wiosce, więc wioski
+opróżniają się z botów 40+ w kilkanaście minut po aktualizacji. Log:
+`PLAYERBOT_BIOLOGIST: herb errand`.
+
+#### Koń bojowy przed ziołami
+
+Po 2.0.60 bot 70+ z koniem na 10. poziomie miał iść na pustynię, ale ziołowy
+wiersz Biologa (Korzeń Gango w pierwszej wiosce) wysyłał go najpierw do M1 —
+w Jayang stało 35 takich botów z napisem „Zdobywam konia bojowego na
+pustyni (0/100)”, w innych wioskach podobnie. Dopóki bot ma otwartą próbę
+konia (bojowego albo wojskowego), potwór wiersza Biologa nie jest celem
+podróży; oddanie okazów nadal idzie normalnie. Na serwerze testowym pół
+godziny po restarcie: wyjazdy Teleporterem na pustynię i pierwsze zabójstwa
+próby u botów, które dotąd stały w wioskach.
+
+### Niesprzedany towar na ladach tanieje z czasem
+
+Linia na sklepie offline, której nikt nie kupił, tanieje o 10 % za każde
+2 godziny stania, najwyżej o 50 %, i nigdy poniżej tego, co zapłacono
+kowalowi za ulepszenie. Klasyczny stragan miał taką przecenę od dawna; sklep
+offline dostaje ją na wizycie serwisowej (log `PLAYERBOT_OFFLINE: marked
+down`).
+
+### Klient 2.0.12
+
+- Przełącznik „Tytuły botów” w opcjach gry wypisuje na czacie, że zmiana
+  będzie widoczna po ponownym zalogowaniu (klient rysuje tytuł do następnej
+  zmiany rangi bota).
+
 ## 2.0.60 — 2026-09-16
 
 Serwer 2.0.60; klient bez zmian (2.0.11). Wydanie do testów systemu gildii i zakupów botów w ItemShopie —

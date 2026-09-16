@@ -212,6 +212,20 @@ namespace
 	const DWORD PLAYERBOT_STAT_CHECK_INTERVAL = 1000;
 	const DWORD PLAYERBOT_SKILL_CHECK_INTERVAL = 1000;
 	const DWORD PLAYERBOT_SKILL_BOOK_CHECK_INTERVAL = 8000;
+	// The two skills every class trains from a book that is not an
+	// ITEM_SKILLBOOK: Sztuka Wojny Sun Zi / Wu Zi / WeiLiao Zi (50301-50303,
+	// Leadership by twenty levels each) and Sztuka Combo (50304-50306, Combo
+	// at 20/70/100 percent a read, from level 30 and 50). skill_length.h on
+	// mt2009, skill.h on r40250 - the numbers are the same on both.
+	const DWORD PLAYERBOT_SKILL_LEADERSHIP_VNUM = 121;
+	const DWORD PLAYERBOT_SKILL_COMBO_VNUM = 122;
+	// How many of a book the bot can still read it keeps; the rest are goods.
+	const int PLAYERBOT_GENERAL_BOOK_KEEP = 3;
+	// A Combo book is kept this many levels before the level that reads it.
+	const int PLAYERBOT_GENERAL_BOOK_LEVEL_AHEAD = 5;
+	// Iwakura's ordinary book, times this, is what a counter asks for them.
+	const DWORD PLAYERBOT_GENERAL_BOOK_PRICE_MULT_LEADERSHIP = 2;
+	const DWORD PLAYERBOT_GENERAL_BOOK_PRICE_MULT_COMBO = 4;
 	// Kamien Duchowy, the Grand Master's book (ManagePlayerBotGrandMasterTraining):
 	// how often a bot holding one looks, and the twelve hours the quest puts
 	// between two reads. Fasolka Zen lifts a rank below zero, and a bot keeps
@@ -561,6 +575,19 @@ namespace
 	const DWORD PLAYERBOT_STONE_GROUP_STALL_TIMEOUT = 42000;
 	const DWORD PLAYERBOT_STONE_FAILED_COOLDOWN = 90000;
 	const int PLAYERBOT_STONE_SUPPORT_RANGE = 2200;
+	// A stone is broken together, not claimed. Up to this many bots may be on
+	// one before the next is sent elsewhere; a bot joins a stone others are
+	// already breaking up to this many levels over its own, whatever its band
+	// says ("jesli nie da sobie rady, niech dolacza", Tieru, 16 September);
+	// a stone only a player is hitting is left to the player unless the switch
+	// says otherwise, because the drop goes to whoever dealt the most damage.
+	// Every bot scores a stone in its band above the sweet-spot monster, and a
+	// stone somebody is already on gets the join bonus on top.
+	const BYTE PLAYERBOT_STONE_MAX_ATTACKERS = 6;
+	const int PLAYERBOT_STONE_JOIN_LEVEL_DELTA = 30;
+	const bool PLAYERBOT_STONE_JOIN_PLAYERS = false;
+	const int PLAYERBOT_STONE_BASE_SCORE = 500000;
+	const int PLAYERBOT_STONE_JOIN_BONUS = 600000;
 	const DWORD PLAYERBOT_BUFF_INTERVAL = 2000;
 	const DWORD PLAYERBOT_SKILL_ATTACK_INTERVAL = 2500;
 	// A client-side skill motion is longer than one normal attack tick.  Without
@@ -4267,6 +4294,7 @@ namespace
 			dwStoneFightStartTime(0),
 			dwStoneProgressVID(0),
 			dwStoneBrokenTime(0),
+			bFightProgressBoss(false),
 			dwRaceHistogramStamp(0),
 			dwMetinExpeditionUntil(0),
 			dwNextMetinExpeditionRoll(0),
@@ -4539,6 +4567,9 @@ namespace
 		DWORD dwStoneFightStartTime;
 		DWORD dwStoneProgressVID;
 		DWORD dwStoneBrokenTime;
+		// The monster the fight-progress clock tracks is a boss: its fall opens
+		// the loot window a broken stone gets (dwStoneBrokenTime).
+		bool bFightProgressBoss;
 		// What this bot has fought lately, by race flag; see the world memory.
 		WORD awRaceHistogram[PLAYERBOT_RACE_HISTOGRAM_SLOTS] = { 0 };
 		DWORD dwRaceHistogramStamp;

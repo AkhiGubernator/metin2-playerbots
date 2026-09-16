@@ -17,6 +17,114 @@ every version here.
 
 ---
 
+## 2.0.62 — 2026-09-16
+
+Serwer 2.0.62; klient bez zmian. Wydanie do testów Wieży Demonów — prosimy o
+zgłoszenia na Discordzie.
+
+### Gildie botów chodzą do Wieży Demonów (przełącznik „Gildie botów chodzą do Wieży Demonów”, domyślnie włączony)
+
+- **Wyprawa**: mniej więcej co półtorej godziny (pierwsza kilkanaście minut
+  po starcie serwera) jedna gildia botów rdzenia — z co najmniej czterema
+  członkami od 40. poziomu online, najchętniej taka, w której ktoś ma 75. —
+  zwołuje na czacie gildii zbiórkę na parterze Wieży (do 16 najsilniejszych
+  członków), a serwer ogłasza to wszystkim: „Gildia X (Chunjo) rusza na Wieżę
+  Demonów: zbiórka na parterze wiezy, start za 4 minuty. Kto stoi na parterze,
+  wchodzi razem z nimi.” Po czterech minutach (albo gdy wszyscy dotarli) boty
+  razem rozbijają Metin Twardości. Log: `PLAYERBOT_TOWER: raid called /
+  breaking the stone / raid inside / raid over`.
+- **Kto stoi na parterze, wchodzi** — bot na własnej misji (Pamiątka po
+  Demonie), gracz, który przyszedł popatrzeć: gra wciąga do nowej instancji
+  wszystkich z mapy zabójcy kamienia, a w środku każdy bot gra według zasad
+  piętra, wyprawa czy nie.
+- **Piętra** jak w grze: 2. — wybić wszystko; 3. — Król Demonów i reszta;
+  4. — Metin Diabła, potem siedem Metinów Upadku (fałszywe znikają przy 50 %,
+  prawdziwy trzeba rozbić); 5. — Kamienie Otwarcia z demonów niesione do
+  pięciu Starożytnych Pieczęci; 6. — Elit. Król Demonów, potem kowal Wieży;
+  7. — cztery Metiny Śmierci, potem Metin Morderstwa, Nieznana Stara
+  Skrzynia i Mapa Wieży Zin-Sa-Gui; 8. — Klucz Zin-Bong-In z Nieśm. Duchów
+  do Sa-Soe; 9. — Umarły Rozpruwacz. Klucze zbiera zwykły pas lootu, bot ich
+  używa albo oddaje, komu trzeba. Od 6. piętra potrzebny jest bot z 75.
+  poziomem (zasada gry: kowal puszcza dalej tylko takiego); bez niego wyprawa
+  kończy się na szóstym piętrze i boty wychodzą. Run bez postępu przez 20
+  minut, piętro powyżej 35 minut albo całość powyżej 2 godzin — boty wychodzą.
+  Polegli wstają na miejscu jak dotąd.
+- **Gildia gracza**: gdy mistrz gildii (gracz) stoi na parterze Wieży,
+  jego boty od 40. poziomu przychodzą i stoją przy nim; gdy gracz rozbije
+  kamień, wchodzą z nim i walczą piętro po piętrze. Bot w drużynie gracza
+  wchodzi jak dotąd z drużyną.
+- **Panel klasyczny**: przełącznik na stronie zachowania botów i przycisk
+  „Wyprawa do Wieży Demonów teraz” (rdzeń zwołuje wyprawę przy najbliższym
+  sprawdzeniu, jeśli żadna nie trwa); na stronie „Gildie” przy gildii w
+  Wieży stoi „w Wieży Demonów”. Status nad głową: „Wieza Demonow: pietro N”,
+  „Zbiorka gildii: Wieza Demonow”. Gildia w Wieży nie jest wybierana do wojny.
+
+- **Zmierzone na serwerze testowym** (16 września, jedna wyprawa 16 botów
+  gildii MINISTRANCI, bez wycieków z instancji): 2. piętro 208 s, 3. z Królem
+  Demonów 253 s, 4. Metiny 107 s, 5. pięć Kamieni Otwarcia do Pieczęci 177 s,
+  6. Elitarny Król Demonów 104 s i kowal Wieży przepuścił bota 75. poziomu.
+  Na 7. piętrze pierwsza wyprawa utknęła: 214 demonów, boty rozproszone po
+  piętrze, połowa w pętli śmierć/wskrzeszenie, 6 minut bez zabójstwa. Stąd
+  walka w grupie w tym wydaniu: cel wybierany od środka gildii (wszyscy biją
+  tego samego demona), kamienie piętra dopiero gdy zostanie najwyżej 25
+  potworów, maruder bez celu wraca do grupy. Ta walka grupowa jest w tym
+  wydaniu nowa i w chwili wydania była dopiero w pierwszym teście na
+  serwerze testowym — Wieża idzie jako nowość do testów; piętra 7–9 prosimy
+  zgłaszać na Discordzie.
+
+### Koniec pętli Joan↔Bokjung u botów z ziołowym wierszem Biologa
+
+Bot z otwartym ziołowym wierszem (potwór w pierwszej wiosce) wchodził z
+Bokjung do Joan po zioła, a w Joan reguła „wyrosłeś z tej mapy” od razu
+wysyłała go z powrotem — punkty wejścia obu bram stoją obok bramy
+powrotnej, więc okrążenie trwało 4 sekundy (Greess, log TAKAMURU1: „nie
+przechodzą przez teleporty”). Polowanie na zioła jest teraz powodem, by
+zostać w pierwszej wiosce, tak samo jak było powodem, by do niej przyjść.
+Przy okazji policzone: Teleporter działa w każdej pierwszej i drugiej
+wiosce trzech królestw (na serwerze testowym w 45 min: z 1/21/41 do Doliny
+361/377/252 razy, na pustynię 44/58/58; z 3/23/43 do Doliny 103/54/67), a
+bramy M1↔M2, do Lochów Małp i z M3 po wojnie tak samo.
+
+### Koniec pętli M2↔M3 u dropperów M3
+
+Dropper M3 (osobowość, która farmi mapę gildyjną pod bronie 30 lvl na
+sprzedaż) z taką bronią w torbie był wysyłany na M3 jako dropper, a gałąź
+M3 odsyłała go do M2 jako bota, który „znalazł broń” — punkt przybycia
+Teleportera na mapie gildyjnej stoi obok bramy powrotnej, więc okrążenie
+trwało 5 sekund (paczka seban latino: po dwa boty na Shinsoo i Jinno,
+62–65 okrążeń w 6 minut, „level30_weapon_to_m3” / „m3_weapon_found”). Dla
+droppera M3 broń w torbie to towar, nie powód do powrotu; obie reguły —
+wejścia i wyjścia — pytają teraz o to samo.
+
+### Próba konia bojowego tylko tam, gdzie jest jej mapa
+
+W układzie split pustynia (i Wieża Demonów dla konia wojskowego) stoi na
+jednym rdzeniu, a próba pytała tylko o poziom, konia i zabójstwa: 58 botów
+Shinsoo i 42 Jinno stało w drugich wioskach z napisem „Zdobywam konia
+bojowego na pustyni (0/100)” (paczka seban latino), losowanie frontieru
+odpowiadało pustynią i było filtrowane do niczego, a od 2.0.61 Biolog
+ustępował próbie — więc te boty nie miały ani frontieru, ani wiersza
+Biologa. Próba jest otwarta tylko na rdzeniu, który hostuje jej mapę; na
+pozostałych bot jest losowany po poziomie i robi Biologa jak każdy inny.
+
+### Naprawa paczki: 5. piętro Wieży Demonów było nie do przejścia
+
+Quest paczki liczył na 5. piętrze zabójstwa Brutalnego Demona Łucznika
+(1062), a regen tego piętra w tej paczce stawia Demonów Żołnierzy, Łuczników,
+Włóczników i Szamanów oraz ich Podłe odmiany (1002–1004, 1031–1034) — nigdy
+1062. Żaden Kamień Otwarcia nie mógł więc wypaść i nikt, gracz ani bot, nie
+przechodził dalej. Kopia questu w obrazie serwera liczy potwory, które na
+tym piętrze naprawdę stoją.
+
+### Bot przechodzi przez każdy warp gry
+
+Silnikowy `WarpSet` — skok lochu, wyjście z lochu (`d.exit_all`), `pc.warp`
+questu, `/warp` GM-a — zdejmował bota z mapy i czekał na klienta, którego
+bot nie ma (ratunek stawiał go na starcie jego mapy). Teraz bot na tym
+rdzeniu przechodzi po stronie serwera tam, gdzie gra go posłała, z
+członkostwem w lochu jak gracz po ponownym połączeniu; warp na mapę innego
+rdzenia jest odmawiany z wpisem w logu (`PLAYERBOT_WORLD: warpset refused`).
+
 ## 2.0.61 — 2026-09-16
 
 Serwer 2.0.61 i klient 2.0.12. Wydanie z tabelą tierów Iwakury, cennikiem 1.2 i

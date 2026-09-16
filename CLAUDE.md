@@ -4490,6 +4490,110 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `playerbot_chest_switch.tsv` beside it; unticking writes them back. Tried
   on the test world through the page's own form: off wrote the zeros and the
   core reloaded within the five seconds, on put 10 and 300 back.
+- **The world's difficulty is three event flags the migrator writes and one
+  Lua file the quests ask.** `M2_DIFFICULTY` (easy, medium, hard, custom with
+  `M2_BIOLOGIST_WAIT_HOURS` and `M2_HORSE_WAIT_HOURS`) goes to the migrate
+  service; `apply.sh` turns it into `player.quest` rows with dwPID 0 in seconds
+  (`m2_biologist_wait`, `m2_horse_buy_wait`, `_upgrade_`, `_train_` 1-10,
+  `_train2_` 11-19), written before the seed because the seed may exit early
+  on a foreign cohort. The db core loads those at boot (`LoadEventFlag`) and
+  pushes them to every game core, which is the package's own idiom for a
+  world-wide switch (`beta_server` in the same quests) - so a change is a
+  restart, and the panel could read the numbers. `quest/m2_difficulty.lua`,
+  copied into `libs/other/` and dofile'd from `_otherModuleLoader.lua` (CRLF,
+  stripped first) after `collect_data.lua`, overrides
+  `collect_data.is_research_in_progress` and `set_wait_time` - the 2.0.55 sed
+  that made the first answer false is gone, that is what "easy" is now - and
+  defines `m2_horse_wait(kind)`, a plain global because qc admits only the
+  dotted calls it knows. The four horse quests and pony_levelup ask it where
+  the package wrote 12, 18 and 21 hours; a wait of zero goes straight to
+  `buy`, because the package's `wait` state hands the horse over only at the
+  next talk or login. Presets scale the package's numbers: hard is what it
+  shipped with, medium a third. The launcher has a button and a text-menu
+  entry (`SetDifficulty`, `-Difficulty -BiologistHours -HorseHours`), and
+  `Set-DotEnvValue` is the generic .env writer it needed. Tried on the test
+  world in hard: the flags arrived at the core (`QUEST eventflag m2_difficulty
+  2`), the compiled objects carry the calls, questlib loaded without a Lua
+  error; no player dialog was driven. The bots' Biologist and stable keeper
+  are the AI's own code and never waited (Drip's "z harda na easy nieeee",
+  Tieru, 16 September).
+- **A timed event is a file the panel writes and one core acts on.**
+  `playerbot_event_rules.h` (pure, unit-tested) reads
+  `/opt/m2spool/playerbot_events.tsv` - weekly windows by kind (chest, exp,
+  drop, yang), days 1-7, HH:MM-HH:MM past midnight allowed, a percent over
+  the world's rate, `#off` rows the panel keeps, and `now` lines the
+  "Aktywuj teraz" button writes with an epoch - and `Evaluate` says per kind:
+  active, until, next start. `playerbot_events.h` runs it once a second.
+  Two things are per core and one is not: the chest gate is local (every
+  core's `CreateDropItem` rolls on its own `g_iMoonlightChestPermille`), so
+  every core holds the two figures at zero while a chest window is written
+  and not open, keeping the sliders' values captured on each weights
+  generation (`GetPlayerBotChestWantedPermille`, which the F9 report asks
+  through a forward declaration in config.h); the rate flags and the notices
+  are the leader's alone - the core hosting Joan, map 21, which is game1
+  under both layouts - because `BroadcastNotice` goes to every core by P2P
+  and three cores each adding fifty percent to `mob_exp` would compound it.
+  The base rate lives in a flag of its own (`m2_event_exp_base`, and
+  `_buyer`), so a core restarted inside an event computes the same boosted
+  number again, and a rate the operator moved during the event is left where
+  they put it. The core answers with `playerbot_events_status.tsv` beside
+  `playerbot_status.tsv`; the panel's `/events` page reads the newest of the
+  three cores' and shows "active until / next at" with the schedule editor
+  (two empty rows after the saved ones, no script) and the activate-now
+  forms. Log tag `PLAYERBOT_EVENT`, in the bundle's list.
+- **The guild-mark connection logs in twice, and the second was an error
+  line.** The client's mark downloader sends `HEADER_CG_MARK_LOGIN` (100)
+  once the handshake has put its connection in PHASE_LOGIN;
+  `CInputHandshake` answers that header only inside the handshake, so
+  `CInputLogin::Analyze` fell to its default branch: "login phase does not
+  handle this packet! header 100" on every mark download, 202 in two days on
+  sizowski's world and 92 on ours, read by him (and by the Claude he asked)
+  as the cause of a login problem it had nothing to do with - the branch
+  already returned 0 with `SetPhase(PHASE_CLOSE)` commented out.
+  `apply_mark_login_quiet` (playerbotify.py) gives the header a silent case;
+  input_login.cpp already shipped staged.
+- **A stone is broken together, not claimed.** `IsTargetClaimedByAnotherBot`
+  kept every bot off a target another bot had, and that included a Metin: one
+  bot on the only stone in sight and the rest walking past ("jak jest jeden
+  metek to jeden bije a reszta sie nie dolacza", Kiciamol, 16 September;
+  Tieru: "to bug"). For a stone the claim is a headcount now -
+  `PLAYERBOT_STONE_MAX_ATTACKERS` on it - and `CCountPlayerBotStoneAttackers`
+  tells bots from players. Every bot scores a stone in its band above the
+  sweet-spot monster (`PLAYERBOT_STONE_BASE_SCORE`; the hunter's 1.5M is
+  untouched) and a stone another bot is already on gets
+  `PLAYERBOT_STONE_JOIN_BONUS` on top; `IsPlayerBotStoneJoinable` admits a
+  stone up to `PLAYERBOT_STONE_JOIN_LEVEL_DELTA` over the bot while others
+  break it, in the collector, in the party's target and in the manager's
+  "obsolete stone" check, which would otherwise drop the joined stone on the
+  next tick. A stone only a player is hitting is left to the player
+  (`PLAYERBOT_STONE_JOIN_PLAYERS`), because the drop goes to whoever dealt the
+  most damage. `PLAYERBOT_METIN: joined a stone` says who joined whom.
+- **A boss's fall opens the loot window a broken stone gets.** The raid's next
+  step after a kill is "boss down, going back to work", and the killer walked
+  off with the Umarly Rozpruwacz's casket (50082, a giftbox of level-75
+  weapons; nothing in the loot rules refuses it) lying on the snow (Ciapek,
+  16 September). `bFightProgressBoss` rides with the fight-progress clock; when
+  that monster is dead or gone, `dwStoneBrokenTime` is stamped and
+  `HandleLoot` dashes for what lies within `PLAYERBOT_METIN_LOOT_DASH_RANGE`
+  for `PLAYERBOT_METIN_LOOT_DASH_TIME`, ahead of the threat scan and the
+  wander. The killer owns the drops for the engine's ten seconds; a party
+  member's are picked up for the owner, as before.
+- **Sztuka Combo and the Leadership books are not ITEM_SKILLBOOK.** 50301-50303
+  (Sun Zi, Wu Zi, WeiLiao Zi: Leadership by twenty levels each, 35% a read
+  through the class-book branch of `LearnSkillByBook`) and 50304-50306 (Combo
+  at 20/70/100 percent, from level 30 for Combo 1 and 50 for Combo 2) are
+  ITEM_USE, USE_SPECIAL, with cases of their own in `char_item.cpp`; the
+  skill-book pass never saw them and the junk rule's default sold them for a
+  thousand yang ("Mistrz. Sztuka Combo" sold to the merchant in a gear
+  history, sizowski, 16 September). `IsPlayerBotGeneralSkillBook` and
+  `CanPlayerBotReadGeneralSkillBookNow` (consumables.h, the engine's own
+  tests) drive `ReadPlayerBotGeneralSkillBook`, asked from the class-book
+  pass when no class book is due and waving the engine's day away like it;
+  the junk rule never vendors one; the counter lists what the bot cannot
+  read or holds beyond `PLAYERBOT_GENERAL_BOOK_KEEP`, at Iwakura's ordinary
+  book times two (Leadership) or four (Combo). Combo is worth having: a
+  swing's `GetShootMaxTargetCount` is 3 + the Combo level, so Combo 2 hits
+  five monsters where Combo 0 hits three.
 - **A mod in an engine file survives an update and breaks the next build.**
   The package replaces our files and leaves everything else, so a fork's
   edit in `guild.cpp` or `messenger_manager.cpp` calling a manager method we

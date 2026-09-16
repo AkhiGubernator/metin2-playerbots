@@ -1354,7 +1354,17 @@ def read_guild_status():
                     except ValueError:
                         g[key] = 0
                 g["war_with"] = row.get("war_with", "")
+                g["next_war_in_s"] = None
                 guilds[gid] = g
+            # The kingdom's next war, as the core that hosts its guild map
+            # counts it (0 = under way, -1 = none scheduled); a core that
+            # does not host it writes -1, so the best answer wins.
+            try:
+                nw = int(row.get("next_war_in_s", -1))
+            except ValueError:
+                nw = -1
+            if nw >= 0 and (g["next_war_in_s"] is None or g["next_war_in_s"] < 0 or nw < g["next_war_in_s"]):
+                g["next_war_in_s"] = nw
             if not g["master"] and row.get("master"):
                 g["master"] = row["master"]
             if not g["war_with"] and row.get("war_with"):
@@ -3380,6 +3390,10 @@ T.update({
  "gl_col_exp":   {"en":"Exp received","pl":"Otrzymany exp","de":"Erhaltene Erfahrung","tr":"Alınan tecrübe"},
  "gl_col_war":   {"en":"War","pl":"Wojna","de":"Krieg","tr":"Savaş"},
  "gl_war_with":  {"en":"vs","pl":"z","de":"gegen","tr":"vs"},
+ "gl_next_war":  {"en":"Next bot guild war","pl":"Następna wojna gildii botów","de":"Nächster Bot-Gildenkrieg","tr":"Sonraki bot lonca savaşı"},
+ "gl_next_war_now": {"en":"under way now (guild map)","pl":"trwa teraz (mapa gildyjna)","de":"läuft jetzt (Gildenkarte)","tr":"şu anda sürüyor (lonca haritası)"},
+ "gl_next_war_off": {"en":"not scheduled","pl":"niezaplanowana","de":"nicht geplant","tr":"planlanmadı"},
+ "gl_next_war_in": {"en":"in about","pl":"za ok.","de":"in etwa","tr":"yaklaşık"},
  "gl_exp_note":  {"en":"Exp received counts what the bots have offered since the cores started; the guild's own exp column in the game is the same number, kept by the DB.","pl":"„Otrzymany exp” liczy, co boty oddały od startu rdzeni; kolumna expa gildii w grze to ta sama liczba, trzymana przez bazę.","de":"„Erhaltene Erfahrung“ zählt, was die Bots seit dem Start der Kerne gegeben haben; die Erfahrungsspalte der Gilde im Spiel ist dieselbe Zahl, von der Datenbank geführt.","tr":"„Alınan tecrübe“ çekirdekler başladığından beri botların verdiğini sayar; oyundaki lonca tecrübe sütunu veritabanının tuttuğu aynı sayıdır."},
  "ev_dash_hint": {"en":"Timed windows: Moonlight chests drop only while their event runs; more experience, drop or yang at chosen hours. \u201cActivate now\u201d switches an event on for a number of minutes.","pl":"Okna czasowe: Szkatu\u0142ki Blasku Ksi\u0119\u017cyca dropi\u0105 tylko wtedy, gdy trwa ich event; wi\u0119cej expa, dropu albo yang o wybranych porach. \u201eAktywuj teraz\u201d w\u0142\u0105cza event na podan\u0105 liczb\u0119 minut.","de":"Zeitfenster: Mondschein-Truhen fallen nur w\u00e4hrend ihres Events; mehr Erfahrung, Drop oder Yang zu gew\u00e4hlten Stunden. \u201eJetzt aktivieren\u201c schaltet ein Event f\u00fcr einige Minuten ein.","tr":"Zaman pencereleri: Ay I\u015f\u0131\u011f\u0131 Sand\u0131klar\u0131 yaln\u0131zca etkinlik s\u00fcrerken d\u00fc\u015fer; se\u00e7ilen saatlerde daha fazla tecr\u00fcbe, drop veya yang. \u201c\u015eimdi etkinle\u015ftir\u201d bir etkinli\u011fi belirli dakika a\u00e7ar."},
  "ev_intro":     {"en":"A row is a weekly window: which days, from what hour to what hour, and for a rate how many percent over the server's own rates (50 = +50%). The game core reads this within five seconds; nothing restarts. A window past midnight (22:00-02:00) runs into the next day.","pl":"Wiersz to okno tygodniowe: w jakie dni, od kt\u00f3rej do kt\u00f3rej, a dla rat o ile procent ponad ustawione raty serwera (50 = +50%). Rdze\u0144 gry odczytuje to w pi\u0119\u0107 sekund; nic si\u0119 nie restartuje. Okno przez p\u00f3\u0142noc (22:00-02:00) trwa do nast\u0119pnego dnia.","de":"Eine Zeile ist ein w\u00f6chentliches Fenster: welche Tage, von wann bis wann, und bei einer Rate wie viel Prozent \u00fcber den Serverraten (50 = +50%). Der Spielkern liest das binnen f\u00fcnf Sekunden; nichts startet neu. Ein Fenster \u00fcber Mitternacht (22:00-02:00) l\u00e4uft in den n\u00e4chsten Tag.","tr":"Bir sat\u0131r haftal\u0131k bir penceredir: hangi g\u00fcnler, saat ka\u00e7tan ka\u00e7a ve oran i\u00e7in sunucu oranlar\u0131n\u0131n y\u00fczde ka\u00e7 \u00fcst\u00fc (50 = +%50). Oyun \u00e7ekirde\u011fi bunu be\u015f saniyede okur; hi\u00e7bir \u015fey yeniden ba\u015flamaz. Gece yar\u0131s\u0131n\u0131 ge\u00e7en pencere (22:00-02:00) ertesi g\u00fcne sarkar."},
@@ -5273,6 +5287,7 @@ TPL_GUILDS = BASE.replace("__BODY__", """
 <h3>{{t('gl_summary')}}{% if guilds %}: {{guilds|length}}
   {% for key in tier_keys %}{% set n = guilds|selectattr('tier_key', 'equalto', key)|list|length %}{% if n %}<span class="badge">{{t(key)}}: {{n}}</span> {% endif %}{% endfor %}{% endif %}</h3>
 {% if not guilds %}<p class="muted">{{t('gl_stale')}}</p>{% else %}
+{% if next_wars %}<p>\u2694 {{t('gl_next_war')}}: {% for key, s in next_wars %}<b>{{t(key)}}</b>: {% if s == 0 %}{{t('gl_next_war_now')}}{% elif s < 0 %}{{t('gl_next_war_off')}}{% else %}{{t('gl_next_war_in')}} {{(s // 60) + 1}} min{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
 <div style="overflow-x:auto">
 <table>
 <tr><th>{{t('gl_col_name')}}</th><th>{{t('gl_col_kingdom')}}</th><th>{{t('gl_col_tier')}}</th>
@@ -12405,7 +12420,20 @@ def rates():
 def guilds_page():
     """The bot guilds: tier, level, members, ladder, the war under way. Read
     from the cores' playerbot_guild_status.tsv; nothing is written."""
-    return render_template_string(TPL_GUILDS, guilds=read_guild_status(), tier_keys=GUILD_TIER_KEYS)
+    guilds = read_guild_status()
+    # Per kingdom: seconds until its next bot war (0 = under way), so a
+    # player who wants to watch one knows when and where to be.
+    next_wars = {}
+    for g in guilds:
+        nw = g.get("next_war_in_s")
+        if nw is None:
+            continue
+        cur = next_wars.get(g["empire"])
+        if cur is None or (nw >= 0 and (cur < 0 or nw < cur)):
+            next_wars[g["empire"]] = nw
+    next_war_rows = [(GUILD_EMPIRE_KEYS.get(e, "gl_empire_unknown"), s) for e, s in sorted(next_wars.items())]
+    return render_template_string(TPL_GUILDS, guilds=guilds, tier_keys=GUILD_TIER_KEYS,
+                                  next_wars=next_war_rows)
 
 
 @app.route("/events", methods=["GET", "POST"])

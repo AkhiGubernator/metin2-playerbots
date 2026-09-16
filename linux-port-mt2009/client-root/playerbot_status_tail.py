@@ -90,6 +90,59 @@ PERSONALITY_COLOURS = {
 TITLE_REFRESH_SECONDS = 1.0
 TITLE_FORGET_SECONDS = 60.0
 
+# The player's own switch, "Tytuly botow" in the game options: the
+# personalities or the classic alignment titles (NerrVoVy, 15 September). One
+# line in playerbot_titles.cfg beside the client, because systemSetting has no
+# key of its own for it; a missing or unreadable file means on. Off, nothing is
+# attached and the keeper forgets what it held: the client writes the alignment
+# title back on the bot's next alignment change - a kill away - and textTail has
+# no DetachTitle to call.
+TITLES_CONFIG_FILE = "playerbot_titles.cfg"
+TITLES_CONFIG_KEY = "personality_titles"
+_titlesEnabled = None
+
+
+def TitlesConfigText(enabled):
+	return "%s=%d\n" % (TITLES_CONFIG_KEY, 1 if enabled else 0)
+
+
+def TitlesEnabledFromText(text):
+	for line in (text or "").splitlines():
+		key, sep, value = line.strip().partition("=")
+		if sep and key.strip() == TITLES_CONFIG_KEY:
+			return value.strip() != "0"
+	return True
+
+
+def TitlesEnabled():
+	global _titlesEnabled
+	if _titlesEnabled is None:
+		try:
+			f = open(TITLES_CONFIG_FILE, "r")
+			try:
+				_titlesEnabled = TitlesEnabledFromText(f.read())
+			finally:
+				f.close()
+		except (IOError, OSError):
+			_titlesEnabled = True
+	return _titlesEnabled
+
+
+def SetTitlesEnabled(enabled):
+	global _titlesEnabled
+	_titlesEnabled = bool(enabled)
+	try:
+		f = open(TITLES_CONFIG_FILE, "w")
+		try:
+			f.write(TitlesConfigText(_titlesEnabled))
+		finally:
+			f.close()
+	except (IOError, OSError):
+		pass
+	if not _titlesEnabled:
+		GetTitleKeeper().Destroy()
+	return _titlesEnabled
+
 
 def decode_title(vid_arg, personality_arg):
 	try:
@@ -128,6 +181,9 @@ class TitleKeeper(object):
 		return bool(self.titles)
 
 	def OnUpdate(self):
+		if not TitlesEnabled():
+			self.titles = {}
+			return
 		import app
 		now = app.GetTime()
 		if now < self.nextRefresh:
@@ -154,6 +210,8 @@ def GetTitleKeeper():
 
 
 def show_title(vid_arg, personality_arg):
+	if not TitlesEnabled():
+		return False
 	decoded = decode_title(vid_arg, personality_arg)
 	if decoded is None or not attach_title(decoded[0], decoded[1]):
 		return False

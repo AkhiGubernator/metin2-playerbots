@@ -26,6 +26,9 @@ Writes into client-root/ (beside serverinfo.py, which is hand-written):
                     in one frame, which the server's flood limit closed on.
   * offlineshopmanage.py - a click on an empty slot of the shop's edit grid
                     removes nothing instead of raising KeyError.
+  * uigameoption.py, uiscript/gameoptiondialog.py - the "Tytuly botow" row of
+                    the game options: a bot's personality title or the classic
+                    alignment title (playerbot_status_tail.py keeps the choice).
 
 Exact-string edits on the stock CP1250/CRLF files, byte for byte otherwise.
 Idempotent; re-run after a new client package.
@@ -221,6 +224,128 @@ EDITS = {
         (b'\t\tself.discordButton.SAFE_SetEvent(self.OpenURL, "https://discord.gg/RhUaGRYZG7")\r\n',
          b'\t\tself.discordButton.SAFE_SetEvent(self.OpenURL, "https://discord.gg/pt5tvnrN6")\r\n'),
     ],
+    # The game options get a "Tytuly botow" row under the floating text one:
+    # a bot's personality title (playerbot_status_tail.py, 2.0.53) or the
+    # classic alignment title, the player's own choice ("dodac w opcjach gry
+    # aby moc przelaczac pomiedzy klasycznymi i aktualnymi", NerrVoVy, 15
+    # September). The two buttons follow the night mode's pattern: bound by
+    # name, refreshed from the module, and the click writes the choice through
+    # SetTitlesEnabled. The dialog's script grows by one row's height.
+    'uigameoption.py': [
+        (b'\t\tself.RefreshFloatingTextButtons()\r\n'
+         b'\r\n'
+         b'\tdef __del__(self):\r\n',
+         b'\t\tself.RefreshFloatingTextButtons()\r\n'
+         b'\t\tself.RefreshBotTitleButtons()\r\n'
+         b'\r\n'
+         b'\tdef __del__(self):\r\n'),
+        (b'\t\tself.floatingTextButtonList = []\r\n'
+         b'\t\tself.toolTip = None\r\n',
+         b'\t\tself.floatingTextButtonList = []\r\n'
+         b'\t\tself.botTitleButtonList = []\r\n'
+         b'\t\tself.toolTip = None\r\n'),
+        (b'\t\t\tself.floatingTextButtonList.append(GetObject("floating_text_off"))\r\n'
+         b'\r\n'
+         b'\t\texcept:\r\n',
+         b'\t\t\tself.floatingTextButtonList.append(GetObject("floating_text_off"))\r\n'
+         b'\r\n'
+         b'\t\t\tself.botTitleButtonList.append(GetObject("bot_title_personality_button"))\r\n'
+         b'\t\t\tself.botTitleButtonList.append(GetObject("bot_title_classic_button"))\r\n'
+         b'\r\n'
+         b'\t\texcept:\r\n'),
+        (b'\t\tself.floatingTextButtonList[2].SAFE_SetEvent(self.__OnClickFloatingTextButton, 0)\r\n',
+         b'\t\tself.floatingTextButtonList[2].SAFE_SetEvent(self.__OnClickFloatingTextButton, 0)\r\n'
+         b'\r\n'
+         b'\t\tself.botTitleButtonList[0].SAFE_SetEvent(self.__OnClickBotTitleButton, 1)\r\n'
+         b'\t\tself.botTitleButtonList[1].SAFE_SetEvent(self.__OnClickBotTitleButton, 0)\r\n'),
+        (b'\tdef __OnClickFloatingTextButton(self, state):\r\n'
+         b'\t\tsystemSetting.SetShowFloatingText(state)\r\n'
+         b'\t\tself.RefreshFloatingTextButtons()\r\n'
+         b'\r\n',
+         b'\tdef __OnClickFloatingTextButton(self, state):\r\n'
+         b'\t\tsystemSetting.SetShowFloatingText(state)\r\n'
+         b'\t\tself.RefreshFloatingTextButtons()\r\n'
+         b'\r\n'
+         b'\t# A bot\'s personality title or the classic alignment title (NerrVoVy):\r\n'
+         b'\t# playerbot_status_tail.py keeps the choice in playerbot_titles.cfg.\r\n'
+         b'\tdef __OnClickBotTitleButton(self, enabled):\r\n'
+         b'\t\timport playerbot_status_tail\r\n'
+         b'\t\tplayerbot_status_tail.SetTitlesEnabled(enabled)\r\n'
+         b'\t\tself.RefreshBotTitleButtons()\r\n'
+         b'\r\n'
+         b'\tdef RefreshBotTitleButtons(self):\r\n'
+         b'\t\timport playerbot_status_tail\r\n'
+         b'\t\tfor btn in self.botTitleButtonList:\r\n'
+         b'\t\t\tbtn.SetUp()\r\n'
+         b'\t\tif playerbot_status_tail.TitlesEnabled():\r\n'
+         b'\t\t\tself.botTitleButtonList[0].Down()\r\n'
+         b'\t\telse:\r\n'
+         b'\t\t\tself.botTitleButtonList[1].Down()\r\n'
+         b'\r\n'),
+    ],
+    'uiscript/gameoptiondialog.py': [
+        (b'\t"width" : 300,\r\n'
+         b'\t"height" : 25*16+8,\r\n',
+         b'\t"width" : 300,\r\n'
+         b'\t"height" : 25*16+8+21,\r\n'),
+        (b'\t\t\t"width" : 300,\r\n'
+         b'\t\t\t"height" : 25*16+8,\r\n',
+         b'\t\t\t"width" : 300,\r\n'
+         b'\t\t\t"height" : 25*16+8+21,\r\n'),
+        (b'\t\t\t\t\t"text" : uiScriptLocale.GAME_OPTIONS_FLOATING_TEXT_2,\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"default_image" : ROOT_PATH + "middle_button_01.sub",\r\n'
+         b'\t\t\t\t\t"over_image" : ROOT_PATH + "middle_button_02.sub",\r\n'
+         b'\t\t\t\t\t"down_image" : ROOT_PATH + "middle_button_03.sub",\r\n'
+         b'\t\t\t\t},\r\n'
+         b'\t\t\t],\r\n',
+         b'\t\t\t\t\t"text" : uiScriptLocale.GAME_OPTIONS_FLOATING_TEXT_2,\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"default_image" : ROOT_PATH + "middle_button_01.sub",\r\n'
+         b'\t\t\t\t\t"over_image" : ROOT_PATH + "middle_button_02.sub",\r\n'
+         b'\t\t\t\t\t"down_image" : ROOT_PATH + "middle_button_03.sub",\r\n'
+         b'\t\t\t\t},\r\n'
+         b'\r\n'
+         b'\t\t\t\t## BOT TITLES (playerbot_status_tail.py): the personality or the\r\n'
+         b'\t\t\t\t## classic alignment title. The strings are CP1250 escapes so the\r\n'
+         b'\t\t\t\t## file stays ASCII like the rest of the root.\r\n'
+         b'\t\t\t\t{\r\n'
+         b'\t\t\t\t\t"name" : "bot_title_text",\r\n'
+         b'\t\t\t\t\t"type" : "text",\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"x" : LINE_LABEL_X,\r\n'
+         b'\t\t\t\t\t"y" : 382+2,\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"text" : "Tytu\\xb3y bot\\xf3w",\r\n'
+         b'\t\t\t\t},\r\n'
+         b'\t\t\t\t{\r\n'
+         b'\t\t\t\t\t"name" : "bot_title_personality_button",\r\n'
+         b'\t\t\t\t\t"type" : "radio_button",\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"x" : LINE_DATA_X,\r\n'
+         b'\t\t\t\t\t"y" : 382,\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"text" : "Osobowo\\x9c\\xe6",\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"default_image" : ROOT_PATH + "middle_button_01.sub",\r\n'
+         b'\t\t\t\t\t"over_image" : ROOT_PATH + "middle_button_02.sub",\r\n'
+         b'\t\t\t\t\t"down_image" : ROOT_PATH + "middle_button_03.sub",\r\n'
+         b'\t\t\t\t},\r\n'
+         b'\t\t\t\t{\r\n'
+         b'\t\t\t\t\t"name" : "bot_title_classic_button",\r\n'
+         b'\t\t\t\t\t"type" : "radio_button",\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"x" : LINE_DATA_X+MIDDLE_BUTTON_WIDTH,\r\n'
+         b'\t\t\t\t\t"y" : 382,\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"text" : "Klasyczne",\r\n'
+         b'\r\n'
+         b'\t\t\t\t\t"default_image" : ROOT_PATH + "middle_button_01.sub",\r\n'
+         b'\t\t\t\t\t"over_image" : ROOT_PATH + "middle_button_02.sub",\r\n'
+         b'\t\t\t\t\t"down_image" : ROOT_PATH + "middle_button_03.sub",\r\n'
+         b'\t\t\t\t},\r\n'
+         b'\t\t\t],\r\n'),
+    ],
 }
 
 
@@ -240,7 +365,9 @@ def main():
                     continue  # already ours (re-run on our own output)
                 raise SystemExit('clientrootify: %s: expected exactly one %r, found %d' % (name, old[:50], data.count(old)))
             data = data.replace(old, new)
-        io.open(os.path.join(OUT, name), 'wb').write(data)
+        out = os.path.join(OUT, name)
+        os.makedirs(os.path.dirname(out), exist_ok=True)  # uiscript/...
+        io.open(out, 'wb').write(data)
         print('clientrootify: client-root/%s (%d bytes)' % (name, len(data)))
 
 

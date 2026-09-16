@@ -121,5 +121,83 @@ class TitleTest(unittest.TestCase):
         self.assertEqual(self.calls, [])
 
 
+class TitleSwitchTest(unittest.TestCase):
+    """The player's "Tytuly botow" switch, kept in playerbot_titles.cfg."""
+
+    def setUp(self):
+        import tempfile
+        self.calls = []
+        native = types.ModuleType('textTail')
+        native.AttachTitle = lambda vid, text, r, g, b: self.calls.append((vid, text))
+        clock = types.ModuleType('app')
+        clock.GetTime = lambda: 100.0
+        self.saved = dict((name, sys.modules.get(name)) for name in ('textTail', 'app'))
+        sys.modules['textTail'] = native
+        sys.modules['app'] = clock
+        self.tmp = tempfile.mkdtemp()
+        self.savedFile = status.TITLES_CONFIG_FILE
+        status.TITLES_CONFIG_FILE = os.path.join(self.tmp, 'playerbot_titles.cfg')
+        status._titlesEnabled = None
+        status._keeper = None
+
+    def tearDown(self):
+        import shutil
+        for name, module in self.saved.items():
+            if module is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+        status.TITLES_CONFIG_FILE = self.savedFile
+        status._titlesEnabled = None
+        status._keeper = None
+        shutil.rmtree(self.tmp, True)
+
+    def test_on_without_a_file(self):
+        self.assertTrue(status.TitlesEnabled())
+        self.assertTrue(status.show_title('42', '1'))
+        self.assertEqual(self.calls, [(42, status.PERSONALITY_TITLES[1])])
+
+    def test_off_attaches_nothing_and_the_keeper_forgets(self):
+        self.assertTrue(status.show_title('42', '1'))
+        keeper = status.GetTitleKeeper()
+        self.assertTrue(keeper.CanUpdate())
+        self.assertFalse(status.SetTitlesEnabled(False))
+        self.assertFalse(keeper.CanUpdate())
+        self.assertFalse(status.show_title('43', '2'))
+        keeper.OnUpdate()
+        self.assertEqual(self.calls, [(42, status.PERSONALITY_TITLES[1])])
+        self.assertTrue(status.SetTitlesEnabled(True))
+        self.assertTrue(status.show_title('43', '2'))
+        self.assertEqual(self.calls[-1], (43, status.PERSONALITY_TITLES[2]))
+
+    def test_the_choice_survives_a_restart(self):
+        status.SetTitlesEnabled(False)
+        status._titlesEnabled = None   # a new client process reads the file
+        self.assertFalse(status.TitlesEnabled())
+        status.SetTitlesEnabled(True)
+        status._titlesEnabled = None
+        self.assertTrue(status.TitlesEnabled())
+        f = open(status.TITLES_CONFIG_FILE)
+        try:
+            self.assertEqual(f.read().strip(), 'personality_titles=1')
+        finally:
+            f.close()
+
+    def test_a_file_the_client_cannot_write_still_switches_for_the_session(self):
+        status.TITLES_CONFIG_FILE = os.path.join(self.tmp, 'no', 'such', 'dir', 'x.cfg')
+        self.assertFalse(status.SetTitlesEnabled(False))
+        self.assertFalse(status.TitlesEnabled())
+        status._titlesEnabled = None
+        self.assertTrue(status.TitlesEnabled())
+
+    def test_text_forms(self):
+        self.assertTrue(status.TitlesEnabledFromText(''))
+        self.assertTrue(status.TitlesEnabledFromText(None))
+        self.assertTrue(status.TitlesEnabledFromText('personality_titles=1\n'))
+        self.assertFalse(status.TitlesEnabledFromText(' personality_titles = 0 \r\n'))
+        self.assertTrue(status.TitlesEnabledFromText('other=0\n'))
+        self.assertEqual(status.TitlesConfigText(False), 'personality_titles=0\n')
+
+
 if __name__ == '__main__':
     unittest.main()

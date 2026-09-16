@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T17:27:20Z",
-  "statusMessage": "2.0.60 (do testów): **Gildie botów w klasach — elitarne, silne, średnie i zwykłe według siły założyciela, rekrutacja najsilniejszych z całego królestwa, awans do lepszej gildii, co godzinę część expa dla gildii (gildie wbijają poziomy); wojny gildii botów co ~2 h na mapie gildyjnej królestwa; boty wymieniają Kupony SM na Smocze Monety i kupują w ItemShopie to, z czego korzystają; misje Biologa po kolei bez „za niskie dla bota”; boty 70+ z koniem na 10. poziomie robią próbę konia bojowego. Strona „Gildie” i dwa przełączniki w panelu klasycznym.** Serwer; klient bez zmian (2.0.11).",
+  "publishedAt": "2026-09-16T20:10:50Z",
+  "statusMessage": "2.0.61 (serwer) i klient 2.0.12: **Tiery ekwipunku i bonusów Iwakury (boty wiedzą, co warto nosić w PvE), cennik 1.2; boty przyjmują zaproszenia do gildii od graczy; wojny gildii botów rozłożone między królestwa z zapowiedzią i „następną wojną” w panelu; Pierścień Teleportacji działa u gracza; bot 70+ najpierw robi konia bojowego, potem zioła Biologa; niesprzedany towar na ladach tanieje z czasem.** Klient 2.0.12: dopisek przy przełączaniu tytułów botów. Kliknij ZAINSTALUJ AKTUALIZACJE i AKTUALIZUJ KLIENTA.",
   "server": {
-    "version": "2.0.60",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.60/metin2-server-update-2.0.60.zip",
-    "sha256": "B99541AEF8B3803B54F99EF2400A747FC879AE83AA59C1C7B2D6E01B865EA0D1"
+    "version": "2.0.61",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.61/metin2-server-update-2.0.61.zip",
+    "sha256": "873C08AAC8271C335C4ED2E0090A79B7FB59BE504D1445BE04572DD35767A5CB"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.11",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.55/metin2-client-update-2.0.11.zip",
-    "sha256": "70801863A1A7ACC599DF17C1DF0000A4FE17B86A7300A794CA5EEC324B88C53B"
+    "version": "2.0.12",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.61/metin2-client-update-2.0.12.zip",
+    "sha256": "C767874A02CBB51E5CBDA3CCE0163B4E132493B94F5FEDE7300B05DB3A4B4C82"
   }
 }

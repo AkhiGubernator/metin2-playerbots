@@ -197,6 +197,13 @@ db -e "ALTER TABLE account.account ADD COLUMN IF NOT EXISTS jackpot INT NOT NULL
 # of world.item_proto here (PROTO_FROM_DB = 1), which is why this sticks;
 # idempotent, and it touches only rods still carrying the old fifty.
 db -e "UPDATE world.item_proto SET limitvalue0 = 30 WHERE type = 13 AND limittype0 = 1 AND limitvalue0 = 50;"
+# Pierscien Teleportacji (70058) carries ITEM_FLAG_APPLICABLE (8192) in this
+# package, and under ENABLE_QUEST_DND_EVENT that flag makes UseItemEx treat an
+# ITEM_QUEST as "drop it onto another item": a plain use finds no target cell
+# and returns before the quest is asked, so teleport_ring.quest never ran for
+# a player ("caly czas nie dziala pierscien teleportu", Tieru, 16 September).
+# The ring is dragged onto nothing; the flag comes off. Idempotent.
+db -e "UPDATE world.item_proto SET flag = flag & ~8192 WHERE vnum = 70058 AND (flag & 8192) <> 0;"
 # Maska Sabaha left the world with the Hwang curse (playerbotify
 # apply_hwang_curse_removed, the share step of the game Dockerfile): the shop
 # that sold one sells it no more. The db core reads the shops at boot, so this

@@ -1287,6 +1287,7 @@ def main(root):
     apply_gm_panel(game)
     apply_costume_block(game)
     apply_costume_hair_allowed(game)
+    apply_mark_login_quiet(game)
     apply_horse_rider_links(game)
     apply_gm_transfer_bots(game)
     apply_refine_log_way(game)
@@ -1723,6 +1724,44 @@ def apply_costume_hair_allowed(game):
          '\t{\n'
          '\t\tChatPacket(CHAT_TYPE_INFO, "Kostiumy sa na tym serwerze wylaczone.");\n',
          marker='playerbotify.py, apply_costume_hair_allowed).')
+
+
+def apply_mark_login_quiet(game):
+    """The guild-mark connection's login is not an unknown packet.
+
+    The client opens a second connection for the guild marks and, once the
+    handshake has put it in PHASE_LOGIN, sends HEADER_CG_MARK_LOGIN (100)
+    before its MARK_IDXLIST. CInputHandshake answers that header only while the
+    connection is still in the handshake, so in the login phase it fell through
+    to the default branch: "login phase does not handle this packet! header
+    100" in syserr on every mark download - 92 lines on the test world, 202 in
+    two days on sizowski's, and a report that read them as the cause of his
+    login trouble (16 September). The branch already did nothing but log
+    (SetPhase(PHASE_CLOSE) is commented out), so this only takes the line away;
+    the MARK_IDXLIST that follows is handled as before.
+    """
+    edit(os.path.join(game, 'input_login.cpp'),
+         '\t\t// @fixme120\n'
+         '\t\tcase HEADER_CG_ITEM_USE:\n'
+         '\t\tcase HEADER_CG_TARGET:\n'
+         '\t\t\tbreak;\n'
+         '\n'
+         '\t\tdefault:\n'
+         '\t\t\tsys_err("login phase does not handle this packet! header %d", bHeader);\n',
+         '\t\t// @fixme120\n'
+         '\t\tcase HEADER_CG_ITEM_USE:\n'
+         '\t\tcase HEADER_CG_TARGET:\n'
+         '\t\t\tbreak;\n'
+         '\n'
+         '\t\t// The guild-mark connection\'s login, sent once the handshake has put it\n'
+         '\t\t// here (playerbotify.py, apply_mark_login_quiet): nothing to do, and\n'
+         '\t\t// nothing worth a syserr line on every mark download.\n'
+         '\t\tcase HEADER_CG_MARK_LOGIN:\n'
+         '\t\t\tbreak;\n'
+         '\n'
+         '\t\tdefault:\n'
+         '\t\t\tsys_err("login phase does not handle this packet! header %d", bHeader);\n',
+         marker='playerbotify.py, apply_mark_login_quiet)')
 
 
 def apply_costume_block(game):

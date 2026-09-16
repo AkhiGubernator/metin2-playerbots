@@ -196,6 +196,41 @@ namespace
 		return mission.itemVnum;
 	}
 
+	// Who is away on an outgrown herb row right now (pid -> since), so the
+	// trip to the first village is a trickle and not the whole population
+	// at once: PLAYERBOT_BIOLOGIST_HERB_TRIP_PER_MILLE of the live bots hold
+	// a place, a place expires after PLAYERBOT_BIOLOGIST_HERB_ERRAND_MAX_MS
+	// and is given back when the bot's herb rows are done.
+	std::map<DWORD, DWORD> s_mapPlayerBotHerbErrand;
+
+	bool PlayerBotMayTakeHerbErrand(LPCHARACTER ch, size_t missionIndex, DWORD dwNow)
+	{
+		const DWORD pid = ch->GetPlayerID();
+		std::map<DWORD, DWORD>::iterator it = s_mapPlayerBotHerbErrand.find(pid);
+		if (it != s_mapPlayerBotHerbErrand.end())
+		{
+			if (dwNow - it->second < PLAYERBOT_BIOLOGIST_HERB_ERRAND_MAX_MS)
+				return true;
+			s_mapPlayerBotHerbErrand.erase(it);
+		}
+		for (std::map<DWORD, DWORD>::iterator old = s_mapPlayerBotHerbErrand.begin();
+				old != s_mapPlayerBotHerbErrand.end();)
+		{
+			if (dwNow - old->second >= PLAYERBOT_BIOLOGIST_HERB_ERRAND_MAX_MS)
+				s_mapPlayerBotHerbErrand.erase(old++);
+			else
+				++old;
+		}
+		const size_t cap = std::max<size_t>(1, (size_t)GetPlayerBotsAlive() * PLAYERBOT_BIOLOGIST_HERB_TRIP_PER_MILLE / 1000);
+		if (s_mapPlayerBotHerbErrand.size() >= cap)
+			return false;
+		s_mapPlayerBotHerbErrand[pid] = dwNow;
+		sys_log(0, "PLAYERBOT_BIOLOGIST: herb errand pid=%u name=%s level=%d row=%u map=%ld away=%u/%u",
+				pid, ch->GetName(), (int)ch->GetLevel(), (unsigned int)missionIndex, ch->GetMapIndex(),
+				(unsigned int)s_mapPlayerBotHerbErrand.size(), (unsigned int)cap);
+		return true;
+	}
+
 	const TPlayerBotBiologistMission* GetActivePlayerBotBiologistMission(
 			LPCHARACTER ch, size_t* outIndex = NULL)
 	{
@@ -243,6 +278,18 @@ namespace
 			// 0/15" exactly the way they once all read "Korzen Gango 0/5".
 			if (!IsPlayerBotHuntingMobHosted(mission.mobVnum))
 				continue;
+			// An outgrown first-village herb row is a stay in the first village
+			// - and those are a trickle (PLAYERBOT_BIOLOGIST_HERB_TRIP_PER_MILLE),
+			// wherever the bot stands: with the place free for a bot already
+			// there, the 483 bots the update had drawn into the first villages
+			// stayed for all six rows. A bot without a place steps over the row,
+			// in every pass, and takes what stands next in order - which sends a
+			// bot of fifty out of Joan the way it always left; a hand-in it
+			// already holds waits for the place too.
+			if (mission.mobVnum < 500 &&
+					(int)ch->GetLevel() > mission.requiredLevel + PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS &&
+					!PlayerBotMayTakeHerbErrand(ch, i, get_dword_time()))
+				continue;
 			last = (int)i;
 			// No row is ever "too low": rows are done in order, whatever the
 			// bot's level, and a bot of seventy-eight with the Gango Root undone
@@ -272,6 +319,12 @@ namespace
 		// trip for it is the same trip either way.
 		const int pick = carrying >= 0 ? carrying
 				: (here >= 0 ? here : (first >= 0 ? first : last));
+		// A place on the herb errand is given back the moment the bot's
+		// active row is not a first-village one any more.
+		if ((pick < 0 || PLAYERBOT_BIOLOGIST_MISSIONS[pick].mobVnum >= 500) &&
+				s_mapPlayerBotHerbErrand.erase(ch->GetPlayerID()) != 0)
+			sys_log(0, "PLAYERBOT_BIOLOGIST: herb errand over pid=%u name=%s away=%u",
+					ch->GetPlayerID(), ch->GetName(), (unsigned int)s_mapPlayerBotHerbErrand.size());
 		if (pick < 0)
 			return NULL;
 		if (outIndex)
@@ -312,6 +365,16 @@ namespace
 	// while the bag already holds the hand-in.
 	DWORD GetPlayerBotBiologistHuntMob(LPCHARACTER ch)
 	{
+		// The horse trial comes first. A bot of seventy-seven with its horse
+		// at ten read "Zdobywam konia bojowego na pustyni (0/100)" in Jayang
+		// for the whole evening (Tieru, 16 September): the Gango Root's monster
+		// stands in the first village, so the herb row's hunt sent it there
+		// through NeedsPlayerBotM1OnlyServices ahead of the frontier draw, which
+		// wanted the desert - 35 such bots on map 3, and the same on every
+		// other village map. While a horse trial is open the row's monster is
+		// not a destination; the row waits, and the hand-in still walks.
+		if (IsPlayerBotOnBattleHorseTrial(ch) || IsPlayerBotOnMilitaryHorseTrial(ch))
+			return 0;
 		size_t missionIndex = 0;
 		const TPlayerBotBiologistMission* mission = GetActivePlayerBotBiologistMission(ch, &missionIndex);
 		if (!mission || PlayerBotBiologistHoldsHandIn(ch, mission, missionIndex))

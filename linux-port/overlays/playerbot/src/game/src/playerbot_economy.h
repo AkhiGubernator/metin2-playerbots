@@ -950,6 +950,10 @@ namespace
 		if (item->GetType() == ITEM_USE)
 		{
 			const BYTE sub = item->GetSubType();
+			// A Combo or Leadership book is read or sold on a counter, never
+			// vendored, the way a skill book is.
+			if (IsPlayerBotGeneralSkillBook(vnum))
+				return false;
 			if (IsPlayerBotBoosterItem(item) || IsPlayerBotMetinDetector(vnum) ||
 					(GetPlayerBotAutoPotionAffect(vnum) != 0 && !IsPlayerBotAutoPotionEmpty(item)) ||
 					sub == USE_ADD_ATTRIBUTE || sub == USE_CHANGE_ATTRIBUTE || sub == USE_ADD_ATTRIBUTE2)

@@ -344,6 +344,62 @@ namespace
 		return item && item->GetSocket(1) == item->GetSocket(2);
 	}
 
+	// Sztuka Combo and the three Leadership books: ITEM_USE, USE_SPECIAL, read
+	// by char_item.cpp's own cases (50301-50306), so neither the skill-book
+	// pass nor the junk rule knew them and the merchant got them for a
+	// thousand yang ("Mistrz. Sztuka Combo" in a gear history, sizowski,
+	// 16 September).
+	bool IsPlayerBotGeneralSkillBook(DWORD vnum)
+	{
+		return vnum >= 50301 && vnum <= 50306;
+	}
+
+	DWORD GetPlayerBotGeneralSkillBookSkill(DWORD vnum)
+	{
+		return vnum >= 50304 ? PLAYERBOT_SKILL_COMBO_VNUM : PLAYERBOT_SKILL_LEADERSHIP_VNUM;
+	}
+
+	// The engine's own tests, from char_item.cpp: Combo 0 reads from level 30,
+	// Combo 1 from 50, Combo 2 reads no more; a Leadership book covers twenty
+	// levels of the skill (value0 to value1 of the proto: 0-20, 20-30, 30-40).
+	bool CanPlayerBotReadGeneralSkillBookNow(LPCHARACTER ch, DWORD vnum)
+	{
+		if (!ch || !IsPlayerBotGeneralSkillBook(vnum))
+			return false;
+		if (vnum >= 50304)
+		{
+			const int combo = ch->GetSkillLevel(PLAYERBOT_SKILL_COMBO_VNUM);
+			if (combo >= 2)
+				return false;
+			return (int)ch->GetLevel() >= (combo == 0 ? 30 : 50);
+		}
+		const int lead = ch->GetSkillLevel(PLAYERBOT_SKILL_LEADERSHIP_VNUM);
+		if (vnum == 50301)
+			return lead < 20;
+		if (vnum == 50302)
+			return lead >= 20 && lead < 30;
+		return lead >= 30 && lead < 40;
+	}
+
+	// Worth keeping: readable now, or a Combo book a few levels ahead of the
+	// level that reads it. A Leadership book for a range the skill has passed
+	// or not reached is goods.
+	bool IsPlayerBotGeneralSkillBookUseful(LPCHARACTER ch, DWORD vnum)
+	{
+		if (!ch || !IsPlayerBotGeneralSkillBook(vnum))
+			return false;
+		if (CanPlayerBotReadGeneralSkillBookNow(ch, vnum))
+			return true;
+		if (vnum >= 50304)
+		{
+			const int combo = ch->GetSkillLevel(PLAYERBOT_SKILL_COMBO_VNUM);
+			if (combo >= 2)
+				return false;
+			return (int)ch->GetLevel() + PLAYERBOT_GENERAL_BOOK_LEVEL_AHEAD >= (combo == 0 ? 30 : 50);
+		}
+		return false;
+	}
+
 	bool IsPlayerBotMetinDetector(DWORD vnum)
 	{
 		for (size_t i = 0; i < sizeof(PLAYERBOT_METIN_DETECTOR_VNUMS) / sizeof(PLAYERBOT_METIN_DETECTOR_VNUMS[0]); ++i)

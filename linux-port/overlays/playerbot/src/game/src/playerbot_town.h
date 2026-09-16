@@ -1520,6 +1520,10 @@ namespace
 				GetPlayerBotForgetScrollAskingBase(item);
 		if (bookSkill != 0)
 			unit = GetPlayerBotBookAskingBase(bookSkill);
+		else if (IsPlayerBotGeneralSkillBook(item->GetVnum()))
+			unit = ScalePlayerBotIwakuraPrice(PLAYERBOT_PRIOR_BOOK_ORDINARY *
+					(item->GetVnum() >= 50304 ? PLAYERBOT_GENERAL_BOOK_PRICE_MULT_COMBO
+						: PLAYERBOT_GENERAL_BOOK_PRICE_MULT_LEADERSHIP));
 		else if (materialBase != 0)
 			unit = materialBase;
 		else if (iwakuraBase != 0)
@@ -1961,6 +1965,15 @@ namespace
 		if (item->GetType() == ITEM_METIN)
 			return WantsPlayerBotSoulStone(ch, item->GetVnum(), (DWORD)item->GetValue(5))
 					? -1 : 700 + GetPlayerBotSoulStoneGrade(item->GetVnum()) * 100;
+		// Sztuka Combo and the Leadership books: kept while the bot can read
+		// them (a few of each), the rest goods like any other book.
+		if (IsPlayerBotGeneralSkillBook(item->GetVnum()))
+		{
+			if (IsPlayerBotGeneralSkillBookUseful(ch, item->GetVnum()) &&
+					CountPlayerBotVnumUnitsAhead(ch, item) < PLAYERBOT_GENERAL_BOOK_KEEP)
+				return -1;
+			return 400;
+		}
 		// Skill books. Stock for everyone; the Metin dropper's whole trade, so
 		// on its counter they go up beside the level-30 weapons.
 		if (item->GetType() == ITEM_SKILLBOOK)

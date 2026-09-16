@@ -1146,6 +1146,52 @@ def write_ai_weights(vals):
     os.replace(tmp, AI_WEIGHTS)
 
 
+# The Moonlight chest switch: one click that turns the drop off without
+# losing the two figures the operator had set ("Daj w panelu www mozliwosc
+# wylaczenia dropu szkat blasku", Tieru, 16 September). Off is CHEST 0 and
+# CHEST_STONE 0 in the weights file - what the core reads within five
+# seconds - and the sliders' values kept beside it in a file of the panel's
+# own, because an unknown key in the weights file costs the core a log line
+# on every re-read.
+CHEST_SWITCH = os.path.join(AI_SPOOL, "playerbot_chest_switch.tsv")
+
+
+def read_chest_switch():
+    """(off, saved_kill, saved_stone); the saved values are None until set."""
+    off, kill, stone = False, None, None
+    try:
+        with open(CHEST_SWITCH, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                parts = line.replace("\t", " ").split()
+                if len(parts) < 2:
+                    continue
+                try:
+                    value = int(parts[1])
+                except ValueError:
+                    continue
+                if parts[0] == "off":
+                    off = value == 1
+                elif parts[0] == "kill":
+                    kill = max(0, min(1000, value))
+                elif parts[0] == "stone":
+                    stone = max(0, min(1000, value))
+    except OSError:
+        pass
+    return off, kill, stone
+
+
+def write_chest_switch(off, kill, stone):
+    body = ["off\t%d" % (1 if off else 0)]
+    if kill is not None:
+        body.append("kill\t%d" % max(0, min(1000, int(kill))))
+    if stone is not None:
+        body.append("stone\t%d" % max(0, min(1000, int(stone))))
+    tmp = CHEST_SWITCH + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(body) + "\n")
+    os.replace(tmp, CHEST_SWITCH)
+
+
 LANG_SPOOL   = _env_path("M2PANEL_LANG_SPOOL", "/opt/m2spool")
 LANG_REQUEST = os.path.join(LANG_SPOOL, "lang.request")
 LANG_STATUS  = os.path.join(LANG_SPOOL, "lang.status")
@@ -3065,6 +3111,11 @@ T.update({
                   "pl":"Jak często wypada szkatułka, w promilach: z zabitego potwora i z rozbitego Metina. Domyślnie w grze 10‰ (1%) i 300‰ (30%); więcej szkatułek to więcej zwojów bonusów, mikstur szybkości i Zwojów Błogosławieństwa u botów. Działa w pięć sekund, dla botów i graczy tak samo.",
                   "de":"Wie oft eine Truhe fällt, in Promille: pro getötetem Monster und pro zerstörtem Metin. Spielstandard 10‰ (1%) und 300‰ (30%); mehr Truhen heißt mehr Bonusrollen, Tempotränke und Segensrollen bei den Bots. Gilt binnen fünf Sekunden, für Bots wie Spieler.",
                   "tr":"Sandığın ne sıklıkla düştüğü, binde olarak: öldürülen canavar başına ve kırılan Metin başına. Oyun varsayılanı 10‰ (%1) ve 300‰ (%30); daha çok sandık, botlarda daha çok bonus parşömeni, hız iksiri ve Kutsama Parşömeni demek. Beş saniye içinde, bot ve oyuncu için aynı şekilde uygulanır."},
+ "ai_chest_off":  {"en":"Turn the Moonlight chest drop off","pl":"Wyłącz drop Szkatułek Blasku Księżyca","de":"Mondschein-Truhen nicht fallen lassen","tr":"Ay Işığı Sandığı düşmesini kapat"},
+ "ai_chest_off_help":{"en":"Ticked and saved, no chest drops from monsters or Metin stones (both figures go to 0‰); the sliders keep what you set and come back when you untick. Applies within five seconds.",
+                  "pl":"Zaznaczone i zapisane: żadna szkatułka nie wypada z potworów ani z Metinów (obie wartości idą na 0‰); suwaki pamiętają Twoje ustawienie i wracają po odznaczeniu. Działa w pięć sekund.",
+                  "de":"Angehakt und gespeichert fällt keine Truhe mehr von Monstern oder Metins (beide Werte auf 0‰); die Regler behalten deine Werte und kommen nach dem Abhaken zurück. Gilt binnen fünf Sekunden.",
+                  "tr":"İşaretleyip kaydedince canavarlardan ve Metinlerden sandık düşmez (iki değer de 0‰ olur); kaydırıcılar ayarını hatırlar ve işareti kaldırınca geri gelir. Beş saniye içinde uygulanır."},
  "ai_chest_kill": {"en":"per monster kill","pl":"z zabitego potwora","de":"pro getötetem Monster","tr":"öldürülen canavar başına"},
  "ai_chest_stone":{"en":"per broken Metin stone","pl":"z rozbitego Metina","de":"pro zerstörtem Metin","tr":"kırılan Metin başına"},
  "ai_chest_note": {"en":"Saving writes both values; until then the game keeps what .env says.",
@@ -4893,6 +4944,10 @@ TPL_AI = BASE.replace("__BODY__", """
 <div style="margin-bottom:18px">
   <h3 style="margin:0 0 2px">🎁 {{t('ai_chest')}}</h3>
   <p class="muted" style="margin:0 0 6px">{{t('ai_chest_help')}}</p>
+  <label style="display:block;margin:6px 0 8px;font-weight:bold">
+    <input type="checkbox" name="CHEST_OFF" value="1" {% if chest_off %}checked{% endif %}> {{t('ai_chest_off')}}
+  </label>
+  <div class="muted" style="font-size:12px;margin-bottom:6px">{{t('ai_chest_off_help')}}</div>
   {% set chest = cur.get('CHEST') if cur.get('CHEST') is not none else 10 %}
   {% set stone = cur.get('CHEST_STONE') if cur.get('CHEST_STONE') is not none else 300 %}
   <div style="margin:6px 0 2px">{{t('ai_chest_kill')}} <span class="badge" id="v_CHEST">{{chest}}‰</span></div>
@@ -11946,6 +12001,16 @@ def ai_weights():
                 vals[key] = max(0, min(1000, int(request.form.get(key))))
             except (TypeError, ValueError):
                 vals[key] = None
+        # The chest switch: off writes zero for both figures and keeps the
+        # sliders' values for the day it is switched back on.
+        chest_off = bool(request.form.get("CHEST_OFF"))
+        try:
+            write_chest_switch(chest_off, vals.get("CHEST"), vals.get("CHEST_STONE"))
+        except OSError:
+            pass
+        if chest_off:
+            vals["CHEST"] = 0
+            vals["CHEST_STONE"] = 0
         try:
             write_ai_weights(vals)
         except OSError:
@@ -11958,7 +12023,14 @@ def ai_weights():
     # line (levelup.quest ships in quest/_unused - see playerbot_missions.h), so
     # the slider would do nothing there. LEVEL is the leveling control on 2.x.
     keys = [k for k in AI_WEIGHT_KEYS if not (ENGINE_MT2009 and k[0] == "HUNTING")]
-    return render_template_string(TPL_AI, cur=read_ai_weights(),
+    cur = read_ai_weights()
+    chest_off, chest_kill, chest_stone = read_chest_switch()
+    if chest_off:
+        # The sliders show what the operator had set, not the zeros the
+        # switch wrote, so switching back on restores them.
+        cur["CHEST"] = chest_kill
+        cur["CHEST_STONE"] = chest_stone
+    return render_template_string(TPL_AI, cur=cur, chest_off=chest_off,
                                   keys=keys, wmin=AI_W_MIN,
                                   wmax=AI_W_MAX, wneutral=AI_W_NEUTRAL)
 

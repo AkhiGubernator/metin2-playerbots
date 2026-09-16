@@ -2485,6 +2485,7 @@ namespace
 			if (units <= 0 || (int)item->GetCount() <= units || item->isLocked())
 				continue;
 			const int wantLines = units == 1 ? PLAYERBOT_SHOP_SINGLE_UNITS
+					: IsPlayerBotSafeRefineScroll(item->GetVnum()) ? PLAYERBOT_SHOP_SCROLL_LINES
 					: units == PLAYERBOT_SHOP_HOARD_PACK_UNITS ? PLAYERBOT_SHOP_HOARD_LINES
 					: PLAYERBOT_SHOP_PACK_LINES;
 			int lines = 0;

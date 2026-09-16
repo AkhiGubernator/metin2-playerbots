@@ -466,6 +466,16 @@ namespace
 	const int PLAYERBOT_SHOP_HOARD_PACK_UNITS = 10;
 	const int PLAYERBOT_SHOP_HOARD_LINES = 3;
 	const int PLAYERBOT_SHOP_HOARD_SCORE = 440;
+	// A safe refine scroll goes on a counter in lines of at most this many,
+	// up to PLAYERBOT_SHOP_SCROLL_LINES lines of them on one counter. The
+	// classic stall cut singles; the offline stand's service visit put the
+	// stack up as it was, and twenty Blessing Scrolls on one line are 4.7
+	// million yang for somebody who wants one refine ("boty wrzucaja bodzia po
+	// 20 sztuk na sklep, powinny rozdzielac po 1-5", jaksiezabic, 15
+	// September). A line already standing with more comes home at the next
+	// service visit (BotOfflineUnwantedLine) and goes up again in fives.
+	const int PLAYERBOT_SHOP_SCROLL_LINE_UNITS = 5;
+	const int PLAYERBOT_SHOP_SCROLL_LINES = 3;
 	// Keys of one kind a bot holds on to with no chest in the bag; the rest
 	// are goods (IsPlayerBotSurplusTreasureKey). 2598 gold and silver keys lay
 	// in 1057 bags on the test world on 15 September, and not one of those

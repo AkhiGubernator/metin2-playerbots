@@ -322,14 +322,17 @@ namespace
 	// How many units of a stackable go on one counter line. A private shop
 	// sells a line whole, so a stack of twenty scrolls on one line is twenty
 	// scrolls or nothing: what a player buys one at a time - potions,
-	// scrolls, stones, the shell and the pearls - is a single; a material is
-	// a pack of PLAYERBOT_SHOP_PACK_UNITS, small enough to buy for one refine
-	// and few enough lines to leave room on the counter. Zero for anything
-	// that does not stack.
+	// stones, the shell and the pearls - is a single; a safe refine scroll
+	// is a line of PLAYERBOT_SHOP_SCROLL_LINE_UNITS (one to five, the
+	// Discord's number); a material is a pack of PLAYERBOT_SHOP_PACK_UNITS,
+	// small enough to buy for one refine and few enough lines to leave room
+	// on the counter. Zero for anything that does not stack.
 	int GetPlayerBotStallLineUnits(LPITEM item)
 	{
 		if (!item || !item->IsStackable() || IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
 			return 0;
+		if (IsPlayerBotSafeRefineScroll(item->GetVnum()))
+			return PLAYERBOT_SHOP_SCROLL_LINE_UNITS;
 		if (item->GetType() == ITEM_USE || item->GetType() == ITEM_METIN ||
 				item->GetType() == ITEM_TREASURE_KEY ||
 				(item->GetVnum() >= 27992 && item->GetVnum() <= 27994))

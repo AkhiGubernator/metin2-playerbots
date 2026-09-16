@@ -239,6 +239,15 @@ namespace {
                 M2_DELETE(preview);
                 continue;
             }
+            // A scroll line of more than PLAYERBOT_SHOP_SCROLL_LINE_UNITS went
+            // up as a whole stack before 2.0.55; it comes home to be cut.
+            if (IsPlayerBotSafeRefineScroll(preview->GetVnum()) &&
+                    (int)preview->GetCount() > PLAYERBOT_SHOP_SCROLL_LINE_UNITS &&
+                    GetPlayerBotItemPolicy(preview) != PLAYERBOT_ITEM_POLICY_STALL) {
+                if (!unwanted) unwanted = id;
+                M2_DELETE(preview);
+                continue;
+            }
             if (IsPlayerBotLowLevelGear(preview) &&
                     GetPlayerBotItemPolicy(preview) != PLAYERBOT_ITEM_POLICY_STALL) {
                 const bool capped = CountsAgainstPlayerBotLowGearCap(preview);
@@ -341,8 +350,9 @@ namespace {
                 if (line && line->GetInfo().vnum == vnum) ++lines;
         return lines;
     }
-    // The bag cell of the line to add. A hoard's pack of ten, a single key, or a
-    // pack of Moonlight chests (PLAYERBOT_CHEST_LINE_UNITS)
+    // The bag cell of the line to add. A hoard's pack of ten, a single key, a
+    // pack of Moonlight chests (PLAYERBOT_CHEST_LINE_UNITS) or a line of
+    // refine scrolls (PLAYERBOT_SHOP_SCROLL_LINE_UNITS)
     // is cut off its stack into a free cell (GetPlayerBotStallLineUnitsFor);
     // anything else goes up as the stack it is, as it always has - a stand
     // adds one line a visit. -1 when no line can be cut without the stack's
@@ -353,7 +363,8 @@ namespace {
         const int units = GetPlayerBotStallLineUnitsFor(ch, item);
         const bool cut = units == PLAYERBOT_SHOP_HOARD_PACK_UNITS ||
             (units == 1 && item->GetType() == ITEM_TREASURE_KEY) ||
-            item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM;
+            item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM ||
+            IsPlayerBotSafeRefineScroll(item->GetVnum());
         if (!cut || (int)item->GetCount() <= units) return cell;
         if ((int)item->GetCount() - units < GetPlayerBotStallBaseKeep(ch, item) ||
                 CountPlayerBotFreeInventoryCells(ch) <= PLAYERBOT_SHOP_SPLIT_KEEP_FREE_CELLS)
@@ -566,6 +577,8 @@ namespace {
                     BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_SHOP_HOARD_LINES) continue;
             if (item->GetVnum() == PLAYERBOT_MOONLIGHT_CHEST_VNUM &&
                     BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_CHEST_COUNTER_LINES) continue;
+            if (IsPlayerBotSafeRefineScroll(item->GetVnum()) &&
+                    BotOfflineLinesOf(shop, item->GetVnum()) >= PLAYERBOT_SHOP_SCROLL_LINES) continue;
             const int lineCell = BotOfflinePrepareLine(ch, cell);
             if (lineCell < 0) continue;
             const WORD at = (WORD)lineCell;

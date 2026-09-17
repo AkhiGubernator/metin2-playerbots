@@ -5146,6 +5146,80 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   eighth's key to Sa-Soe and the ninth's Reaper have never been reached by
   a bot; watch `key used`, `key handed ... npc=20366` and `floor 9` first.
 
+- **A playerbotify edit whose marker is its whole text is inserted again at
+  every rewording.** The 0006 group in `item_manager.cpp` (the stone's book
+  top-up, the Moonlight chest roll, the voucher roll) had no `marker=`, so
+  each time its comments were reworded the staged file no longer contained
+  the exact new text, "not applied" was the verdict, and the group went in
+  once more at the anchor: every shipped package from at least 2.0.50 to
+  2.0.63 rolled the chest and the Dragon Coin voucher **twice** per kill and
+  per stone (the book top-up counts what is there and was harmless), and the
+  staging of 17 September held three copies. `scratchpad/dedupe_item_manager.py`
+  is the shape of the repair, the edit carries a stable marker now, and
+  `count_chest_blocks.py` over the release zips is the check. The mirror of
+  "A playerbotify edit whose marker is its whole replacement fails the second
+  run" above: one shape, two failures.
+- **The chest window is a gate on a variable two other things write.**
+  `g_iMoonlightChestPermille` was set by the weights parse on every save of the
+  file and by `ResetPlayerBotWeights`, and the event gate zeroed it again only
+  on its next second - a hole of up to a second per save while a chest window
+  was shut ("dropia tez poza konkursem", NerrVoVy, 17 September). The parse
+  keeps the sliders' figure (`GetPlayerBotChestConfigPermille`) and writes the
+  engine's variable only while `IsPlayerBotChestGateClosed()` (forward-declared
+  from `playerbot_events.h`) is false; the gate reads the parsed figure, never
+  the variable it may itself have zeroed. And the package's own drop tables
+  carry 50011 lines the permilles never touched: `CreateDropItem` (playerbotify)
+  drops none of the tables' chests while both figures are zero - a shut window
+  or the switch off means no Moonlight chest from anybody.
+- **A unique the bot needs cannot be worn into a full pair of slots.**
+  `FindEquipCell` answers WEAR_UNIQUE2 when UNIQUE1 is taken and `EquipItem`
+  refuses the occupied cell, so `EnsurePlayerBotFishingPass` failed for every
+  bot wearing two uniques (the Prophet King's symbol and a ring, mostly) and
+  the next ask was an hour away: the whole FISHING output of seban latino's
+  1013-bot world was "fishing pass in the bag but not worn yet" and nobody
+  fished. It frees a slot the way the unique-slots pass does (what pays
+  nothing first, a timed ring last, never IRREMOVABLE), and the cast step asks
+  for the pass again on every cast - which also refreshes the hold that keeps
+  the equipment pass off it - and ends the session `no_pass` when it cannot be
+  worn, instead of 730 "You need to have a fishing pass" refusals in two
+  minutes. The Rybak's tackle leg is the "snapped goal outside the arrival
+  radius" shape once more: a 16-cell snap against an arrival of 100 left a bot
+  119-177 units from the counter for the whole session on Yongan and Pyongmoo
+  (`PLAYERBOT_FISHING_TACKLE_ARRIVE`, `_SNAP_CELLS`). And the dry-stand mark
+  handed the same stand back: with more anglers than stands the share-a-stand
+  fallback took slot `start` whatever it was, so a bot that had just marked
+  its stand dry stood on it for the idle timeout ("dry stand ... moving to
+  another" once a second on one key, then never_cast). The fallback shares
+  the first wet stand, and a stand handed out dry twice ends the session as
+  `bank_dry`.
+- **A war is fought on foot, in the middle.** `CanPlayerBotEverFightOnHorse`
+  kept a battle-horse rider in the saddle on the guild map and the two sides
+  rallied 700 units apart (NerrVoVy's video, 17 September); the operator's
+  rule is horses dismissed and both sides on the same open ground
+  (`PLAYERBOT_GUILD_WAR_RALLY_SPREAD` 0).
+- **The armour on the bot's back has the hand weapon's burn rule.**
+  `IsPlayerBotWornArmourAtRisk`: worn body armour at a step that can burn
+  (`PLAYERBOT_WORN_SCROLL_MAX_PROB`) with no other wearable body armour in the
+  bag goes under a scroll or waits, in `CanPlayerBotAttemptRefineItem` and the
+  refine pass both ("potrafia spalic jedyna zbroje ... ida farmic bez zbroi",
+  THC, 16 September).
+- **Respawn speed was already an event flag; it only lacked a world-wide
+  name.** `regen_event` scales the next spawn by `fastBossSpawn<map>` /
+  `fastMobSpawn<map>` (a percent of the line's delay, 0 = untouched), which is
+  what Seban's per-map console writes. playerbotify adds the map-less names as
+  the fallback, `web_admin.quest` has a `REGEN` command ("boss,mob") beside
+  `RATES`, and the classic panel's /rates page carries the two figures as
+  percent of the normal time (10-100), persisted as `player.quest` rows with
+  dwPID 0 like the rates (Hiob, 17 September).
+- **update.sh appends the .env keys a release adds, and only the safe ones.**
+  `.env` is written once; only the Windows launcher's `Add-MissingDotEnvKeys`
+  ever added new keys, so a Linux host had no `M2_DIFFICULTY` after 2.0.57
+  (GoracyDelfin, 17 September). `add_missing_env_keys` copies from
+  `.env.example` the keys named in `ENV_KEYS_FROM_EXAMPLE` - each one's example
+  value is the compose default, so an absent key already meant that - and
+  never a password, a port or an address, whose example value is not what an
+  existing install runs on.
+
 ## Engine facts worth not re-deriving
 
 - Item types/subtypes live in `common/item_length.h`; map attributes and

@@ -2921,6 +2921,8 @@ T = {
                  "en":"Percent of the normal respawn time: 100 = as in the game, 50 = twice as fast, 10 = ten times as fast. Live at once (through the in-game helper) and kept across a restart. Stones and bosses apart from ordinary monsters."},
  "regen_boss":  {"pl":"Metiny i bossowie (% czasu)", "en":"Metin stones and bosses (% of time)"},
  "regen_mob":   {"pl":"Zwykłe potwory (% czasu)", "en":"Ordinary monsters (% of time)"},
+ "regen_faster": {"pl":"Szybciej:", "en":"Faster:"},
+ "regen_mult":  {"pl":"≈ ×{n} szybciej niż w grze", "en":"≈ ×{n} faster than the game"},
  "regen_save":  {"pl":"Zapisz czasy odradzania", "en":"Save the respawn times"},
  "regen_range": {"pl":"Obie wartości muszą być liczbą całkowitą od 10 do 100. Nic nie zmieniono.",
                  "en":"Both have to be whole numbers between 10 and 100. Nothing was changed."},
@@ -5198,10 +5200,20 @@ function m2rates(e,d,y){
 <input type="hidden" name="_csrf" value="{{csrf_token}}">
 <h3>⏱️ {{t('regen_title')}}</h3>
 <p class="muted">{{t('regen_help')}}</p>
-<h3 style="margin-top:12px">🪨 {{t('regen_boss')}}</h3>
-<input name="regen_boss" type="number" min="10" max="100" step="1" value="{{regen['regen_boss']}}" required>
-<h3 style="margin-top:18px">👾 {{t('regen_mob')}}</h3>
-<input name="regen_mob" type="number" min="10" max="100" step="1" value="{{regen['regen_mob']}}" required>
+{% for key, icon in (("regen_boss", "🪨"), ("regen_mob", "👾")) %}
+<h3 style="margin-top:{{ 12 if loop.first else 18 }}px">{{icon}} {{t(key)}}</h3>
+<input id="{{key}}" name="{{key}}" type="number" min="10" max="100" step="1" value="{{regen[key]}}" required oninput="regenLabel('{{key}}')">
+<div class="muted" style="margin-top:6px">{{t('regen_faster')}}
+{% for m in (1, 2, 3, 4, 5, 10) %}<button type="button" class="small" style="margin:2px" onclick="regenSet('{{key}}', {{ (100 / m) | round(0) | int }})">×{{m}}</button>{% endfor %}
+<span id="{{key}}_mult" style="margin-left:8px"></span></div>
+{% endfor %}
+<script>
+function regenLabel(k){var v=parseInt(document.getElementById(k).value||"100",10);if(!(v>0))v=100;
+  var m=Math.round(100/v*10)/10;var s=(m%1===0)?String(m):m.toFixed(1);
+  document.getElementById(k+"_mult").textContent={{ t('regen_mult') | tojson }}.replace("{n}", s);}
+function regenSet(k,v){document.getElementById(k).value=v;regenLabel(k);}
+regenLabel("regen_boss");regenLabel("regen_mob");
+</script>
 <button class="big" style="margin-top:18px">{{t('regen_save')}}</button>
 </form></div>
 {% endif %}""")

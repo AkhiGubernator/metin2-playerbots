@@ -205,6 +205,15 @@ namespace
 
 	bool PlayerBotMayTakeHerbErrand(LPCHARACTER ch, size_t missionIndex, DWORD dwNow)
 	{
+		// A horse trial comes first: the frontier draw sends a trial bot to
+		// the desert or the tower and the hunt row already yields to it
+		// (GetPlayerBotBiologistHuntMob), but the herb errand did not, so a
+		// bot of seventy-six walked to Joan for the fourth herb row under the
+		// status "Zdobywam konia bojowego na pustyni" - 88 of 124 trial bots
+		// on m2zip had the Biologist as their goal (17 September). The herbs
+		// wait for the horse; a hand-in already carried still walks.
+		if (IsPlayerBotOnBattleHorseTrial(ch) || IsPlayerBotOnMilitaryHorseTrial(ch))
+			return false;
 		const DWORD pid = ch->GetPlayerID();
 		std::map<DWORD, DWORD>::iterator it = s_mapPlayerBotHerbErrand.find(pid);
 		if (it != s_mapPlayerBotHerbErrand.end())

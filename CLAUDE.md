@@ -5250,6 +5250,13 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   The errand refuses a trial bot; a hand-in already carried still walks. A
   status line that names one errand while the planner runs another is the
   measurement to keep making: goal x action of the bots wearing the line.
+  And the gate uncovered a churn the full map had hidden: the row loop
+  *granted* a place for every outgrown herb row it passed, so a bot whose
+  pick ended on a collect row (the Orc Teeth it carried) took a place and
+  gave it back in the same call, once a tick - 525 "herb errand" and 514
+  "over" lines in two minutes. A place is taken for the row picked
+  (`PlayerBotTakeHerbErrand`), and the loop only asks whether one is held
+  or free. A gate consulted inside a loop must not have a side effect.
 
 ## Engine facts worth not re-deriving
 

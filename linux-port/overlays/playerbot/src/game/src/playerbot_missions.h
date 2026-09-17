@@ -203,6 +203,19 @@ namespace
 	// and is given back when the bot's herb rows are done.
 	std::map<DWORD, DWORD> s_mapPlayerBotHerbErrand;
 
+	bool PlayerBotHerbErrandOutgrown(LPCHARACTER ch, size_t missionIndex)
+	{
+		const TPlayerBotBiologistMission& mission = PLAYERBOT_BIOLOGIST_MISSIONS[missionIndex];
+		return mission.mobVnum < 500 &&
+				(int)ch->GetLevel() > mission.requiredLevel + PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS;
+	}
+
+	// Whether the bot may work an outgrown herb row: a place it already holds,
+	// or a free one. Nothing is taken here - the row loop asks this for every
+	// herb row it passes, and a place granted to a row that is not picked was
+	// given back in the same call, once a tick, for as long as the map had
+	// room (525 "herb errand" and 514 "over" lines in two minutes on m2zip,
+	// 17 September, the moment the trial bots stopped holding every place).
 	bool PlayerBotMayTakeHerbErrand(LPCHARACTER ch, size_t missionIndex, DWORD dwNow)
 	{
 		// A horse trial comes first: the frontier draw sends a trial bot to
@@ -231,13 +244,20 @@ namespace
 				++old;
 		}
 		const size_t cap = std::max<size_t>(1, (size_t)GetPlayerBotsAlive() * PLAYERBOT_BIOLOGIST_HERB_TRIP_PER_MILLE / 1000);
-		if (s_mapPlayerBotHerbErrand.size() >= cap)
-			return false;
+		return s_mapPlayerBotHerbErrand.size() < cap;
+	}
+
+	// The place itself, taken once the pick is an outgrown herb row.
+	void PlayerBotTakeHerbErrand(LPCHARACTER ch, size_t missionIndex, DWORD dwNow)
+	{
+		const DWORD pid = ch->GetPlayerID();
+		if (s_mapPlayerBotHerbErrand.count(pid))
+			return;
 		s_mapPlayerBotHerbErrand[pid] = dwNow;
+		const size_t cap = std::max<size_t>(1, (size_t)GetPlayerBotsAlive() * PLAYERBOT_BIOLOGIST_HERB_TRIP_PER_MILLE / 1000);
 		sys_log(0, "PLAYERBOT_BIOLOGIST: herb errand pid=%u name=%s level=%d row=%u map=%ld away=%u/%u",
 				pid, ch->GetName(), (int)ch->GetLevel(), (unsigned int)missionIndex, ch->GetMapIndex(),
 				(unsigned int)s_mapPlayerBotHerbErrand.size(), (unsigned int)cap);
-		return true;
 	}
 
 	const TPlayerBotBiologistMission* GetActivePlayerBotBiologistMission(
@@ -295,8 +315,7 @@ namespace
 			// in every pass, and takes what stands next in order - which sends a
 			// bot of fifty out of Joan the way it always left; a hand-in it
 			// already holds waits for the place too.
-			if (mission.mobVnum < 500 &&
-					(int)ch->GetLevel() > mission.requiredLevel + PLAYERBOT_BIOLOGIST_OUTGROWN_LEVELS &&
+			if (PlayerBotHerbErrandOutgrown(ch, i) &&
 					!PlayerBotMayTakeHerbErrand(ch, i, get_dword_time()))
 				continue;
 			last = (int)i;
@@ -336,6 +355,9 @@ namespace
 					ch->GetPlayerID(), ch->GetName(), (unsigned int)s_mapPlayerBotHerbErrand.size());
 		if (pick < 0)
 			return NULL;
+		// The place is taken for the row picked, and only then.
+		if (PlayerBotHerbErrandOutgrown(ch, (size_t)pick))
+			PlayerBotTakeHerbErrand(ch, (size_t)pick, get_dword_time());
 		if (outIndex)
 			*outIndex = (size_t)pick;
 		return &PLAYERBOT_BIOLOGIST_MISSIONS[pick];

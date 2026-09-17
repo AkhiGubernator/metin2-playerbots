@@ -49,7 +49,10 @@ Biologa (wiersze 1–6) i przez cały ten czas nad głową miał „Zdobywam kon
 bojowego na pustyni (0/100)” — na m2zip 88 ze 124 takich botów miało za cel
 Biologa, a na pustyni stało ich 8. Losowanie frontu i wiersz z potworem
 ustępowały próbie od 2.0.61, wyprawa po zioła nie. Teraz zioła czekają na
-konia; hand-in już niesionych okazów nadal idzie.
+konia; hand-in już niesionych okazów nadal idzie. Przy okazji: miejsce na
+wyprawę po zioła jest przydzielane dopiero dla wybranego wiersza, nie przy
+każdym sprawdzeniu — bot niosący Zęby Orka brał miejsce i oddawał je w tej
+samej klatce (300 linii logu na minutę po restarcie).
 
 ## 2.0.64 — 2026-09-17
 

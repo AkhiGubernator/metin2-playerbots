@@ -212,6 +212,41 @@ migrate_timezone() {
     printf 'M2_TZ_DEFAULTED=1\n' >> "$_env"
 }
 
+# A new key in .env.example reaches nobody who already installed: .env is
+# written at install and never rewritten, and only the Windows launcher
+# (Add-MissingDotEnvKeys) ever appended the keys a release added - a Linux
+# host updated by this script had no M2_DIFFICULTY and no wait hours after
+# 2.0.57 (GoracyDelfin, 17 September). Every KEY=value line of the example
+# whose key .env does not carry is appended with the example's value - only
+# the keys named below, whose example value is the compose default (an
+# absent key already meant that), never a password, a port or an address;
+# a key already there, empty included, is the operator's and is left alone.
+ENV_KEYS_FROM_EXAMPLE="M2_DIFFICULTY M2_BIOLOGIST_WAIT_HOURS M2_HORSE_WAIT_HOURS PLAYERBOT_SPAWN_WINDOW_MINUTES PLAYERBOT_LATE_JOINERS PLAYERBOT_LATE_JOIN_HOURS PLAYERBOT_MEDAL_DROPPERS PLAYERBOT_MEDAL_DROPPER_LEVEL M2_MOONLIGHT_CHEST_PERMILLE M2_MOONLIGHT_CHEST_STONE_PERMILLE M2_PLAYERBOT_WORLD_LAYOUT"
+add_missing_env_keys() {
+    _env="$COMPOSE_DIR/.env"
+    _ex="$COMPOSE_DIR/.env.example"
+    [ -f "$_env" ] && [ -f "$_ex" ] || return 0
+    _added=""
+    while IFS= read -r _line || [ -n "$_line" ]; do
+        _line=$(printf '%s' "$_line" | tr -d '\r')
+        case "$_line" in
+            [A-Z_0-9]*=*) ;;
+            *) continue ;;
+        esac
+        _key=${_line%%=*}
+        case " $ENV_KEYS_FROM_EXAMPLE " in
+            *" $_key "*) ;;
+            *) continue ;;
+        esac
+        grep -q "^$_key=" "$_env" && continue
+        [ -n "$(tail -c 1 "$_env")" ] && printf '\n' >> "$_env"
+        printf '%s\n' "$_line" >> "$_env"
+        _added="$_added $_key"
+    done < "$_ex"
+    [ -n "$_added" ] && note "   new .env keys, at the example's defaults:$_added"
+    return 0
+}
+
 run_update() {
     STEP=0
     rm -rf "$WORK"; mkdir -p "$WORK" || { fail "cannot create $WORK"; return 1; }
@@ -235,6 +270,7 @@ run_update() {
     unpack_over "$WORK/update.zip" "$ROOT" || { fail "the zip could not be unpacked"; return 1; }
     note "   the folder now says version $(installed_version)"
     migrate_timezone
+    add_missing_env_keys
     step "building and starting the new version (docker compose up -d --build)"
     # By hand the build talks to the terminal; under the panel it goes to the
     # spool's log, which is what the panel's progress page tails.

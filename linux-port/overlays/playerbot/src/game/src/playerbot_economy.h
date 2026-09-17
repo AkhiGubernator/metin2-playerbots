@@ -1493,6 +1493,35 @@ namespace
 		return GetPlayerBotBackupWeaponID(ch, fresh) == 0;
 	}
 
+	// The armour on the bot's back, at a step that can burn it, with no
+	// other body armour in the bag it could put on: the weapon's rule for
+	// the other slot a bot cannot do without. Every failed refine destroys
+	// the piece on this engine, so a bot of twenty raised its only plate at
+	// the anvil, lost it, and went on farming bare with the upgrade
+	// materials it had kept for it (THC, 16 September). Under a scroll or
+	// not at all; the merchant's re-stock is a town visit away, and that is
+	// exactly the bare walk the report was about.
+	bool IsPlayerBotWornArmourAtRisk(LPCHARACTER ch, LPITEM item)
+	{
+		if (!ch || !item || item->GetType() != ITEM_ARMOR || item->GetSubType() != ARMOR_BODY ||
+				item->GetRefinedVnum() == 0 || ch->GetWear(WEAR_BODY) != item)
+			return false;
+		const TRefineTable* recipe = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
+		if (!recipe || recipe->prob > PLAYERBOT_WORN_SCROLL_MAX_PROB)
+			return false;
+		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)
+		{
+			LPITEM spare = ch->GetInventoryItem(cell);
+			if (!spare || spare->GetCell() != cell || spare == item ||
+					spare->GetType() != ITEM_ARMOR || spare->GetSubType() != ARMOR_BODY ||
+					spare->GetLevelLimit() > (int)ch->GetLevel() ||
+					!IsPlayerBotProtoForCharacter(ch, spare->GetProto()))
+				continue;
+			return false;
+		}
+		return true;
+	}
+
 	// The scroll a refine goes under: from PLAYERBOT_DRAGON_GOD_SCROLL_MIN_PLUS
 	// the Zwoj Boga Smokow when the bag has one, otherwise the Blessing
 	// Scroll. Both are read by DoRefineWithScroll from the cell SetRefineMode
@@ -1846,7 +1875,8 @@ namespace
 			// backup and nothing a merchant sells at its level: under a scroll or
 			// not at all (IsPlayerBotWornWeaponAtRisk). CanPlayerBotAttemptRefineItem
 			// above already refused it without a scroll; this is the scroll's half.
-			const bool handAtRisk = IsPlayerBotWornWeaponAtRisk(ch, item, true);
+			const bool handAtRisk = IsPlayerBotWornWeaponAtRisk(ch, item, true) ||
+					IsPlayerBotWornArmourAtRisk(ch, item);
 			if (scrollOnly)
 				scrollCell = FindPlayerBotRefineScrollCell(ch, plusLevel, stepProb);
 			else if (level30Grind)
@@ -2266,11 +2296,11 @@ namespace
 		// to fall back on (IsPlayerBotWornWeaponAtRisk). Under the operator's
 		// SCROLL_FROM no scroll may go on the step, and the anvil's odds stand.
 		if (IsPlayerBotScrollStepAllowed(item->GetRefineLevel()) &&
-				IsPlayerBotWornWeaponAtRisk(ch, item) &&
+				(IsPlayerBotWornWeaponAtRisk(ch, item) || IsPlayerBotWornArmourAtRisk(ch, item)) &&
 				FindPlayerBotRefineScrollCell(ch, item->GetRefineLevel(), (int)recipe->prob) < 0)
 		{
 			PlayerBotLogThrottled("refine_hand_weapon", get_dword_time(),
-					"PLAYERBOT_AI: refine held, the only weapon and no scroll pid=%u name=%s vnum=%u plus=%u prob=%d level=%u",
+					"PLAYERBOT_AI: refine held, the only weapon or armour and no scroll pid=%u name=%s vnum=%u plus=%u prob=%d level=%u",
 					ch->GetPlayerID(), ch->GetName(), item->GetVnum(), (unsigned int)item->GetRefineLevel(),
 					(int)recipe->prob, (unsigned int)ch->GetLevel());
 			return false;

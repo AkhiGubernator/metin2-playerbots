@@ -441,11 +441,19 @@ namespace
 			return true;
 		}
 		// A transport horse comes off for the fight, as in a duel.
-		if (ch->IsRiding() && !CanPlayerBotEverFightOnHorse(ch))
+		// On foot, every rider, and the horse sent away rather than left to
+		// trot behind the fight: the operator's rule for a war ("niech boty
+		// odwoluja konie i walcza tylko na pieszo", Tieru, 17 September),
+		// which the battle horse's own fitness to fight used to exempt.
+		if (ch->IsRiding())
 		{
 			SetPlayerBotRidingForTravel(ch, state, false, dwNow, "guild_war");
+			if (ch->GetHorse())
+				ch->HorseSummon(false);
 			return true;
 		}
+		if (ch->GetHorse())
+			ch->HorseSummon(false);
 
 		// The foe in hand is kept while it stands; the roster is searched only
 		// when it is lost, because that search is every bot in the world.

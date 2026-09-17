@@ -997,7 +997,11 @@ namespace
 	const int PLAYERBOT_GUILD_WAR_MIN_ONLINE = 8;
 	// The sides stand this far apart on the battlefield, on open ground found
 	// within this radius of the map's Town.txt point (playerbot_guild_war.h).
-	const int PLAYERBOT_GUILD_WAR_RALLY_SPREAD = 700;
+	// Both sides rally on the same ground, the open middle nearest the map's
+	// Town.txt point, and fight from the first minute: a spread of 700 made
+	// two columns standing apart ("niech ida od poczatku na srodek strefy
+	// sie bic", Tieru, 17 September).
+	const int PLAYERBOT_GUILD_WAR_RALLY_SPREAD = 0;
 	const long PLAYERBOT_GUILD_WAR_GROUND_SEARCH = 6000;
 	// The Demon Tower raid (playerbot_demon_tower.h): one bot guild at a
 	// time on this core, the first a few minutes after a start and the next

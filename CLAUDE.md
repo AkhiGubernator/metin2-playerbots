@@ -5239,6 +5239,19 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   puts a tool in the hand wants the same line, and the rider note above
   ("a rider reads, dresses, opens chests ...") lists the engine's refusals,
   which is not the same list as what looks right.
+- **A trial is a hundred kills on one map, and every errand that leaves the
+  map restarts the wait.** With the herbs out of the way (2.0.65) the trial
+  bots still finished nothing: 85 arrivals on the desert in an hour, 75
+  stays of 344 s on average, 67 under ten minutes, the kill counter moving
+  25 at a time half an hour apart - three completions at 08h and none in
+  the next three hours, 102 of 120 trial bots at 0/100 in the villages. What
+  took them home was the Biologist hand-in they carried
+  (`NeedsPlayerBotM1OnlyServices`, "frontier_services_to_m1" 29/h) and the
+  offline stand's service walk (`BotOfflineBusy`, 23/h). Both wait while
+  `IsPlayerBotOnBattleHorseTrial` holds on the desert; a blocking need (no
+  weapon, no potions) still wins. Measure a trial as desert stays per bot
+  and the `battle trial ... kills=` lines' spacing, never as "bots on the
+  desert now" - nine at a time was the shape of eighty leaving.
 - **An open horse trial outranks the herb errand, not only the hunt row.**
   2.0.61 made `GetPlayerBotBiologistHuntMob` yield to a trial; the herb
   errand (`PlayerBotMayTakeHerbErrand`, the trickle to the first villages)

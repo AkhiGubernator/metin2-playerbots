@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-16T22:19:50Z",
-  "statusMessage": "2.0.63 (serwer): poprawki po pierwszych testach Wieży Demonów i zgłoszeniach z Discorda po 2.0.62. W launcherze ZAINSTALUJ AKTUALIZACJE.",
+  "publishedAt": "2026-09-17T06:14:49Z",
+  "statusMessage": "2.0.64 (serwer): szkatułki losowane raz i tylko w oknie eventu, wędkarze z kartą na zajętych slotach, wojna gildii pieszo, suwak czasu odradzania na stronie Stawki, update.sh dopisuje klucze .env, panel Sebana 1.55.0. W launcherze ZAINSTALUJ AKTUALIZACJE.",
   "server": {
-    "version": "2.0.63",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.63/metin2-server-update-2.0.63.zip",
-    "sha256": "33EDB06EA8057EEDB239576FA2DEAD21476566B06C6F7701D5027D6E76359486"
+    "version": "2.0.64",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.64/metin2-server-update-2.0.64.zip",
+    "sha256": "8CE55FE7EF9541660C8E5C41F51522B1765D7D7703D5AA840651AC10F20CA73D"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

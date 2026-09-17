@@ -121,6 +121,7 @@ linux-port-mt2009/docker/game/src/server/game/src/item_manager.h
 linux-port-mt2009/docker/game/src/server/game/src/main.cpp
 linux-port-mt2009/docker/game/src/server/game/src/p2p.cpp
 linux-port-mt2009/docker/game/src/server/game/src/p2p.h
+linux-port-mt2009/docker/game/src/server/game/src/regen.cpp
 # Every Playerbot source has a build-context copy here, discovered like the
 # overlay above rather than listed: the r40250 list did this already (its
 # line 65) and this one enumerated thirty-six names, so the first new file

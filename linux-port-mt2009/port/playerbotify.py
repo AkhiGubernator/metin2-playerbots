@@ -1219,6 +1219,21 @@ def main(root):
          marker='The tables\' own chests obey the same zero')
 
     # ======================================================================
+    # 2.0.64 respawn on a slider. regen_event already scales the next spawn
+    # by the event flags fastBossSpawn<map> / fastMobSpawn<map> (Seban's
+    # per-map console); the map-less names are the fallback the classic
+    # panel's /rates page sets for the whole world (Hiob, 17 September).
+    # ======================================================================
+    edit(os.path.join(game, 'regen.cpp'),
+         '\tconst int flagValue = MINMAX(0, quest::CQuestManager::instance().GetEventFlag(flagName.c_str()), 100);\n',
+         '\tint flagValue = MINMAX(0, quest::CQuestManager::instance().GetEventFlag(flagName.c_str()), 100);\n'
+         '\t// playerbot: the map-less flag is the world-wide fallback (the classic\n'
+         '\t// panel\'s /rates page); a per-map flag, when set, still wins.\n'
+         '\tif (flagValue == 0)\n'
+         '\t\tflagValue = MINMAX(0, quest::CQuestManager::instance().GetEventFlag(regen->is_boss_or_stone ? "fastBossSpawn" : "fastMobSpawn"), 100);\n',
+         marker='the map-less flag is the world-wide fallback')
+
+    # ======================================================================
     # 0007 the chat reaches the bots: a shout, a whisper, a counter to read.
     # ======================================================================
     p = os.path.join(game, 'input_main.cpp')

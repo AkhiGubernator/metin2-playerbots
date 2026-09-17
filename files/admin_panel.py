@@ -2915,6 +2915,19 @@ T = {
                   "de":"🚀 Schnell — Erfahrung 1000%, Gegenstände 500%, Yang 500%",
                   "tr":"🚀 Hızlı — tecrübe 1000%, eşya 500%, yang 500%"},
  "rates_save":   {"pl":"💾 Zapisz i zrestartuj serwer","en":"💾 Save and restart the server","de":"💾 Speichern und Server neu starten","tr":"💾 Kaydet ve sunucuyu yeniden başlat"},
+ "regen_title": {"pl":"Czas odradzania Metinów, bossów i potworów",
+                 "en":"Respawn time of Metin stones, bosses and monsters"},
+ "regen_help":  {"pl":"Procent zwykłego czasu odradzania: 100 = jak w grze, 50 = dwa razy szybciej, 10 = dziesięć razy szybciej. Działa od razu (przez pomocnika w grze), a po restarcie zostaje. Osobno dla Metinów i bossów, osobno dla zwykłych potworów.",
+                 "en":"Percent of the normal respawn time: 100 = as in the game, 50 = twice as fast, 10 = ten times as fast. Live at once (through the in-game helper) and kept across a restart. Stones and bosses apart from ordinary monsters."},
+ "regen_boss":  {"pl":"Metiny i bossowie (% czasu)", "en":"Metin stones and bosses (% of time)"},
+ "regen_mob":   {"pl":"Zwykłe potwory (% czasu)", "en":"Ordinary monsters (% of time)"},
+ "regen_save":  {"pl":"Zapisz czasy odradzania", "en":"Save the respawn times"},
+ "regen_range": {"pl":"Obie wartości muszą być liczbą całkowitą od 10 do 100. Nic nie zmieniono.",
+                 "en":"Both have to be whole numbers between 10 and 100. Nothing was changed."},
+ "regen_saved_live": {"pl":"✅ Zapisano! Nowe czasy odradzania działają już w grze, bez restartu.",
+                      "en":"✅ Saved! The new respawn times are live in game, no restart needed."},
+ "regen_saved_restart": {"pl":"Zapisano. Nikt nie jest zalogowany, więc pomocnik w grze nie odpowiedział — nowe czasy zadziałają po restarcie serwera (albo zapisz jeszcze raz, gdy ktoś będzie w grze).",
+                         "en":"Saved. Nobody is logged in, so the in-game helper did not answer — the new times apply after a server restart (or save again while somebody is in game)."},
  "rates_range":  {"pl":"Każda z trzech wartości musi być liczbą całkowitą od 1 do 10000. Nic nie zmieniono. 🙂","en":"Each of the three has to be a whole number between 1 and 10000. Nothing was changed. 🙂",
                   "de":"Alle drei müssen ganze Zahlen zwischen 1 und 10000 sein. Es wurde nichts geändert. 🙂",
                   "tr":"Üçü de 1 ile 10000 arasında tam sayı olmalı. Hiçbir şey değiştirilmedi. 🙂"},
@@ -3936,6 +3949,32 @@ MT2009_RATE_FLAGS = {
     "drop": ("mob_item", "mob_item_buyer"),
     "yang": ("mob_gold", "mob_gold_buyer"),
 }
+# Respawn time, as a percent of the regen line's own delay: the engine's
+# regen_event scales the next spawn by the event flags fastBossSpawn and
+# fastMobSpawn (0 = untouched, 1..100 = that share of the delay; playerbotify
+# adds the map-less names as the fallback to Seban's per-map ones). The page
+# shows 100 for "normal", the flag carries 0 for it.
+MT2009_REGEN_FLAGS = {"regen_boss": "fastBossSpawn", "regen_mob": "fastMobSpawn"}
+REGEN_MIN_PERCENT = 10
+
+def read_regen_mt2009():
+    """The two flags as the page shows them (100 = normal), from player.quest."""
+    out = {name: 100 for name in MT2009_REGEN_FLAGS}
+    with db() as c, c.cursor() as cur:
+        for name, flag in MT2009_REGEN_FLAGS.items():
+            cur.execute("SELECT lValue FROM player.quest WHERE dwPID=0 AND szName=%s LIMIT 1", (flag,))
+            row = cur.fetchone()
+            if row:
+                value = int(row["lValue"] if isinstance(row, dict) else row[0])
+                if REGEN_MIN_PERCENT <= value < 100:
+                    out[name] = value
+    return out
+
+def persist_regen_mt2009(cur, vals):
+    for name, flag in MT2009_REGEN_FLAGS.items():
+        value = int(vals[name])
+        cur.execute("REPLACE INTO player.quest (dwPID, szName, szState, lValue) "
+                    "VALUES (0, %s, '', %s)", (flag, 0 if value >= 100 else value))
 RATES_LIVE_WAIT = 12.0     # the helper's server timer ticks every 5 s
 GM_RELOAD_WAIT = 8.0       # a player timer ticks every 3 s
 
@@ -5152,7 +5191,20 @@ function m2rates(e,d,y){
   document.getElementById('r_drop').value=d;
   document.getElementById('r_yang').value=y;
 }
-</script>""")
+</script>
+{% if regen %}
+<div class="card">
+<form method="post" action="{{url_for('rates_regen')}}">
+<input type="hidden" name="_csrf" value="{{csrf_token}}">
+<h3>⏱️ {{t('regen_title')}}</h3>
+<p class="muted">{{t('regen_help')}}</p>
+<h3 style="margin-top:12px">🪨 {{t('regen_boss')}}</h3>
+<input name="regen_boss" type="number" min="10" max="100" step="1" value="{{regen['regen_boss']}}" required>
+<h3 style="margin-top:18px">👾 {{t('regen_mob')}}</h3>
+<input name="regen_mob" type="number" min="10" max="100" step="1" value="{{regen['regen_mob']}}" required>
+<button class="big" style="margin-top:18px">{{t('regen_save')}}</button>
+</form></div>
+{% endif %}""")
 
 # every state apply_rates.sh can leave behind has a sentence of its own
 RATE_STATES = ("running", "ok", "unsupported", "failed", "no_restart")
@@ -12431,9 +12483,55 @@ def rates():
     if not have_script:
         flash(t("rates_no_script"), "error")
     st = rates_status().get("state", "")
-    return render_template_string(TPL_RATES, cur=cur_rates, presets=RATE_PRESETS,
+    regen = None
+    if ENGINE_MT2009:
+        try:
+            regen = read_regen_mt2009()
+        except Exception:
+            regen = {name: 100 for name in MT2009_REGEN_FLAGS}
+    return render_template_string(TPL_RATES, cur=cur_rates, presets=RATE_PRESETS, regen=regen,
                                   intro_key="rates_intro_mt2009" if ENGINE_MT2009 else "rates_intro",
                                   state_msg=t("rates_st_" + st) if st in RATE_STATES else "")
+
+
+@app.post("/rates/regen")
+@login_required
+def rates_regen():
+    """Stones and bosses, and ordinary monsters, respawning in a share of their
+    normal time. mt2009 only: the engine's regen_event reads the flags."""
+    if not ENGINE_MT2009:
+        return redirect(url_for("rates"))
+    vals = {}
+    for name in MT2009_REGEN_FLAGS:
+        raw = (request.form.get(name, "") or "").strip()
+        if not raw.isdigit() or not REGEN_MIN_PERCENT <= int(raw) <= 100:
+            flash(t("regen_range"), "error")
+            return redirect(url_for("rates"))
+        vals[name] = int(raw)
+    try:
+        with db() as c, c.cursor() as cur:
+            persist_regen_mt2009(cur, vals)
+    except Exception:
+        flash(t("db_down"), "error")
+        return redirect(url_for("rates"))
+    try:
+        status, qid = queue_and_wait("", "REGEN", "%d,%d" % (0 if vals["regen_boss"] >= 100 else vals["regen_boss"],
+                                                            0 if vals["regen_mob"] >= 100 else vals["regen_mob"]), "",
+                                     wait=RATES_LIVE_WAIT)
+    except Exception:
+        status, qid = "failed", 0
+    if status == "done":
+        flash(t("regen_saved_live"))
+    else:
+        if status == "timeout":
+            try:
+                with db() as c, c.cursor() as cur:
+                    cur.execute("UPDATE player.web_admin_queue SET status='cancelled' "
+                                "WHERE id=%s AND status='pending'", (qid,))
+            except Exception:
+                pass
+        flash(t("regen_saved_restart"))
+    return redirect(url_for("rates"))
 
 
 

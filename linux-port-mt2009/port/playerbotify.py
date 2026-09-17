@@ -1421,6 +1421,7 @@ def main(root):
     apply_hwang_curse_removed(game)
     apply_playerbot_guild_invites(game)
     apply_bot_warpset(game)
+    apply_quest_item_use_log(game)
     print('playerbotify: done')
 
 
@@ -2553,6 +2554,36 @@ def apply_gm_gameplay(game):
          '\tif (GetGMLevel() > GM_PLAYER)\n'
          '\t\treturn true;\n',
          marker='a GM opens a stall without the kill count')
+
+
+def apply_quest_item_use_log(game):
+    # A plain use of an ITEM_QUEST (Pierscien Teleportacji 70058 above all)
+    # left nothing in any log when the quest did not answer: NerrVoVy's ring
+    # on 2.0.64, "nic sie nie dzieje", a bundle with no line to read. The
+    # 2.0.62 diagnosis read the ring's flag 8192 as ITEM_FLAG_APPLICABLE and
+    # cleared it in apply.sh; on this engine APPLICABLE is 1 << 14 and 8192 is
+    # ITEM_FLAG_LOG, so the DND branch below was never the cause. Every such
+    # use writes QUEST_ITEM: with the flags and whether the player's quest
+    # state is suspended (NPC::HandleEvent refuses that silently, off the
+    # test server), and a suspended state is told to the player. The bundle's
+    # grep list carries the tag.
+    edit(os.path.join(game, 'char_item.cpp'),
+         '\t\t\tif (GetArena() != NULL || IsObserverMode() == true)\n'
+         '\t\t\t{\n'
+         '\t\t\t\tif (item->GetVnum() == 50051 || item->GetVnum() == 50052 || item->GetVnum() == 50053)\n',
+         '\t\t\t{\n'
+         '\t\t\t\tquest::PC* questPC = quest::CQuestManager::instance().GetPCForce(GetPlayerID());\n'
+         '\t\t\t\tconst bool questRunning = questPC && questPC->IsRunning();\n'
+         '\t\t\t\tsys_log(0, "QUEST_ITEM: use pid=%u name=%s vnum=%u flag=%u map=%ld level=%d running=%d quest=%s",\n'
+         '\t\t\t\t\t\tGetPlayerID(), GetName(), item->GetVnum(), item->GetFlag(), GetMapIndex(), (int)GetLevel(),\n'
+         '\t\t\t\t\t\tquestRunning ? 1 : 0, questRunning ? questPC->GetCurrentQuestName().c_str() : "-");\n'
+         '\t\t\t\tif (questRunning)\n'
+         '\t\t\t\t\tChatPacket(CHAT_TYPE_INFO, "Najpierw zamknij otwarte okno zadania (albo zaloguj sie ponownie), potem uzyj przedmiotu.");\n'
+         '\t\t\t}\n'
+         '\t\t\tif (GetArena() != NULL || IsObserverMode() == true)\n'
+         '\t\t\t{\n'
+         '\t\t\t\tif (item->GetVnum() == 50051 || item->GetVnum() == 50052 || item->GetVnum() == 50053)\n',
+         marker='QUEST_ITEM: use pid=')
 
 
 def apply_party_pickup_to_owner(game):

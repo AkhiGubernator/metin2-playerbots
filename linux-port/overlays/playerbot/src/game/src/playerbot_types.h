@@ -3297,6 +3297,14 @@ namespace
 	// table, not a number to shave here. The static_assert in
 	// playerbot_activities.h keeps this from being lowered again.
 	const int PLAYERBOT_FISHING_ARRIVE = 100;
+	// The Rybak is a counter, not a cast point: his approach point sits on
+	// blocked ground in Yongan and Pyongmoo, the walk snapped it 119-177
+	// units away and then tested arrival at the hundred above, so a bot
+	// stood "Ide do Rybaka po przynete" for its whole session (seban latino,
+	// 17 September). The purchase asks no distance of the NPC at all; the
+	// snap stays inside the radius that tests arrival.
+	const int PLAYERBOT_FISHING_TACKLE_ARRIVE = 400;
+	const int PLAYERBOT_FISHING_TACKLE_SNAP_CELLS = 4;
 	// Independently planned route failures before the bank is written off. Six
 	// matches the town-service rescue; anything larger is indistinguishable from
 	// never giving up at all.

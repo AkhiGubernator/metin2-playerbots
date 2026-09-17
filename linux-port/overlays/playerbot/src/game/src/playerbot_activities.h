@@ -310,8 +310,11 @@ namespace
 	// it.
 	std::set<int> s_setPlayerBotDryFishingStands;
 #if defined(PLAYERBOT_ENGINE_MT2009)
-	int MarkPlayerBotFishingStandDry(DWORD playerID)
+	// again: the stand was in the dry set already - the bot was handed a dry
+	// stand a second time, which only happens once every stand of the bank is.
+	int MarkPlayerBotFishingStandDry(DWORD playerID, bool& again)
 	{
+		again = false;
 		for (std::map<int, TPlayerBotFishingStand>::iterator it =
 				s_mapPlayerBotFishingStands.begin();
 				it != s_mapPlayerBotFishingStands.end(); ++it)
@@ -319,7 +322,7 @@ namespace
 			if (it->second.dwPid == playerID)
 			{
 				const int key = it->first;
-				s_setPlayerBotDryFishingStands.insert(key);
+				again = !s_setPlayerBotDryFishingStands.insert(key).second;
 				s_mapPlayerBotFishingStands.erase(it);
 				return key;
 			}
@@ -386,7 +389,17 @@ namespace
 					mine = slot;
 			}
 			// More anglers than stands one day: share a stand rather than refuse
-			// to fish.
+			// to fish - a wet one, though. Sharing slot `start` whatever it was
+			// handed a bot the very stand it had just marked dry, once a second
+			// for the whole idle timeout (xXxMotykaxXx on Yongan, 17 September:
+			// 120 s of "dry stand ... moving to another" on one key, then
+			// never_cast).
+			for (int step = 0; step < slots && mine < 0; ++step)
+			{
+				const int slot = PlayerBotFishingClaimKey(mapIndex, (start + step) % slots);
+				if (!s_setPlayerBotDryFishingStands.count(slot))
+					mine = slot;
+			}
 			if (mine < 0)
 				mine = PlayerBotFishingClaimKey(mapIndex, start);
 			TPlayerBotFishingStand& claim = s_mapPlayerBotFishingStands[mine];
@@ -1042,11 +1055,40 @@ namespace
 			sys_log(0, "PLAYERBOT_FISHING: fishing pass bought pid=%u name=%s price=%u gold=%lld",
 					ch->GetPlayerID(), ch->GetName(), PLAYERBOT_FISHING_PASS_PRICE, (long long)ch->GetGold());
 		}
+		// Both unique slots taken: FindEquipCell answers WEAR_UNIQUE2 and
+		// EquipItem refuses the occupied cell, so the pass stayed in the bag
+		// for good and the next ask was an hour away - every FISHING line of
+		// seban latino's 1013-bot world was "not worn yet" and nobody fished.
+		// One slot is freed the way the unique-slots pass frees one for a
+		// ring: what pays the bot nothing first, a ring or glove on its clock
+		// last (it comes off at the water anyway), never what the engine
+		// will not let go of.
+		if (ch->GetWear(WEAR_UNIQUE1) && ch->GetWear(WEAR_UNIQUE2))
+		{
+			LPITEM displaced = NULL;
+			for (int pass_ = 0; pass_ < 2 && !displaced; ++pass_)
+				for (int wear = WEAR_UNIQUE1; wear <= WEAR_UNIQUE2 && !displaced; ++wear)
+				{
+					LPITEM worn = ch->GetWear(wear);
+					if (!worn || !IsPlayerBotWornItemSound(ch, worn, wear) ||
+							IS_SET(worn->GetFlag(), ITEM_FLAG_IRREMOVABLE))
+						continue;
+					if (pass_ == 0 && IsPlayerBotTimedUnique(worn->GetVnum()))
+						continue;
+					displaced = worn;
+				}
+			if (displaced && ch->GetEmptyInventory(displaced->GetSize()) >= 0 &&
+					ch->UnequipItem(displaced))
+				sys_log(0, "PLAYERBOT_FISHING: unique taken off for the pass pid=%u name=%s vnum=%u",
+						ch->GetPlayerID(), ch->GetName(), displaced->GetVnum());
+		}
 		if (!ch->EquipItem(pass))
 		{
 			PlayerBotLogThrottled("fishing_pass_wear", dwNow,
-					"PLAYERBOT_FISHING: fishing pass in the bag but not worn yet pid=%u name=%s",
-					ch->GetPlayerID(), ch->GetName());
+					"PLAYERBOT_FISHING: fishing pass in the bag but not worn yet pid=%u name=%s unique1=%u unique2=%u",
+					ch->GetPlayerID(), ch->GetName(),
+					ch->GetWear(WEAR_UNIQUE1) ? ch->GetWear(WEAR_UNIQUE1)->GetVnum() : 0,
+					ch->GetWear(WEAR_UNIQUE2) ? ch->GetWear(WEAR_UNIQUE2)->GetVnum() : 0);
 			return false;
 		}
 		return true;
@@ -1258,11 +1300,14 @@ namespace
 			return EndPlayerBotFishingSession(ch, state, dwNow, "never_reached_water");
 		}
 
-		if (DISTANCE_APPROX(ch->GetX() - destX, ch->GetY() - destY) >
-				PLAYERBOT_FISHING_ARRIVE)
+		// The Rybak is a counter: its own radius and a snap inside it (see
+		// PLAYERBOT_FISHING_TACKLE_ARRIVE); the stand keeps the cast point's.
+		const int arrive = needsTackle ? PLAYERBOT_FISHING_TACKLE_ARRIVE : PLAYERBOT_FISHING_ARRIVE;
+		const int snapCells = needsTackle ? PLAYERBOT_FISHING_TACKLE_SNAP_CELLS : 16;
+		if (DISTANCE_APPROX(ch->GetX() - destX, ch->GetY() - destY) > arrive)
 		{
 			// Riding there is fine; the line simply cannot go in from a saddle.
-			if (MovePlayerBot(ch, destX, destY, dwNow, 16, true, true) ||
+			if (MovePlayerBot(ch, destX, destY, dwNow, snapCells, true, true) ||
 					state.bStuckCounter < PLAYERBOT_FISHING_STUCK_LIMIT)
 				return true;
 
@@ -1343,7 +1388,17 @@ namespace
 			LPSECTREE dryTree = ch->GetSectree();
 			if (dryTree && !dryTree->IsNearAttr(ch->GetX(), ch->GetY(), ATTR_WATER))
 			{
-				const int dry = MarkPlayerBotFishingStandDry(ch->GetPlayerID());
+				bool again = false;
+				const int dry = MarkPlayerBotFishingStandDry(ch->GetPlayerID(), again);
+				if (again)
+				{
+					// Handed a stand already marked dry: every stand of this bank is,
+					// so there is nowhere to move to and the session ends here rather
+					// than after the idle timeout as never_cast.
+					sys_log(0, "PLAYERBOT_FISHING: bank dry pid=%u name=%s map=%ld key=%d pos=(%ld,%ld)",
+							ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(), dry, ch->GetX(), ch->GetY());
+					return EndPlayerBotFishingSession(ch, state, dwNow, "bank_dry");
+				}
 				sys_log(0, "PLAYERBOT_FISHING: dry stand pid=%u name=%s map=%ld key=%d pos=(%ld,%ld), moving to another",
 						ch->GetPlayerID(), ch->GetName(), ch->GetMapIndex(), dry, ch->GetX(), ch->GetY());
 				state.dwNextFishingActionTime = dwNow + 1000;
@@ -1430,6 +1485,13 @@ namespace
 			// talks to the fisherman, so it is set here once.
 			if (ch->GetQuestFlag("fishing_onboarding.completed") < 1)
 				ch->SetQuestFlag("fishing_onboarding.completed", 1);
+			// The pass again on every cast: the ask refreshes the hold that keeps
+			// the equipment and unique-slot passes off it for the session, and a
+			// pass that came off is put back rather than cast without - fishing()
+			// answered "You need to have a fishing pass" 730 times in two minutes
+			// and 24 sessions ended never_cast with a rod and bait (17 September).
+			if (!EnsurePlayerBotFishingPass(ch, dwNow))
+				return EndPlayerBotFishingSession(ch, state, dwNow, "no_pass");
 			ch->fishing();
 			if (!ch->m_pkPreFishingEvent)
 			{

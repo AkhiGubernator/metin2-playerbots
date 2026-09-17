@@ -5278,6 +5278,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   bag (`IsPlayerBotBagFull`) deposits them whatever the ledger says; the
   withdrawal already brings a material back only while the bag stays clear
   of pressure. Measure a keeper by its safebox count beside its bag.
+  With all that in place (2.0.66) two trials finished in fifty minutes and
+  the shuttle went on for the rest: `BlocksPlayerBotTravel` counts a bag
+  with no free three-cell column, which a keeper with sixteen loose free
+  cells has for good (GumbASSx, five stays of 97-426 s in forty minutes),
+  and the personality's frontier visit clock ended a trial two-thirds done
+  ("frontier_visit_complete" after 41 minutes). On the trial a bot is
+  blocked by what stops the fight alone, its visit does not expire, and a
+  trial archer fills its quiver like a dropper (2.0.67). A trial is one
+  errand with one end; every clock and every need that ends an ordinary
+  frontier visit has to be asked whether it ends this one.
 - **An open horse trial outranks the herb errand, not only the hunt row.**
   2.0.61 made `GetPlayerBotBiologistHuntMob` yield to a trial; the herb
   errand (`PlayerBotMayTakeHerbErrand`, the trickle to the first villages)

@@ -32,6 +32,16 @@ własnego sklepu co 10–15 minut (23 na godzinę). Oba czekają teraz, dopóki
 próba na pustyni trwa; potrzeba blokująca (brak broni, mikstur) nadal
 wygrywa.
 
+### Launcher ponawia pobieranie paczki (Hiob)
+
+Aktualizacja 2.0.61 → 2.0.65 padła dwa razy sekundę po odczycie manifestu:
+„połączenie nieoczekiwanie zakończone”, potem „(500) Wewnętrzny błąd
+serwera” — odpowiedź GitHuba, ten sam zip minutę później schodził
+normalnie. Launcher pobierał raz i przy pierwszym potknięciu kończył
+błędem; teraz próbuje trzy razy z pięciosekundową przerwą (blokada
+antywirusa nadal od razu). Nowy launcher przyjeżdża w paczce, więc działa
+od następnej aktualizacji.
+
 ### Karta czasu odradzania z mnożnikami (kiciamol)
 
 Przy każdym z dwóch pól na stronie „Stawki” są przyciski ×1 … ×10 (wpisują

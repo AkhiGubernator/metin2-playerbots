@@ -374,14 +374,27 @@ function Get-M2Download {
     if (-not [Uri]::TryCreate($Source, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https') {
         throw 'Pakiet aktualizacji musi pochodzić z lokalnego pliku albo adresu HTTPS.'
     }
-    try {
-        Invoke-WebRequest -Uri $uri -OutFile $Destination -UseBasicParsing -TimeoutSec 300
-    }
-    catch {
-        if (Test-M2AntivirusBlock -ErrorRecord $_) {
-            throw (New-M2AntivirusError -Path $Destination -ErrorRecord $_)
+    # Three attempts: a release asset on GitHub answered "(500) Wewnetrzny
+    # blad serwera" and "Polaczenie zostalo nieoczekiwanie zakonczone" a
+    # second into the download, twice in two minutes, and served the same
+    # file minutes later (Hiob, 17 September). One request, one failure was
+    # the whole update. An antivirus block is raised at once - it does not
+    # mend itself.
+    $attempts = 3
+    for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+        try {
+            Invoke-WebRequest -Uri $uri -OutFile $Destination -UseBasicParsing -TimeoutSec 300
+            return
         }
-        throw
+        catch {
+            if (Test-M2AntivirusBlock -ErrorRecord $_) {
+                throw (New-M2AntivirusError -Path $Destination -ErrorRecord $_)
+            }
+            if ($attempt -ge $attempts) { throw }
+            Write-Warning ('Pobieranie nie powiodlo sie (proba ' + $attempt + ' z ' + $attempts + '): ' + $_.Exception.Message + ' - ponawiam za 5 s.')
+            Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 5
+        }
     }
 }
 

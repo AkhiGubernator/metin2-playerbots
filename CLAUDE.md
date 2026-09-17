@@ -5239,6 +5239,15 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   puts a tool in the hand wants the same line, and the rider note above
   ("a rider reads, dresses, opens chests ...") lists the engine's refusals,
   which is not the same list as what looks right.
+- **One HTTP request is one failure away from a failed update.**
+  `Get-M2Download` made a single `Invoke-WebRequest` for the release asset;
+  GitHub answered "(500) Wewnetrzny blad serwera" and dropped a connection
+  a second into the download, twice in two minutes, and served the same
+  47 MB minutes later (Hiob, 17 September; the manifest read through the
+  API had just succeeded). Three attempts with a pause since 2.0.66; the
+  antivirus block is still raised at once, because it does not mend itself.
+  The launcher module ships in the package, so a launcher fix reaches a
+  player one update late - the update that fails is run by the old code.
 - **A trial is a hundred kills on one map, and every errand that leaves the
   map restarts the wait.** With the herbs out of the way (2.0.65) the trial
   bots still finished nothing: 85 arrivals on the desert in an hour, 75

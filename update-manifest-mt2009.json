@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-17T10:36:44Z",
-  "statusMessage": "2.0.66 (serwer): bot z próbą konia bojowego zostaje na pustyni do końca próby (hand-in Biologa i obsługa sklepu czekają), karta czasu odradzania z mnożnikami ×2/×3/×4. W launcherze ZAINSTALUJ AKTUALIZACJE.",
+  "publishedAt": "2026-09-17T12:08:45Z",
+  "statusMessage": "2.0.67 (serwer): bot z próbą konia bojowego zostaje na pustyni od pierwszego do setnego zabójstwa — nie wraca po wolną kolumnę w torbie ani po wygaśnięciu czasu wizyty, łucznik bierze pełny kołczan. W launcherze ZAINSTALUJ AKTUALIZACJE.",
   "server": {
-    "version": "2.0.66",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.66/metin2-server-update-2.0.66.zip",
-    "sha256": "0F174C9546575AD1CCC02F2B00E6E3E52D4710F2BBA181A984ABAC04E37076F0"
+    "version": "2.0.67",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.67/metin2-server-update-2.0.67.zip",
+    "sha256": "B4F6B483EC520023CEC3A1D511FD882B806C015D535AE5A046F184A79E0D5848"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

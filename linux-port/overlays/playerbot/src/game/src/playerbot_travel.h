@@ -1890,8 +1890,17 @@ namespace
 			// cannot wait out a timer. Everything else waits until the bot has
 			// been here long enough for the trip to have been worth making.
 			const bool blocked = BlocksPlayerBotTravel(ch);
+			// The battle-horse trial is a hundred kills of two archers on this one
+			// map, and the Biologist hand-in a trial bot carries sent it home for
+			// the hand-in every few minutes: 75 desert stays of 344 s on average
+			// in an hour, 67 under ten minutes, the trial's kills 25 at a time
+			// half an hour apart, and 102 of 120 trial bots at 0/100 in the
+			// villages (m2zip, 17 September). The hand-in waits for the horse;
+			// a blocking need still wins.
+			const bool onBattleTrialHere = mapIndex == PLAYERBOT_MAP_DESERT &&
+					IsPlayerBotOnBattleHorseTrial(ch);
 			const bool needsTown = blocked ||
-					(settledIn && (needsM1OnlyServices || needsEssentialWeaponSupply));
+					(settledIn && ((needsM1OnlyServices && !onBattleTrialHere) || needsEssentialWeaponSupply));
 			// The Monkey Dungeons are reached from Bokjung, and nothing here ever
 			// went back for one: the roll that sends a bot for a medal was only
 			// read in town, and a bot past forty lives out here - which is how

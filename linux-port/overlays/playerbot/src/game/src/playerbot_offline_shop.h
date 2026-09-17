@@ -18,6 +18,10 @@ namespace {
             state.bVisitingShop || state.bVisitingBiologist || state.bVisitingStable ||
             state.bRecoveringAfterDeath || state.bTacticalRetreat || state.bMultiPullActive ||
             state.bFishingSession ||
+            // Nor off the desert in the middle of its battle-horse trial: the
+            // service walk every ten to fifteen minutes was 23 of 80 desert
+            // departures an hour, and the trial is a hundred kills on that map.
+            (IsPlayerBotOnBattleHorseTrial(ch) && ch->GetMapIndex() == PLAYERBOT_MAP_DESERT) ||
             // A bot in a player's party does not warp off to its counter every
             // ten minutes; the stand keeps selling until the party ends.
             (ch->GetParty() && IsPlayerBotHumanLedParty(ch->GetParty())) ||

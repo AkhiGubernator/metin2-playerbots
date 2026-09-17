@@ -1883,7 +1883,14 @@ namespace
 			if (state.dwFrontierEnteredTime == 0)
 				state.dwFrontierEnteredTime = dwNow;
 			const DWORD stayed = dwNow - state.dwFrontierEnteredTime;
-			const bool visitExpired = stayed >=
+			// The battle-horse trial is a hundred kills of two archers on this one
+			// map; everything below that would send the bot home before the
+			// hundredth waits for it (2.0.66, 2.0.67).
+			const bool onBattleTrialHere = mapIndex == PLAYERBOT_MAP_DESERT &&
+					IsPlayerBotOnBattleHorseTrial(ch);
+			// The personality's visit clock ended a trial two-thirds done
+			// ("frontier_visit_complete" after 41 minutes, m2zip 17 September).
+			const bool visitExpired = !onBattleTrialHere && stayed >=
 					GetPlayerBotFrontierVisitTime(state.bPersonality);
 			// Two minutes of actually playing here before anything but a real
 			// emergency may send the bot home again.
@@ -1898,16 +1905,23 @@ namespace
 			// A blocking need still wins immediately - a bot with no weapon left
 			// cannot wait out a timer. Everything else waits until the bot has
 			// been here long enough for the trip to have been worth making.
-			const bool blocked = BlocksPlayerBotTravel(ch);
-			// The battle-horse trial is a hundred kills of two archers on this one
-			// map, and the Biologist hand-in a trial bot carries sent it home for
-			// the hand-in every few minutes: 75 desert stays of 344 s on average
-			// in an hour, 67 under ten minutes, the trial's kills 25 at a time
-			// half an hour apart, and 102 of 120 trial bots at 0/100 in the
-			// villages (m2zip, 17 September). The hand-in waits for the horse;
-			// a blocking need still wins.
-			const bool onBattleTrialHere = mapIndex == PLAYERBOT_MAP_DESERT &&
-					IsPlayerBotOnBattleHorseTrial(ch);
+			// A trial bot is blocked by what stops the fight - no weapon, no
+			// armour, no potions, no arrows - and not by the bag with no free
+			// three-cell column that stops a pickup: an assassin of fifty-two
+			// with a full belt and sixteen free cells came home from the desert
+			// five times in forty minutes for that column, 97 to 426 s a stay
+			// (GumbASSx, m2zip 17 September), and the town visit could not make
+			// one either.
+			const bool blocked = onBattleTrialHere
+					? (ch->IsItemLoaded() &&
+						(ch->GetWear(WEAR_WEAPON) == NULL || ch->GetWear(WEAR_BODY) == NULL ||
+						 NeedsPlayerBotEmergencyPotions(ch) || NeedsPlayerBotArrows(ch)))
+					: BlocksPlayerBotTravel(ch);
+			// The Biologist hand-in a trial bot carries sent it home for the
+			// hand-in every few minutes: 75 desert stays of 344 s on average in
+			// an hour, 67 under ten minutes, the trial's kills 25 at a time half
+			// an hour apart, and 102 of 120 trial bots at 0/100 in the villages
+			// (m2zip, 17 September). The hand-in waits for the horse.
 			const bool needsTown = blocked ||
 					(settledIn && ((needsM1OnlyServices && !onBattleTrialHere) || needsEssentialWeaponSupply));
 			// The Monkey Dungeons are reached from Bokjung, and nothing here ever

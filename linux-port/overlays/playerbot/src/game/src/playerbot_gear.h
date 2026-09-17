@@ -2145,8 +2145,12 @@ namespace
 	// bought once the bot stands at the counter.
 	bool WantsPlayerBotArrowTopUp(LPCHARACTER ch)
 	{
+		// A trial archer too: the hundred kills of the battle-horse trial cost
+		// more arrows than the hundred the restock threshold leaves, and every
+		// trip back for them is a stay on the desert lost.
 		return ch && ch->GetJob() == JOB_ASSASSIN && ch->GetSkillGroup() == 2 &&
-				IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID())) &&
+				(IsPlayerBotDropper(GetPlayerBotPersonalityByPID(ch->GetPlayerID())) ||
+				 IsPlayerBotOnBattleHorseTrial(ch)) &&
 				CountPlayerBotArrows(ch) < PLAYERBOT_DROPPER_ARROW_STOCK;
 	}
 

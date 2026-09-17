@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-17T06:14:49Z",
-  "statusMessage": "2.0.64 (serwer): szkatułki losowane raz i tylko w oknie eventu, wędkarze z kartą na zajętych slotach, wojna gildii pieszo, suwak czasu odradzania na stronie Stawki, update.sh dopisuje klucze .env, panel Sebana 1.55.0. W launcherze ZAINSTALUJ AKTUALIZACJE.",
+  "publishedAt": "2026-09-17T08:33:15Z",
+  "statusMessage": "2.0.65 (serwer): użycie Pierścienia Teleportacji zostawia ślad w logu i paczce diagnostycznej (diagnoza z 2.0.62 była chybiona), zioła Biologa czekają na próbę konia bojowego, górnik schodzi z konia przed kopaniem. W launcherze ZAINSTALUJ AKTUALIZACJE.",
   "server": {
-    "version": "2.0.64",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.64/metin2-server-update-2.0.64.zip",
-    "sha256": "8CE55FE7EF9541660C8E5C41F51522B1765D7D7703D5AA840651AC10F20CA73D"
+    "version": "2.0.65",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.65/metin2-server-update-2.0.65.zip",
+    "sha256": "CC97805B3477BFAB757D508788AC4AFFDD61617BD68A92370B004095A11E914A"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

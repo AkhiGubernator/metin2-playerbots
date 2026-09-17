@@ -35,7 +35,12 @@ pustynię ruszał (126 takich botów, 3 wjazdy w 25 minut) — trzymała go
 „miękka” potrzeba sprawunków, torba zapełniona w 45 %, którą handlarz z
 towarem nosi zawsze: wizyta w mieście → rynek → drużyna → wizyta w mieście,
 przez cały dzień. Dla bota z próbą ta połowa nie liczy się; brak broni,
-zbroi, mikstur, strzał albo wolnej kolumny nadal wysyła do miasta.
+zbroi, mikstur, strzał albo wolnej kolumny nadal wysyła do miasta. A „brak
+wolnej kolumny” był u handlarzy stanem trwałym: bot 40 lvl z 200 mln yang
+nosił 38 stosów materiałów „na ladę” (lada mieści kilka linii) przy 4
+przedmiotach w magazynie, bo materiał, którego ktoś na świecie szuka, nigdy
+nie szedł do Dozorcy. Przy pełnej torbie (80 %) idzie; wypłata z magazynu
+wraca po niego na ladę tylko, gdy torba ma miejsce.
 
 ### Launcher ponawia pobieranie paczki (Hiob)
 

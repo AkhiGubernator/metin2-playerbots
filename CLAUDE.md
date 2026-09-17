@@ -5268,7 +5268,16 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   which a keeper with goods carries for good) held the village branches of
   the world travel between visits; a trial bot skips it, the hard needs
   stand. Same shape as the medal droppers' loop of 15 September: a soft
-  need the town cannot meet is a loop, not an errand.
+  need the town cannot meet is a loop, not an errand. And the hard need
+  behind it, "no free column" (`BlocksPlayerBotTravel`), was permanent for a
+  keeper: `CollectPlayerBotSafeboxMaterials` kept every material the ledger
+  said somebody was short of for the counter, and a counter lists a few
+  lines - a bot of forty with 200 million yang held 38 stacks of them in a
+  bag of 94 cells and four items in the safebox, sold three pieces per town
+  visit, and left the desert a minute after arriving, every time. A full
+  bag (`IsPlayerBotBagFull`) deposits them whatever the ledger says; the
+  withdrawal already brings a material back only while the bag stays clear
+  of pressure. Measure a keeper by its safebox count beside its bag.
 - **An open horse trial outranks the herb errand, not only the hunt row.**
   2.0.61 made `GetPlayerBotBiologistHuntMob` yield to a trial; the herb
   errand (`PlayerBotMayTakeHerbErrand`, the trickle to the first villages)

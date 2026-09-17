@@ -137,7 +137,16 @@ namespace
 			if (PlayerBotNeedsRefineMaterial(ch, item->GetVnum()) ||
 					!IsPlayerBotSurplusMaterial(ch, item))
 				continue;
-			if (GetPlayerBotLedgerDemand(item->GetVnum()) > 0 && PlayerBotCanOpenShop(ch))
+			// A material somebody is short of is the counter's - while the bag
+			// can hold it. A counter lists a few lines, and a keeper of forty
+			// held 38 stacks of them in a bag of 94 cells with four items in the
+			// safebox, so every trip out ended a minute later as "no free
+			// column" (BlocksPlayerBotTravel) and its horse trial never began
+			// (xXxKacperxXx, m2zip, 17 September). A full bag deposits them; the
+			// withdrawal brings them back for the counter only while the bag
+			// stays clear of pressure.
+			if (GetPlayerBotLedgerDemand(item->GetVnum()) > 0 && PlayerBotCanOpenShop(ch) &&
+					!IsPlayerBotBagFull(ch))
 				continue;
 			cells.push_back(cell);
 		}

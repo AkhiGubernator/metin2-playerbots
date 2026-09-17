@@ -32,6 +32,17 @@ Na próbie bot wraca tylko, gdy nie może walczyć (brak broni, zbroi, mikstur,
 strzał), wizyta nie wygasa, a łucznik bierze u handlarza pełny kołczan (jak
 dropek), żeby strzał starczyło na sto zabójstw.
 
+### Pierścień Teleportacji: druga paczka i samonaprawa stanu
+
+Paczka NerrVoVy z 12:43 (2.0.65) pokazała 20 linii `QUEST_ITEM: use` — użycie
+dociera do silnika (flagi 0, żaden quest nie zawieszony, poziom 75, mapa 1), a
+handler questu nie rusza i nie ma błędu Lua. Quest jest zarejestrowany i ma
+jeden stan; jedyne, czego dopasowanie nie umie uruchomić, to gracz ze stanem
+`teleport_ring` innym niż start. 2.0.67 loguje przy każdym użyciu przedmiotu
+questowego, ile questów dopasowano i pominięto (`QUEST_ITEM: event`), a
+użycie pierścienia ze stanem innym niż start najpierw zeruje ten stan (quest
+nie ma innych stanów, więc nic nie ginie).
+
 ## 2.0.66 — 2026-09-17
 
 Serwer 2.0.66; klient bez zmian (2.0.12).

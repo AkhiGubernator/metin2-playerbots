@@ -1422,6 +1422,7 @@ def main(root):
     apply_playerbot_guild_invites(game)
     apply_bot_warpset(game)
     apply_quest_item_use_log(game)
+    apply_quest_item_event_log(game)
     print('playerbotify: done')
 
 
@@ -2584,6 +2585,58 @@ def apply_quest_item_use_log(game):
          '\t\t\t{\n'
          '\t\t\t\tif (item->GetVnum() == 50051 || item->GetVnum() == 50052 || item->GetVnum() == 50053)\n',
          marker='QUEST_ITEM: use pid=')
+
+
+def apply_quest_item_event_log(game):
+    # The ring's second bundle (NerrVoVy, 12:43): QUEST_ITEM: use twenty times,
+    # flag=0 running=0, and the quest never ran, no Lua error. HandleEvent says
+    # how many quests it matched and missed for an item-use event, and a use
+    # of the ring whose teleport_ring.__status is not the start state resets
+    # it first - the quest has one state, so the reset loses nothing, and a
+    # stale state is the one thing MatchingQuest cannot start (a matched
+    # state with no script for it is neither a match nor a miss).
+    edit(os.path.join(game, 'questnpc.cpp'),
+         '\t\tMatchingQuest(pc, m_mapOwnQuest[EventIndex], fMatch, fMiss);\n'
+         '\n'
+         '\t\tbool r = false;\n'
+         '\t\tif (fMatch.Matched())\n'
+         '\t\t{\n'
+         '\t\t\tfor (int i = 0; i < fMatch.size; i++)\n',
+         '\t\tMatchingQuest(pc, m_mapOwnQuest[EventIndex], fMatch, fMiss);\n'
+         '\t\tif (EventIndex == QUEST_ITEM_USE_EVENT)\n'
+         '\t\t\tsys_log(0, "QUEST_ITEM: event npc=%u pid=%u matched=%d missed=%d",\n'
+         '\t\t\t\t\tm_vnum, pc.GetID(), fMatch.size, fMiss.size);\n'
+         '\n'
+         '\t\tbool r = false;\n'
+         '\t\tif (fMatch.Matched())\n'
+         '\t\t{\n'
+         '\t\t\tfor (int i = 0; i < fMatch.size; i++)\n',
+         marker='QUEST_ITEM: event npc=')
+    edit(os.path.join(game, 'char_item.cpp'),
+         '\t\t\t\tif (questRunning)\n'
+         '\t\t\t\t\tChatPacket(CHAT_TYPE_INFO, "Najpierw zamknij otwarte okno zadania (albo zaloguj sie ponownie), potem uzyj przedmiotu.");\n'
+         '\t\t\t}\n',
+         '\t\t\t\tif (questRunning)\n'
+         '\t\t\t\t\tChatPacket(CHAT_TYPE_INFO, "Najpierw zamknij otwarte okno zadania (albo zaloguj sie ponownie), potem uzyj przedmiotu.");\n'
+         '\t\t\t\t// Pierscien Teleportacji has one state. A __status that is not it\n'
+         '\t\t\t\t// is a use MatchingQuest can neither match nor start, and nothing\n'
+         '\t\t\t\t// says so; start it over.\n'
+         '\t\t\t\tif (item->GetVnum() == 70058 && questPC && !questRunning)\n'
+         '\t\t\t\t{\n'
+         '\t\t\t\t\tconst std::string ringQuest("teleport_ring");\n'
+         '\t\t\t\t\tconst int ringState = questPC->GetFlag(ringQuest + ".__status");\n'
+         '\t\t\t\t\tif (ringState != 0)\n'
+         '\t\t\t\t\t{\n'
+         '\t\t\t\t\t\tsys_log(0, "QUEST_ITEM: teleport_ring state %d for pid=%u, reset to start", ringState, GetPlayerID());\n'
+         '\t\t\t\t\t\tquestPC->SetFlag(ringQuest + ".__status", 0);\n'
+         '\t\t\t\t\t\tconst unsigned int ringIndex = quest::CQuestManager::instance().GetQuestIndexByName(ringQuest);\n'
+         '\t\t\t\t\t\tfor (quest::PC::QuestInfoIterator qit = questPC->quest_begin(); qit != questPC->quest_end(); ++qit)\n'
+         '\t\t\t\t\t\t\tif (qit->first == ringIndex)\n'
+         '\t\t\t\t\t\t\t\tqit->second.st = 0;\n'
+         '\t\t\t\t\t}\n'
+         '\t\t\t\t}\n'
+         '\t\t\t}\n',
+         marker='QUEST_ITEM: teleport_ring state %d for pid=')
 
 
 def apply_party_pickup_to_owner(game):

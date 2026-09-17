@@ -4918,15 +4918,25 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   rows (measured after the first build). Same shape as the M3 crowd share and the
   chest market reserve: an errand that names one map takes a share of the
   population, never the population.
-- **Pierscien Teleportacji did nothing because of one flag.** 70058 is an
-  ITEM_QUEST whose proto carries ITEM_FLAG_APPLICABLE (8192), and under
-  `ENABLE_QUEST_DND_EVENT` the ITEM_QUEST case of `UseItemEx` takes that flag
-  as "drop it onto another item": a plain use finds no target cell and returns
-  before `CQuestManager::UseItem` is asked, so the compiled `teleport_ring`
-  quest (loaded fine, `object/state/teleport_ring` returns 0) never ran, with
-  nothing in any log. `apply.sh` clears the flag in `world.item_proto`, which
-  is read from the database on this line. When an item-use quest is "not
-  working", read the `case ITEM_QUEST` branch for the flags before the quest.
+- **Pierscien Teleportacji: the 2.0.62 diagnosis read the wrong flag.** 70058
+  is an ITEM_QUEST whose proto carries flag 8192, and 2.0.62 took that for
+  `ITEM_FLAG_APPLICABLE` (the `ENABLE_QUEST_DND_EVENT` branch of `UseItemEx`,
+  "drop it onto another item", returns before the quest is asked). On this
+  engine `ITEM_FLAG_APPLICABLE` is `1 << 14` (`common/item_length.h`) and 8192
+  is `ITEM_FLAG_LOG`, so that branch never ran and `apply.sh` cleared a
+  harmless flag; the ring was still "nic nie robi" on 2.0.64 (NerrVoVy, 17
+  September) and his bundle had no line about it. What the use goes through:
+  `CHARACTER::UseItem` (CanHandleItem, CanUsedBy, a suspended quest state -
+  chat only), `UseItemEx` (the level limit, then `case ITEM_QUEST` ->
+  `CQuestManager::UseItem` -> `m_mapNPC[70058].OnUseItem` ->
+  `NPC::HandleEvent`, which refuses a `pc.IsRunning()` state silently off the
+  test server), and the compiled `object/70058/use/teleport_ring.start` is
+  registered at boot ("QUEST loading ..." on m2zip). Since 2.0.65 every plain
+  use of an ITEM_QUEST logs `QUEST_ITEM: use ... flag= running= quest=`
+  (playerbotify `apply_quest_item_use_log`), a suspended state is told to the
+  player, the ring quest logs `QUEST_ITEM: teleport_ring runs`, and the bundle
+  keeps the tag - the next report can be read instead of guessed. Read the
+  enum before naming a flag by its number.
 - **A player's guild invitation reaches the bot on the same call.**
   `CGuild::Invite` sends the invitee a packet a bot's descriptor never answers,
   so the invitation event expired in silence. Unlike the party invitation, the
@@ -5219,6 +5229,18 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   value is the compose default, so an absent key already meant that - and
   never a password, a port or an address, whose example value is not what an
   existing install runs on.
+
+- **An open horse trial outranks the herb errand, not only the hunt row.**
+  2.0.61 made `GetPlayerBotBiologistHuntMob` yield to a trial; the herb
+  errand (`PlayerBotMayTakeHerbErrand`, the trickle to the first villages)
+  did not ask, so a bot of seventy-six with its battle horse open walked to
+  Joan for the fourth herb row under "Zdobywam konia bojowego na pustyni
+  (0/100)": on m2zip 88 of 124 trial bots had the Biologist as their goal and
+  8 stood on the desert (17 September, two hours after 2.0.64, with 18 trials
+  completed in those two hours - the trial works, it queued behind herbs).
+  The errand refuses a trial bot; a hand-in already carried still walks. A
+  status line that names one errand while the planner runs another is the
+  measurement to keep making: goal x action of the bots wearing the line.
 
 ## Engine facts worth not re-deriving
 

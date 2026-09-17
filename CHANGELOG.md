@@ -17,6 +17,91 @@ every version here.
 
 ---
 
+## 2.0.64 — 2026-09-17
+
+Serwer 2.0.64; klient bez zmian (2.0.12). Poranne zgłoszenia z Discorda po
+nocnych wydaniach 2.0.62/2.0.63 i panel Sebana 1.55.0.
+
+### Szkatułki Blasku Księżyca dropiły dwa razy częściej, niż mówił suwak
+
+W dostarczanym `item_manager.cpp` blok losowania szkatułki (i kuponu Smoczych
+Monet) siedział w `CreateDropItem` dwa razy — od co najmniej 2.0.50 każde
+zabójstwo i każdy Metin losowały szkatułkę dwukrotnie, więc 10‰ z panelu
+znaczyło w praktyce ~20‰. Przyczyna: skrypt portu rozpoznawał „już nałożone”
+po pełnym tekście bloku, a każda zmiana komentarza w tym bloku wstawiała go
+ponownie. Blok jest teraz jeden, a skrypt rozpoznaje go po stałym markerze.
+
+### Szkatułki tylko w oknie eventu — dwie dziury zamknięte (NerrVoVy)
+
+„Mam włączone blaski 10/100, harmonogram na 2 h dziennie, a dropią też poza
+konkursem”: po pierwsze, każdy zapis pliku wag z panelu wpisywał suwak wprost
+do silnika i bramka eventu zerowała go dopiero w następnej sekundzie; teraz
+wartość suwaka jest trzymana obok, a silnik dostaje ją tylko, gdy okno jest
+otwarte. Po drugie, własne tabele dropu paczki mają linie ze szkatułką (50011),
+których żadna bramka nie obejmowała: gdy oba suwaki są na zerze (okno
+zamknięte albo wyłącznik), szkatułki z tabel też nie wypadają. Trzeci powód to
+podwójne losowanie z sekcji wyżej.
+
+### Wędkarze: karta wchodzi na zajęte sloty, Rybak ma własny próg dojścia (seban latino)
+
+Dwie paczki diagnostyczne z 1013 i 1044 botami: na pierwszej nie łowił nikt —
+każda linia wędkowania to „karta w torbie, ale nie założona”. Karta Wędkarska
+jest unikatem, a bot z dwoma zajętymi slotami unikatów (np. Symbol Króla
+Przepowiedni + pierścień) nie mógł jej założyć i próbował znów za godzinę.
+Teraz zdejmuje jeden unikat (najpierw taki, który nic mu nie daje, pierścień na
+zegarze na końcu), a przy każdym zarzuceniu sprawdza, czy karta jest na sobie —
+730 odmów silnika „You need to have a fishing pass” w dwie minuty i 24 sesje
+zakończone bez rzutu to była karta, która zeszła w trakcie sesji. Osobno: bot
+zawieszony na „Idę do Rybaka po przynętę” (Przepotenszny, MrocznyNinjaxD… na
+Yongan i Pyongmoo) stał 119–177 jednostek od punktu podejścia, bo punkt leżał na
+zablokowanym gruncie, a próg dojścia był stanowiskiem wędkarskim (100) — Rybak
+to lada, dostała własny próg (400) i dopasowany snap celu. Do tego bot, który
+oznaczył swoje stanowisko jako suche (brak wody obok), dostawał je z powrotem,
+gdy wędkarzy było więcej niż stanowisk — stał na piasku do końca limitu
+bezczynności; teraz dzieli z kimś mokre stanowisko, a gdy cały brzeg jest
+suchy, kończy sesję od razu.
+
+### Wojna gildii botów pieszo i od razu na środku (NerrVoVy, Tieru)
+
+Boty odwołują konie na polu bitwy (dotąd bojowy koń zostawał w siodle) i obie
+strony zbierają się na tym samym otwartym gruncie na środku mapy gildyjnej,
+zamiast w dwóch kolumnach 700 jednostek od siebie.
+
+### Zbroja na plecach nie idzie na ryzykowny ulepszacz bez zastępstwa (THC)
+
+Reguła „broni w ręce” z 2.0.49 dostała bliźniaczkę dla zbroi: na kroku, który
+może spalić (od +4 na +5 wzwyż), noszona zbroja idzie pod zwój albo czeka, jeśli
+w torbie nie ma innej, którą bot mógłby założyć. Dotąd bot na 20. poziomie
+przepalał jedyny pancerz i szedł farmić bez zbroi.
+
+### Czas odradzania Metinów, bossów i potworów — suwak w panelu (Hiob)
+
+Silnik od dawna czyta flagi `fastBossSpawn<mapa>` / `fastMobSpawn<mapa>`
+(procent zwykłego czasu odradzania linii regenu); 2.0.64 dodaje ich wersje
+bez numeru mapy jako domyślne dla całego świata i formularz na stronie
+„Stawki” panelu klasycznego: osobno Metiny i bossowie, osobno zwykłe potwory,
+10–100 % zwykłego czasu. Działa od razu przez pomocnika w grze (polecenie
+`REGEN` questu web_admin) i zostaje po restarcie (flagi w `player.quest`).
+
+### update.sh dopisuje brakujące klucze .env (GorącyDelfin)
+
+Aktualizacja z paczki na Linuksie nigdy nie dopisywała nowych kluczy do `.env`
+(robił to tylko launcher na Windows), więc po 2.0.57 brakowało `M2_DIFFICULTY`
+i godzin oczekiwania. `update.sh` dopisuje teraz z `.env.example` tylko te
+klucze, których wartość przykładowa jest domyślną z compose (trudność, plan
+wejścia botów, dropki medali, szkatułki, układ świata) — nigdy hasła, portu ani
+adresu; klucz już obecny zostaje jak jest.
+
+### Panel Sebana 1.55.0
+
+Plan wejścia botów w /manage (okno kohorty, późno dołączający), rozbudowane
+gildie (królestwo z flagą po liderze), planer eventów, ItemShop w monitoringu
+gospodarki (Smocze Monety i Znaki botów, zakupy z `log.itemshop`), diagnostyka
+wędkarstwa, sprzedawca ze sprzedaży prowadzi do karty postaci, wyszukiwanie
+przedmiotów przechodzi wprost do wyników. Nasze zabezpieczenia zachowane; plan
+wejścia botów w panelu działa tylko z integracją Sebana (bez niej panel odsyła
+do launchera / `.env`).
+
 ## 2.0.63 — 2026-09-17
 
 Serwer 2.0.63; klient bez zmian (2.0.12). Ostatnie poprawki nocy po

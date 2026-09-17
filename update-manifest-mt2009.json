@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-17T08:33:15Z",
-  "statusMessage": "2.0.65 (serwer): użycie Pierścienia Teleportacji zostawia ślad w logu i paczce diagnostycznej (diagnoza z 2.0.62 była chybiona), zioła Biologa czekają na próbę konia bojowego, górnik schodzi z konia przed kopaniem. W launcherze ZAINSTALUJ AKTUALIZACJE.",
+  "publishedAt": "2026-09-17T10:36:44Z",
+  "statusMessage": "2.0.66 (serwer): bot z próbą konia bojowego zostaje na pustyni do końca próby (hand-in Biologa i obsługa sklepu czekają), karta czasu odradzania z mnożnikami ×2/×3/×4. W launcherze ZAINSTALUJ AKTUALIZACJE.",
   "server": {
-    "version": "2.0.65",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.65/metin2-server-update-2.0.65.zip",
-    "sha256": "CC97805B3477BFAB757D508788AC4AFFDD61617BD68A92370B004095A11E914A"
+    "version": "2.0.66",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.0.66/metin2-server-update-2.0.66.zip",
+    "sha256": "0F174C9546575AD1CCC02F2B00E6E3E52D4710F2BBA181A984ABAC04E37076F0"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",

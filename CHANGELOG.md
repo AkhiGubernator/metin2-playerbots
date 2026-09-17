@@ -17,6 +17,21 @@ every version here.
 
 ---
 
+## 2.0.67 — 2026-09-17
+
+Serwer 2.0.67; klient bez zmian (2.0.12).
+
+### Próba konia bojowego od pierwszego do setnego zabójstwa
+
+Po 2.0.66 boty z próbą docierały na pustynię i dwa ją ukończyły, ale reszta
+dalej wracała: reguła „blokuje podróż” liczy torbę bez wolnej kolumny trzech
+komórek (handlarz z 16 luźnymi wolnymi komórkami ma to na stałe — GumbASSx
+wracał pięć razy w 40 minut, pobyty 97–426 s), a zegar wizyty na froncie
+kończył próbę w dwóch trzecich („frontier_visit_complete” po 41 minutach).
+Na próbie bot wraca tylko, gdy nie może walczyć (brak broni, zbroi, mikstur,
+strzał), wizyta nie wygasa, a łucznik bierze u handlarza pełny kołczan (jak
+dropek), żeby strzał starczyło na sto zabójstw.
+
 ## 2.0.66 — 2026-09-17
 
 Serwer 2.0.66; klient bez zmian (2.0.12).

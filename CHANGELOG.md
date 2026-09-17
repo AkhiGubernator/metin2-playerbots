@@ -30,7 +30,12 @@ godziny, a 102 ze 120 botów z próbą stało w wioskach z „0/100”. Do wiosk
 wysyłał je hand-in Biologa, który nieśli (29 wyjazdów na godzinę), i obsługa
 własnego sklepu co 10–15 minut (23 na godzinę). Oba czekają teraz, dopóki
 próba na pustyni trwa; potrzeba blokująca (brak broni, mikstur) nadal
-wygrywa.
+wygrywa. I druga połowa: bot z otwartą próbą w wiosce w ogóle rzadko na
+pustynię ruszał (126 takich botów, 3 wjazdy w 25 minut) — trzymała go
+„miękka” potrzeba sprawunków, torba zapełniona w 45 %, którą handlarz z
+towarem nosi zawsze: wizyta w mieście → rynek → drużyna → wizyta w mieście,
+przez cały dzień. Dla bota z próbą ta połowa nie liczy się; brak broni,
+zbroi, mikstur, strzał albo wolnej kolumny nadal wysyła do miasta.
 
 ### Launcher ponawia pobieranie paczki (Hiob)
 

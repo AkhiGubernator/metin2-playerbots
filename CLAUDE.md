@@ -5260,7 +5260,15 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   `IsPlayerBotOnBattleHorseTrial` holds on the desert; a blocking need (no
   weapon, no potions) still wins. Measure a trial as desert stays per bot
   and the `battle trial ... kills=` lines' spacing, never as "bots on the
-  desert now" - nine at a time was the shape of eighty leaving.
+  desert now" - nine at a time was the shape of eighty leaving. And the
+  other half, once the stays were fixed: three trial bots reached the
+  desert in twenty-five minutes while 126 stood in the villages, one of
+  seventy in Joan all day on town visit -> market -> party -> town visit.
+  `NeedsPlayerBotCriticalTownServices`'s soft half (a bag at 45 percent,
+  which a keeper with goods carries for good) held the village branches of
+  the world travel between visits; a trial bot skips it, the hard needs
+  stand. Same shape as the medal droppers' loop of 15 September: a soft
+  need the town cannot meet is a loop, not an errand.
 - **An open horse trial outranks the herb errand, not only the hunt row.**
   2.0.61 made `GetPlayerBotBiologistHuntMob` yield to a trial; the herb
   errand (`PlayerBotMayTakeHerbErrand`, the trickle to the first villages)

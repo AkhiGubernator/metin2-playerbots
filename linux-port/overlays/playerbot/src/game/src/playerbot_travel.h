@@ -89,6 +89,15 @@ namespace
 				NeedsPlayerBotArrows(ch) ||
 				ch->GetEmptyInventory(3) < 0)
 			return true;
+		// The soft half - a bag at 45 percent - is what a keeper with goods
+		// carries for good, and through the village branches of the world
+		// travel it was a town visit every ten minutes for a bot whose errand
+		// is a hundred kills on the desert: 126 trial bots in the villages,
+		// three on the desert in twenty-five minutes, one of seventy in Joan
+		// all day on town visit -> market -> party -> town visit (m2zip, 17
+		// September). The trial is the errand; the bag waits for the horse.
+		if (IsPlayerBotOnBattleHorseTrial(ch))
+			return false;
 
 		size_t occupiedGridCells = 0;
 		for (WORD cell = 0; cell < PLAYERBOT_BAG_CELLS; ++cell)

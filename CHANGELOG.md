@@ -17,6 +17,27 @@ every version here.
 
 ---
 
+## 2.0.66 — 2026-09-17
+
+Serwer 2.0.66; klient bez zmian (2.0.12).
+
+### Bot z próbą konia bojowego zostaje na pustyni
+
+Po 2.0.65 (zioła ustępują próbie) boty z otwartą próbą i tak niczego nie
+kończyły: na m2zip w godzinę 85 wjazdów na pustynię, 75 pobytów po średnio
+344 s (67 krótszych niż 10 minut), licznik zabójstw próby rósł o 25 co pół
+godziny, a 102 ze 120 botów z próbą stało w wioskach z „0/100”. Do wioski
+wysyłał je hand-in Biologa, który nieśli (29 wyjazdów na godzinę), i obsługa
+własnego sklepu co 10–15 minut (23 na godzinę). Oba czekają teraz, dopóki
+próba na pustyni trwa; potrzeba blokująca (brak broni, mikstur) nadal
+wygrywa.
+
+### Karta czasu odradzania z mnożnikami (kiciamol)
+
+Przy każdym z dwóch pól na stronie „Stawki” są przyciski ×1 … ×10 (wpisują
+odpowiedni procent) i podpis „≈ ×N szybciej niż w grze” liczony na żywo. Pod
+spodem zostaje procent, więc polecenie `REGEN` i flagi silnika bez zmian.
+
 ## 2.0.65 — 2026-09-17
 
 Serwer 2.0.65; klient bez zmian (2.0.12). Dwie rzeczy z przedpołudnia po 2.0.64.

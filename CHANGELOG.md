@@ -17,6 +17,33 @@ every version here.
 
 ---
 
+## 2.0.65 — 2026-09-17
+
+Serwer 2.0.65; klient bez zmian (2.0.12). Dwie rzeczy z przedpołudnia po 2.0.64.
+
+### Pierścień Teleportacji: użycie zostawia ślad w logu (NerrVoVy)
+
+Po 2.0.64 pierścień (70058) u gracza dalej „nic nie robi”, a paczka
+diagnostyczna nie ma o tym ani jednej linii. Diagnoza z 2.0.62 była chybiona:
+flaga 8192 na pierścieniu to w tym silniku `ITEM_FLAG_LOG`, nie `APPLICABLE`
+(ta jest 1<<14), więc gałąź „przeciągnij na inny przedmiot” nigdy nie była
+przyczyną, a migrator czyścił nieszkodliwą flagę. Od 2.0.65 każde zwykłe użycie
+przedmiotu questowego zapisuje w syslogu linię `QUEST_ITEM: use` z flagami,
+mapą, poziomem i informacją, czy gracz ma **zawieszony quest** (otwarte okno
+zadania — wtedy silnik po cichu odrzuca każde nowe zdarzenie questowe; gracz
+dostaje teraz podpowiedź na czacie), a sam quest pierścienia loguje, że się
+uruchomił. Paczka diagnostyczna zbiera tag `QUEST_ITEM`. To pozwoli nazwać
+przyczynę z następnej paczki zamiast zgadywać.
+
+### Zioła Biologa ustępują otwartej próbie konia bojowego
+
+Bot z otwartą próbą konia (70+, koń na 10) szedł do pierwszej wioski po zioła
+Biologa (wiersze 1–6) i przez cały ten czas nad głową miał „Zdobywam konia
+bojowego na pustyni (0/100)” — na m2zip 88 ze 124 takich botów miało za cel
+Biologa, a na pustyni stało ich 8. Losowanie frontu i wiersz z potworem
+ustępowały próbie od 2.0.61, wyprawa po zioła nie. Teraz zioła czekają na
+konia; hand-in już niesionych okazów nadal idzie.
+
 ## 2.0.64 — 2026-09-17
 
 Serwer 2.0.64; klient bez zmian (2.0.12). Poranne zgłoszenia z Discorda po

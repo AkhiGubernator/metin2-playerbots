@@ -1174,7 +1174,49 @@ def main(root):
          '\t}\n'
          '\n'
          '\tif (pkKiller->IsHorseRiding() &&\n'
-         '\t\t\tGetDropPerKillPct(1000, 1000000, iDeltaPercent, "horse_skill_book_drop") >= number(1, iRandRange))\n')
+         '\t\t\tGetDropPerKillPct(1000, 1000000, iDeltaPercent, "horse_skill_book_drop") >= number(1, iRandRange))\n',
+         # A stable marker: with the whole text as the marker, every rewording
+         # of these comments found "not applied" and inserted the group again -
+         # the shipped item_manager.cpp rolled the chest and the voucher twice
+         # per kill from 2.0.50 to 2.0.63 (three times in the staging of
+         # 17 September). A group already there, in any wording, is left alone.
+         marker='The Moonlight Treasure Chest event. What a chest holds is decided by')
+
+    # 2.0.64 the package's own drop tables carry the Moonlight chest (50011)
+    # too, and the panel's chest window and switch reached only the roll
+    # above: "dropia tez poza konkursem" (NerrVoVy, 17 September). With both
+    # permilles at zero - the gate shut, or the switch off - the tables'
+    # chests are taken out of the drop as well. A new edit with its own
+    # anchor, so a staged tree that already carries the roll takes it.
+    edit(p,
+         '\t\t\titem = CreateItem(50011, 1, 0, true);\n'
+         '\t\t\tif (item) vec_item.emplace_back(item);\n'
+         '\t\t}\n'
+         '\t}\n'
+         '\n'
+         '\t// A Dragon Coin voucher (Kupon SM 50, vnum 80017) from a Metin stone\n',
+         '\t\t\titem = CreateItem(50011, 1, 0, true);\n'
+         '\t\t\tif (item) vec_item.emplace_back(item);\n'
+         '\t\t}\n'
+         '\t\t// The tables\' own chests obey the same zero: a chest window that is\n'
+         '\t\t// shut, or the switch off, means no Moonlight chest from anybody.\n'
+         '\t\tif (g_iMoonlightChestPermille <= 0 && g_iMoonlightChestStonePermille <= 0)\n'
+         '\t\t{\n'
+         '\t\t\tfor (size_t i = 0; i < vec_item.size();)\n'
+         '\t\t\t{\n'
+         '\t\t\t\tif (vec_item[i] && vec_item[i]->GetVnum() == 50011)\n'
+         '\t\t\t\t{\n'
+         '\t\t\t\t\tM2_DESTROY_ITEM(vec_item[i]);\n'
+         '\t\t\t\t\tvec_item.erase(vec_item.begin() + i);\n'
+         '\t\t\t\t}\n'
+         '\t\t\t\telse\n'
+         '\t\t\t\t\t++i;\n'
+         '\t\t\t}\n'
+         '\t\t}\n'
+         '\t}\n'
+         '\n'
+         '\t// A Dragon Coin voucher (Kupon SM 50, vnum 80017) from a Metin stone\n',
+         marker='The tables\' own chests obey the same zero')
 
     # ======================================================================
     # 0007 the chat reaches the bots: a shout, a whisper, a counter to read.

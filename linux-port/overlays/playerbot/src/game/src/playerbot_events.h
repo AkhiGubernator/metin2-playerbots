@@ -65,6 +65,11 @@ namespace {
 		return stone ? s_iPlayerBotChestStoneWantedPermille : s_iPlayerBotChestWantedPermille;
 	}
 
+	bool IsPlayerBotChestGateClosed()
+	{
+		return s_bPlayerBotChestGateClosed;
+	}
+
 	const char* GetPlayerBotEventsPath()
 	{
 		const char* override_path = getenv("PLAYERBOT_EVENTS_FILE");
@@ -252,8 +257,11 @@ namespace {
 		if (generation != s_dwPlayerBotEventsWeightsGeneration)
 		{
 			s_dwPlayerBotEventsWeightsGeneration = generation;
-			s_iPlayerBotChestWantedPermille = g_iMoonlightChestPermille;
-			s_iPlayerBotChestStoneWantedPermille = g_iMoonlightChestStonePermille;
+			// The sliders' figure as parsed (playerbot_config.h), never the
+			// engine's variable: the parse no longer writes that while this
+			// gate is shut, so reading it back here would capture the zero.
+			s_iPlayerBotChestWantedPermille = GetPlayerBotChestConfigPermille(false);
+			s_iPlayerBotChestStoneWantedPermille = GetPlayerBotChestConfigPermille(true);
 		}
 		if (closed != s_bPlayerBotChestGateClosed)
 		{

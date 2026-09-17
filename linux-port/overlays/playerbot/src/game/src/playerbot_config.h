@@ -172,6 +172,17 @@ namespace
 		return PLAYERBOT_WEIGHT_DEFAULT_PATH;
 	}
 
+	// playerbot_events.h: whether a scheduled chest window is holding the
+	// engine's chest figures at zero right now.
+	bool IsPlayerBotChestGateClosed();
+	// The sliders' figure (CONFIG's until a weights file names one), which is
+	// what the gate opens the drop to - never the engine's variable, which
+	// the gate itself may be holding at zero.
+	int GetPlayerBotChestConfigPermille(bool stone)
+	{
+		return stone ? s_iPlayerBotChestStoneConfigPermille : s_iPlayerBotChestConfigPermille;
+	}
+
 	void ResetPlayerBotWeights()
 	{
 		++s_dwPlayerBotWeightsGeneration;
@@ -193,8 +204,15 @@ namespace
 			s_iPlayerBotChestConfigPermille = g_iMoonlightChestPermille;
 			s_iPlayerBotChestStoneConfigPermille = g_iMoonlightChestStonePermille;
 		}
-		g_iMoonlightChestPermille = s_iPlayerBotChestConfigPermille;
-		g_iMoonlightChestStonePermille = s_iPlayerBotChestStoneConfigPermille;
+		// While a chest window holds the engine's figures shut
+		// (playerbot_events.h) the sliders' figure is kept here and the gate
+		// puts it back when the window opens; writing it now opened the drop
+		// for up to a second on every save of the weights file.
+		if (!IsPlayerBotChestGateClosed())
+		{
+			g_iMoonlightChestPermille = s_iPlayerBotChestConfigPermille;
+			g_iMoonlightChestStonePermille = s_iPlayerBotChestStoneConfigPermille;
+		}
 		s_bPlayerBotChestFromFile = false;
 		s_bPlayerBotWeightsInitialised = true;
 	}
@@ -309,12 +327,17 @@ namespace
 		if (PlayerBotWeightNameEquals(szKey, "CHEST") || PlayerBotWeightNameEquals(szKey, "CHEST_STONE"))
 		{
 			const int permille = value < 0 ? 0 : (value > 1000 ? 1000 : (int)value);
-			int& target = PlayerBotWeightNameEquals(szKey, "CHEST")
-					? g_iMoonlightChestPermille : g_iMoonlightChestStonePermille;
-			if (target != permille)
-				sys_log(0, "PLAYERBOT_CONFIG: moonlight chest %s %d -> %d permille",
-						PlayerBotWeightNameEquals(szKey, "CHEST") ? "kill" : "stone", target, permille);
-			target = permille;
+			const bool stone = !PlayerBotWeightNameEquals(szKey, "CHEST");
+			int& wanted = stone ? s_iPlayerBotChestStoneConfigPermille : s_iPlayerBotChestConfigPermille;
+			if (wanted != permille)
+				sys_log(0, "PLAYERBOT_CONFIG: moonlight chest %s %d -> %d permille%s",
+						stone ? "stone" : "kill", wanted, permille,
+						IsPlayerBotChestGateClosed() ? " (held shut until the chest window)" : "");
+			wanted = permille;
+			// The engine's variable only while no chest window holds it shut:
+			// the gate (playerbot_events.h) reads the figure kept above.
+			if (!IsPlayerBotChestGateClosed())
+				(stone ? g_iMoonlightChestStonePermille : g_iMoonlightChestPermille) = permille;
 			s_bPlayerBotChestFromFile = true;
 			return;
 		}

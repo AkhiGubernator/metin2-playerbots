@@ -35,6 +35,13 @@ dostaje teraz podpowiedź na czacie), a sam quest pierścienia loguje, że się
 uruchomił. Paczka diagnostyczna zbiera tag `QUEST_ITEM`. To pozwoli nazwać
 przyczynę z następnej paczki zamiast zgadywać.
 
+### Kopanie rud pieszo (Remigiusz)
+
+Bot kopał rudę siedząc na koniu (zrzut: TheBlady2 z kilofem na białym koniu
+przy Stercie Muszli) — silnik nie pyta o konia ani przy machnięciu, ani przy
+założeniu kilofa. Górnik schodzi teraz z konia przy żyle i odsyła go, jak
+wędkarz przy wodzie; wsiada z powrotem na drogę.
+
 ### Zioła Biologa ustępują otwartej próbie konia bojowego
 
 Bot z otwartą próbą konia (70+, koń na 10) szedł do pierwszej wioski po zioła

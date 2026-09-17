@@ -5230,6 +5230,15 @@ PLAYERBOT: autospawn requested=750 registered_started=511 in Chunjo
   never a password, a port or an address, whose example value is not what an
   existing install runs on.
 
+- **A tool in the hand is swung on foot, and the engine will not say so.**
+  `CHARACTER::mining()` asks nothing about a horse and `EquipItem` lets a
+  pickaxe on from the saddle, so a miner that rode to its vein dug from
+  horseback (Remigiusz, 17 September: a bot on a white horse with the
+  pickaxe at a Sterta Muszli). The session climbs down at the vein and sends
+  the horse away, as the fishing session does at the water; a session that
+  puts a tool in the hand wants the same line, and the rider note above
+  ("a rider reads, dresses, opens chests ...") lists the engine's refusals,
+  which is not the same list as what looks right.
 - **An open horse trial outranks the herb errand, not only the hunt row.**
   2.0.61 made `GetPlayerBotBiologistHuntMob` yield to a trial; the herb
   errand (`PlayerBotMayTakeHerbErrand`, the trickle to the first villages)

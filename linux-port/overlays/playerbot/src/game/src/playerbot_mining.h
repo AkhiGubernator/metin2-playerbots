@@ -526,6 +526,14 @@ namespace
 			return true;
 		}
 
+		// The swing is made on foot. mining() asks nothing about a horse and
+		// EquipItem lets a pickaxe on from the saddle, so a rider dug from
+		// horseback (Remigiusz's screenshot, 17 September: TheBlady2 at a
+		// Sterta Muszli on a white horse). As at the water: StopRiding leaves
+		// the horse standing beside the miner, so it is sent away and
+		// summoned again for the ride.
+		if (SetPlayerBotRidingForTravel(ch, state, false, dwNow, "mining"))
+			ch->HorseSummon(false);
 		ch->Stop();
 		std::map<DWORD, DWORD>::const_iterator swing = s_mapPlayerBotMiningSwingAt.find(pid);
 		if (swing != s_mapPlayerBotMiningSwingAt.end() && dwNow < swing->second)

@@ -17,6 +17,36 @@ every version here.
 
 ---
 
+## 2.2.25 — 2026-09-26
+
+Tylko serwer, klient zostaje 2.0.40. Rynek według odpowiedzi Iwakury na
+pytanie o zakup sprzętu z lad (Patch 4, pkt 2). Zawiera wszystko z 2.2.24.
+
+- Bot kupuje z lady sprzęt +6 lub wyżej, jeśli ma o jeden plus więcej niż
+  noszony (dotąd dwa), albo ten sam plus i sumarycznie lepsze bonusy według
+  tabeli tierów (o co najmniej 15%). Do dwóch plusów dochodził dotąd jeszcze
+  wymóg 15% lepszego wyniku, a obrona zbroi 34 lvl rośnie o ok. 7% na plus,
+  więc bot w zbroi +6 kupował dopiero +9. Perfekcjonista czekający z kowalem
+  na gotowy przedmiot z rynku stosuje tę samą regułę. Na naszym świecie
+  testowym boty kupiły z lad 30 sztuk sprzętu +6 i wyżej w półtorej godziny
+  po zmianie, wcześniej 6 w dwie godziny.
+- Zbroje i biżuterię +0..+3 wystawiają wszystkie boty, także poniżej 30 lvl.
+  Dotąd na ladę trafiały tylko od 30 lvl i tylko u zbieraczy złomu, a resztę
+  kupował handlarz. Bot trzyma dla lady najwyżej trzy takie przedmioty i
+  wystawia je przed zwykłymi materiałami (za materiałami, których brakuje
+  botom). Przedmioty na 1 lvl (drewniana biżuteria, startowe zbroje) dalej
+  idą do handlarza. Na świecie testowym w pół godziny liczba zbroi +0..+3 na
+  ladach botów wzrosła z 40 do 330, a linii biżuterii +0..+3 z 42 do 150.
+- Limit zbroi +0..+4 jednej rodziny na wszystkich ladach botów to teraz 40
+  (było 20). Biżuteria +0..+3 ma taki sam limit.
+- Hazardzista między sesjami kupuje z lady bazę do ulepszania bez względu
+  na jej plus, gdy w torbie i magazynie ma mniej niż trzy przedmioty. Bierze
+  najtańszą, najwyżej za dwukrotność ceny z cennika. Dotąd z lad kupował
+  tylko Nałogowiec, bo sesja Hazardzisty to wizyta w mieście, a w trakcie
+  wizyty bot nie przegląda sklepów.
+
+---
+
 ## 2.2.24 — 2026-09-26
 
 Tylko serwer, klient zostaje 2.0.40. Poprawki z audytu wdrożenia

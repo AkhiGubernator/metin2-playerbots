@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-26T20:57:22Z",
-  "statusMessage": "2.2.25 (tylko serwer, klient zostaje 2.0.40): rynek wedlug odpowiedzi Iwakury - boty kupuja sprzet o plus lepszy od noszonego albo z lepszymi bonusami, zbroje i bizuteria +0..+3 na ladach, limit 40 zbroi jednej rodziny, Hazardzista kupuje bazy z lad. Zawiera wszystko z 2.2.24.",
+  "publishedAt": "2026-09-26T23:48:11Z",
+  "statusMessage": "2.2.26 (serwer i klient 2.0.41 - zaktualizuj oba): Auto Lowy (8h) i dwa pierscienie w ItemShopie, wybor dostepu do Autolowow w POZIOMIE TRUDNOSCI i w panelu, wojny gildii 20 na 20 z miksturami, Towarzysz zaklada ekwipunek, boty czytaja ksiegi, regula zwojow i bonusy wedlug Iwakury, wedka od 30 lvl w kliencie. Zawiera wszystko z 2.2.25.",
   "server": {
-    "version": "2.2.25",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.25/metin2-server-update-2.2.25.zip",
-    "sha256": "5EEADAFEFC8FFE9679744397C5F335DDD337BDF8199CE3C64AE7DB8A721D0856"
+    "version": "2.2.26",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.26/metin2-server-update-2.2.26.zip",
+    "sha256": "FDACDA6E11A573CDAC5ABF41D78EBEB64DD5E7F8980D04FAB3342F588591D9EA"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.40",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.23/metin2-client-update-2.0.40.zip",
-    "sha256": "CCE9AE13EF99E6D7D433C59B0540F3969D00D8FF4451F65064550BB958A32C96"
+    "version": "2.0.41",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.26/metin2-client-update-2.0.41.zip",
+    "sha256": "41507CCB8BA439D045718BE138A53B99347FD3B819C19C1CD0B01F9C4CFE8D96"
   }
 }

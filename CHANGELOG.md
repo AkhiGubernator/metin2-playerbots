@@ -17,6 +17,159 @@ every version here.
 
 ---
 
+## 2.2.26 — 2026-09-27
+
+Serwer 2.2.26 i klient 2.0.41: zaktualizuj oba. Nowe przedmioty w ItemShopie,
+wojny gildii, Towarzysz, księgi, bonusy i ulepszanie według Iwakury oraz
+poprawki ze zgłoszeń z Discorda. Wędka w kliencie, filtr podnoszenia Auto
+Łowów i komunikat o bilecie działają dopiero z nowym klientem. Zawiera
+wszystko z 2.2.25.
+
+### ItemShop: Auto Łowy na godziny gry i dwa pierścienie
+
+- W ItemShopie są trzy nowe pozycje: „Auto Łowy (8h)” (29 Smoczych Monet),
+  „Pierścień Anty-Exp” (99) i „Pierścień Teleportacji” (149, od 30 lvl).
+  Oba pierścienie działają bez limitu czasu i nie zużywają się. Pierścień
+  Anty-Exp włącza i wyłącza blokadę doświadczenia przy każdym użyciu.
+- „Auto Łowy (8h)” to bilet, którego używa się z ekwipunku. Każdy daje 8 godzin
+  Auto Łowów, a czas leci tylko wtedy, gdy postać jest w grze: po wylogowaniu
+  stoi, po śmierci zostaje. Kolejne bilety się sumują, najwyżej do 30 dni.
+  Biletu nie da się sprzedać, wymienić, wyrzucić ani wystawić w sklepie.
+- Nowa opcja w oknie POZIOM TRUDNOŚCI w launcherze i w panelu klasycznym
+  (Mnożniki serwera): „Panel Autołowy dostępny dla każdego” (domyślnie, jak
+  dotąd) albo „Panel Autołowy dostępny tylko po kupnie przedmiotu z
+  ItemShop”. Przy drugiej postać bez czasu z biletu nie uruchomi Auto Łowów.
+  Klient 2.0.41 napisze wtedy na czacie, że trzeba kupić bilet. Zmiana z
+  panelu działa od razu, gdy ktoś jest w grze, i zostaje po restarcie, dopóki
+  nie zmienisz jej w launcherze.
+- Boty tych przedmiotów nie kupują.
+
+### Wojny gildii
+
+- Boty piją mikstury na wojnie: w walce poniżej 85% HP i 50% many, w obozie
+  uzupełniają do 95% i 90%, włączają też eliksiry. Dotąd piły dopiero poniżej
+  65%, jak na polowaniu, i bez eliksirów.
+- Bot, który zginie, wstaje w obozie z pełnym HP i maną (dotąd z 50 HP).
+  Kolejna runda zaczyna się, gdy wstanie ostatni z przegranych, a nie
+  pierwszy. Koniec z rundami po trzy sekundy, w których połowa botów miała
+  po kilka punktów życia.
+- Strony są równe: każda gildia wystawia tyle botów, ile ma mniejsza z nich,
+  najwyżej 20, wylosowanych z całego składu. W następnej wojnie losuje się
+  inna dwudziestka, a bot, który odpadnie, zostaje zastąpiony następnym z
+  losowania. Dotąd silna gildia wystawiała 40 botów na 24 z elitarnej i
+  wygrywała prawie zawsze. Przeciw gildii gracza boty mają tylko górny limit.
+- Długość wojny (30 minut) i przerwa między wojnami (90 minut) na razie się
+  nie zmieniają.
+
+### Towarzysz
+
+- Towarzysz zakłada przedmioty od właściciela. Szamanka, która tylko rzuca
+  czary, odpowiadała na każdy przedmiot „Założy to, jak tylko skończy cios”
+  i stała, bo serwer źle odczytywał czas jej ostatniego ciosu. Przedmiot
+  zamienia się teraz w miejscu, więc pełna torba Towarzysza już nie
+  przeszkadza. Jeśli nie może go założyć, Towarzysz mówi prawdziwy powód.
+- Lurowanie obejmuje potwory do 15 poziomów powyżej właściciela (było 5). Na
+  pustyni Łucznik Towarzysz właściciela na 38 lvl lurował dotąd tylko 21%
+  potworów i „zaczynał” dopiero po awansie.
+- Łucznik Towarzysz strzela z dystansu: podchodzi tylko na skraj zasięgu łuku
+  i nie krąży już wokół potworów.
+
+### Księgi umiejętności
+
+- Boty z blokadą poziomu znów czytają księgi. Czytanie kosztuje 20 000 exp,
+  a bot z blokadą ma pusty pasek, więc silnik odmawiał za każdym razem. Na
+  naszym świecie testowym blokadę miało 852 z 1725 botów od 20 lvl, a próba
+  czytania stawała na braku exp ok. 2600 razy na minutę. W pół godziny po
+  poprawce boty przeczytały 732 księgi (207 udanych nauk), a na brak exp
+  natrafiły 51 razy.
+- Boty kupują księgi tylko do umiejętności na poziomie Mistrza (M1 i wyżej),
+  bo tylko takie można nimi szkolić. Dotąd kupowały też do niższych: 754 z
+  1908 kupionych ksiąg leżało w torbach bez możliwości przeczytania.
+- Księgi Umiejętności, Księgi Zapomnienia i Kamienie Duchowe łączą się po 200
+  sztuk (było 10). Boty też łączą je po 200.
+
+### Ulepszanie i bonusy według Iwakury
+
+- Reguła zwojów: bot, który ma co najmniej 3 Zwoje Błogosławieństwa, a broń na
+  30 lvl lub wyżej poniżej +7, ulepsza ją pod zwojem. Brakujące ulepszacze
+  kupuje na rynku swojej mapy, a jeśli są tylko w pierwszej wiosce, jedzie
+  tam po nie. Dotąd takie bronie szły prawie zawsze na zwykłe kowadło: na
+  naszym świecie testowym w sześć godzin 2380 razy (496 spalonych) i tylko 21
+  razy pod zwojem.
+- Bonusy: gdy naszyjnik, bransoleta i buty mają już bonusy z kamieni, bot
+  nakłada kamienie dodania i zmiany na broń, na zbroję (od zbroi 18 lvl +7),
+  na kolczyki, a potem na hełm i tarczę. Bot poniżej 30 lvl może wtedy użyć
+  zwykłych kamieni, nie tylko zielonych. Dotąd 327 z 346 botów, które miały
+  kamienie, nie miało przedmiotu, na który wolno było je nałożyć. W pół
+  godziny po zmianie boty dodały 64 bonusy, 54 z nich na zbroi.
+- Biżuteria z czterema bonusami nie idzie już na zwykłe kowadło, tylko pod
+  zwój (naszyjnik +1000 HP ginął na drodze do +9).
+- Pył Alchemika: boty od 30 lvl odkładają go do setki potrzebnej na Marmur
+  Błogosławieństwa, zamiast wystawiać na ladę. Dotąd robił to tylko bot z
+  przedmiotem z czterema bonusami: na świecie testowym 2 boty na 544 miały 100
+  pyłu, a marmur powstał raz w dwie doby.
+- Hazardzista zaczyna sesję także wtedy, gdy bazy leżą w magazynie (bierze je
+  u magazyniera). Przed kowalem kupuje na rynku ulepszacze, których jego
+  przedmiotom brakuje do +7: najtańsze najpierw, każdą linię najwyżej za
+  połowę tego, co zostało z budżetu sesji, do 8 linii i 4 minut. Potem
+  ulepsza tyle przedmiotów, na ile pozwala budżet, a ulepszone wystawia na
+  rynek. Nad głową pokazuje „Kupuje ulepszacze na rynku”. Na świecie testowym
+  w 37 minut: 51 wyjść po materiały, 50 dostarczonych linii i 100 prób u
+  kowala w 22 sesjach.
+- Ceny Iwakury z 26 września: Zwój Błogosławieństwa 375 000, Marmury Polimorfii
+  113 750–148 750 (losowo) z nowymi wyjątkami, wędki od +0 (15 000) do +19
+  (10 000 000). Lady przeceniają się same.
+
+### Rynek i magazyn (audyt Iwakury)
+
+- Ulepszacze wydawane z magazynu na ladę wypełniają torbę najwyżej do 60%.
+  Dotąd do 80%, więc przy następnej wizycie wracały do magazynu: 84% z 1615
+  takich wydań w dobę, 884 nigdy nie trafiły na ladę.
+- Bot, który zszedł z M3 do kowala, nie wraca do Teleportera, dopóki nie
+  ulepszy przedmiotu (najwyżej 15 minut). Dotąd 304 z 399 takich botów
+  wracały na M3 w ciągu trzech minut, bez kowala.
+- Wznawiane stoisko offline liczy swoje przedmioty do limitów lad (księgi
+  misji, broń na złom, słabe zbroje). Dotąd limit nie widział stoisk, którym
+  skończył się czas: w wioskach stało 559–606 ksiąg misji przy limicie 30.
+
+### Tanaka
+
+- Boty zbierają yang i ucho z Pirata Tanaki. Silnik odrzucał co drugie
+  podniesienie, a zwycięzca schodził z wydarzenia, zanim zebrał łup. Teraz
+  zostaje, dopóki coś leży (najwyżej 45 sekund), a członkowie jego grupy, w
+  tym Towarzysz, zostawiają mu jego yang. Pełna torba nie blokuje yangów.
+
+### Klient 2.0.41
+
+- Wędka pokazuje wymagany 30 poziom (była 50, choć założyć ją można od 30).
+- Auto Łowy: filtr podnoszenia ma osobno hełmy, tarcze, bransolety, buty,
+  naszyjniki i kolczyki. Ustawienia z 2.0.40 przenoszą się same. Serwer
+  sprzed 2.2.26 dostaje od nowego klienta to samo, co od starego.
+- Auto Łowy mówią, że skończył się czas z biletu, a bilet i Pierścień
+  Anty-Exp mają własne nazwy i opisy.
+
+### Launcher, panele i serwer
+
+- Launcher na linii 2.x nie nadpisuje już questa panelu (web_admin) starszą
+  wersją z linii 1.x. Przez to na Windowsie zmiany szybkości i liczby
+  respawnów oraz poziomu trudności z panelu działały dopiero po restarcie.
+  Po tej aktualizacji działają od razu.
+- Szkatułki Blasku Księżyca: własna edycja pliku dropu przetrwa teraz GRAJ i
+  aktualizacje. Launcher przy każdym starcie i aktualizacji nadpisywał plik w
+  kontekście budowania kopią z pełnej paczki (16.09), a na linii 2.x już tego
+  nie robi. Trwałą edycję zapisuje się do
+  `linux-port\docker\game\special_item_group.moonlight.custom.txt` (sama grupa
+  `Vnum 50011`), a potem przebudowuje grę. Serwer użyje jej zamiast naszej.
+- Zegar rdzenia po 49,7 dnia bez restartu: odliczanie podróży botów i koniec
+  pojedynku liczą się poprawnie po przekręceniu licznika. Dotąd bot mógł
+  przestać wyjeżdżać z wioski albo przerwać pojedynek w chwili jego przyjęcia.
+  Błąd znaleźliśmy fuzzingiem.
+- Panel zaawansowany (Seban) w wersji 1.92.0 z jego repozytorium na GitHubie.
+  Nasze ograniczenia dla linii 2.x zostają. Paczka aktualizacji jest przez to
+  większa (kreator postaci ma animacje).
+
+---
+
 ## 2.2.25 — 2026-09-26
 
 Tylko serwer, klient zostaje 2.0.40. Rynek według odpowiedzi Iwakury na

@@ -17,6 +17,145 @@ every version here.
 
 ---
 
+## 2.2.30 — 2026-09-27
+
+Serwer 2.2.30 i klient 2.0.44: zaktualizuj oba. Wieża Demonów: boty po
+śmierci wracają do drużyny, nie stoją przy mobach z Metina, boty wszystkich
+królestw wchodzą razem bez walki między sobą, mistrz gildii może wejść bez
+gildii, a każdy gracz solo. Towarzysz może grać dalej, gdy wyjdziesz z gry,
+okno sklepu offline pokazuje pełny nick właściciela, a przyciski przy
+ekwipunku są większe. Do tego boty podnoszą książki z metinów bitych przez
+wiele postaci, Auto Łowy zbierają drop po walce, a napis z szansą w oknie
+ulepszania nie zasłania ulepszaczy. Zawiera wszystko z 2.2.29.
+
+### Wieża Demonów: powrót do drużyny po śmierci (zgłosił prodnathin)
+
+- Bot, który padnie na piętrze, wstaje niewidzialny i idzie do reszty
+  drużyny, a gdy nikt nie stoi, na punkt startowy piętra. Po drodze się
+  leczy i pije mikstury, a walczy dopiero przy drużynie. Dotąd odchodził
+  tysiąc jednostek w przypadkową stronę i ściągał na siebie kolejne grupy,
+  najbardziej na 8. piętrze, gdzie grupy odnawiają się co minutę.
+- To samo robi bot, który przy 20% życia wycofuje się z walki.
+- W Wieży boty piją mikstury wcześniej, jak na wojnie gildii: czerwone
+  poniżej 85% życia, niebieskie poniżej 50% many. Włączają też eliksiry i
+  wzmacniacze.
+
+### Wieża Demonów: bez przestojów przy mobach z Metina (zgłosił prodnathin)
+
+- Bot, który zostawiał kamień, żeby bić potwory obok, dostawał okno
+  zbierania łupu jak po zbiciu Metina i przez chwilę biegł po drop albo
+  stał. W Wieży nie ma już biegu po łup z Metina, a drop boty zbierają
+  między walkami.
+- Lista potworów na piętrze odświeża się co 0,4 s zamiast co 1,5 s i pomija
+  martwe, więc bot nie dostaje za cel trupa, którego przed chwilą zabił.
+- Przy Metinie Mordu każdy bot bierze jednego z kilku potworów najbliżej
+  siebie, mniej więcej dwa boty na potwora, zamiast wszystkie tego samego.
+
+### Wieża Demonów: wszystkie królestwa, bez walki między botami
+
+- Boty z innych królestw znów wchodzą do Wieży razem z rajdem. Od 2.2.21
+  były z niej wyrzucane, więc rajdy były o połowę mniejsze i nie
+  przechodziły 8. piętra.
+- Dwa boty nie mogą się ranić na mapach Wieży, na parterze i na piętrach,
+  także ciosami obszarowymi, i nie biorą się nawzajem na cel. Gracze walczą
+  jak dotąd.
+
+### Wieża Demonów: wejście bez gildii i solo (zaproponował Remigiusz)
+
+- Strażnik Wieży pyta mistrza gildii: „Wejdz z gildia” albo „Wejdz bez
+  gildii”. Bez gildii boty z jego gildii nie są wzywane na parter, a te,
+  które już tam stały, wracają do siebie. Parter zostaje wspólny: kto stoi
+  na nim, gdy pada kamień, wchodzi razem z graczem, jak dotąd.
+- Każdy gracz może też wybrać „Wejdz solo (tylko ty)”: własną Wieżę, w
+  której jest tylko on. Zaczyna od razu na pierwszym piętrze, bez parteru i
+  bez Metina Twardości; boty ani inni gracze tam nie wejdą. Limit wejść
+  liczy się jak przy zwykłym wejściu.
+
+### Boty podnoszą książki z metinów bitych przez wiele postaci (zgłosił sosen)
+
+- Łup z metina serwer dzieli między wszystkich, którzy zadali mu co
+  najmniej 10% obrażeń, i przez pierwsze 30 sekund tylko właściciel może
+  podnieść swoją część. Okno na zebranie łupu dostawał dotąd tylko bot,
+  który celował w kamień. Czwarty i kolejny bot bił potwory obok, trafiał
+  kamień ciosami obszarowymi i dostawał swoją część, często książkę, ale
+  bił dalej, a po 30 sekundach książkę brał ktoś inny.
+- Teraz każdy bot, który trafił kamień, po jego zniszczeniu idzie po swój
+  łup przed innymi zajęciami, a wizyta w sklepie offline czeka, aż skończy.
+- Na naszym świecie testowym książek podniesionych dopiero po 30 sekundach
+  było 5,2% (30 z 574) przed zmianą i 1,5% (6 z 405) w trzech godzinach po
+  niej.
+
+### Auto Łowy: zbieranie po walce (Colide, zgłosił teivos)
+
+- Postać najpierw bije cel albo grupkę, a gdy wszystko padnie, zbiera cały
+  drop i dopiero potem bierze następny cel. Dotąd ninja potrafiła zostawiać
+  przedmioty.
+- Przedmiot, którego nie da się podnieść, na przykład przy pełnym
+  ekwipunku, postać próbuje wziąć trzy razy, a potem pomija go na 30 sekund
+  i wraca do walki.
+- Łucznik zaczyna strzelać w chwili zaznaczenia celu, a umiejętności
+  obszarowe (Deszcz Strzał, Ryk Smoka i podobne) idą tylko przy żywym celu,
+  więc postać nie zawiesza się między grupkami. Wzmocnienia gildii idą jak
+  dotąd także między walkami.
+- Cel, którego klient jeszcze nie pokazał, nie jest od razu porzucany, a
+  po zwykłym wzmocnieniu (buff, ukrycie ninji) postać nie stoi już 1,3
+  sekundy.
+- Działa od klienta 2.0.44.
+
+### Towarzysz może grać, gdy Cię nie ma (zaproponował Burdavsky)
+
+- W oknie Towarzysza (klawisz P) jest nowy przełącznik „Gra beze mnie”.
+  Domyślnie jest wyłączony: Towarzysz wychodzi z gry razem z Tobą, jak
+  dotąd.
+- Włączony: kiedy wyjdziesz z gry, Towarzysz zostaje i gra dalej jak
+  zwykły bot. Zdobywa doświadczenie najwyżej do Twojego poziomu +30 (to
+  granica różnicy poziomów w drużynie), więc zawsze możecie znowu expić
+  razem.
+- Kiedy wrócisz do gry, Towarzysz kończy to, co robił, i staje przy Tobie.
+  Po restarcie serwera wraca do gry razem z Tobą.
+- To samo polecenie w czacie: /towarzysz sam 1 (włącz) albo /towarzysz sam
+  0 (wyłącz).
+- Przełącznik w oknie działa od klienta 2.0.44.
+
+### Pełny nick właściciela w oknie sklepu offline (zgłosił Mkls)
+
+- Okno sklepu offline pokazywało nick właściciela ucięty do 14 znaków
+  („Sklep Gracza ZepsutaSpacjaP” zamiast „ZepsutaSpacjaPL”), a przycisk
+  szeptu z tego okna pisał do nieistniejącej postaci. Dotyczyło to mniej
+  więcej co ósmego bota.
+- Teraz okno pokazuje pełny nick i szepcze do właściwej postaci (od klienta
+  2.0.44). Pełny nick widać też w wynikach wyszukiwarki przedmiotów, od razu
+  po aktualizacji serwera.
+
+### Większe przyciski przy ekwipunku (zgłosił Tyrion)
+
+- Przyciski juków konnych, depozytu i sklepu pod wyposażeniem oraz przycisk
+  podglądu skrzynki są większe: 21 zamiast 15 pikseli, tyle co przycisk
+  sortowania. Przycisk podglądu skrzynki stoi teraz nad pozostałymi.
+- Działa od klienta 2.0.44.
+
+### Towarzysz pojawia się po przywołaniu (zgłosił bruce_willis)
+
+- Towarzysz zapisany na mapie, którą obsługuje inna część serwera niż ta,
+  na której stoi właściciel (na przykład w wiosce Jinno, gdy właściciel
+  poluje na pustyni), nie mógł wejść do gry, a serwer próbował co 10 sekund
+  bez końca. Teraz taki Towarzysz pojawia się od razu obok właściciela.
+
+### Paczka logów z trzech ostatnich dni
+
+- Paczka diagnostyczna z launchera zawiera dzienniki launchera z trzech
+  ostatnich dni i listę wolumenów Dockera z datą utworzenia. Dotąd brała
+  pięć najnowszych plików, więc dziennik z poprzedniego dnia potrafił z niej
+  wypaść.
+
+### Szansa na ulepszenie nie zasłania ulepszaczy (zgłosił Piciu713)
+
+- Okno ulepszania jest o linijkę wyższe, gdy pokazuje szansę, więc napis
+  nie nachodzi już na ostatni ulepszacz.
+- Działa od klienta 2.0.44.
+
+---
+
 ## 2.2.29 — 2026-09-27
 
 Serwer 2.2.29 i klient 2.0.43: zaktualizuj oba. Pełne nicki botów w oknie

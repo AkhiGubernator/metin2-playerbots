@@ -17,6 +17,90 @@ every version here.
 
 ---
 
+## 2.2.27 — 2026-09-27
+
+Serwer 2.2.27 i klient 2.0.42: zaktualizuj oba. Naprawa pomieszanego
+ekwipunku u graczy ze starym plikiem gry, boty bijące metiny razem z
+potworami wokół, konie dla wszystkich botów, wymiana yang z Towarzyszem i
+czat z botami. Przyciski yang w oknie Towarzysza i ostrzeżenie o starym
+pliku gry działają dopiero z nowym klientem. Zawiera wszystko z 2.2.26.
+
+### Pomieszany ekwipunek po aktualizacji (zgłosili 601210 i kordianq1112)
+
+- Objawy: strony III i IV ekwipunku klikają się, ale są puste, sprzedaż u
+  NPC nic nie robi, przedmiot założony prawym klikiem znika, w oknie
+  ekwipunku widać miecze w miejscu hełmu, a czasem nie da się wylogować ani
+  zmienić kanału.
+- Przyczyna: stary plik gry `metin2client.exe` z dawnej pełnej paczki (np.
+  2.0.71 z klientem 2.0.13), który zna tylko dwie strony ekwipunku.
+  Aktualizacje klienta od 2.0.35 nie przynoszą pliku exe (fałszywy alarm
+  Windows Defendera), więc stary plik zostawał na dysku mimo wszystkich
+  aktualizacji. Przedmioty są całe na serwerze: po podmianie pliku wszystko
+  jest na swoim miejscu, a te „zniknięte” są założone.
+- Launcher sam podmienia stary `metin2client.exe` na aktualny: po
+  aktualizacji klienta, przy starcie i przed uruchomieniem gry. Podmienia
+  tylko znane stare wersje, a poprzednią zostawia w `Serwer\backups\client`.
+  Jeśli antywirus nie pozwoli zapisać pliku, launcher napisze w dzienniku, co
+  zrobić (wykluczenie folderu klienta w Zabezpieczeniach Windows).
+- Launcher usuwa z folderu klienta dwa zbędne pliki z dawnych pełnych paczek:
+  `metin2client-2.0.13.exe` i `metin2client-claude.exe`. Jeśli uruchamiał
+  któryś z nich, od teraz uruchamia `metin2client.exe`.
+- Klient 2.0.42 ze starym plikiem exe nie wejdzie do gry: przy logowaniu
+  pokaże, co zrobić, zamiast wpuszczać z pomieszanym ekwipunkiem.
+- Ręcznie: wystarczy wziąć sam `metin2client.exe` z paczki klienta 2.0.34
+  (wydanie v2.2.16 na GitHubie) albo z pełnej paczki gry i wrzucić go do
+  folderu `Klient`.
+
+### Boty biją metiny razem z potworami wokół (zgłosił Iwakura)
+
+- Umiejętności botów trafiają tyle celów, ile trafiłby gracz: Trójstronne
+  cięcie i Wirujący Sztylet po trzy razy każdy cel w zasięgu, Wir Miecza do
+  12 potworów naraz, pozostałe umiejętności walki wręcz potwory przed botem.
+  Dotąd każda umiejętność bota trafiała tylko cel, w który mierzył, więc przy
+  metinie otoczonym potworami bot bił sam kamień.
+- Przy metinie boty używają umiejętności obszarowych, gdy w ich zasięgu stoją
+  co najmniej dwa potwory. Dotąd nie używały ich przy kamieniu nigdy.
+- Zwykły cios trafia do 10 potworów przed botem (było 4).
+- Na świecie testowym w pierwszym kwadransie Trójstronne cięcie trafiło
+  więcej niż jeden cel w 92% użyć, Wir Miecza do 12, a przy metinach boty
+  użyły umiejętności obszarowych 1177 razy.
+
+### Wszystkie boty rozwijają konie (zgłosił Urtopy)
+
+- Boty o charakterze Grindera nie zatrzymują się już na pierwszym koniu i nie
+  sprzedają medali: każdy bot zbiera medale, oddaje je Stajennemu i podchodzi
+  do prób konia bojowego i wojskowego. Dropperzy nadal nie biorą udziału w
+  próbach.
+- W pierwszych 16 minutach po zmianie 43 boty wyszły poza konia pierwszego
+  poziomu, a do stajni trafiło 195 medali.
+
+### Wymiana yang z Towarzyszem (pomysł Hioba)
+
+- W oknie ekwipunku Towarzysza obok jego yang są przyciski „Daj” i „Weź”.
+  Otwierają okno kwoty, a yang przechodzi w obie strony. Yang można też
+  przeciągnąć z ekwipunku na okno Towarzysza.
+- Nie da się dać więcej, niż się ma, ani przekroczyć limitu yang u siebie
+  albo u Towarzysza. Każda wymiana trafia do logów serwera.
+
+### Czat z botami: ulepszacze z „+” i nazwy broni graczy (zgłosili Bloody Reapers i Hiob)
+
+- Bot odróżnia ulepszacz z „+” w nazwie (np. Biała Wstęga+) od zwykłego:
+  pytanie o „Białą Wstęgę +” albo „z plusem” nie dostaje już oferty zwykłej.
+  „+9” przy broni nadal znaczy poziom ulepszenia.
+- Boty rozumieją nazwy, których używają gracze: rib (broń dwuręczna na 30
+  lvl), fms, hms, jelonek (łuk na 30 lvl), koziki (sztylety na 30 lvl) i
+  półtorak, także odmienione („riba”, „jelonkiem”). Rozpoznają też skrócone
+  nazwy przedmiotów z gry, np. „Ostrze Z Czerw. Stali”. Dotąd zamiast riba
+  bot potrafił zaproponować zwój misji.
+
+### Klient 2.0.42
+
+- Przyciski wymiany yang w oknie ekwipunku Towarzysza.
+- Ostrzeżenie przy logowaniu, gdy plik `metin2client.exe` jest starszy niż
+  reszta klienta.
+
+---
+
 ## 2.2.26 — 2026-09-27
 
 Serwer 2.2.26 i klient 2.0.41: zaktualizuj oba. Nowe przedmioty w ItemShopie,

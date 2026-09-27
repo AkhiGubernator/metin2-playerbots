@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-27T10:47:27Z",
-  "statusMessage": "2.2.28 (tylko serwer, klient zostaje 2.0.42): Zuo i Pirat Tanaka na kilku mapach naraz, a na mapy krolestwa przychodza tylko jego boty; boty zostawiaja sobie bron z lepszymi bonusami i ulepszaja ja; przedmioty w szeptach botow jako podglad (Alt+klik); launcher usuwa stare pliki gry przy kazdym starcie. Zawiera wszystko z 2.2.27.",
+  "publishedAt": "2026-09-27T12:19:59Z",
+  "statusMessage": "2.2.29 (serwer i klient 2.0.43 - zaktualizuj oba): pelne nicki botow w oknie szeptu, szansa na ulepszenie w oknie kowala, Auto Lowy dochodza do dalekich celow i przedmiotow. Zawiera wszystko z 2.2.28.",
   "server": {
-    "version": "2.2.28",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.28/metin2-server-update-2.2.28.zip",
-    "sha256": "A74C13F6E85E14F186F3E40F249C4BE069BA34E9F785062717D9B64099684985"
+    "version": "2.2.29",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.29/metin2-server-update-2.2.29.zip",
+    "sha256": "75CDB878F225629D35A0F3089CB317D069C84A0398ED70B1B433B366E00D72BC"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.42",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2-client-update-2.0.42.zip",
-    "sha256": "6222608E6AEDEEC048F6892C3E00F79B340C5AA5F31B63E8EE08F6B6D11CC51E"
+    "version": "2.0.43",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.29/metin2-client-update-2.0.43.zip",
+    "sha256": "ADA879755BB06A1807867CEBE7D4BBE48B940C7B3DC148E86F01AD7DCB8B0689"
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

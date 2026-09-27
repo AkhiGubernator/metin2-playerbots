@@ -17,6 +17,48 @@ every version here.
 
 ---
 
+## 2.2.29 — 2026-09-27
+
+Serwer 2.2.29 i klient 2.0.43: zaktualizuj oba. Pełne nicki botów w oknie
+szeptu, szansa na ulepszenie w oknie kowala i Auto Łowy, które dochodzą do
+dalekich celów i przedmiotów. Zawiera wszystko z 2.2.28.
+
+### Pełne nicki w oknie szeptu (zgłosił Mkls)
+
+- Okno szeptu otwierane Shift+Enter przyjmuje nick do 24 znaków. Dotąd
+  przyjmowało 14, tyle ile wolno wpisać przy tworzeniu nowej postaci. Boty
+  mają nicki do 22 znaków, więc do co ósmej postaci dało się napisać tylko
+  po kliknięciu w nią.
+- Działa od klienta 2.0.43.
+
+### Szansa na ulepszenie w oknie kowala (zgłosił Piciu713)
+
+- Okno ulepszania pokazuje „Szansa na Ulepszenie” z tą samą szansą, z którą
+  serwer losuje: szansą z przepisu, 100% przy Zwoju Wojny i Gwarancji
+  Rzemiosła, 10 punktów więcej przy Zwoju Boga Smoków, 15 więcej przy
+  Podręczniku Kowala i 10 więcej u kowala gildii.
+- Dotąd serwer z paczki wysyłał w tym miejscu zawsze 0, a klient chował tę
+  linijkę. Stąd 0% po jej ręcznym włączeniu.
+- Szansę widać z serwerem 2.2.29 i klientem 2.0.43. Klient 2.0.42 działa z
+  nowym serwerem jak dotąd, bez tej linijki.
+- Przy ulepszeniu ze 100% szansą okno nie pyta już o zniszczenie
+  przedmiotu, bo takie ulepszenie zawsze się udaje.
+
+### Auto Łowy: dalekie cele i przedmioty (zgłosił teivos)
+
+- Postać idzie do celu i do przedmiotu, dopóki się do nich zbliża. Dotąd
+  rezygnowała z celu po 8 sekundach od pierwszego kroku, a z przedmiotu po
+  6, więc przy zasięgu 5000 łucznik stał zamiast dojść do potworów na
+  skraju i zostawiał dalekie przedmioty.
+- Przedmiot, od którego oderwała postać walka, podnosi po walce.
+- Przy wyłączonym „Wracaj” postać po rezygnacji z celu nie wraca już na
+  miejsce startu.
+- W angielskim kliencie umiejętność łucznika nr 47 nie strzela już sama w
+  potwora pod kursorem, z dowolnej odległości.
+- Działa od klienta 2.0.43.
+
+---
+
 ## 2.2.28 — 2026-09-27
 
 Tylko serwer, klient zostaje 2.0.42. Kilka eventów Zuo i Pirata Tanaki

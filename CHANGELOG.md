@@ -17,6 +17,67 @@ every version here.
 
 ---
 
+## 2.2.28 — 2026-09-27
+
+Tylko serwer, klient zostaje 2.0.42. Kilka eventów Zuo i Pirata Tanaki
+naraz, boty zostawiają sobie broń z lepszymi bonusami, przedmioty w
+szeptach botów jako podgląd i sprzątanie starych plików gry przy starcie
+launchera. Zawiera wszystko z 2.2.27.
+
+### Zuo i Pirat Tanaka na kilku mapach naraz (zgłosił Derpsonkowy95)
+
+- Event uruchomiony na kolejnej mapie nie kończy już poprzedniego. Każda
+  mapa ma swój event, który zaczyna się, trwa i kończy niezależnie od
+  pozostałych. Dotąd Zuo w Bakra ustawione na 19:00 kończyło się, gdy o
+  19:02 ktoś uruchomił Zuo w Bokjung, a metiny spadały już tylko w Bokjung.
+- Na mapy królestwa (obie wioski, mapę gildii i łatwy Loch Małp) przychodzą
+  tylko boty tego królestwa. Na wspólne mapy świata nadal przychodzą boty
+  wszystkich trzech. Dotąd na Zuo w Bokjung schodziły się też boty z Jinno i
+  Shinsoo.
+- W obu panelach lista trwających eventów pokazuje mapy i każdy event można
+  zatrzymać osobno. Komunikaty na czacie podają nazwę mapy.
+- Na świecie testowym Zuo w Bakra i Zuo w Bokjung uruchomione minutę po
+  sobie trwały obok siebie do własnego końca: po trzy fale i dwóch bossów,
+  po 24 zniszczone metiny na każdej mapie. Do Bakra przyszło 19 botów, same
+  z Jinno, do Bokjung 18, same z Chunjo.
+
+### Boty zostawiają sobie broń z lepszymi bonusami (zgłosił sosen)
+
+- Bot, który zdobędzie broń swojej klasy z lepszymi bonusami niż broń w
+  ręce, ale z niższym plusem, zostawia ją, ulepsza u kowala co najmniej do
+  plusa broni w ręce i zakłada, gdy bije mocniej. Dotąd zwykła broń z
+  lepszymi bonusami szła do handlarza (do +3) albo na stragan (od +4), a
+  broń na 30 poziom (np. FMS) przegrywała z bronią +8 czy +9 w ręce i
+  część botów wystawiała ją na stragan.
+- Broń na 30 poziom nigdy nie trafiała i nie trafia do handlarza.
+- Która broń jest lepsza, liczy model obrażeń bota. Dla bota na
+  umiejętnościach broń z wyższą średnią, ale z większym minusem do
+  umiejętności, bywa słabsza i wtedy idzie na stragan. Broń innej klasy
+  nadal idzie na sprzedaż.
+
+### Przedmioty w szeptach botów jako podgląd (pomysł Tieru)
+
+- Gdy bot w szepcie wymienia przedmioty (co ma w ekwipunku i na sobie, co
+  wystawia na straganie, ile kosztuje przedmiot na targu), wstawia je tak
+  jak gracz przez Alt+klik: nazwa w nawiasach kwadratowych, złota dla
+  przedmiotu z bonusami, a po kliknięciu okienko z plusem, kamieniami i
+  bonusami tego konkretnego przedmiotu.
+- Tak samo odpowiedź bota na „Kupię …” na czacie pokazuje przedmiot z
+  jego straganu.
+- Klient pokazuje najwyżej 255 znaków linii szeptu razem z nickiem, więc w
+  jednej odpowiedzi mieszczą się dwa, trzy linki. Pozostałe przedmioty
+  zostają zwykłymi nazwami.
+- Nie trzeba aktualizować klienta.
+
+### Launcher usuwa stare pliki gry przy każdym starcie
+
+- `metin2client-2.0.13.exe` i `metin2client-claude.exe` znikają z folderu
+  klienta przy każdym uruchomieniu launchera, jeśli obok jest
+  `metin2client.exe`. W 2.2.27 launcher usuwał je tylko przy aktualizacji
+  klienta albo przy starcie gry z launchera, więc u części graczy zostały.
+
+---
+
 ## 2.2.27 — 2026-09-27
 
 Serwer 2.2.27 i klient 2.0.42: zaktualizuj oba. Naprawa pomieszanego

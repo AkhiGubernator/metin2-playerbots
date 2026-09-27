@@ -17,6 +17,118 @@ every version here.
 
 ---
 
+## 2.2.31 — 2026-09-27
+
+Serwer 2.2.31 i klient 2.0.45: zaktualizuj oba. Bonusy przedmiotów jak na
+serwerze globalnym, a odporności na żywioły i szansa na przedmioty naprawdę
+działają. Seon-Pyeong przy Grocie Wygnańców przekuwa przedmioty z 65 poziomu
+na 80. Boty odwołują konia w PvP, a nad botem widać, że dropi kamień dla
+Biologa. Pasek celu pokazuje życie liczbą, także gracza w pojedynku.
+Towarzysz przyjmuje od Ciebie każdy przedmiot i może nie otwierać skrzyń. Na
+dwóch kanałach startują wszystkie boty z suwaka, a launcher mówi, który
+program zajmuje port serwera. Zawiera wszystko z 2.2.30.
+
+### Bonusy jak na serwerze globalnym (zgłosił sosen)
+
+- Maks. PŻ do 2000 (było 1500), maks. PE do 80 na bransolecie i butach i do
+  200 na naszyjniku (było 250), regeneracja PŻ i PE do 30% (było 12%).
+- Nowe bonusy: odporność na ogień, błyskawice i wiatr (zbroja, bransoleta,
+  hełm, do 15%), szansa na bonus doświadczenia (buty, naszyjnik, tarcza, do
+  20%) i szansa na podwójną ilość przedmiotów (bransoleta, kolczyki, do 20%).
+- Nie losują się już bonusy, których te przedmioty na globalu nie mają:
+  wytrzymałość, regeneracja wytrzymałości, czas trwania umiejętności,
+  odbicie strzał i stałe punkty doświadczenia. Przedmioty zachowują
+  wszystkie bonusy, które już mają.
+- Szybkość ruchu zostaje na butach i kolczykach, tak jak podaje polska wiki
+  gry.
+- Odporności na żywioły działają: zmniejszają obrażenia od potworów z danym
+  żywiołem, jak w oryginalnej grze (15% odporności to około 4,5% mniej
+  obrażeń). Potwory dostały żywioły z oryginalnych danych, na przykład
+  błyskawicę Setaou i Dowódca Yonghan z Groty, Niszczyciel i Ogr, a wiatr
+  Fanatycy, Żabi Żołnierze, Królowa Pająków i Olbrzymi Żółw.
+- Szansa na podwójną ilość przedmiotów podnosi szansę dropu, tak jak inne
+  takie bonusy (20% to o 20% częściej).
+- W kliencie 2.0.45 maksymalne wartości nowych bonusów świecą się na
+  pomarańczowo.
+
+### Seon-Pyeong ulepsza przedmioty z 65 poziomu (zaproponował NerrVoVy)
+
+- Seon-Pyeong przy wejściu do Groty Wygnańców w Dolinie Orków ma rozmowę
+  „Wytwarzanie Ekwipunku”, która otwiera okno wytwarzania.
+- Broń +9 z 65 poziomu albo zbroja +9 z 66 poziomu, Broszura Szermierki, po
+  2 Białe, Niebieskie i Krwawe Perły oraz 2 000 000 Yang dają jej następcę z
+  80 poziomu (+0), zawsze z powodzeniem: Miecz Trytona, Brzegowe Ostrze,
+  Święty Miecz, Bezduszny Nóż, Olbrzymi Łuk Diabła, Dzwon Szczęki Smoka,
+  Wachlarz Demona, Zbroja z Niebiańskiej Stali, Ubranie Niebiańskiego Smoka,
+  Zbroja Płytowa Aury i Szata Smoka.
+- Bonusy i kamienie duszy oddanego przedmiotu przepadają.
+- Broszura Szermierki wypada w Grocie: z Lodowej Wiedźmy co drugi raz,
+  rzadko z potworów Setaou.
+
+### Boty odwołują konia w PvP (zaproponował archonek)
+
+- W pojedynku i w walce z kimś, kto zaatakował bota, bot zsiada z konia
+  (także bojowego) i odwołuje go, żeby koń nie stał między walczącymi. Nie
+  wsiada ponownie, dopóki walka trwa. Na wojnach gildii boty robiły tak już
+  wcześniej.
+
+### Status bota przy misji Biologa (zgłosił prodnathin)
+
+- Gdy bot oddał już okazy, a misja czeka na kamień duszy, nad botem i w
+  panelu widać „Probuje wydropic dla Biologa: Kamien Duszy Jinunggyi” (albo
+  inny kamień tej misji) zamiast „Zbieram dla Biologa: Zab Orka”. Kamień
+  wypada z potworów misji na każdym poziomie, dlatego bot na 80 poziomie może
+  bić w Dolinie Orków.
+
+### Życie celu na pasku (Kiciamol)
+
+- Pasek celu pokazuje życie liczbą (na przykład 1520/3000). W pojedynku, na
+  wojnie albo przy włączonym trybie PK widać też pasek i życie drugiego
+  gracza.
+- Działa od klienta 2.0.45.
+
+### Towarzysz: przedmioty i skrzynki (zgłosił xxkld.)
+
+- Przedmioty, których nie można oddać innemu graczowi (na przykład
+  Zaczarowanie i Wzmocnienie Przedmiotu ze Szkatułek), przechodzą między Tobą
+  a Towarzyszem w oknie jego torby, w obie strony. Handel z innymi graczami
+  dalej ich nie przyjmuje.
+- Nowy przełącznik „Skrzynki” w oknie Towarzysza (P), domyślnie włączony.
+  Wyłączony: Towarzysz nie otwiera skrzyń ani szkatułek, zostają w jego
+  torbie do wzięcia. W czacie: /towarzysz skrzynki 1 albo 0.
+- Przełącznik działa od klienta 2.0.45. Podpowiedź „do Twojego poziomu +30”
+  jest teraz w dymku przycisku „Gra beze mnie”.
+
+### Przycisk podglądu skrzynki nie zasłania podpisów (zgłosił NerrVoVy)
+
+- Przycisk podglądu skrzynki stoi pod naszyjnikiem, a jego podpis nie
+  wychodzi poza okno. Wcześniej zasłaniał podpis przycisku sklepu.
+- Działa od klienta 2.0.45.
+
+### Wszystkie boty z suwaka na dwóch kanałach (zgłosił NerrVoVy)
+
+- Na świecie, który gra z drugim kanałem od kilku tygodni, większość botów
+  przechodziła z czasem na kanał 2. Kanał 1 startował wtedy mniej botów, niż
+  mówił suwak, a boty dołączające później prawie wcale nie wchodziły. Teraz
+  to, czego kanał 1 nie może uruchomić, uruchamia kanał 2: na naszym świecie
+  testowym zamiast 940 botów z 1099 startuje całe 1000 i dropki, a z 400
+  dołączających później wchodzą wszystkie, a nie 78.
+- Okno LICZBA BOTÓW w launcherze GUI otwiera pola królestw na równym
+  podziale, gdy indywidualne wartości są wyłączone (wcześniej na zerach), i
+  ostrzega, gdy któreś królestwo nie dostałoby żadnego bota.
+- Na Linuksie (VPS) aktualizacja raz włącza trzy królestwa na świecie z
+  bardzo starej wersji, tak jak od dawna robi to launcher na Windows.
+
+### Launcher: zajęty port serwera (zgłosił Producent Hip Hopu)
+
+- Gdy port serwera zajmuje inny program (na przykład własny MySQL na
+  3306), launcher mówi, który port, który program i który wiersz pliku .env
+  zmienić, zamiast podawać port panelu 7788.
+- Przed aktualizacją i przed budową serwera launcher sprawdza porty i
+  przerywa, zanim cokolwiek pobierze albo podmieni.
+
+---
+
 ## 2.2.30 — 2026-09-27
 
 Serwer 2.2.30 i klient 2.0.44: zaktualizuj oba. Wieża Demonów: boty po

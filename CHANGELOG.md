@@ -17,6 +17,119 @@ every version here.
 
 ---
 
+## 2.2.38 — 2026-09-28
+
+Serwer 2.2.38 i klient 2.0.52: zaktualizuj oba. Rundy wojen gildii mają
+koniec i przerwę, polegli czekają w obozie, samo kliknięcie gracza nie robi
+już z nikogo zabójcy, boty nie wystawiają wędek, a dla graczy grających po
+angielsku serwer mówi po angielsku: nazwy NPC, okrzyki i szepty botów, nazwy
+ich sklepów i pasek efektów. Skrzynie ucznia mają jeden przełącznik, który
+obejmuje też boty. Do tego panel Sebana 1.100.6,
+tablica celu, fryzura towarzysza i tło logowania w wysokich
+rozdzielczościach. Zawiera wszystko z 2.2.37.
+
+### Gildie
+
+- **Runda wojny gildii kończy się sama, a polegli czekają w obozie** (DUDU).
+  Bot, który padł, wstaje w swoim obozie i do końca rundy nie bierze udziału
+  w walce: nikogo nie atakuje i nikt go nie atakuje. Dotąd polegli atakowali
+  każdego w zasięgu, więc walka przenosiła się pod obóz jednej z gildii i
+  wstający dołączali bez końca. Runda, w której nikt nie pada przez minutę
+  albo która trwa 3 minuty, kończy się wygraną strony z większą liczbą
+  stojących (przy równej liczbie remisem): dotąd runda czekała, aż padnie
+  cała jedna strona, a samotny bot zepchnięty umiejętnością między skały
+  liczył się jako stojący i wojna stała nawet 15 minut. Taki bot wraca teraz
+  do obozu po 5 sekundach. Między rundami jest 30 sekund przerwy w obozach,
+  wszyscy stoją pełni i nakładają buffy.
+
+### Gracze
+
+- **Samo kliknięcie gracza nie robi z nikogo zabójcy.** Pokazywanie PŻ
+  zaznaczonego gracza albo bota sprawdzało, czy można go zaatakować, tak jak
+  prawdziwy cios: w trybie wolnym albo gildyjnym oznaczało to postać jako
+  zabójcę (pomarańczowy nick na ok. 30 sekund, każdy z królestwa mógł ją bić
+  bez utraty rangi), i to przy każdej zmianie PŻ celu. W pojedynku samo
+  patrzenie przedłużało jego zegar. Teraz to pytanie niczego nie zmienia.
+
+### Sklepy
+
+- **Boty nie wystawiają już wędek ani kilofów** (Octodan). Wędka od +4
+  liczyła się jak cenne ulepszenie i szła na ladę pierwsza, a bot kupował
+  sobie potem nową u Rybaka. Teraz wędka i kilof nigdy nie trafiają na ladę,
+  te, które już na niej stoją, wracają do plecaka przy najbliższej obsłudze
+  sklepu, a bot, którego wędka stoi na ladzie, nie kupuje nowej, tylko ją
+  zabiera. Drugą, gorszą wędkę bot sprzedaje u handlarza.
+
+### Po angielsku
+
+Dla gracza, którego klient jest po angielsku (Jeremus-Sama). Wszystkie nazwy
+są oficjalnymi angielskimi nazwami z Metina: pochodzą z angielskiego pakietu
+klienta, a czego tam nie ma, zostaje po polsku.
+
+- **Nazwy NPC nad głowami są po angielsku.** Serwer wysyła każdemu graczowi
+  nazwę NPC w jego języku; nazwy potworów klient brał już z własnego pakietu.
+- **Okrzyki botów o ich ladach i potrzebach każdy czyta w swoim języku**, a
+  szept handlowy do bota rozumie też WTB, WTS, buy i sell i odpowiada po
+  angielsku z angielskimi nazwami przedmiotów.
+- **Sklepy botów mają angielskie nazwy dla angielskiego gracza**: ten sam
+  sklep polski gracz widzi pod polską nazwą. Sklepy graczy się nie zmieniają.
+- **Wołania botów na czacie gildii** (boss, wieża, metin) są w języku mistrza
+  gildii.
+- **Pasek efektów w kliencie jest po angielsku**: nazwy i opisy buffów, ich
+  bonusy, „efekt minął” i efekty przedmiotów z ItemShopu. W angielskim
+  pakiecie brakowało tych tekstów i klient brał polskie.
+- **Boty rozmawiają w szeptach po angielsku z graczem, który gra po
+  angielsku**: każda odpowiedź rozmowy ma angielską wersję, a bot rozumie
+  angielskie pytania (poziom, klasa, gdzie expi, buffy, „come here”, grupa,
+  ceny, WTB/WTS i reszta). Polski gracz dostaje dokładnie to, co dotąd.
+- Poprawione przy okazji: bot z misją polowania mówił „Zostało mi Czarny
+  OrkN sztuk” zamiast liczby.
+
+### Świat
+
+- **Skrzynie ucznia mają jeden przełącznik, który obejmuje też boty**
+  (seban latino). Dotąd wyłączenie działało tylko na postacie graczy: każdy
+  nowy bot i tak dostawał Skrzynię Ucznia I prosto do plecaka, przełącznik w
+  panelu Sebana zapisywał ustawienie, którego gra nie czytała, okno „nowy
+  świat” w launcherze po cichu zmieniało wybór, a skrzynie skasowane w bazie
+  na działającym świecie wracały z pamięci serwera. Teraz jest jedno
+  ustawienie: w launcherze (okno trudności), w obu panelach (działa od razu,
+  bez restartu) i w `.env`. Wyłączone znaczy: nikt nie dostaje skrzyni, nowe
+  boty powstają bez niej, a boty już w świecie tracą wszystkie skrzynie z
+  łańcucha (ucznia, eksperta, mistrza). Skrzynie graczy zostają. Włączone
+  działa jak dotąd, a boty otwierają każdą skrzynię na jej poziomie. Stare
+  `.env` bez tego ustawienia zostaje przy włączonych skrzyniach.
+
+### Panele
+
+- **Panel Sebana w wersji 1.100.6.** Wszystkie jego zmiany od 1.92.0 (m.in.
+  stronicowanie rankingów, przetopy w tooltipach, boty na kanałach na
+  dashboardzie, szybsze ładowanie) razem z naszymi poprawkami, które od dziś
+  trafiają najpierw do jego repozytorium: gracze w rankingach obok botów (bez
+  postaci GM-ów, z przełącznikiem „Tylko gracze”), teleport na kanał bota,
+  Tanaka i Zuo na wybranej mapie i reszta.
+
+### Klient
+
+- **Tablica celu nie jest węższa niż jej przyciski** (DUDU). Po kliknięciu
+  gracza przyciski układały się pierwsze, a PŻ z serwera przychodziło chwilę
+  później i zwężało tablicę do szerokości nicku.
+- **Towarzysz nie traci fryzury, broni ani szarfy po zmianie zbroi** (Tieru).
+  Towarzysz jest dla klienta NPC tylko na moment sprawdzania kolizji, więc
+  dalej można przez niego przechodzić, a jego model buduje się w całości.
+- **Ekran logowania wypełnia cały ekran w każdej rozdzielczości** (Latarka,
+  GorącyDelfin). Tło było rysowane w 1920×1080 w lewym górnym rogu, więc przy
+  2K i 4K reszta ekranu nie była odświeżana i zostawał na niej obraz
+  schowanego okna wyboru serwera. Kanał po wyborze zmienia się przyciskiem
+  „Wybierz” obok nazwy serwera.
+
+### Launcher
+
+- **Paczka diagnostyczna znów zawiera wycinek sysloga.** Od 2.2.36 filtr
+  miał sklejone dwa wzorce i wycinek był pusty.
+
+---
+
 ## 2.2.37 — 2026-09-28
 
 Serwer 2.2.37 i klient 2.0.51: zaktualizuj oba. Liczba botów nie rośnie już

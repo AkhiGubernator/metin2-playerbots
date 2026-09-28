@@ -19,7 +19,8 @@ The bots are not external programs. They are first-class characters driven by AI
 1. Download the **full package** (server and client in one archive) from the project's Discord server: [discord.gg/pt5tvnrN6](https://discord.gg/pt5tvnrN6).
 2. Install Docker Desktop and wait until it shows "Engine running".
 3. Unpack the package into an ordinary folder, e.g. `C:\Games\Metin2 Singleplayer` (not the Desktop or Documents synced by OneDrive), and run `Serwer\Metin2-Launcher-GUI.bat`.
-4. Click **1. INSTALL / PREPARE**, then **2. PLAY**. The first start builds the server and takes some fifteen minutes; later ones take a moment.
+4. When the launcher offers an update, choose **Update everything**: the full package is older than the newest release.
+5. Click **1. INSTALL / PREPARE**, then **2. PLAY**. The first start builds the server and takes some fifteen minutes; later ones take a moment.
 
 The launcher offers a new server or client version by itself when it starts, and **CHECK FOR UPDATES** looks for one at any time. The packages come from [the releases in this repository](https://github.com/TieruYT/metin2-playerbots/releases). A server on Linux is updated with `sh linux-port/tools/update.sh` in the server folder, and a server on a VPS can be set up and updated from the launcher (**SERVER ON A VPS**).
 
@@ -42,13 +43,14 @@ Every kind of support helps build a livelier Metin2 world: testing, bug reports,
 - ⚔️ **They fight like players**: every class and path (Warrior, Sura, Ninja, Shaman), combos, skill rotations, buffs, archers with arrows, and Metin stones broken from a battle horse.
 - 🗺️ **Three kingdoms and the whole world**: Shinsoo, Chunjo and Jinno with their own villages, Orc Valley, the Yongbi Desert, Mount Sohan, the Hwang Temple, the Fire Land (Doyyumhwaji), the forests, and the Monkey and Spider Dungeons. Bots pick the map and the spot by their level and plan their routes over the map's real collision grid.
 - 🧠 **Personalities**: Iwakura's personality system with moods. A bot may be a Grinder, a Conqueror, a Gambler, a Perfectionist, a Trader, a companion or a mercenary, and now and then a rare personality turns up.
-- 🛡️ **Guilds, wars and the Demon Tower**: bots found guilds by strength, fight guild wars on the guild map (players' guilds included), go to the Demon Tower as a guild, and bring down the world's bosses together.
-- 🏪 **A bot market**: real offline shops on the village stalls, prices from Iwakura's price list adjusted by demand, and purchases between bots.
+- 🛡️ **Guilds, wars and raids**: bots found guilds by strength, fight guild wars in rounds on the guild map (players' guilds included), go to the Demon Tower as a guild, bring down the world's bosses together and go down into the Catacombs after Azrael.
+- 🎉 **Events**: Pirate Tanaka and Zuo's Metin rain with announcements and rewards, and the bots head there to fight by themselves.
+- 🏪 **A bot market**: real offline shops on the village stalls, prices from Iwakura's price list with inflation, adjusted by demand, and purchases between bots. The **Dom Towarowy** shows every shop's offers in one window and suggests the bots' price when you list an item (with an "Auto cena" option). The game also has an **ItemShop** for Dragon Coins, which drop from Metin stones and bosses.
 - 🔨 **Character progression**: the Blacksmith and refine scrolls, bonuses, soul stones, skill books and Spirit Stones, the Biologist's missions, the horse up to the battle horse, fishing, mining and herbalism.
 - 💬 **Conversations**: bots answer whispers and trade over the chat ("Kupię…", "Sprzedam…"), a Shaman will tell you what its buffs give, and a bot you call will come over. The bots talk in Polish.
-- 🤝 **Towarzysz, your companion**: a permanent partner in your party. It fights beside you, buffs you and trades with you, and you set its equipment and skills yourself.
-- 🎯 **Auto Hunt**: automatic hunting for the player, with no requirements and no fees.
-- 🎛️ **Panels and launcher**: two web panels with a live world map, rankings, the bots' equipment, AI behaviour sliders and timed events; a launcher with updates, world backups, the difficulty setting and a server on a VPS.
+- 🤝 **Towarzysz, your companion**: a permanent partner in your party. It fights beside you, buffs you and trades with you, and you set its equipment and skills yourself. It also joins a party a friend leads ("Grupa") and can play on its own while you are away ("Gra beze mnie").
+- 🎯 **Auto Hunt**: automatic hunting for the player. The world's settings decide whether it is for everyone or bought in the ItemShop.
+- 🎛️ **Panels and launcher**: two web panels with a live world map, rankings, the bots' equipment, AI behaviour sliders and timed events; a launcher with updates, world backups, the difficulty setting, a second channel, COOP (friends playing in your world, for supporters) and a server on a VPS.
 - 💾 **A persistent world**: every bot has its own account and character in MariaDB, so levels, items and yang survive a restart.
 
 ## ⌨️ In-game keys
@@ -58,7 +60,9 @@ Every kind of support helps build a livelier Metin2 world: testing, bug reports,
 | `P` | the companion's window |
 | `K` | Auto Hunt |
 | `` ` `` (tilde) | pick up every item nearby |
+| `F5` | search the offline shops for an item |
 | `F9` | the GM panel (GM characters only) |
+| `F1`–`F3` | on the login screen: a saved account from the page on show (15 accounts on 5 pages) |
 
 ## 🎮 In-game commands (GM)
 
@@ -112,6 +116,10 @@ Versions up to and including 2.2.16 are under the MIT licence ([LICENSE-MIT.txt]
 - **OskarPWA**: the bot depot window, the skill icons and the F9 GM panel.
 - **SIZOWSKI**: the design of the bots' dynamic split between channels.
 - **Tyrion**: searching the offline shops for one particular item.
+- **Uxìĕ [DSO]**: the Dom Towarowy and the Cape of Courage pulling monsters from the whole screen.
+- **Gibon**: previews of what a chest holds and what a monster drops.
+- **Kiciamol**: the target's health on its bar, a player's in a fight too.
+- **Piciu713**: the refine chance in the Blacksmith's window.
 - **Kenny, Pabloo, Mur4s**: fixes to party pickups, to bots' errands in a player's party, to the bear quest and to the Teleport Ring.
 - [DadsMmoLab/dads-mmo-lab](https://github.com/DadsMmoLab/dads-mmo-lab): research inspiration for autonomous agents in MMO games.
 - The Discord community: the tests, bug reports and ideas most of this project came from.

@@ -19,7 +19,8 @@ Boty nie są zewnętrznymi programami. To pełnoprawne postacie sterowane przez 
 1. Pobierz **pełną paczkę** (serwer i klient w jednym archiwum) z serwera Discord projektu: [discord.gg/pt5tvnrN6](https://discord.gg/pt5tvnrN6).
 2. Zainstaluj Docker Desktop i poczekaj, aż pokaże „Engine running”.
 3. Rozpakuj paczkę do zwykłego folderu, np. `C:\Gry\Metin2 Singleplayer` (nie na Pulpit ani do Dokumentów synchronizowanych z OneDrive), i uruchom `Serwer\Metin2-Launcher-GUI.bat`.
-4. Kliknij **1. ZAINSTALUJ / PRZYGOTUJ**, a potem **2. GRAJ**. Pierwszy start buduje serwer i trwa kilkanaście minut, kolejne trwają chwilę.
+4. Gdy launcher zaproponuje aktualizację, wybierz **Aktualizuj wszystko**: pełna paczka jest starsza niż najnowsze wydanie.
+5. Kliknij **1. ZAINSTALUJ / PRZYGOTUJ**, a potem **2. GRAJ**. Pierwszy start buduje serwer i trwa kilkanaście minut, kolejne trwają chwilę.
 
 O nowej wersji serwera lub klienta launcher sam zapyta przy starcie. Możesz też sprawdzić ją przyciskiem **SPRAWDZ AKTUALIZACJE**. Paczki pobierają się z [wydań w tym repozytorium](https://github.com/TieruYT/metin2-playerbots/releases). Serwer na Linuksie aktualizujesz poleceniem `sh linux-port/tools/update.sh` w folderze serwera, a serwer na VPS możesz założyć i aktualizować z launchera (**SERWER NA VPS**).
 
@@ -42,13 +43,14 @@ Każda forma wsparcia pomaga tworzyć coraz bardziej żywy świat Metin2: testy,
 - ⚔️ **Walka jak gracze**: wszystkie klasy i ścieżki (Wojownik, Sura, Ninja, Szaman), kombosy, rotacje umiejętności, buffy, łucznicy ze strzałami i Metiny bite z konia bojowego.
 - 🗺️ **Trzy królestwa i cały świat**: Shinsoo, Chunjo i Jinno z własnymi wioskami, Dolina Orków, Pustynia Yongbi, Góra Sohan, Świątynia Hwang, Ziemia Ognia, lasy oraz Lochy Małp i Pająków. Boty dobierają mapę i miejsce do swojego poziomu, a trasy liczą po prawdziwej siatce kolizji mapy.
 - 🧠 **Osobowości**: system osobowości Iwakury z nastrojami. Boty bywają Grinderami, Zdobywcami, Hazardzistami, Perfekcjonistami, Handlarzami, towarzyszami i najemnikami, a czasem trafia się rzadka osobowość.
-- 🛡️ **Gildie, wojny i Wieża Demonów**: boty zakładają gildie według siły, toczą wojny gildii na mapie gildii (także z gildiami graczy), ruszają całą gildią na Wieżę Demonów i wspólnie biją bossów świata.
-- 🏪 **Rynek botów**: prawdziwe sklepy offline na straganach w wioskach, ceny z cennika Iwakury korygowane popytem i zakupy między botami.
+- 🛡️ **Gildie, wojny i rajdy**: boty zakładają gildie według siły, toczą wojny gildii na rundy na mapie gildii (także z gildiami graczy), ruszają całą gildią na Wieżę Demonów, wspólnie biją bossów świata i schodzą do Katakumb po Azraela.
+- 🎉 **Wydarzenia**: pirat Tanaka i deszcz Metinów Zuo z ogłoszeniami i nagrodami, a boty same ruszają na nie do walki.
+- 🏪 **Rynek botów**: prawdziwe sklepy offline na straganach w wioskach, ceny z cennika Iwakury z inflacją, korygowane popytem, i zakupy między botami. **Dom Towarowy** pokazuje w jednym oknie oferty wszystkich sklepów, a przy wystawianiu przedmiotu podpowiada cenę botów (z opcją „Auto cena”). W grze jest też **ItemShop** za Smocze Monety, które wypadają z Metinów i bossów.
 - 🔨 **Rozwój postaci**: Kowal i zwoje, bonusy, kamienie duszy, księgi umiejętności i Kamienie Duchowe, misje Biologa, koń aż do bojowego, łowienie ryb, górnictwo i zielarstwo.
 - 💬 **Rozmowy**: boty odpowiadają na szepty, handlują przez czat („Kupię…”, „Sprzedam…”), Szaman powie, co dają jego buffy, a zawołany bot przyjdzie.
-- 🤝 **Towarzysz**: Twój stały kompan w drużynie. Walczy przy Tobie, buffuje, handluje z Tobą, a jego ekwipunek i umiejętności ustawiasz sam.
-- 🎯 **Auto Łowy**: automatyczne polowanie dla gracza, bez wymagań i opłat.
-- 🎛️ **Panele i launcher**: dwa panele WWW z mapą świata na żywo, rankingami, ekwipunkiem botów, suwakami zachowania AI i wydarzeniami czasowymi; launcher z aktualizacjami, kopią świata, poziomem trudności i serwerem na VPS.
+- 🤝 **Towarzysz**: Twój stały kompan w drużynie. Walczy przy Tobie, buffuje, handluje z Tobą, a jego ekwipunek i umiejętności ustawiasz sam. Dołącza też do grupy prowadzonej przez znajomego („Grupa”) i może grać sam, gdy Ciebie nie ma („Gra beze mnie”).
+- 🎯 **Auto Łowy**: automatyczne polowanie dla gracza. W ustawieniach świata wybierasz, czy jest dla każdego, czy po zakupie w ItemShopie.
+- 🎛️ **Panele i launcher**: dwa panele WWW z mapą świata na żywo, rankingami, ekwipunkiem botów, suwakami zachowania AI i wydarzeniami czasowymi; launcher z aktualizacjami, kopią świata, poziomem trudności, drugim kanałem, COOP (gra ze znajomymi w Twoim świecie, dla wspierających) i serwerem na VPS.
 - 💾 **Trwały świat**: każdy bot ma własne konto i postać w bazie MariaDB, więc poziom, przedmioty i yang zostają po restarcie.
 
 ## ⌨️ Skróty w grze
@@ -58,7 +60,9 @@ Każda forma wsparcia pomaga tworzyć coraz bardziej żywy świat Metin2: testy,
 | `P` | okno Towarzysza |
 | `K` | Auto Łowy |
 | `` ` `` (tylda) | podnieś wszystkie przedmioty w pobliżu |
+| `F5` | wyszukiwarka przedmiotów w sklepach offline |
 | `F9` | panel GM (tylko postacie GM) |
+| `F1`–`F3` | na ekranie logowania: zapisane konto z widocznej strony (15 kont na 5 stronach) |
 
 ## 🎮 Komendy w grze (GM)
 
@@ -111,6 +115,10 @@ Wersje do 2.2.16 włącznie są na licencji MIT ([LICENSE-MIT.txt](LICENSE-MIT.t
 - **OskarPWA**: okno magazynu bota, ikony umiejętności i panel GM pod F9.
 - **SIZOWSKI**: projekt dynamicznego podziału botów między kanały.
 - **Tyrion**: wyszukiwanie konkretnego przedmiotu w sklepach offline.
+- **Uxìĕ [DSO]**: Dom Towarowy i Peleryna Męstwa przyciągająca potwory z całego ekranu.
+- **Gibon**: podgląd zawartości skrzyń i dropu potworów.
+- **Kiciamol**: życie celu na pasku, także gracza w walce.
+- **Piciu713**: szansa ulepszenia w oknie Kowala.
 - **Kenny, Pabloo, Mur4s**: poprawki podnoszenia przedmiotów w drużynie, zadań botów w drużynie gracza, questu niedźwiedzi i Pierścienia Teleportacji.
 - [DadsMmoLab/dads-mmo-lab](https://github.com/DadsMmoLab/dads-mmo-lab): inspiracja do badań nad autonomicznymi agentami w grach MMO.
 - Społeczność Discorda: testy, zgłoszenia błędów i pomysły, z których powstała większość tego projektu.

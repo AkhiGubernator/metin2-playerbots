@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-28T17:43:16Z",
-  "statusMessage": "2.2.37 (serwer i klient 2.0.51 - zaktualizuj oba): liczba botow nie rosnie juz ponad ustawienie; boty nie kreca sie przy wyjsciu z pierwszej wioski; wojne gildii da sie przyjac; sklep bota to jedno duze okno; Teleportuj mnie w panelach przenosi tez na kanal bota. Zawiera wszystko z 2.2.36.",
+  "publishedAt": "2026-09-28T20:45:53Z",
+  "statusMessage": "2.2.38 (serwer i klient 2.0.52 - zaktualizuj oba): rundy wojen gildii koncza sie same, a polegli czekaja w obozie; klikniecie gracza nie robi juz z nikogo zabojcy; boty nie wystawiaja wedek; po angielsku nazwy NPC, szepty i sklepy botow; jeden przelacznik skrzyn ucznia takze dla botow; panel Sebana 1.100.6. Zawiera wszystko z 2.2.37.",
   "server": {
-    "version": "2.2.37",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.37/metin2-server-update-2.2.37.zip",
-    "sha256": "FCD208240D83E9A74AEE55198740AEBF8E726C4188CC6D5C4925ABAD5953D952"
+    "version": "2.2.38",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.38/metin2-server-update-2.2.38.zip",
+    "sha256": "ADB56D7349D24B5BBE5FB29189ADE2C5664CC9892C40D28F9B9D87624D7698D3"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.51",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.37/metin2-client-update-2.0.51.zip",
-    "sha256": "6DBD8791715A6BF8D60CE405A66E805500777CCFBB62B8A63534BC04D5849518"
+    "version": "2.0.52",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.38/metin2-client-update-2.0.52.zip",
+    "sha256": "97DB6E76FD1A947FC8B01D9654E8794226817D86044A53DE86D2C1E80D993737"
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-28T07:54:45Z",
-  "statusMessage": "2.2.33 (serwer i klient 2.0.47 - zaktualizuj oba): Dom Towarowy nie wyrzuca juz z gry; boty przechodza 6. pietro Wiezy Demonow; Towarzysz dolacza do grupy znajomego; strona Slub w ItemShopie; Auto cena w sklepie offline; 15 zapisanych kont. Zawiera wszystko z 2.2.32.",
+  "publishedAt": "2026-09-28T11:24:51Z",
+  "statusMessage": "2.2.34 (serwer i klient 2.0.48 - zaktualizuj oba): suwaki zachowania botow w panelu dzialaja na boty; puste pola ekwipunku przy otwartym magazynie znow przyjmuja przedmioty; prawy klik na Towarzysza; jeden bot - jedna cena. Zawiera wszystko z 2.2.33.",
   "server": {
-    "version": "2.2.33",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.33/metin2-server-update-2.2.33.zip",
-    "sha256": "B195FDCE7E8D4149E0F521D37DB3C4D795F9EBC0C939A829E75E857EC948387A"
+    "version": "2.2.34",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.34/metin2-server-update-2.2.34.zip",
+    "sha256": "46CD16093929F4527F8805E0450E74543A0C1A3ABEF0DDB5E8CC289CA4954F20"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.47",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.33/metin2-client-update-2.0.47.zip",
-    "sha256": "73093D742EFC4CCFE455CC3DCBC0CFF4094046372F8A730F8CC62CBBB5FA2041"
+    "version": "2.0.48",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.34/metin2-client-update-2.0.48.zip",
+    "sha256": "260023E5A7591B50CE2F74D70C073A793C8F66A08027FC4701C4BA5DB5FDA25A"
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

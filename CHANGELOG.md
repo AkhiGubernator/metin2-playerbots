@@ -17,6 +17,54 @@ every version here.
 
 ---
 
+## 2.2.35 — 2026-09-28
+
+Serwer 2.2.35 i klient 2.0.49: zaktualizuj oba. Szaman, Sura czarnej magii i
+Łucznik też biorą marmur na Umarłego Rozpruwacza i na bossa rajdu i walczą
+wtedy wręcz, ogłoszenie o pokonaniu Rozpruwacza podaje, kto zadał ostatni
+cios, nowy Towarzysz nie rozdaje sam punktów umiejętności, w jego oknie
+umiejętności jest „Zeruj”, a „Zatrzymaj i zapisz” pyta, czy zatrzymać też
+Docker Desktop. Zawiera wszystko z 2.2.34.
+
+### Wieża Demonów (prodnathin)
+
+- **Marmur dla każdej klasy.** Boty Szamani, Sury czarnej magii i Łucznicy
+  nie brali marmuru na Umarłego Rozpruwacza ani na bossa rajdu, bo pod
+  marmurem gra nie pozwala używać umiejętności, a wcześniej walczyli pod nim
+  jak bez niego: stali na dystansie łuku albo czarów, próbowali rzucać
+  umiejętności i odskakiwali. Teraz biorą marmur jak reszta, jeśli gra im
+  pozwala, a po przemianie walczą wręcz jak zadający obrażenia: bez
+  dystansu, bez odskakiwania od Rozpruwacza i bez buffów.
+- **Ostatni cios.** Ogłoszenie o pokonaniu Umarłego Rozpruwacza kończy się
+  teraz „Ostatni cios: <nick>”, gracza albo bota, bo na rajd bywa, że
+  przyjdzie ktoś spoza gildii.
+
+### Towarzysz (blasty)
+
+- **Punkty umiejętności rozdaje właściciel.** Nowy Towarzysz nie rozdaje już
+  sam punktów przy pierwszym przywołaniu: czekają w jego oknie umiejętności
+  (P), a Towarzysz mówi o tym, gdy dołącza. Przełącznik „Punkty rozdaję sam:
+  nie” oddaje je jego SI. Towarzysze sprzed aktualizacji zostają przy swoim
+  ustawieniu.
+- **„Zeruj” w oknie umiejętności.** Przy każdej umiejętności z poziomem jest
+  przycisk „Zeruj” (najpierw pyta). Towarzysz używa tego, co ma w swoim
+  plecaku: Ksiąg Zapomnienia tej umiejętności, jeśli wystarczy ich do zera
+  (każda cofa jeden poziom razem z punktem), a gdy jest ich za mało albo
+  umiejętność jest już mistrzowska, Zwoju Powrotu Umiejętności (cała
+  umiejętność od zera, a następna, która dojdzie do 17, zostanie mistrzem).
+  Niczego nie robi w połowie. Punkty wracają do okna i od tej chwili
+  rozdajesz je ty.
+
+### Launcher (Producent Hip Hopu)
+
+- **„Zatrzymaj i zapisz” nie wyłącza Dockera bez pytania.** Przycisk
+  zatrzymywał razem z serwerem cały Docker Desktop, a z nim inne projekty,
+  które ktoś ma w Dockerze. Teraz pyta: „Tak” to serwer i Docker Desktop, jak
+  dotąd (Docker zwalnia wtedy pamięć RAM), „Nie” to sam serwer, a Docker
+  działa dalej, „Anuluj” nic nie zatrzymuje.
+
+---
+
 ## 2.2.34 — 2026-09-28
 
 Serwer 2.2.34 i klient 2.0.48: zaktualizuj oba. Suwaki zachowania botów w

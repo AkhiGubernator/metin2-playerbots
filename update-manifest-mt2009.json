@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-27T20:12:16Z",
-  "statusMessage": "2.2.31 (serwer i klient 2.0.45 - zaktualizuj oba): bonusy jak na serwerze globalnym, a odpornosci na zywioly i szansa na przedmioty dzialaja; Seon-Pyeong ulepsza przedmioty z 65 na 80 poziom; zycie celu na pasku; boty odwoluja konia w PvP; wszystkie boty z suwaka na dwoch kanalach. Zawiera wszystko z 2.2.30.",
+  "publishedAt": "2026-09-28T01:50:08Z",
+  "statusMessage": "2.2.32 (serwer i klient 2.0.46 - zaktualizuj oba): Community Patch 5 od Iwakury z czterema Hazardzistami i nowymi cenami; Dom Towarowy u Handlarki Roznosci w M1; Peleryna Mestwa przyciaga caly ekran; bonusy z paczki z Maks. PZ do 2000; wojny gildii z rundami do ostatniego; okrzyki botow na calym serwerze. Zawiera wszystko z 2.2.31.",
   "server": {
-    "version": "2.2.31",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.31/metin2-server-update-2.2.31.zip",
-    "sha256": "FF039F8EEAED86F085B88210FC61DD2843575772AE132BFACD58FB62BD6A91C1"
+    "version": "2.2.32",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.32/metin2-server-update-2.2.32.zip",
+    "sha256": "63794311C562D4EFE9A3A2740859E47AE90F432E74910FA27C5B96F3DD573D55"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.45",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.31/metin2-client-update-2.0.45.zip",
-    "sha256": "B2C85B12194F4AB0373964DF0810001B82C56CBCB6B78CCFA4540F539F5C5257"
+    "version": "2.0.46",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.32/metin2-client-update-2.0.46.zip",
+    "sha256": "27D94AB707FC960BC4630E32E31B01E13A18E551A9E1E7D7FD5B64CD5602989F"
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

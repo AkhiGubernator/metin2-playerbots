@@ -17,6 +17,73 @@ every version here.
 
 ---
 
+## 2.2.33 — 2026-09-28
+
+Serwer 2.2.33 i klient 2.0.47: zaktualizuj oba. Dom Towarowy nie wyrzuca już
+z gry, boty przechodzą 6. piętro Wieży Demonów, Towarzysz dołącza do grupy
+prowadzonej przez znajomego, w ItemShopie jest strona „Ślub”, w sklepie
+offline przycisk „Auto cena”, a w oknie logowania 15 zapisanych kont.
+Zawiera wszystko z 2.2.32.
+
+### Poprawki
+
+- **Dom Towarowy wyrzucał z gry.** Sekundę po otwarciu okna Domu
+  Towarowego gracz był rozłączany: serwer nie obsługiwał pakietu, którym
+  okno prosi o katalog. Teraz katalog się wczytuje. Przyczynę znalazł
+  SIZOWSKI.
+- **Wieża Demonów, 6. piętro.** Boty stały przed potworem zaklinowanym w
+  ścianie, do którego nie ma przejścia, zamiast bić Elitarnego Króla
+  Demonów, więc kowal się nie pojawiał i rajd nie szedł dalej. Teraz
+  omijają taki cel przez minutę, a gdy na piętrze zostały już tylko takie,
+  po 30 sekundach ściągają je do siebie (do sześciu naraz) i dobijają.
+  (prodnathin)
+- **Najpierw łup z Metina, potem kłótnia.** Bot, któremu gracz
+  przeszkadzał przy kamieniu, podnosi swój drop, zanim odpowie na atak, o
+  ile ma co najmniej 40% HP. (teivos)
+- **Marmur na Żniwiarza tylko dla walczących wręcz.** Szaman, Sura czarnej
+  magii i łucznik nie biorą marmuru na Żniwiarza, bo pod marmurem tracą
+  umiejętności i łuk. (prodnathin)
+- **Broszura Szermierki się stackuje** (do 200 w jednej kratce). Broszury,
+  które już masz w torbie, połączysz, przeciągając jedną na drugą, albo
+  przyciskiem „Scal i uporządkuj”. (NerrVoVy)
+- **Instalacja na VPS** kończyła się błędem bazy „$1: unbound variable”.
+  Jeśli pierwsza instalacja już się na tym wywróciła, na VPS wykonaj
+  `docker compose down -v` i zainstaluj serwer ponownie. (Urtopy)
+- Bot u kowala nie próbuje już co kilka sekund ulepszać przedmiotu z
+  plecaka, na który brakuje mu materiałów albo Yang (np. zbroi +7 bez
+  materiału na +8). Nic nie tracił, ale każda taka próba była wpisem w logu
+  serwera.
+
+### Nowe
+
+- **ItemShop: strona „Ślub”.** Pierścionek Zaręczynowy, Smoking, Suknia
+  Ślubna, Bukiet, Pióro Ptaka Miłości oraz kolczyki, bransolety i
+  naszyjniki Miłości i Harmonii, od 25 poziomu, za Smocze Monety. Ślub:
+  obie postacie mają co najmniej 25 poziom, są z jednego królestwa,
+  różnią się najwyżej o 15 poziomów, mają po Pierścionku Zaręczynowym i
+  założone Smoking albo Suknię Ślubną. U Starszej Pani jedna z nich płaci
+  1 000 000 Yang i wpisuje imię drugiej, która stoi obok i potwierdza.
+  Potem rozmowa ze Starszą Panią przenosi parę na mapę ślubu, gdzie
+  przysięgę składa się u Hany Org. Ślubów. Boty nie biorą ślubów.
+  (xXxDaronxXx)
+- **Towarzysz: „Grupa”.** Nowy przycisk w oknie Towarzysza (i
+  `/towarzysz grupa 1` albo `0`): Towarzysz dołącza do Twojej grupy także
+  wtedy, gdy prowadzi ją ktoś inny, o ile zostanie w niej miejsce jeszcze
+  dla jednej osoby. Domyślnie włączone. Wyłączone: jak dotąd, tylko na
+  zaproszenie lidera. (xXxDaronxXx)
+- **Sklep offline: „Auto cena”.** Pod sugestią botów w oknie ceny jest
+  przycisk, który wpisuje tę sugestię jako cenę. Nie nadpisuje tego, co
+  sam wpiszesz. Domyślnie wyłączony, a Twój wybór zostaje zapamiętany.
+  Działa, gdy Dom Towarowy jest włączony. (vanderro, NerrVoVy, hubert)
+- **15 zapisanych kont.** W oknie logowania jest 5 stron po 3 konta ze
+  strzałkami pod listą. F1–F3 logują konto z widocznej strony, a konta
+  zapisane do tej pory są na pierwszej. (xXxDaronxXx)
+- **Launcher.** Hasło do panelu nie trafia już do pliku logu (widać je
+  tylko w oknie launchera), a gdy antywirus zabierze plik launchera,
+  launcher mówi, gdzie go szukać i jak go przywrócić. (Hyper96)
+
+---
+
 ## 2.2.32 — 2026-09-28
 
 Serwer 2.2.32 i klient 2.0.46: zaktualizuj oba. Community Patch 5 od

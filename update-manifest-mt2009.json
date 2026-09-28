@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-28T12:46:25Z",
-  "statusMessage": "2.2.35 (serwer i klient 2.0.49 - zaktualizuj oba): Szaman, Sura i Lucznik na marmurze w Wiezy walcza wrecz; ostatni cios Ripera w ogloszeniu; Towarzysz: reczne punkty umiejetnosci i przycisk Zeruj; Zatrzymaj i zapisz moze zostawic Dockera. Zawiera wszystko z 2.2.34.",
+  "publishedAt": "2026-09-28T15:35:01Z",
+  "statusMessage": "2.2.36 (serwer i klient 2.0.50 - zaktualizuj oba): gra, launcher i panel po angielsku dla wybierajacych angielski; okno Towarzysza jak okno postaci; boty gildii pomagaja graczowi i sluchaja rozkazow z okna gildii; sklepy botow na dwie strony; Auto-Cena z zakresem rynku; Stalki i Baronowa Pajakow; kanaly 3 i 4 do wyboru. Zawiera wszystko z 2.2.35.",
   "server": {
-    "version": "2.2.35",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.35/metin2-server-update-2.2.35.zip",
-    "sha256": "42CAE71BAD7AD1CF3AD6D3939A402437DDDE299849C6F12AAD55DACBA2D860EF"
+    "version": "2.2.36",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.36/metin2-server-update-2.2.36.zip",
+    "sha256": "630F172979481B449E6A2E5FC8AADFA7D214092DE3EFFAF442DF76B8FFE67470"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.49",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.35/metin2-client-update-2.0.49.zip",
-    "sha256": "DF0A24AF864D3C33795417D28E28530E9DBFB9F04009139A29DC2856F1FD2249"
+    "version": "2.0.50",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.36/metin2-client-update-2.0.50.zip",
+    "sha256": "B18F3551F1D30337A67AB9177E051560D3928E27F61BF737FB0CA8A098905536"
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

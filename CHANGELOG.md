@@ -17,6 +17,127 @@ every version here.
 
 ---
 
+## 2.2.36 — 2026-09-28
+
+Serwer 2.2.36 i klient 2.0.50: zaktualizuj oba. Gra, launcher i panel
+klasyczny mówią po angielsku do tego, kto wybrał angielski, okno Towarzysza
+wygląda jak okno postaci, boty z gildii gracza pomagają mu w walce i słuchają
+rozkazów z okna gildii, sklepy botów mają dwie strony, a w Auto-Cenie są
+cztery ustawienia i zakres cen z rynku. Do tego Stalki u botów, Baronowa
+Pająków w V2 i opcjonalne kanały 3 i 4 ze świeżymi botami. Zawiera wszystko
+z 2.2.35.
+
+### Angielski
+
+- **Gra.** Klient ustawiony na inny język niż polski dostaje po angielsku
+  wszystko, co nasze: okna (Auto Łowy, Towarzysz, podglądy, sortowanie
+  ekwipunku, Dom Towarowy, Auto-Cena, autologin), ogłoszenia botów, to, co
+  bot mówi do jednej osoby, questy serwera i odpowiedź gildii botów na
+  wypowiedzenie wojny. Serwer pyta klienta o język przy każdym wejściu do
+  gry; stary klient o nic nie jest pytany i zostaje przy polskim.
+- **Towarzysz** słucha też angielskich rozkazów w szepcie („defend me”,
+  „to me”, „play alone”, „report” i reszta) i komendy `/towarzysz` z
+  angielskimi słowami. List Towarzysza ma angielski tytuł.
+- **Launcher.** Przełącznik języka w oknie tłumaczy teraz wszystko: okna i
+  pytania, komunikaty akcji w logu, błędy i porady diagnostyki, aktualizacje,
+  kopie zapasowe, paczkę pomocy, COOP i SERWER NA VPS.
+- **Panel klasyczny** mówi w czterech językach (polski, angielski, niemiecki,
+  turecki) na każdej stronie, łącznie z mapą na żywo i opisami przedmiotów.
+
+### Towarzysz
+
+- **Okno jak okno postaci** (Piciu713, prodnathin). Okno Towarzysza (P) to
+  teraz zwykłe okno postaci z czterema zakładkami: Status (statystyki z „+”,
+  Ctrl+klik pyta o liczbę, PŻ, PE, atak, obrona, szybkości i przycisk
+  „Plecak”), Umiejętności (jak u gracza, z przełącznikiem rozdawania punktów i
+  „Zeruj”), Polecenia (co robi, gdzie, mikstury, Yang, rozkazy, postawa,
+  podnoszenie) i Opcje (straż, buffy, lurowanie, „Gra beze mnie”, skrzynie,
+  grupa). Osobne okna statystyk i umiejętności zniknęły; plecak zostaje.
+- **P zamyka wszystko** Towarzysza naraz, także plecak (blasty).
+
+### Gildie (Derpsonkowy95)
+
+- **Boty z gildii gracza pomagają mu w walce.** Gdy boty z innego królestwa
+  atakują gracza, który jest w gildii, boty jego gildii w pobliżu ruszają mu
+  na pomoc: po jednym na każdego atakującego, najwyżej sześć. Gracz dostaje
+  wiadomość „[Gildia] X z twojej gildii rusza ci na pomoc.”. Boty bronią
+  tylko przed botami: w walkę dwóch graczy się nie mieszają.
+- **Komendy dla botów w oknie gildii.** Na stronie informacji gildii jest
+  przycisk „Boty gildii” z trzema rozkazami: „Pomocy!” (do 8 botów o
+  poziomie co najmniej twój minus 10, na 5 minut), „Expimy razem” (do 4 botów
+  ±10 poziomów, na 15 minut) i „Wracajcie”. Boty przychodzą tam, gdzie stoi
+  twoja postać. Rozkazy wydaje mistrz gildii albo ranga, której mistrz dał
+  prawo używania umiejętności gildii.
+- **Boty odpisują na szepty z innego kanału.** Szept do bota na CH2 wysłany
+  z CH1 (i na odwrót) zostawał bez odpowiedzi. Teraz bot odpowiada, a gdy
+  prosisz go, żeby przyszedł, mówi, na którym kanale jest.
+
+### Rynek
+
+- **Auto-Cena** (Piciu713). Pod podpowiedzią ceny w sklepie offline jest
+  trzecia linia: najtańsza i najdroższa taka sama oferta na rynku, liczona
+  na tę liczbę sztuk. Przycisk „Auto-cena” ma cztery ustawienia: Sugerowana,
+  Minimalna, Maksymalna i Nieaktywna (domyślnie Nieaktywna, stare „tak” to
+  Sugerowana). Ta sama podpowiedź i Auto-cena są też w oknie zmiany ceny
+  przedmiotu, który już stoi w sklepie. Ceny wpisanej ręcznie nigdy nie
+  nadpisuje.
+- **Sklepy botów dwa razy większe** (prodnathin). Sklep offline bota ma dwie
+  strony, 160 pól zamiast 80. W oknie sklepu są zakładki I i II, gdy
+  sklep ma coś na drugiej stronie; wyszukiwarka otwiera sklep na stronie z
+  szukanym przedmiotem. Sklepy graczy zostają na jednej stronie.
+- **Ceny według Iwakury.** Niesprzedany towar tanieje o 10% co 3 godziny,
+  najwyżej o 40% (było co 2 godziny, do 50%). Towar, który się ciągle
+  sprzedaje, a na rynku go brakuje, drożeje o 10% za każde takie 3 godziny,
+  najwyżej o 40%, i tanieje z powrotem, gdy znów leży na ladach.
+- **Szkatułki Blasku** (blipu). Boty same otwierają swoje Szkatułki Blasku i
+  używają tego, co z nich wypadnie. Szkatułki na lady wystawiają tylko
+  droperzy, a cena szkatułki nie spada poniżej tego, co w niej jest warte.
+
+### Stalki i Baronowa Pająków
+
+- **Stalki u botów.** Zbroje z Czarnej Stali (66) i bronie na 75 poziom boty
+  trzymają na zapas: jedną na miejsce, swojej klasy, do 8 poziomów przed
+  czasem, i zakładają ją, gdy tylko mogą. Od 2 poziomów przed kupują taką z
+  rynku, jeśli nie mają żadnej, za najwyżej dwa razy tyle, ile wynosi cena z
+  cennika. Żadnego Stalka nie sprzedają handlarzowi; resztę wystawiają.
+- **Baronowa Pająków** stoi w ostatniej komnacie drugiego Lochu Pająków (V2)
+  co 4-5 godzin. Ciosy w nią liczą się dziesięć razy, jak w jej leżu po
+  rozbiciu jaj, a boty z przedziału 67-84 zbierają się na nią w rajd.
+
+### Kanały 3 i 4 ze świeżymi botami (do wyboru)
+
+- W launcherze w oknie botów zamiast „Drugi kanał” jest lista „Kanały gry
+  (1-4)”, to samo w panelu klasycznym. Przy 3 i 4 kanałach na CH3 (i CH4)
+  grają świeże boty od 1 poziomu: osobne postacie, po 500 na królestwo,
+  tworzone przy pierwszym starcie z tym ustawieniem. Nie przechodzą na CH1 i
+  CH2, a na CH3 i CH4 nie ma sklepów, gildii botów, wojen, Wieży ani
+  wydarzeń. Każdy kanał to około 1 GB RAM więcej; launcher ostrzega, gdy
+  pamięci może zabraknąć. Domyślnie wszystko zostaje jak było.
+- Klient pokazuje na liście kanałów CH3 i CH4, gdy odpowiadają, a okno
+  zmiany kanału w grze ma przycisk tylko dla działających kanałów.
+
+### Launcher (Sudak)
+
+- **Tunel SERWER NA VPS nie zabiera portów serwera na tym samym komputerze.**
+  Okno SERWER NA VPS otwierało panele VPS na portach 7788, 7790 i 7791, jeśli
+  akurat były wolne, a potem serwer na tym komputerze nie mógł wystartować
+  („Port 7788 (panel WWW) zajmuje proces ssh”). Teraz tunel omija porty
+  serwera zainstalowanego w folderze launchera (panele VPS są wtedy na
+  17788, 17790 i 17791), a tunel otwarty na nich przez starszy launcher jest
+  zamykany przed startem i aktualizacją serwera; otwórz go wtedy ponownie.
+
+### Inne
+
+- **Podgląd Metina pokazuje, co może wypaść** (blipu, Tieru): wszystkie
+  Kamienie Duchowe na wszystkich poziomach, jakie ten Metin może dać, a nie
+  ten jeden, który już wylosował.
+- **Klawisz U** otwiera okno zmiany kanału (blipu).
+- **Panele: gracze w rankingach** (blipu). W obu panelach rankingi liczą też
+  postacie graczy (bez postaci GM-ów), z ikoną 👤 i przełącznikiem „Tylko
+  gracze”. Strony gildii pokazują też gildie prowadzone przez graczy.
+
+---
+
 ## 2.2.35 — 2026-09-28
 
 Serwer 2.2.35 i klient 2.0.49: zaktualizuj oba. Szaman, Sura czarnej magii i

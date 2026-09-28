@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-28T01:50:08Z",
-  "statusMessage": "2.2.32 (serwer i klient 2.0.46 - zaktualizuj oba): Community Patch 5 od Iwakury z czterema Hazardzistami i nowymi cenami; Dom Towarowy u Handlarki Roznosci w M1; Peleryna Mestwa przyciaga caly ekran; bonusy z paczki z Maks. PZ do 2000; wojny gildii z rundami do ostatniego; okrzyki botow na calym serwerze. Zawiera wszystko z 2.2.31.",
+  "publishedAt": "2026-09-28T07:54:45Z",
+  "statusMessage": "2.2.33 (serwer i klient 2.0.47 - zaktualizuj oba): Dom Towarowy nie wyrzuca juz z gry; boty przechodza 6. pietro Wiezy Demonow; Towarzysz dolacza do grupy znajomego; strona Slub w ItemShopie; Auto cena w sklepie offline; 15 zapisanych kont. Zawiera wszystko z 2.2.32.",
   "server": {
-    "version": "2.2.32",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.32/metin2-server-update-2.2.32.zip",
-    "sha256": "63794311C562D4EFE9A3A2740859E47AE90F432E74910FA27C5B96F3DD573D55"
+    "version": "2.2.33",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.33/metin2-server-update-2.2.33.zip",
+    "sha256": "B195FDCE7E8D4149E0F521D37DB3C4D795F9EBC0C939A829E75E857EC948387A"
   },
   "support": {
     "contactUrl": "https://discord.gg/pt5tvnrN6",
     "uploadUrl": ""
   },
   "client": {
-    "version": "2.0.46",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.32/metin2-client-update-2.0.46.zip",
-    "sha256": "27D94AB707FC960BC4630E32E31B01E13A18E551A9E1E7D7FD5B64CD5602989F"
+    "version": "2.0.47",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.33/metin2-client-update-2.0.47.zip",
+    "sha256": "73093D742EFC4CCFE455CC3DCBC0CFF4094046372F8A730F8CC62CBBB5FA2041"
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

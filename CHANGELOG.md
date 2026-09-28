@@ -17,6 +17,71 @@ every version here.
 
 ---
 
+## 2.2.37 — 2026-09-28
+
+Serwer 2.2.37 i klient 2.0.51: zaktualizuj oba. Liczba botów nie rośnie już
+ponad ustawienie, boty nie kręcą się przy wyjściu z pierwszej wioski, wojnę
+gildii da się przyjąć, sklep bota to jedno duże okno, a „Teleportuj mnie” w
+panelach przenosi też na kanał bota. Do tego szerokość tablicy celu i
+ostrzeżenie launchera o pamięci przy kilku kanałach. Zawiera wszystko z
+2.2.36.
+
+### Boty
+
+- **Liczba botów nie rośnie już ponad ustawienie** (Latarka). Na nowym
+  świecie z botami „czekającymi na wpuszczenie” każdy rdzeń uruchamiał
+  wejście botów od nowa za każdym razem, gdy podłączał się kolejny rdzeń, a
+  każde takie wejście brało kolejne postacie botów. Po wpuszczeniu wchodziły
+  więc prawie wszystkie: przy 4 kanałach ponad 5000 botów zamiast 2500.
+  Teraz każdy rdzeń wpuszcza boty tylko raz. Na świecie testowym stara wersja
+  ruszała wpuszczanie ponad 6 razy na rdzeń, nowa raz, a świat stanął
+  dokładnie na zamówionej liczbie.
+- **Boty nie kręcą się już przy wyjściu z pierwszej wioski** (blasty). Boty
+  od 30 poziomu trzymane w M1 (Biolog, zakupy) co półtorej minuty jeździły
+  przez całą wioskę po materiał do wilka 3-4 poziomu, którego potem i tak nie
+  biły, bo z tak słabego potwora materiał prawie nie wypada. Teraz bot idzie
+  po materiał tylko do potwora, który może mu go jeszcze dać. A bot z tuzinem
+  śmieci w plecaku nie czeka już w M1 na wizytę u handlarza, której nic nie
+  uruchamiało (pomagał dopiero relog).
+
+### Gildie
+
+- **Wojnę gildii da się przyjąć** (xXxDaronxXx). Paczka mt2009 odrzucała
+  każde „OK” mistrza gildii na wypowiedzenie wojny, bez słowa, a propozycja
+  wracała po każdym teleporcie. Odpowiedź dotyczy teraz tej wojny, którą
+  wypowiedziano. Wypowiedzenie wojny gildii botów działa jak dotąd.
+
+### Sklepy
+
+- **Sklep bota to jedno duże okno** (Tieru). Zamiast dwóch stron z
+  zakładkami I/II okno sklepu bota ma jedną siatkę 20×8: druga połowa (pola
+  80–159) stoi obok pierwszej. Okno rozszerza się tylko wtedy, gdy sklep ma
+  coś w drugiej połowie, a sklepy graczy wyglądają jak dawniej. Towar w
+  sklepach zostaje tam, gdzie był.
+
+### Panele
+
+- **„Teleportuj mnie” przenosi też na kanał bota** (prodnathin). Przycisk w
+  obu panelach przenosił postać w miejsce bota, ale na kanale, na którym ta
+  postać stała. Teraz, gdy bot jest na innym kanale, postać przechodzi na
+  jego kanał, tak jak przy `/warp` GM-a do postaci na innym kanale.
+
+### Klient
+
+- **Tablica celu nie rozciąga się już przez cały ekran** (St_August).
+  Szerokość tablicy liczy się z tego, jak szeroko rysuje się nazwa celu, z
+  górną granicą, więc pasek PŻ nie chowa się pod minimapą. Gdyby nazwa znów
+  rozciągała tablicę, klient zapisze ją raz w syserr.txt.
+
+### Launcher
+
+- **Ostrzeżenie o pamięci przy kanałach** (Piciu97). Każdy kanał to ok.
+  2,5 GB RAM (zmierzone przy 4 kanałach), a nie 1 GB, jak pisał launcher.
+  Ostrzeżenie pojawia się już od dwóch kanałów, gdy połowa pamięci komputera
+  (tyle zwykle dostaje Docker) jest mniejsza, niż potrzebują wybrane kanały.
+
+---
+
 ## 2.2.36 — 2026-09-28
 
 Serwer 2.2.36 i klient 2.0.50: zaktualizuj oba. Gra, launcher i panel

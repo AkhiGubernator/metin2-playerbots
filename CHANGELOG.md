@@ -17,6 +17,67 @@ every version here.
 
 ---
 
+## 2.2.34 — 2026-09-28
+
+Serwer 2.2.34 i klient 2.0.48: zaktualizuj oba. Suwaki zachowania botów w
+panelu działają teraz na to, co boty robią, „Wszystko z powrotem na 100” nie
+robi już z królestw wrogów, puste pola ekwipunku przy otwartym magazynie albo
+sklepie znów przyjmują przedmioty, prawy klik na Towarzysza otwiera menu, a
+jeden bot wystawia te same przedmioty w jednej cenie. Zawiera wszystko z
+2.2.33.
+
+### Poprawki
+
+- **Puste pola w ekwipunku „zajęte” przy otwartym magazynie albo sklepie.**
+  Klient zaznaczał na czerwono pola z przedmiotami, których otwarte okno nie
+  przyjmie, ale pamiętał to po numerze pola, a nie po przedmiocie. Po „Scal i
+  uporządkuj”, podniesieniu czegoś z ziemi albo wyjęciu z magazynu
+  zaznaczenie zostawało na pustym polu: nie dało się tam nic odłożyć, a tego,
+  co tam trafiło, nie dało się ruszyć, dopóki okno nie zostało otwarte od
+  nowa. Teraz zaznaczenie idzie za przedmiotem. (Piciu713)
+- **Prawy klik na Towarzysza.** Dla klienta właściciela Towarzysz jest NPC-em,
+  żeby dało się przez niego przechodzić, a menu (szept, handel, zaproszenie
+  do gildii) gra otwiera tylko dla gracza. Gdy kursor stoi na Towarzyszu,
+  klient traktuje go teraz jak gracza; po zjechaniu kursorem znów da się
+  przez niego przejść. (Piciu713, blipu)
+- **Jeden bot, jedna cena.** Bot wystawiał te same przedmioty w swoim
+  sklepie w różnych cenach (np. dwie paczki Szkatułek Blasku za 1 600 000 i
+  1 840 000). Teraz jeden sklepikarz podaje jedną cenę za tę samą rzecz, a
+  różne boty nadal różne, więc wahania rynku zostają. (Producent Hip Hopu,
+  Piciu713)
+- **Panel Sebana: „Potencjalny zarobek”** mnożył cenę paczki przez liczbę
+  sztuk jeszcze raz, choć cena w sklepie offline jest za całą paczkę. Teraz
+  to suma cen, a podpowiedź przy cenie mówi „za N szt.”. (Producent Hip Hopu)
+- **Suwaki zachowania botów (panel klasyczny i panel Sebana).** Zapasy,
+  Kowal, Księgi, Biolog i Misje polowania zmieniały tylko napis nad głową
+  bota, a nie to, co bot robi. Teraz:
+  - Zapasy przesuwają moment powrotu po mikstury: przy 100 poniżej 300
+    czerwonych albo 200 niebieskich, przy 25 dopiero przy ćwiartce tego,
+    przy 250 już przy dwa i pół raza tylu (najwyżej 480/360).
+  - Kowal, Księgi, Biolog i Misje polowania przy 100 działają przy każdej
+    okazji, więc suwak kończy się na 100. Poniżej część botów pomija daną
+    sprawę po pół godziny: przy 25 mniej więcej trzy boty na cztery. Na
+    świecie testowym przy 25 w ciągu 12 minut wizyt u kowala było 49 zamiast
+    156, a wyjść po okazy dla Biologa 102 zamiast 759.
+  - Poziom podniesiony daje zwykłemu biciu pierwszeństwo, a grinderzy biją
+    wtedy po kilka potworów naraz; obniżony nic nie zmienia.
+- **„Wszystko z powrotem na 100” w obu panelach** ustawiało też wrogość
+  między królestwami na 100% (każdy bot wrogi), zwoje od +9, odpoczynek na
+  100%, a w panelu klasycznym szkatułki na 100‰. Teraz przywraca tylko
+  suwaki celów.
+- Panel klasyczny nie kasuje już przy zapisie ustawień, których nie zna, a
+  suwak szkatułek z potwora sięga 1000‰, jak w grze. Przełączniki, które na
+  danym silniku nic nie robią (Wieża, ItemShop i Katakumby na r40250, Misje
+  polowania i Szybkie księgi na 2.x), są ukryte i zachowują swoją wartość.
+- Opisy suwaków w panelu mówią, co naprawdę robią i jak szybko: wędkowanie
+  losuje się co pół godziny według suwaka i nastroju, Koń steruje wyprawami
+  do Lochu Małp po medale, Metiny to losowanie raz na godzinę, Grupy na
+  froncie działają tylko w dół, wyłączenie Wojen wycofuje boty także z
+  trwającej wojny, a Wrogość między królestwami działa tylko przy układzie
+  świata unified.
+
+---
+
 ## 2.2.33 — 2026-09-28
 
 Serwer 2.2.33 i klient 2.0.47: zaktualizuj oba. Dom Towarowy nie wyrzuca już

@@ -17,6 +17,43 @@ every version here.
 
 ---
 
+## 2.2.41 — 2026-09-30
+
+Serwer 2.2.41: zaktualizuj serwer. Klient zostaje 2.0.53. Zawiera wszystko z
+2.2.40.
+
+### Gra po angielsku: reszta questów
+
+- **Teksty questów, które zostały po polsku, są teraz po angielsku** (lista
+  Tyriona). Przetłumaczyliśmy wszystkie 1085 tekstów, dla których nie było
+  angielskiego od Gameforge'a: menu BETA, nazwy map u Teleportera, „Tak”,
+  „Nie” i „Anuluj”, nagrody Biologa i inne teksty, które paczka zmieniła albo
+  dodała. Gra używa 1081 z nich. Po polsku zostały cztery: trzy ogłoszenia dla
+  wszystkich i jedna linia, którą quest mówi do innej postaci.
+- **Menu każdego NPC kończy się „Close”** zamiast „Zamknij”, gdy gracz ma
+  angielskiego klienta.
+- **Tytuły questów po lewej stronie ekranu** zmieniają język od razu, gdy
+  klient poda nowy język, a nie dopiero przy następnym logowaniu.
+
+### Sklepy offline
+
+- **„Yangbug” z 29 września to były ceny, nie yang z niczego** (zgłoszenia
+  Iwakury, Uxìĕ [DSO] i blastyw, logi przejrzał Kiciamol). Na naszym świecie
+  testowym księgi sklepów offline zgadzają się co do yanga: 55 525 zakupów
+  dało sprzedawcom 25,5 mld yang po 5% podatku i dokładnie tyle zostało
+  wypłacone albo czeka w sklepach. „Wartość rynku” skoczyła przez inflację
+  cen, którą wyłączyło już 2.2.39.
+- **Sprzedaż rozlicza tylko zakup, który założył blokadę przedmiotu.** Rdzeń
+  bazy płacił sprzedawcy, zanim sprawdził blokadę. Teraz blokada pamięta, czyj
+  to zakup, i tylko ten zakup może sprzedaż rozliczyć albo zwolnić. To
+  zabezpieczenie na przyszłość: dziś żaden zakup nie omija blokady.
+- **Jedna sprzedaż to jeden wpis.** Bot, który zmienił kanał, dostawał tę samą
+  sprzedaż drugi raz: w logu, w historii ekwipunku w panelu i w „ostatniej
+  sprzedaży” w oknie Ceny. To było „zapłacone dwa razy” ze zgłoszenia - yang
+  był policzony raz.
+
+---
+
 ## 2.2.40 — 2026-09-29
 
 Poprawka aktualizacji do wersji chronionej: zaktualizuj serwer. Klient zostaje

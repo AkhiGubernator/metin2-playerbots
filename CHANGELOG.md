@@ -17,6 +17,255 @@ every version here.
 
 ---
 
+## 2.2.39 — 2026-09-29
+
+Serwer 2.2.39 i klient 2.0.53: zaktualizuj oba. Gra mówi po angielsku do
+gracza z angielskim klientem (questy, komunikaty serwera, okna i opisy), boty
+rozwijają umiejętności i wymieniają przestarzały ekwipunek, sklepy botów
+wystawiają więcej i układają towar, konkurs OX działa po polsku i angielsku,
+panel klasyczny wyjaśnia decyzje botów, a launcher ma przycisk „Zgłoś”.
+Zawiera wszystko z 2.2.38.
+
+### Serwer bez kompilacji
+
+- **Paczka serwera zawiera gotowe pliki serwera** (game, db, qc) zamiast
+  źródeł: launcher składa z nich obraz gry bez kompilowania, więc pierwsze
+  uruchomienie i każda aktualizacja trwają krócej. Questy, dane gry, `.env` i
+  panele działają jak dotąd. Instalacja z nowej pełnej paczki przejmuje
+  istniejący świat (bazę, postacie, ustawienia), jeśli na komputerze jest
+  dokładnie jeden. Aktualizacje wersji chronionej pobiera launcher
+  jak zwykle i sam wybiera właściwą paczkę. Zwykła instalacja dostaje przy tej
+  aktualizacji propozycję przejścia na wersję chronioną: stare pliki źródłowe
+  zostają na dysku nieużywane, a nieudane przejście jest cofane w całości.
+- **Przed przejściem na wersję chronioną każdy zobaczy, co się zmienia:**
+  okno z informacją (co się zmienia, co zostaje) ma przycisk OK, który
+  odblokowuje się dopiero po 10 sekundach - także przy aktualizacji starym
+  launcherem. Na VPS (update.sh) ta sama informacja i 10 sekund w logu.
+
+### Po angielsku (Jeremus-Sama, Iwakura)
+
+Gracz z klientem ustawionym na angielski (i każdy inny język niż polski)
+dostaje angielski wszędzie tam, gdzie istnieje oficjalny angielski Gameforge;
+reszta zostaje po polsku do ręcznego tłumaczenia (Iwakura zaproponował pomoc).
+Gracz z polskim klientem widzi wszystko jak dotąd.
+
+- **Questy z paczki** mówią po angielsku oficjalnym tekstem Gameforge tam, gdzie
+  polski tekst jest ten sam co u Gameforge (3918 z 4325 tekstów używanych przez
+  questy tego świata), a ogłoszenia lochów trafiają do każdego w jego języku.
+- **Komunikaty samego serwera** („Nie możesz…”, handel, grupa, kowal itd.) po
+  angielsku: 861 z 1016 linii.
+- **Okna klienta:** 568 tekstów, które miał tylko polski plik języka, i 481
+  polskich napisów wpisanych na stałe w skryptach (w tym panel F9) są teraz
+  tekstami języka z angielskim dla każdego innego języka; angielskie obrazki
+  (zakładki okna postaci, nazwy klas, 51 nazw map, logowanie), opisy klas i
+  królestw, regulamin, lista budynków gildii oraz angielskie nazwy
+  przedmiotów i potworów, których brakowało.
+- **Umiejętności łucznika Ninja w klientach innych niż polski** (angielski,
+  niemiecki, hiszpański, włoski, portugalski, rumuński, turecki): Iskrzące
+  Uderzenie miało nazwę, ikonę i warunki Deszczu Strzał (klient żądał przy nim
+  celu), a angielski nie miał opisu Deszczu Strzał wcale. Teraz każdy język ma
+  numerację tego świata.
+- Boty w rozmowie nazywają poprawnie Iskrzące Uderzenie i Deszcz Strzał, a po
+  polsku także Walnięcie, Tąpnięcie, Uderzenie Miecza, Mroczną Sferę i Burzowy
+  Szpon (były pomylone).
+
+### Boty
+
+- **Boty rozwijają umiejętności na M i dalej.** Dotąd prawie żaden bot nie
+  miał w plecaku księgi umiejętności na poziomie M, bo księgi kupował tylko bot
+  z bronią, zbroją i tarczą na +7 (a takich było 5 na 284 boty od 50 poziomu).
+  Teraz bot, który ma ponad 10 mln yang (w skali cennika), kupuje księgi swoich
+  umiejętności z nadwyżki ponad tę kwotę, szuka ich na wszystkich ladach mapy,
+  a nie w 64 liniach naraz, i czyta je od razu. Bot z drugiego, trzeciego i
+  czwartego kanału też wyrusza po księgę na lady kanału ze sklepami.
+- **Czytanie księgi nie wymaga już 20 000 doświadczenia**, w każdym trybie
+  trudności, dla graczy i dla botów.
+- **Boty czytają księgi polimorfii i Przewodnik Górnictwa.** Księga
+  oswajania konia zostaje dla graczy: boty mają tę umiejętność na 10 z samego
+  treningu konia.
+- **Boty nie zmieniają już broni tam i z powrotem.** Broń była oceniana z
+  bieżącymi statystykami, a na koniu rosną one do statystyk konia, więc dwie
+  podobne bronie zamieniały się przy każdym wsiadaniu i zsiadaniu. Teraz broń
+  jest oceniana jak na piechotę, z właściwymi dla klasy statystykami, a zmiana
+  wymaga 1% przewagi (powrót do zdjętej broni w ciągu godziny - 5%).
+- **Boty nie zmieniają już dobrej broni na słabszą przez „tier” broni.** Premia
+  za klasę broni z listy Iwakury (8% za stopień) liczyła się od całej oceny broni
+  i przeważała cios: 32 z 99 zmian broni szły na broń o słabszym ciosie. Teraz
+  to 2% za stopień i tylko od ciosu, a przy równym ciosie wygrywa lepsza rodzina.
+  Reguły „nie walcz bronią 15 poziomów niższą” nie ma - jedyny zakaz to broń do
+  10 poziomu u bota od 30. poziomu.
+- **Materiały do broni w ręce i do projektu broni na 30 poziom** nie idą już na
+  sprzedaż przez regułę 15 poziomów (bot od 46. poziomu z bronią +6..+8 tracił
+  materiały na jej kolejny plus).
+- **Bot nie wystawia na ladę broni lepszej od swojej, gdy łowi ryby** (w czasie
+  łowienia gra odmawia założenia przedmiotu, więc bot brał ją za niepotrzebną).
+- **Przestarzała tarcza, hełm i zbroja są wymieniane** (BeakGo i inne boty na
+  70 poziomie nosiły tarczę z 1 poziomu +9). Od 50 poziomu przedmiot o 30 i
+  więcej poziomów niższy od bota jest zastępowany wyższym z lad (najpierw
+  gotowy +6, potem do ulepszenia), a hełm jest ulepszany do +6.
+- **Wieża Demonów:** boty nie stoją już bezczynnie przy Żniwiarzu (jeden bot,
+  który nie znalazł drogi, zdejmował bossa z celów całej drużyny) i wychodzą z
+  wieży 12 sekund po jego śmierci (prodnathin).
+- **Boty nie utykają już przy wyjeździe z pierwszej wioski** (blasty). Boty od 30
+  poziomu trzymała w M1 blokada czekająca na wizytę w mieście, której ta wizyta
+  nie mogła zdjąć: przy dropie 300% plecak i magazyn były pełne, a Szkatułki
+  Blasku Księżyca dosypywały mikstur ponad limit. Pełny plecak, którego miasto
+  nie opróżni, i nadmiar mikstur nie zatrzymują już bota, a blokada, której
+  nic nie zdejmuje, puszcza go po 20 minutach. Na CH1 planer tras nie odrzuca
+  już długich przejść do portalu, a utknięte przejście czeka 30-60 s zamiast
+  krążyć między portalem a expowiskiem. Każda taka blokada jest zapisywana w
+  logu serwera.
+- **Boty Shinsoo i Jinno płacą za Teleportera** tak jak boty Chunjo i gracze
+  (od 11 poziomu, 1000 yang za każde 5 poziomów). Dotąd jeździły za darmo i na
+  każdym poziomie, bo opłata znała tylko Teleporterów Chunjo.
+- **Boty z Pierścieniem Teleportacji wracają nim do swojej wioski** (M1 albo M2)
+  z każdej mapy poza lochami, przy każdym powrocie - dotąd używały go tylko na
+  pograniczu, gdy skończyły się mikstury albo broń, a poza tym szły pieszo.
+- **Boty w Pyongmoo nie utykają już przy wąwozie** na zachód od expowisk 20-25.
+  Potwory, które odradzają się wewnątrz zablokowanego terenu, atakowały
+  przechodzące boty, a te w kółko próbowały do nich dojść. Teraz bot nie bierze
+  na cel potwora, do którego nie może podejść (łucznik z krawędzi nadal do
+  niego strzela).
+- **Boty kupują w ItemShopie to, czego potrzebują, a nie same fryzury** (sosen94;
+  na świecie testowym 346 z 347 zakupów w tydzień to były fryzury). Zwój
+  Egzorcyzmu, gdy księga czeka na odstęp; Kamień Duchowy do umiejętności na G;
+  wykrywacz dla łowcy Metinów; kamienie zmiany do bonusów; Pierścień
+  Teleportacji na pograniczu; za Znaki Zwój Błogosławieństwa, Rada Pustelnika i
+  wzmacniacze na rajd, wieżę i wojnę. Najpierw to, czym bot zajmuje się teraz.
+  Na potrzebę, na którą go jeszcze nie stać, bot oszczędza (jeśli uzbiera w
+  ciągu 10 dni), a fryzury kupuje tylko z nadwyżki ponad zapas na potrzeby.
+- **Hazardziści pojawiają się częściej** (Iwakura): Młodszy najwyżej 1 bot na
+  200 spełniających warunki (przerwa 2 h), Starszy 1 na 250 (4 h), Naczelny 1
+  na 300 (8 h), Szalony 1 na 400 (8 h).
+- **Wymiana ulepszaczy** (Iwakura): bot z nadmiarem ulepszaczy wymienia 20
+  sztuk na Zaczarowanie albo Wzmocnienie Przedmiotu (to, czego mu bardziej
+  brakuje), a 75 na Marmur Błogosławieństwa, jeśli ma co najmniej 4 przedmioty
+  z czterema bonusami. Opłata 500 000 yang (rośnie z przelicznikiem dropu
+  yang), szansa 60%, po porażce ulepszacze i opłata przepadają. Tylko gdy na
+  ladach leży ponad 200 sztuk danego ulepszacza, a sztuka kosztuje najwyżej
+  70 000 yang - wtedy bot może je też skupować.
+- **Przelicznik cen według dropu yang** jest tabelą Iwakury (100% - x1.0,
+  150% - x1.6, 200% - x2.2, 225% - x2.43, dalej +0.25 na każde 25%).
+
+### Towarzysz
+
+- **Pierścień Anty-Exp właściciela obejmuje też Towarzysza** (zhask9431,
+  Iwakura). Gdy postać ma włączony Pierścień Anty-Exp, Towarzysz również nie
+  dostaje doświadczenia (dotąd zbierał swoją część z każdego zabicia w grupie
+  i odskakiwał właścicielowi poziomami); po wyłączeniu pierścienia znowu
+  dostaje. Towarzysz mówi o tym w czacie. Drop z potworów zostaje jak był.
+- **Ustawienie „Nic” przy zbieraniu dropu jest przestrzegane** (St_August).
+  Towarzysz w trybie „Atakuj” przy rozbijanych kamieniach Metin zbierał przez
+  20 sekund wszystko dookoła, odbiegał od walki i stał tam, gdzie pękł kamień -
+  mimo ustawienia „Nic”. Teraz zbiera tylko to, na co pozwala jego okno
+  (spuszczony ze smyczy albo grający bez właściciela - jak każdy bot).
+- **Towarzysz łucznik dostaje łuk** (Tyrion). Ninja ze ścieżką łucznika
+  zaczynał ze sztyletem i bez yang, a do kupca chodzi tylko razem z
+  właścicielem, więc walczył sztyletem i bez umiejętności łucznika. Teraz
+  Towarzysz-łucznik, który nie ma żadnego łuku, dostaje Łuk+0 i paczkę
+  Drewnianych Strzał - przy tworzeniu, przy zmianie ścieżki i przy wejściu do
+  gry (także Towarzysze stworzeni wcześniej). Sztylet zostaje w torbie na
+  kamienie Metin.
+
+### Drop
+
+- **Bronie na 75 poziom wypadają z Żniwiarza i Azraela, nie z Baronowej
+  Pająków** (Kuszaa). Z grupy dropu Baronowej zniknęło 12 linii (Zatruty Miecz,
+  Lwi Miecz, Miecz Żalu, Stalowy Łuk Kruka, Skrzydła Demona, Bambusowy Dzwon;
+  +3 i +4). Żniwiarz w Wieży Demonów: te same bronie i Wachlarz 8 Trygramów,
+  +3 z szansą 10%, +4 - 5%. Azrael w Katakumbach: +3 - 20%, +4 - 10%. Reszta
+  dropu Baronowej (biżuteria, tarcze, Pierścień Teleportacji, przepustki,
+  Ekstazyjny Wachlarz i zbroje z czarnej stali) bez zmian. Podgląd dropu
+  pokazuje nowy stan.
+
+### Sklepy botów
+
+- **Inflacja cen wyłączona** (Iwakura). Ceny z cennika Iwakury nie rosną
+  już razem z ilością yang w świecie (x1,05 za każde 2,5 mld); Iwakura
+  przebuduje ten system od nowa. Lady botów przeceniają się do cennika przy
+  stawce yang w ciągu kilku godzin po aktualizacji - na świecie z dużą ilością
+  yang ceny spadną (np. 20 mld yang dawało x1,48).
+- **Księgi innych klas trafiają na ladę** (zamiast leżeć w plecaku), a limit
+  trzech linii jednej umiejętności nie obowiązuje, póki na ladzie jest ponad 20
+  wolnych pól.
+- **Ulepszacze z niższych map idą na sprzedaż:** bot trzyma materiały tylko
+  dla przedmiotów w przedziale 15 poziomów od swojego, sprawdzane przy każdym
+  przeglądzie towaru.
+- **8 na 10 botów układa ladę** tak jak plecak - rodzajami, potem numerem i
+  plusem (Iwakura).
+- **Targowanie w szeptach:** oferta równa cenie z lady jest przyjmowana (bot
+  odpowiadał „trochę mało” na własną cenę; zgłosił Setnil).
+- Naprawiony błąd, przez który rdzeń po wystawieniu przedmiotu czytał
+  zwolnioną pamięć (mógł się wywrócić).
+
+### Konkurs OX (Malina)
+
+- **Pytania po polsku i po angielsku** (161, każdy gracz widzi swój język) -
+  paczka miała niemieckie.
+- **Wejście od 15 poziomu** domyślnie, **do 1000 uczestników** (ludzie i boty
+  razem; dotąd limit 200 i tak nie działał).
+- **Boty biorą udział:** część botów zgłasza się na konkurs i odpowiada z
+  trafnością około 75%, odpadają według zasad gry. W układzie „unified” mapa
+  OX jest na rdzeniu z botami.
+- Ogłoszenia questów na innych rdzeniach miały zły typ czatu - naprawione.
+
+### Quest konny (Hiob)
+
+- **Wykonany trening jazdy z atakiem jest zaliczany** - paczka po treningu
+  jeszcze losowała, czy się udał.
+
+### Receptury zielarskie (Derpsonkowy95, Iwakura)
+
+- **Receptury Baek-Go nie mają już czasu odnowienia.** Po udanym
+  przeczytaniu receptury trzeba było czekać 21 godzin (albo zużyć Zwój
+  Egzorcyzmu), zanim dało się przeczytać następną taką samą. Teraz można
+  czytać jedną po drugiej; czekanie zapisane przed aktualizacją też znika.
+  Boty czytają receptury bez czekania tak samo.
+
+### Launcher
+
+- **Przycisk „Zgłoś”:** formularz (co się stało, rodzaj, kontakt) z
+  dołączonymi logami serwera i launchera, wysyłany prosto do autora.
+  Dopóki wysyłanie nie jest włączone, zgłoszenie zapisuje się jako plik ZIP
+  do wysłania na Discordzie.
+- **COOP:** reguła zapory obejmuje porty wszystkich włączonych kanałów -
+  znajomy łączył się tylko z CH1, jeśli CH2 albo CH3/CH4 włączono po pierwszym
+  hostowaniu.
+- **VPS:** ponowna instalacja na istniejący świat uzupełnia `.env` tak jak
+  aktualizacja (nowe klucze, porty włączonych kanałów).
+
+### Panele
+
+- **Panel klasyczny wyjaśnia decyzje botów:** po najechaniu na przedmiot w
+  sklepie bota - dlaczego go wystawił i jak powstała cena (krok po kroku); w
+  historii ekwipunku - dlaczego bot zmienił przedmiot, skąd wziął nowy, jaką
+  rolę miał stary i porównanie ocen; nowa strona „Decyzje” z nietypowymi
+  decyzjami z ostatnich godzin i przyciskiem „Kopiuj”. Przełącznik EXPLAIN na
+  stronie AI (ile dni trzymać, 0 wyłącza).
+- **Wyjaśnienia decyzji dla AI:** przycisk „Kopiuj dla AI” na karcie bota i na
+  stronie „Decyzje” (decyzja z pełnym kontekstem jako tekst do wklejenia), filtr
+  anomalii (zmiana na broń o słabszym ciosie, zdjęta broń na 30 poziom, towar
+  wystawiony z narzędziem w ręce, założony przedmiot na własnej ladzie) i
+  stosunek ceny do cennika przy każdym kroku wyceny.
+- **Gildie w panelach nie pokazują już więcej botów online niż członków**
+  (azzyl5021). Po zmianie układu świata rdzeń bez botów zostawiał stary raport
+  gildii, a panele go doliczały; teraz serwer czyści go przy starcie.
+- **Panel Sebana w wersji 1.100.8** (seban latino): wylogowanie nie nachodzi
+  na rozwijane menu.
+
+### Klient
+
+- **Okno „Ceny”** przy wystawianiu (Piciu713): sugestia botów, mediana cen
+  botów z liczbą próbek, rynek dla takiego stosu i ostatnia sprzedaż botów;
+  „Auto-cena” jak dotąd.
+- **Nowa paczka językowa** (ok. 90 MB): opisy umiejętności i efektów, okna i
+  obrazki po angielsku (zob. „Po angielsku”).
+- **Bez błędu `top1.mse` w syserr.txt** (Tyrion): klient przy każdym starcie
+  rejestrował efekt odznaki Top1 z pliku, którego nie ma w żadnej paczce, i
+  zapisywał błąd; ten wpis zniknął.
+
+---
+
 ## 2.2.38 — 2026-09-28
 
 Serwer 2.2.38 i klient 2.0.52: zaktualizuj oba. Rundy wojen gildii mają

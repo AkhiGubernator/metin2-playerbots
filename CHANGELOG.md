@@ -17,6 +17,27 @@ every version here.
 
 ---
 
+## 2.2.40 — 2026-09-29
+
+Poprawka aktualizacji do wersji chronionej: zaktualizuj serwer. Klient zostaje
+2.0.53. Zawiera wszystko z 2.2.39.
+
+### Przejście na wersję chronioną już się nie zawiesza
+
+- **Aktualizacja z 2.2.38 i start serwera nie stoją już w nieskończoność**
+  (prodnathin - pierwsze zgłoszenie przyciskiem „Zgłoś”). W 2.2.39 informacja
+  o przejściu na wersję chronioną otwierała okno z przyciskiem OK, ale
+  launcher uruchamia serwer w ukrytym procesie i tego okna nie było widać:
+  aktualizacja stawała na „Pliki aktualizacji pobrane i podmienione”, a
+  każdy następny start na „Docker sprawdzony”. Teraz ta sama informacja
+  pojawia się w logu launchera z 10-sekundowym odliczaniem, bez okna.
+- Kto utknął na 2.2.39: po aktualizacji do 2.2.40 serwer wystartuje sam.
+  Obejście bez aktualizacji: pusty plik `PROTECTED.notice` w folderze
+  `Serwer\linux-port` (w tym folderze w wierszu poleceń:
+  `type nul > PROTECTED.notice`).
+
+---
+
 ## 2.2.39 — 2026-09-29
 
 Serwer 2.2.39 i klient 2.0.53: zaktualizuj oba. Gra mówi po angielsku do

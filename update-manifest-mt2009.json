@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-29T21:07:55Z",
-  "statusMessage": "2.2.40 (serwer; klient zostaje 2.0.53): poprawka przejscia na wersje chroniona - aktualizacja i start nie stoja juz na niewidocznym oknie, informacja z 10 s odliczania jest w logu launchera. Zawiera wszystko z 2.2.39.",
+  "publishedAt": "2026-09-29T21:48:19Z",
+  "statusMessage": "2.2.41 (serwer; klient zostaje 2.0.53): reszta questow po angielsku - menu NPC i tytuly questow w jezyku gracza - oraz poprawki sklepow offline (sprzedaz rozlicza tylko zakup z blokada, jeden wpis na sprzedaz). Zawiera wszystko z 2.2.40.",
   "server": {
-    "version": "2.2.40",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.40/metin2-server-protected-migration-2.2.40.zip",
-    "sha256": "777379154070626C1BFEC40C67BF78DDA9C3AE9DBC1ABBDFB1D4211238A44C2A",
-    "size": 145516668
+    "version": "2.2.41",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.41/metin2-server-protected-migration-2.2.41.zip",
+    "sha256": "FBEA417E2B19CD2E71602D871D4561A2D71E5977522568A3FA387B58969C8F95",
+    "size": 145563467
   },
   "serverProtected": {
-    "version": "2.2.40",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.40/metin2-server-protected-update-2.2.40.zip",
-    "sha256": "FF55DAE08D78F02F1CDFC019831761FD7AA3AF0D1060E28AB03FF515B2FED2D5",
-    "size": 135353777
+    "version": "2.2.41",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.41/metin2-server-protected-update-2.2.41.zip",
+    "sha256": "FDCFC21C06A9A8F703326870BB2D1B8AF51E3BE355343D8D3F412B71B0D3B058",
+    "size": 135400576
   },
   "protectedFrom": "2.2.39",
   "support": {

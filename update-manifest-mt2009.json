@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-29T19:23:46Z",
-  "statusMessage": "2.2.39 (serwer w wersji chronionej i klient 2.0.53 - zaktualizuj oba): gotowe pliki serwera zamiast kompilacji (przed przejsciem launcher pokazuje na 10 s, co sie zmienia), gra po angielsku dla angielskiego klienta, poprawki botow, Towarzysza, sklepow i receptur, inflacja cen wylaczona, przycisk Zglos. Zawiera wszystko z 2.2.38.",
+  "publishedAt": "2026-09-29T21:07:55Z",
+  "statusMessage": "2.2.40 (serwer; klient zostaje 2.0.53): poprawka przejscia na wersje chroniona - aktualizacja i start nie stoja juz na niewidocznym oknie, informacja z 10 s odliczania jest w logu launchera. Zawiera wszystko z 2.2.39.",
   "server": {
-    "version": "2.2.39",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.39/metin2-server-protected-migration-2.2.39.zip",
-    "sha256": "C6E838C5D9B1EE69ED51EBEDB9C8EC4180586B2A415F9FC89474A119265EC0DC",
-    "size": 145517037
+    "version": "2.2.40",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.40/metin2-server-protected-migration-2.2.40.zip",
+    "sha256": "777379154070626C1BFEC40C67BF78DDA9C3AE9DBC1ABBDFB1D4211238A44C2A",
+    "size": 145516668
   },
   "serverProtected": {
-    "version": "2.2.39",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.39/metin2-server-protected-update-2.2.39.zip",
-    "sha256": "D116A836C7A272012634967C3E0DD23720DFE63FA967F04D127D60A41CE2347D",
-    "size": 135354146
+    "version": "2.2.40",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.40/metin2-server-protected-update-2.2.40.zip",
+    "sha256": "FF55DAE08D78F02F1CDFC019831761FD7AA3AF0D1060E28AB03FF515B2FED2D5",
+    "size": 135353777
   },
   "protectedFrom": "2.2.39",
   "support": {

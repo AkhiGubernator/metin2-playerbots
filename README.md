@@ -20,9 +20,14 @@ Boty nie są zewnętrznymi programami. To pełnoprawne postacie sterowane przez 
 2. Zainstaluj Docker Desktop i poczekaj, aż pokaże „Engine running”.
 3. Rozpakuj paczkę do zwykłego folderu, np. `C:\Gry\Metin2 Singleplayer` (nie na Pulpit ani do Dokumentów synchronizowanych z OneDrive), i uruchom `Serwer\Metin2-Launcher-GUI.bat`.
 4. Gdy launcher zaproponuje aktualizację, wybierz **Aktualizuj wszystko**: pełna paczka jest starsza niż najnowsze wydanie.
-5. Kliknij **1. ZAINSTALUJ / PRZYGOTUJ**, a potem **2. GRAJ**. Pierwszy start buduje serwer i trwa kilkanaście minut, kolejne trwają chwilę.
+5. Kliknij **1. ZAINSTALUJ / PRZYGOTUJ**, a potem **2. GRAJ**. Pierwszy start składa serwer w Dockerze z gotowych plików i trwa kilka minut, kolejne trwają chwilę.
 
-O nowej wersji serwera lub klienta launcher sam zapyta przy starcie. Możesz też sprawdzić ją przyciskiem **SPRAWDZ AKTUALIZACJE**. Paczki pobierają się z [wydań w tym repozytorium](https://github.com/TieruYT/metin2-playerbots/releases). Serwer na Linuksie aktualizujesz poleceniem `sh linux-port/tools/update.sh` w folderze serwera, a serwer na VPS możesz założyć i aktualizować z launchera (**SERWER NA VPS**).
+> [!NOTE]
+> **Od wersji 2.2.39 serwer jest w wersji chronionej.** Przychodzi jako gotowe pliki serwera, bez kodu źródłowego i bez kompilacji na Twoim komputerze, więc instalacja i aktualizacje trwają krócej. Starsza, zwykła instalacja przechodzi na wersję chronioną sama przy najbliższej aktualizacji (launcher mówi o tym w logu z 10-sekundowym odliczaniem), a świat, postacie i ustawienia zostają. Pliki gry, które możesz edytować (dropy, questy, mapy), są teraz w `Serwer\linux-port\docker\game\share\locale\poland\` i aktualizacje ich nie nadpisują.
+
+O nowej wersji serwera lub klienta launcher sam zapyta przy starcie. Możesz też sprawdzić ją przyciskiem **SPRAWDZ AKTUALIZACJE**. Paczki pobierają się z [wydań w tym repozytorium](https://github.com/TieruYT/metin2-playerbots/releases). Serwer na Linuksie aktualizujesz poleceniem `sh linux-port/tools/update.sh` w folderze serwera, a serwer na VPS możesz założyć i aktualizować z launchera (**SERWER NA VPS**). Na VPS-ie serwer też składa się z gotowych plików, bez kompilacji.
+
+Błąd albo pomysł? Przycisk **ZGŁOŚ BŁĄD / POMYSŁ** w launcherze wysyła Twój opis razem z logami prosto do nas.
 
 Wymagania, instrukcja krok po kroku i odpowiedzi na częste pytania są na stronie [metin2singleplayer.com](https://metin2singleplayer.com) i na kanałach pomocy na Discordzie.
 

@@ -17,6 +17,61 @@ every version here.
 
 ---
 
+## 2.2.49 — 2026-10-01
+
+Serwer 2.2.49 i klient 2.0.60: zaktualizuj oba. Nowy Dom Towarowy od Uxìĕ
+[DSO] z kupnem części stosu, filtrami bonusów i klas, okienko „Zgłoś błąd”
+zawsze widoczne w launcherze, Strażnik Katakumb zabiera grupę, a Szybki Cios
+botów nie skacze już do gracza. Zawiera wszystko z 2.2.48.
+
+### Dom Towarowy
+
+- **Nowa wersja od Uxìĕ [DSO]:**
+  - **Kupno części stosu.** Wpisujesz, ile sztuk chcesz - okno otwiera się
+    na 1. Płacisz tylko za tę część, reszta zostaje w sklepie, a wiersz od
+    razu pokazuje, ile jej zostało. Gdy ekwipunek zapełni się w trakcie
+    zakupu, kupiona część ląduje pod Twoimi stopami - podnieś ją od razu.
+  - **Wyszukiwanie z polskimi literami** działa też dla nazw zaczynających
+    się wielką literą z ogonkiem.
+  - **Przedmioty ulepszane bez „+”:** sama nazwa pokazuje zwykłą wersję, a
+    „+” albo np. „+3” przywraca ulepszone.
+  - **Zbroje i hełmy według klasy** (Wojownik, Ninja, Sura, Szaman) -
+    rozwijane podkategorie w panelu po lewej.
+  - **Panel „Filtry”:** do 5 bonusów naraz, każdy z minimalną wartością.
+  - **Sortowanie po dwóch kolumnach:** kliknięcie nagłówków „Ilość” i
+    „Cena” sortuje po obu naraz (np. najtaniej, a przy tej samej cenie
+    największe stosy).
+  - Mniejszy pasek narzędzi: odśwież i wyczyść przy krzyżyku okna, krótka
+    paginacja.
+- **„Cena sprzedaży” 2 px wyżej** (Piciu713). W oknie wystawiania i edycji
+  ceny napis stoi teraz na środku między polem ceny a przyciskiem „Ceny”.
+
+### Launcher
+
+- **Okienko „Zgłoś błąd” zawsze widoczne** (Tieru). Na dole paska bocznego,
+  pod wersjami, na każdej stronie launchera: „Coś nie działa? Masz pomysł?”
+  i przycisk ZGŁOŚ BŁĄD / POMYSŁ - ten sam formularz z logami co na stronie
+  logów.
+
+### Boty i lochy
+
+- **Szybki Cios ninji bez skoku do gracza** (teivos.). Bot nie mówił
+  klientom graczy dookoła, w kogo celuje skill - robił to tylko łucznik - więc
+  przy Szybkim Ciosie klient brał cel, który został mu w pamięci po innej
+  postaci, często samego gracza, i ninja „doskakiwała” do niego. Teraz bot
+  podaje cel przed każdym skillem, tak jak klient gracza; poprawia to też
+  efekty buffów, które szamani rzucają na innych.
+- **Strażnik Katakumb zabiera grupę** (xXxDaronxXx). Gdy lider grupy powie
+  Strażnikowi w Hwang „Tak”, razem z nim na 1. piętro schodzą członkowie
+  grupy stojący w pobliżu (do 50 m), którzy spełniają warunki wejścia. Kto
+  ich nie spełnia, dostaje na czacie powód i zostaje, a lider widzi, kto
+  został. Dotąd Strażnik przenosił tylko tego, kto go kliknął.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.48 — 2026-09-30
 
 Serwer 2.2.48 i klient 2.0.59: zaktualizuj oba. Koniec wyrzucania do menu przy

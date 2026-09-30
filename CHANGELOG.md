@@ -17,6 +17,56 @@ every version here.
 
 ---
 
+## 2.2.44 — 2026-09-30
+
+Serwer 2.2.44 i klient 2.0.55: zaktualizuj oba. Boty grają tyle godzin na
+dobę, ile ustawisz, przetopy trafiają na lady, a Towarzysz słucha ustawienia
+„Nic” i da się zmienić jego fryzurę. Zawiera wszystko z 2.2.43.
+
+### Boty
+
+- **Godziny gry botów na dobę** (propozycja blipu). Pod przełącznikiem „Boty
+  grają jak żywi ludzie” na stronie AI panelu WWW jest suwak 0–24: ile godzin
+  na dobę gra każdy bot. Sesje trwają po 4 godziny (przy krótszej dobie jedna
+  sesja na całą dobę), a przerwy dopełniają dobę - 12 to około trzech sesji po
+  4 godziny z 4 godzinami przerwy. 0 zostawia dotychczasowe sesje 3–6 godzin
+  i przerwy 3–9 godzin, 24 to gra bez przerw.
+- **Przetopy na ladach botów** (zgłoszenie kuszaa). Boty trzymały przetopy
+  (Diament, Ebonit i pozostałe) w plecakach i nigdy ich nie wystawiały. Teraz
+  trafiają na lady po cenie z cennika; bot zostawia sobie tylko tyle, ile
+  przyjmą gniazda jego biżuterii.
+- **Suwaki „Górnictwo” i „Zielarstwo”** (propozycja kuszaa). Na stronie AI
+  panelu WWW: ile botów kopie rudę i jak długo odpoczywa od żył, oraz ile
+  botów pracuje przy stole zielarskim Baek-Go i jak często.
+- **Nowa osobowość: Zielarz** - bot przy stole zielarskim Baek-Go, jak Górnik
+  przy żyle. Tytuł nad głową pokazuje klient 2.0.55.
+
+### Towarzysz
+
+- **„Nic” znaczy nic** (zgłoszenie kuszaa, potwierdzone przez Tyriona).
+  Towarzysz puszczony wolno („Wolna ręka”), ale wciąż w drużynie właściciela,
+  podnosił jego przedmioty mimo ustawienia „Nic”, podobnie jak przez pół
+  minuty po przywołaniu. Już tego nie robi.
+- **Zmiana fryzury Towarzysza** (zgłoszenie busz30_04484). Fryzurę zdejmuje
+  tylko Wybielacz: połóż go w torbie Towarzysza i kliknij prawym przyciskiem -
+  fryzura trafi do torby i można założyć inną. Tak samo działa farba do
+  włosów. Zamiast „spróbuj za chwilę” okno mówi, że potrzebny jest Wybielacz.
+- **Łysy Towarzysz po pierwszym przywołaniu** (zgłoszenie urtopy). Po
+  pierwszym ubraniu serwer wysyła go widzom od nowa, więc od razu ma włosy.
+
+### Wersja chroniona
+
+- **Własna Szkatułka Blasku Księżyca** (pytanie Viindu). W wersji chronionej
+  zmieniasz ją w pliku
+  `Serwer\linux-port\docker\game\special_item_group.moonlight.custom.txt`:
+  skopiuj do niego `share-add\special_item_group.moonlight.txt` z tego
+  folderu, zostaw linię `Vnum 50011` i kliknij GRAJ. Komentarz po numerze
+  (np. w bloku skopiowanym ze `special_item_group.txt`) nie przerywa już
+  budowy, a plik z podwójnym `.txt` jest wymieniony w logu budowy.
+  CZYTAJ-CHRONIONY.txt i README mówią, gdzie edytować dropy i szkatułkę.
+
+---
+
 ## 2.2.43 — 2026-09-30
 
 Serwer 2.2.43: zaktualizuj serwer. Klient zostaje 2.0.54. Łucznik trafia kilka

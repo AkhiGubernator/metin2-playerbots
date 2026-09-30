@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-30T14:57:04Z",
-  "statusMessage": "2.2.45 (serwer i klient 2.0.56 - zaktualizuj oba): filtr podnoszenia dla Z i ` z opcja bez bonusu, godziny gry i stan kazdego bota w panelu WWW, Ognista Strzala Ninjy jak przed przerobka paczki. Zawiera wszystko z 2.2.44.",
+  "publishedAt": "2026-09-30T16:35:05Z",
+  "statusMessage": "2.2.46 (serwer i klient 2.0.57 - zaktualizuj oba): filtr podnoszenia dla Towarzysza wedlug Auto Lowow, okno launchera bez konsoli w tle, aktualizacja na VPS dopisuje nowe ustawienia .env od razu. Zawiera wszystko z 2.2.45.",
   "server": {
-    "version": "2.2.45",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.45/metin2-server-protected-migration-2.2.45.zip",
-    "sha256": "BB953384BDA3A6823CDC119C0D76941F77888319F67F2FB96C8855C4C3092E74",
-    "size": 145616891
+    "version": "2.2.46",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.46/metin2-server-protected-migration-2.2.46.zip",
+    "sha256": "8707038259B3116FDFB838352608BD128BDA8BB2F37C2CE2C5BE0350E397B24E",
+    "size": 145619585
   },
   "serverProtected": {
-    "version": "2.2.45",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.45/metin2-server-protected-update-2.2.45.zip",
-    "sha256": "A1C709DAA6E3A17CD4F44DBB73743E45A068A236D7429C85ABB35B2990C5E79F",
-    "size": 135454000
+    "version": "2.2.46",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.46/metin2-server-protected-update-2.2.46.zip",
+    "sha256": "E20416ED07F8FCF0323D21D35353087B252D093AC651A8938162FF47E39FE4CA",
+    "size": 135456694
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.56",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.45/metin2-client-update-2.0.56.zip",
-    "sha256": "1753A55F3F8EF0A8DD7763D10ED8DDF9F1373E1E96ABD5B3D5A8411419A2C658",
-    "size": 100482207
+    "version": "2.0.57",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.46/metin2-client-update-2.0.57.zip",
+    "sha256": "EE4F50E751072D23581CA6B82AB6F61DF17AD6931AA4919C5F50C9BF410F2346",
+    "size": 100483838
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

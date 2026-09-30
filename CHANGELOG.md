@@ -17,6 +17,45 @@ every version here.
 
 ---
 
+## 2.2.46 — 2026-09-30
+
+Serwer 2.2.46 i klient 2.0.57: zaktualizuj oba. Towarzysz podnosi według
+filtra z Auto Łowów, okno launchera nie trzyma już za sobą konsoli, a
+aktualizacja na VPS dopisuje do .env nowe ustawienia od razu. Zawiera wszystko
+z 2.2.45.
+
+### Towarzysz
+
+- **Filtr podnoszenia dla Towarzysza** (propozycja Sosny). W oknie Towarzysza
+  (P), na karcie Polecenia, w części Drop jest przycisk „Filtr” obok
+  „Ekwipunku”. Włączony: Towarzysz podnosi tylko rodzaje przedmiotów
+  zaznaczone w Auto Łowach (część „Podnoszenie”, razem z „Bez bonusu”) i yang
+  - także Twój drop, który podnosi do Twojego plecaka. Zmiana rodzajów w Auto
+  Łowach od razu obowiązuje też Towarzysza. Wyłączony: podnosi wszystko, na co
+  pozwala Drop, jak dotąd.
+
+### Launcher
+
+- **Okno launchera bez konsoli w tle** (pytanie Tomasza). Czarne okno
+  terminala, które otwierało się ze skrótu i stało za launcherem - a jego
+  zamknięcie zamykało launcher - samo się zamyka po kilku sekundach, gdy okno
+  launchera jest już na ekranie. Błędy launchera pokazują się jak dotąd w
+  okienkach i w folderze launcher-logs.
+
+### Serwer na VPS i Linuksie
+
+- **Aktualizacja dopisuje nowe ustawienia do .env od razu** (zgłoszenie
+  blipu). Klucze, które przynosi nowa wersja, trafiały do .env dopiero przy
+  kolejnej aktualizacji, bo dopisywał je jeszcze poprzedni skrypt - po
+  przeskoku z 2.2.42 prosto na 2.2.45 brakowało M2_EXCHANGE_DUST_CHANCE,
+  M2_EXCHANGE_PARCHMENT_CHANCE i M2_EXCHANGE_MATERIAL_CHANCE. Serwer z wersją
+  2.2.43 lub nowszą dostanie brakujące klucze przy tej aktualizacji, a od
+  2.2.46 każdy nowy klucz trafi do .env razem z wersją, która go przynosi.
+  Ręcznie: `sudo sh linux-port/tools/update.sh env` w folderze serwera.
+  Launcher na Windowsie zawsze dopisywał je od razu.
+
+---
+
 ## 2.2.45 — 2026-09-30
 
 Serwer 2.2.45 i klient 2.0.56: zaktualizuj oba. Filtr podnoszenia dla

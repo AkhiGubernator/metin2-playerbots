@@ -17,6 +17,49 @@ every version here.
 
 ---
 
+## 2.2.45 — 2026-09-30
+
+Serwer 2.2.45 i klient 2.0.56: zaktualizuj oba. Filtr podnoszenia dla
+klawiszy Z i ` z opcją „bez bonusu”, godziny gry i stan każdego bota w panelu
+WWW, a Ognista Strzała Ninjy wraca do dawnej siły. Zawiera wszystko z 2.2.44.
+
+### Gracz
+
+- **Filtr podnoszenia dla Z i `** (propozycja Sosny). W oknie ustawień Auto
+  Łowów, w części „Podnoszenie”, jest przełącznik „Filtr dla Z i `”: gdy jest
+  włączony, klawisze Z i ` (także przytrzymane) podnoszą tylko rodzaje
+  przedmiotów zaznaczone wyżej. Ten sam przełącznik jest w ESC → Opcje gry, w
+  wierszu „Podnoszenie”: [Wszystko] [Filtr] [Ustaw] - ostatni otwiera okno z
+  rodzajami. Kliknięcie przedmiotu myszą dalej podnosi wszystko, a przełączniki
+  podnoszenia zapisują się od razu, bez „Zapisz”.
+- **Ekwipunek tylko z bonusem** (propozycja Sosny). Nowy przełącznik „Bez
+  bonusu” w tej samej części: ustawiony na „nie” zostawia na ziemi broń,
+  zbroje i biżuterię bez żadnego bonusu - przy Auto Łowach i przy Z i `.
+  Pierścienie, pasy i reszta przedmiotów idą jak dotąd, po swoim rodzaju.
+
+### Panel WWW
+
+- **Godziny gry botów**. Strona bota w panelu klasycznym ma kartę „Sesje gry”:
+  co bot robi teraz (w grze od kiedy i na którym kanale, odpoczywa do której
+  godziny albo poza grą od kiedy i dlaczego), pasek dla każdego z ostatnich 7
+  dni i lista sesji z powodami wejścia i wyjścia (start serwera, odpoczynek,
+  zmiana kanału, ban, GM, rozłączenie, zatrzymanie serwera). Serwer zapisuje
+  sesje od tej wersji i trzyma je 8 dni.
+- **„Tylko boty”** na stronie głównej panelu: wszystkie boty z ich stanem -
+  najpierw w grze, potem odpoczywające z godziną powrotu, potem poza grą - i
+  licznikami.
+
+### Balans
+
+- **Ognista Strzała Ninjy wraca do wzoru sprzed przeróbki paczki** (zgłoszenie
+  Matthaeusa). Paczka wzmocniła ją mniej więcej 1,55 raza i Ninje-łucznicy
+  zajmowali całą czołówkę rankingu obrażeń z umiejętności - to nie był błąd
+  zmiany łucznika z 2.2.43. Dotyczy graczy i botów. Premia Ognistej Strzały do
+  obrażeń przeciw Metinom i bossom zostaje. Zmiana wchodzi przy starcie
+  serwera.
+
+---
+
 ## 2.2.44 — 2026-09-30
 
 Serwer 2.2.44 i klient 2.0.55: zaktualizuj oba. Boty grają tyle godzin na

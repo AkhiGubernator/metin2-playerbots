@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-30T21:08:59Z",
-  "statusMessage": "2.2.48 (serwer i klient 2.0.59 - zaktualizuj oba): koniec wyrzucania do menu przy zmianie kanalu i teleporcie, zestawy startowe nowego swiata, opcja slabszych potworow, Kamienie Duchowe wedlug trudnosci, boty bija Metiny zwyklym atakiem, droppery inwestuja. Zawiera wszystko z 2.2.47.",
+  "publishedAt": "2026-09-30T23:24:27Z",
+  "statusMessage": "2.2.49 (serwer i klient 2.0.60 - zaktualizuj oba): Dom Towarowy z kupnem czesci stosu, filtrami bonusow i klas, okienko Zglos blad zawsze widoczne w launcherze, Straznik Katakumb zabiera grupe, Szybki Cios botow bez skoku do gracza. Zawiera wszystko z 2.2.48.",
   "server": {
-    "version": "2.2.48",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.48/metin2-server-protected-migration-2.2.48.zip",
-    "sha256": "9C8D0460BDCEB2716C1A34BF04A87D9BE59B48A26EC2C531025100F77025AFAF",
-    "size": 145635532
+    "version": "2.2.49",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.49/metin2-server-protected-migration-2.2.49.zip",
+    "sha256": "4EA3EFDD7451A01A5B7093D7A4F37C73C0995713041B113DAEF264199FA5DE3A",
+    "size": 145643416
   },
   "serverProtected": {
-    "version": "2.2.48",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.48/metin2-server-protected-update-2.2.48.zip",
-    "sha256": "1996A6F65DDAA9C15074F22C5443D12E962DA6C025E513498E78FFCA2E97D977",
-    "size": 135472641
+    "version": "2.2.49",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.49/metin2-server-protected-update-2.2.49.zip",
+    "sha256": "BE98511AB5F56042B2FD6230EDAD65C334340D45488A88A8F47651F5483AD12A",
+    "size": 135480525
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.59",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.48/metin2-client-update-2.0.59.zip",
-    "sha256": "C3AB1F35A55C94C8986AD2B40B0AD8F3E0DD7F85CC851EA96FB443BE9E4CDCE6",
-    "size": 100496525
+    "version": "2.0.60",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.49/metin2-client-update-2.0.60.zip",
+    "sha256": "DB993F1A742DC9964A2B3D9DAF55D264E288ED9FC9B76870688395AD423A8580",
+    "size": 100506679
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

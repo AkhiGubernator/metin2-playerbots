@@ -17,6 +17,47 @@ every version here.
 
 ---
 
+## 2.2.42 — 2026-09-30
+
+Serwer 2.2.42 i klient 2.0.54: zaktualizuj oba. Angielski klient nazywa i
+opisuje przedmioty tak, jak są w tym świecie, a strzały łączą się w stosy po
+5000. Zawiera wszystko z 2.2.41.
+
+### Gra po angielsku: nazwy i opisy przedmiotów
+
+- **Angielski klient nazywa przedmioty tak, jak są w tym świecie** (zgłoszenie
+  ren3kun7). Angielskie nazwy z paczki opisywały pod tymi samymi numerami inne
+  przedmioty: Serce Wojownika było „Rivulet Knife+6”, Bambusowy Grot „Dragon
+  Knife+6”, wachlarze były zamienione, wędki miały stopień o jeden za wysoki,
+  a kamienie duszy +1, +3, +4 i +5 pokazywały „+0”. Kilkanaście przedmiotów
+  miało zamiast nazwy „NoNAme”, między innymi Pieczęć Czarnego Konia,
+  trzygodzinne mikstury doświadczenia i skrzynie zwierzaków. Teraz 5862 z 6001
+  przedmiotów ma angielską nazwę: oficjalną od Gameforge'a tam, gdzie opisuje
+  ten sam przedmiot. Przedmioty, których Gameforge nie ma - groty strzał,
+  materiały do ulepszeń, zielarstwo z przepisami, skrzynie zwierzaków -
+  przetłumaczyliśmy sami.
+- **Opisy przedmiotów po angielsku.** 234 opisy, które w angielskim kliencie
+  były puste, po polsku albo opisywały inny przedmiot, są teraz po angielsku.
+- **Komunikaty o przedmiotach w języku gracza.** Nazwa przedmiotu w
+  wiadomości o jego otrzymaniu, o zawartości skrzyni, o podniesieniu przez
+  członka grupy, o przynęcie, o pieczeniu ryby i o portalu w lochu jest po
+  angielsku dla angielskiego klienta („Warrior's Heart received” zamiast
+  „Serce Wojownika received”).
+
+### Strzały
+
+- **Każdy rodzaj strzał łączy się w stos do 5000** zamiast 1000 (prośba
+  ren3kun7). Dotyczy wszystkich dziesięciu rodzajów, także ognistych,
+  trujących, lodowych i przeklętych.
+
+### Launcher
+
+- **Okno „Serwer na VPS” i pytanie o aktualizację podają właściwy czas.**
+  Wersja chroniona składa się z gotowych plików, bez kompilacji, więc budowa
+  trwa kilka minut, a nie 15-40.
+
+---
+
 ## 2.2.41 — 2026-09-30
 
 Serwer 2.2.41: zaktualizuj serwer. Klient zostaje 2.0.53. Zawiera wszystko z

@@ -17,6 +17,29 @@ every version here.
 
 ---
 
+## 2.2.47 — 2026-09-30
+
+Serwer 2.2.47 i klient 2.0.58: zaktualizuj oba. Trzy dodatki od Tyriona:
+zmiana kanału przyciskami przy minimapie, zegar pod minimapą i strona
+przedmiotu albo potwora na wiki pod Ctrl+Alt i prawym przyciskiem myszy.
+Serwer różni się od 2.2.46 tylko numerem wersji. Zawiera wszystko z 2.2.46.
+
+### Gracz
+
+- **Szybka zmiana kanału przy minimapie** (Tyrion). Po lewej stronie
+  pierścienia minimapy, pod „M”, są okrągłe przyciski 1–4, tylko dla
+  kanałów, które działają - tak jak w oknie zmiany kanału pod U. Przy jednym
+  kanale ich nie ma. Aktualny kanał świeci na złoto, a kliknięcie innego
+  przenosi na niego jak przycisk „Zmień” w oknie U, najwyżej raz na 5 sekund.
+- **Zegar pod minimapą** (Tyrion): pod pozycją postaci widać godzinę z
+  komputera.
+- **Wiki pod Ctrl+Alt i prawym przyciskiem myszy** (Tyrion). Na przedmiocie
+  w ekwipunku otwiera w przeglądarce jego stronę na wiki gry, a przedmiot nie
+  zostaje użyty; na pasku celu - stronę potwora, Metina albo NPC. Bez
+  Ctrl+Alt kliknięcia działają jak dotąd.
+
+---
+
 ## 2.2.46 — 2026-09-30
 
 Serwer 2.2.46 i klient 2.0.57: zaktualizuj oba. Towarzysz podnosi według

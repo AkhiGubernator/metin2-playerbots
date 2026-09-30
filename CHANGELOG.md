@@ -17,6 +17,63 @@ every version here.
 
 ---
 
+## 2.2.43 — 2026-09-30
+
+Serwer 2.2.43: zaktualizuj serwer. Klient zostaje 2.0.54. Łucznik trafia kilka
+celów naraz, boty podnoszą Medal Konny w walce, a szanse wymiany u NPC zależą
+od poziomu trudności. Zawiera wszystko z 2.2.42.
+
+### Łucznicy
+
+- **Łucznik strzela w kilka celów naraz - gracze i boty** (zgłoszenie
+  ren3kun7). Zwykły strzał trafia do 3 celów, a z umiejętnością Combo do 4
+  lub 5: cel główny i potwory, które już atakują łucznika (do 10 m od celu).
+  Dodatkowe strzały lecą teraz razem z główną - wcześniej rysowały się strzał
+  później, więc wyglądały jak trafienia bez obrażeń.
+- **Strzał gracza nie przepada już bez śladu**, gdy serwer jest chwilowo
+  zajęty botami, a Ognista i Trująca Strzała nie pudłują w potwory oznaczone
+  przez wcześniejszy strzał.
+- **Boty-łucznicy trafiają dodatkowe cele** tak samo jak gracz, a dodatkowe
+  strzały nie zużywają strzał.
+
+### Boty
+
+- **Boty podnoszą Medal Konny i księgi umiejętności w trakcie walki**
+  (zgłoszenie magicznytomasz). Bot walczący bez przerwy, np. w Małpim Lochu,
+  zostawiał medal leżący kilka metrów dalej, aż mógł go zabrać każdy. Teraz
+  podbiega po medal albo księgę do 15 m, jeśli ma dość zdrowia i miejsca w
+  plecaku, i wraca do walki. Bot z pełnymi stosami medali (po 20) i bez
+  wolnego miejsca nie biega już co chwilę po medal, którego nie podniesie.
+- **Rękawicę Króla Przepowiedni boty noszą tylko przy ujemnej randze.**
+  Rękawica (i Symbol Króla Przepowiedni) przyspiesza odrabianie rangi, ale
+  tylko poniżej zera, a boty zakładały ją przy dodatniej. Bot z ujemną rangą,
+  którego nie stać na Fasolkę Zen albo który nie znajdzie jej na straganach,
+  nie stoi już w mieście, tylko poluje i odrabia rangę z rękawicą.
+
+### Poziom trudności
+
+- **Szanse wymiany u NPC zależą od poziomu trudności** (wątek „Procenty na
+  wytwarzanie”, blipu i malina0172). Wymiana kamieni duszy na Magiczny Pył,
+  ksiąg na Pergamin i ulepszaczy na Materiały Rzemieślnicze:
+  - łatwy: 100% / 100% / 55% (jak dotąd),
+  - średni: 90% / 45% / 55%,
+  - trudny: 55% / 40% / 55%,
+  - własny: trzy liczby z pliku .env serwera - M2_EXCHANGE_DUST_CHANCE,
+    M2_EXCHANGE_PARCHMENT_CHANCE i M2_EXCHANGE_MATERIAL_CHANCE (0 = jak w
+    paczce).
+
+  Okno wymiany pokazuje szansę, która naprawdę obowiązuje, a zmiana poziomu w
+  panelu WWW działa od razu. Boty wymieniają kamienie duszy na pył z tą samą
+  szansą. Launcher (okno POZIOM TRUDNOŚCI) i panel WWW podają te liczby.
+
+### Launcher
+
+- **Włączanie i wyłączanie hostowania nie kończy się błędem, gdy Docker nie
+  zdążył zwolnić portu.** Serwer gry zostawał wtedy wyłączony aż do kliknięcia
+  START. Teraz launcher ponawia jego start do trzech razy co 5 sekund.
+
+---
+
 ## 2.2.42 — 2026-09-30
 
 Serwer 2.2.42 i klient 2.0.54: zaktualizuj oba. Angielski klient nazywa i

@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-30T16:35:05Z",
-  "statusMessage": "2.2.46 (serwer i klient 2.0.57 - zaktualizuj oba): filtr podnoszenia dla Towarzysza wedlug Auto Lowow, okno launchera bez konsoli w tle, aktualizacja na VPS dopisuje nowe ustawienia .env od razu. Zawiera wszystko z 2.2.45.",
+  "publishedAt": "2026-09-30T18:00:00Z",
+  "statusMessage": "2.2.47 (serwer i klient 2.0.58 - zaktualizuj oba): przyciski zmiany kanalu przy minimapie, zegar pod minimapa i wiki pod Ctrl+Alt i prawym przyciskiem myszy (od Tyriona). Zawiera wszystko z 2.2.46.",
   "server": {
-    "version": "2.2.46",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.46/metin2-server-protected-migration-2.2.46.zip",
-    "sha256": "8707038259B3116FDFB838352608BD128BDA8BB2F37C2CE2C5BE0350E397B24E",
-    "size": 145619585
+    "version": "2.2.47",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.47/metin2-server-protected-migration-2.2.47.zip",
+    "sha256": "5E378A72AD6B7CEA3FBA13AFE3EE29BFF582C7355A0625E6BD81F349C46966A9",
+    "size": 145619940
   },
   "serverProtected": {
-    "version": "2.2.46",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.46/metin2-server-protected-update-2.2.46.zip",
-    "sha256": "E20416ED07F8FCF0323D21D35353087B252D093AC651A8938162FF47E39FE4CA",
-    "size": 135456694
+    "version": "2.2.47",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.47/metin2-server-protected-update-2.2.47.zip",
+    "sha256": "E8B21BFCE3988B12EEA7D0FF73A52270B966C6EFAF72E6502AD67A20BF6A0AAA",
+    "size": 135457049
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.57",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.46/metin2-client-update-2.0.57.zip",
-    "sha256": "EE4F50E751072D23581CA6B82AB6F61DF17AD6931AA4919C5F50C9BF410F2346",
-    "size": 100483838
+    "version": "2.0.58",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.47/metin2-client-update-2.0.58.zip",
+    "sha256": "BB4AC4B6F3EE76760E09A723CA3C71EB0D8072827D807E8328A7D102D939A030",
+    "size": 100495841
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

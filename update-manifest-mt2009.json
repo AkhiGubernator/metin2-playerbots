@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-30T07:32:17Z",
-  "statusMessage": "2.2.42 (serwer i klient 2.0.54 - zaktualizuj oba): angielski klient nazywa i opisuje przedmioty tak, jak sa w tym swiecie, komunikaty o przedmiotach w jezyku gracza, strzaly w stosach po 5000. Zawiera wszystko z 2.2.41.",
+  "publishedAt": "2026-09-30T11:23:06Z",
+  "statusMessage": "2.2.43 (serwer; klient zostaje 2.0.54): lucznik trafia kilka celow naraz, boty podnosza Medal Konny w walce, szanse wymiany u NPC zaleza od poziomu trudnosci. Zawiera wszystko z 2.2.42.",
   "server": {
-    "version": "2.2.42",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.42/metin2-server-protected-migration-2.2.42.zip",
-    "sha256": "9E9667983A2E81A6457DA5541E99A57875D5BDE033F8133C4108CD4EA03EBAE5",
-    "size": 145569490
+    "version": "2.2.43",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.43/metin2-server-protected-migration-2.2.43.zip",
+    "sha256": "13DE12297D7B2791A91FFC944B2BB46CF97A83774CB99C45AA5BEA5BA15B8FBE",
+    "size": 145580436
   },
   "serverProtected": {
-    "version": "2.2.42",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.42/metin2-server-protected-update-2.2.42.zip",
-    "sha256": "11F4ADD47B84F8CC84F3E83BF3AFFE99F64FE2C9127377AF31FFE42907B42F03",
-    "size": 135406599
+    "version": "2.2.43",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.43/metin2-server-protected-update-2.2.43.zip",
+    "sha256": "7F4BEBFADDCFE39694F9621A9702EEE03C3914943EC83A1807F981FBE370A38C",
+    "size": 135418105
   },
   "protectedFrom": "2.2.39",
   "support": {

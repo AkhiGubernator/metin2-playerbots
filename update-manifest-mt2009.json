@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-29T21:48:19Z",
-  "statusMessage": "2.2.41 (serwer; klient zostaje 2.0.53): reszta questow po angielsku - menu NPC i tytuly questow w jezyku gracza - oraz poprawki sklepow offline (sprzedaz rozlicza tylko zakup z blokada, jeden wpis na sprzedaz). Zawiera wszystko z 2.2.40.",
+  "publishedAt": "2026-09-30T07:32:17Z",
+  "statusMessage": "2.2.42 (serwer i klient 2.0.54 - zaktualizuj oba): angielski klient nazywa i opisuje przedmioty tak, jak sa w tym swiecie, komunikaty o przedmiotach w jezyku gracza, strzaly w stosach po 5000. Zawiera wszystko z 2.2.41.",
   "server": {
-    "version": "2.2.41",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.41/metin2-server-protected-migration-2.2.41.zip",
-    "sha256": "FBEA417E2B19CD2E71602D871D4561A2D71E5977522568A3FA387B58969C8F95",
-    "size": 145563467
+    "version": "2.2.42",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.42/metin2-server-protected-migration-2.2.42.zip",
+    "sha256": "9E9667983A2E81A6457DA5541E99A57875D5BDE033F8133C4108CD4EA03EBAE5",
+    "size": 145569490
   },
   "serverProtected": {
-    "version": "2.2.41",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.41/metin2-server-protected-update-2.2.41.zip",
-    "sha256": "FDCFC21C06A9A8F703326870BB2D1B8AF51E3BE355343D8D3F412B71B0D3B058",
-    "size": 135400576
+    "version": "2.2.42",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.42/metin2-server-protected-update-2.2.42.zip",
+    "sha256": "11F4ADD47B84F8CC84F3E83BF3AFFE99F64FE2C9127377AF31FFE42907B42F03",
+    "size": 135406599
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.53",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.39/metin2-client-update-2.0.53.zip",
-    "sha256": "6DC51BF32DD8C5D9A2A5A66C100916849CAD225BD1141406E537D3CCD55E00A4",
-    "size": 100471000
+    "version": "2.0.54",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.42/metin2-client-update-2.0.54.zip",
+    "sha256": "559BF0D836B5798EBC5AFE338BCD75385E562330B011F6FB254F8A75ACC23997",
+    "size": 100479018
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

@@ -17,6 +17,83 @@ every version here.
 
 ---
 
+## 2.2.48 — 2026-09-30
+
+Serwer 2.2.48 i klient 2.0.59: zaktualizuj oba. Koniec wyrzucania do menu przy
+zmianie kanału i teleporcie, zestawy startowe dla nowego świata, opcja
+słabszych potworów, Kamienie Duchowe według poziomu trudności, boty biją
+Metiny zwykłym atakiem, droppery inwestują w siebie i kilka poprawek ze
+zgłoszeń. Zawiera wszystko z 2.2.47.
+
+### Gracz
+
+- **Zmiana kanału i teleport bez wyrzucania do menu** (Tieru). Przy otwartym
+  oknie Towarzysza (P) zmiana kanału - przyciskami przy minimapie albo w oknie
+  pod U - i każdy teleport kończyły się powrotem do ekranu logowania: okno w
+  tle wysyłało komendę, zanim nowe połączenie zdążyło się przywitać z
+  serwerem, a serwer je wtedy zrywał. Teraz taki pakiet jest po prostu
+  pomijany.
+- **Ranga Towarzysza na jego nicku** (Tieru). W oknie Towarzysza najechanie
+  na nick pokazuje tytuł rangi i punkty rangi, tak jak w oknie postaci gracza.
+- **Minibossowie w Auto Łowach** (Charlie). Chuong, Lykos, Scrofa, Bera,
+  Tigris, Bestialny Łucznik i Bestialny Specjalista są celem także przy
+  „Bossy” - dotąd brały je tylko „Moby”. Przy włączonych „Bossy” idą zaraz po
+  bossie, przed Metinem. Tę samą rangę mają elitarne potwory w lochach, np.
+  pająki w Lochu Pająków.
+- **Sprint pod Bezszelestnym Chodem** (Hiob). Skill obiecuje limit szybkości
+  220, ale sprint pieszo miał osobny próg 150 i ze skillem był blokowany
+  („Sprint pieszo jest niemożliwy…”). Teraz pod Bezszelestnym Chodem sprint
+  pieszo sięga 220. Okno postaci dalej pokazuje szybkość bez sprintu.
+- **Kamienie Duchowe (G1 → P) według poziomu trudności** (NerrVoVy, Hiob,
+  sosen). Czekanie między kamieniami jest takie jak między księgami: łatwy -
+  bez czekania, średni - 7 h, trudny - 12 h jak w oryginale, własny - godziny
+  ksiąg, najwyżej 12 h. Dla graczy i botów; dotąd zawsze 12 h. Czekanie już
+  zapisane na postaci skraca się przy następnym użyciu kamienia.
+
+### Ustawienia świata
+
+- **Słabsze potwory** (propozycja Frelika). W oknie POZIOM TRUDNOŚCI launchera
+  pole „Słabsze potwory - 80% życia potworów, bossów i Metinów”, a w panelu
+  WWW (Mnożniki serwera) karta „Wytrzymałość potworów”, która zmienia to od
+  razu, także potworom, które już stoją. Domyślnie 100%, jak w grze; w .env
+  `M2_MONSTER_HP` od 10 do 300. Doświadczenie i drop z jednego zabicia się nie
+  zmieniają, więc na 80% gra idzie szybciej, botom też.
+- **Zestaw startowy nowego świata** (na podstawie propozycji Iwakury). W oknie
+  „Nowy świat - ustawienia na start”, które launcher pokazuje przy zakładaniu
+  nowego świata, jest wybór: jak dotąd, średni - broń i zbroja swojej klasy
+  poziomu 1 na +5, łatwy - cały zestaw poziomu 1 na +9 (broń, zbroja, hełm,
+  tarcza, buty, bransoleta, naszyjnik, kolczyki). Zestaw jest od razu
+  założony. Dostaje go nowa postać gracza na 1 poziomie i boty tworzone od tej
+  chwili - boty, które już są w świecie, nic nie dostają. W .env
+  `M2_STARTER_KIT` (default, medium albo easy).
+
+### Boty
+
+- **Metiny biją zwykłym atakiem** (sosen). Skilli ataku (Wir Miecza,
+  Potrójne Cięcie i reszta) bot używa przy Metinie dopiero wtedy, gdy wokół
+  jest stado - co najmniej 3 potwory w zasięgu danego skilla. Dotąd tak
+  czekały tylko skille obszarowe, a reszta szła w sam kamień i zjadała
+  mikstury many. Gdy samo bicie nie zbija kamienia, po ok. 8 sekundach skille
+  wracają. Kamienie w Wieży Demonów i w Katakumbach rajdy biją jak dotąd.
+- **Droppery inwestują w siebie** (sosen). Od 15.09 dropper nie kupował nic z
+  żadnego straganu, więc przy rekordach yang chodził z Kosą Bojową +5 i
+  skillami na M1. Teraz po każdej obsłudze swojego straganu (co 40-60 minut)
+  ma do 3 minut na zakupy u straganów dookoła: najpierw materiały i zwoje na
+  kolejne ulepszenie broni, zbroi i tarczy (do +9), potem to, co kupuje każdy
+  bot - broń na 30 poziom, lepszy sprzęt, księgi. Bez dodatkowych wypraw;
+  medali od innych dropperów nie kupuje.
+- **Boty i potwory stojące przy Metinie** (sosen). Bot, który przy 20% HP
+  robił się niewidzialny na czas odpoczynku, zostawiał goniące go potwory bez
+  możliwości ataku - obie strony stały obok siebie i nikt nikogo nie bił.
+  Teraz bot, którego trzyma potwór, normalnie się wycofuje i pije mikstury.
+  Pogromca Metinów, który przy małym HP rzuca się na stado z kamienia, już
+  przy tym nie ucieka, a wizyta w mieście nie zaczyna się w środku walki.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.47 — 2026-09-30
 
 Serwer 2.2.47 i klient 2.0.58: zaktualizuj oba. Trzy dodatki od Tyriona:

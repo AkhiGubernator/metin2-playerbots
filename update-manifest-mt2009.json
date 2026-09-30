@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-30T11:23:06Z",
-  "statusMessage": "2.2.43 (serwer; klient zostaje 2.0.54): lucznik trafia kilka celow naraz, boty podnosza Medal Konny w walce, szanse wymiany u NPC zaleza od poziomu trudnosci. Zawiera wszystko z 2.2.42.",
+  "publishedAt": "2026-09-30T12:25:08Z",
+  "statusMessage": "2.2.44 (serwer i klient 2.0.55 - zaktualizuj oba): godziny gry botow na dobe, przetopy na ladach, Towarzysz slucha ustawienia Nic i zmienia fryzure Wybielaczem, suwaki gornictwa i zielarstwa, osobowosc Zielarz. Zawiera wszystko z 2.2.43.",
   "server": {
-    "version": "2.2.43",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.43/metin2-server-protected-migration-2.2.43.zip",
-    "sha256": "13DE12297D7B2791A91FFC944B2BB46CF97A83774CB99C45AA5BEA5BA15B8FBE",
-    "size": 145580436
+    "version": "2.2.44",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.44/metin2-server-protected-migration-2.2.44.zip",
+    "sha256": "0833AD354AB40287A211A2B010BD8F95F600939DA3D46A7B3F84644D72111CF3",
+    "size": 145592852
   },
   "serverProtected": {
-    "version": "2.2.43",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.43/metin2-server-protected-update-2.2.43.zip",
-    "sha256": "7F4BEBFADDCFE39694F9621A9702EEE03C3914943EC83A1807F981FBE370A38C",
-    "size": 135418105
+    "version": "2.2.44",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.44/metin2-server-protected-update-2.2.44.zip",
+    "sha256": "68807008DE3CB0C47B027DC629BC869136B1636113ED7BD4F8DEA80D42A11F33",
+    "size": 135429961
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.54",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.42/metin2-client-update-2.0.54.zip",
-    "sha256": "559BF0D836B5798EBC5AFE338BCD75385E562330B011F6FB254F8A75ACC23997",
-    "size": 100479018
+    "version": "2.0.55",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.44/metin2-client-update-2.0.55.zip",
+    "sha256": "31961A4A2F267D1AD5DEEA10F5451A9A1EB8239A2D4CBDF9F6EBC0F6EE3E0346",
+    "size": 100479093
   },
   "clientExe": {
     "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",

@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-01T18:58:55Z",
-  "statusMessage": "2.2.54 (serwer i klient 2.0.64 - zaktualizuj oba): nowy magazyn kolekcjonera u Dozorcy - prosze o testy - Towarzysz wydaje Smocze Monety w ItemShopie, masowa sprzedaz broni i zbroi z poziomu 30, 70 i 75+, pelna kopia swiata. Zawiera wszystko z 2.2.53.",
+  "publishedAt": "2026-10-01T21:57:13Z",
+  "statusMessage": "2.2.55 (serwer i klient 2.0.65 - zaktualizuj oba, launcher podmieni tez metin2client.exe): magazyn kolekcjonera w klasycznym wygladzie, wlasna pula postaci Towarzysza, znaczniki na minimapie, dodatkowe zabezpieczenia pliku gry, COOP po angielsku, szybszy start serwera. Zawiera wszystko z 2.2.54.",
   "server": {
-    "version": "2.2.54",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.54/metin2-server-protected-migration-2.2.54.zip",
-    "sha256": "FD59EC6E739AB7F7F2BE10614D3923B7D8CA3DDA3E83B4CAA82A4DA6C1459B19",
-    "size": 145965774
+    "version": "2.2.55",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.55/metin2-server-protected-migration-2.2.55.zip",
+    "sha256": "F1575FA78E49262EC3BE3826B6EC4123E5942EED2C2A424E21CB0067E51FD0E6",
+    "size": 145995588
   },
   "serverProtected": {
-    "version": "2.2.54",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.54/metin2-server-protected-update-2.2.54.zip",
-    "sha256": "4590ABB46591BF361C77FE88E9A33D873347A1DBE95E9BF8414D495C01BD88FC",
-    "size": 135802883
+    "version": "2.2.55",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.55/metin2-server-protected-update-2.2.55.zip",
+    "sha256": "38E4730FA0D8B110CD6EB2F43818D9F5D3C3CD4CCED066D4597039AAAC264120",
+    "size": 135832697
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,14 +22,14 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.64",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.54/metin2-client-update-2.0.64.zip",
-    "sha256": "DC80C152D2393CC556AC4100C1FD73C68BBB8DD0B1EF6898AFFA302510E22AD8",
-    "size": 101053246
+    "version": "2.0.65",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.55/metin2-client-update-2.0.65.zip",
+    "sha256": "DF40A34CC09790A11AA7CE43002FEFAB3D64FC8A2FCF8A5DDB166154837B866D",
+    "size": 101066578
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.53/metin2client.exe",
-    "sha256": "42B1EB724AD665E32FFFB56B34DD40FC21C22C299A5552AD5766F092865E7FA1",
-    "size": 13590528
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.55/metin2client.exe",
+    "sha256": "91D8047FC17C210839F173BA2B26A9D259089499139EAA389EC4B0C192A8376A",
+    "size": 13591040
   }
 }

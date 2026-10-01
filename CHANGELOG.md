@@ -17,6 +17,37 @@ every version here.
 
 ---
 
+## 2.2.52 — 2026-10-01
+
+Serwer 2.2.52 i klient 2.0.62: zaktualizuj oba. Zawiera wszystko z 2.2.51.
+
+### Alchemia Smoczych Kamieni
+
+- **Okno alchemii w kliencie** (Kiciamol): oryginalne okno z Metina.
+  Otwierasz je klawiszem **O** albo przyciskiem w ekwipunku (lewy dolny róg
+  wyposażenia).
+- **„Aktywuj” działa dla graczy** - zestaw kamieni włącza się i wyłącza z
+  okna alchemii.
+- **Odłamki Smoczego Kamienia łączą się w stosy** (Kiciamol, Tieru). Te,
+  które już masz w torbie, połączysz przyciskiem „Scal i uporządkuj”.
+- Poprawki stabilności uszlachetniania u Alchemika.
+
+### Klient
+
+- **Ekran logowania** pokazuje wersję klienta i oficjalną stronę projektu,
+  metin2singleplayer.com. Przycisk „Strona WWW” prowadzi na nią.
+
+### Boty
+
+- **Boty nie walczą z kilofem ani wędką w ręce** (Buszek).
+- **Po spaleniu przedmiotu u kowala boty i Towarzysz szybciej kupują
+  porządny zamiennik** (Derpsonkowy95).
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.51 — 2026-10-01
 
 Serwer 2.2.51 i klient 2.0.61: zaktualizuj oba. Większe rajdy botów na

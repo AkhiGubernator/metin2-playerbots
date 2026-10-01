@@ -3,7 +3,7 @@
 [Polski (README.md)](README.md) | **English**
 
 [![Website](https://img.shields.io/badge/Website-metin2singleplayer.com-2EA44F?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://metin2singleplayer.com)
-[![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/pt5tvnrN6)
+[![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/DyCxXdZtnV)
 [![BuyCoffee](https://img.shields.io/badge/BuyCoffee-Support_the_Project-FF813F?style=for-the-badge&logo=coffeescript&logoColor=white)](https://buycoffee.to/metin2-playerbots)
 [![Licence](https://img.shields.io/badge/Licence-CC_BY--NC--SA_4.0-EF9421?style=for-the-badge&logo=creativecommons&logoColor=white)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)
 
@@ -16,7 +16,7 @@ The bots are not external programs. They are first-class characters driven by AI
 
 ## 📥 How to play
 
-1. Download the **full package** (server and client in one archive) from the project's Discord server: [discord.gg/pt5tvnrN6](https://discord.gg/pt5tvnrN6).
+1. Download the **full package** (server and client in one archive) from the project's Discord server: [discord.gg/DyCxXdZtnV](https://discord.gg/DyCxXdZtnV).
 2. Install Docker Desktop and wait until it shows "Engine running".
 3. Unpack the package into an ordinary folder, e.g. `C:\Games\Metin2 Singleplayer` (not the Desktop or Documents synced by OneDrive), and run `Serwer\Metin2-Launcher-GUI.bat`.
 4. When the launcher offers an update, choose **Update everything**: the full package is older than the newest release.
@@ -34,7 +34,7 @@ Requirements, a step-by-step guide and answers to common questions are on [metin
 ## 💬 Community & Project Support
 
 - **[Project website — metin2singleplayer.com](https://metin2singleplayer.com)**: what the project is, the install guide and the FAQ, in Polish and English.
-- **[Discord server](https://discord.gg/pt5tvnrN6)**: the full package, help, bug reports, ideas and news about new versions.
+- **[Discord server](https://discord.gg/DyCxXdZtnV)**: the full package, help, bug reports, ideas and news about new versions.
 - **[Support on buycoffee.to](https://buycoffee.to/metin2-playerbots)**: voluntary donations help cover the tools, the test server and the AI models used to develop the project.
 
 <a href="https://buycoffee.to/metin2-playerbots" target="_blank"><img src="https://buycoffee.to/btn/buycoffeeto-btn-primary.svg" style="height: 42px;" alt="Support on buycoffee.to"></a>

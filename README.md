@@ -3,7 +3,7 @@
 **Polski** | [English (README_EN.md)](README_EN.md)
 
 [![Strona](https://img.shields.io/badge/Strona-metin2singleplayer.com-2EA44F?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://metin2singleplayer.com)
-[![Discord](https://img.shields.io/badge/Discord-Dołącz_do_społeczności-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/pt5tvnrN6)
+[![Discord](https://img.shields.io/badge/Discord-Dołącz_do_społeczności-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/DyCxXdZtnV)
 [![BuyCoffee](https://img.shields.io/badge/BuyCoffee-Postaw_kaw%C4%99-FF813F?style=for-the-badge&logo=coffeescript&logoColor=white)](https://buycoffee.to/metin2-playerbots)
 [![Licencja](https://img.shields.io/badge/Licencja-CC_BY--NC--SA_4.0-EF9421?style=for-the-badge&logo=creativecommons&logoColor=white)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.pl)
 
@@ -16,7 +16,7 @@ Boty nie są zewnętrznymi programami. To pełnoprawne postacie sterowane przez 
 
 ## 📥 Jak zagrać
 
-1. Pobierz **pełną paczkę** (serwer i klient w jednym archiwum) z serwera Discord projektu: [discord.gg/pt5tvnrN6](https://discord.gg/pt5tvnrN6).
+1. Pobierz **pełną paczkę** (serwer i klient w jednym archiwum) z serwera Discord projektu: [discord.gg/DyCxXdZtnV](https://discord.gg/DyCxXdZtnV).
 2. Zainstaluj Docker Desktop i poczekaj, aż pokaże „Engine running”.
 3. Rozpakuj paczkę do zwykłego folderu, np. `C:\Gry\Metin2 Singleplayer` (nie na Pulpit ani do Dokumentów synchronizowanych z OneDrive), i uruchom `Serwer\Metin2-Launcher-GUI.bat`.
 4. Gdy launcher zaproponuje aktualizację, wybierz **Aktualizuj wszystko**: pełna paczka jest starsza niż najnowsze wydanie.
@@ -34,7 +34,7 @@ Wymagania, instrukcja krok po kroku i odpowiedzi na częste pytania są na stron
 ## 💬 Społeczność i wsparcie projektu
 
 - **[Strona projektu — metin2singleplayer.com](https://metin2singleplayer.com)**: opis projektu, instrukcja instalacji i FAQ, po polsku i po angielsku.
-- **[Serwer Discord](https://discord.gg/pt5tvnrN6)**: pełna paczka do pobrania, pomoc, zgłaszanie błędów, pomysły i informacje o nowych wersjach.
+- **[Serwer Discord](https://discord.gg/DyCxXdZtnV)**: pełna paczka do pobrania, pomoc, zgłaszanie błędów, pomysły i informacje o nowych wersjach.
 - **[Wsparcie na buycoffee.to](https://buycoffee.to/metin2-playerbots)**: dobrowolne wpłaty pomagają pokrywać koszty narzędzi, serwera testowego i modeli AI używanych przy rozwoju projektu.
 
 <a href="https://buycoffee.to/metin2-playerbots" target="_blank"><img src="https://buycoffee.to/btn/buycoffeeto-btn-primary.svg" style="height: 42px;" alt="Postaw kawę na buycoffee.to"></a>

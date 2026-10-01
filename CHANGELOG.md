@@ -17,6 +17,58 @@ every version here.
 
 ---
 
+## 2.2.54 — 2026-10-01
+
+Serwer 2.2.54 i klient 2.0.64: zaktualizuj oba. Zawiera wszystko z 2.2.53.
+
+**Proszę o testy, zwłaszcza nowego magazynu.** Wszystko, co działa nie tak,
+zgłaszajcie w wątkach na Discordzie - najlepiej ze zrzutem ekranu.
+
+### Magazyn kolekcjonera (Amos)
+
+Nowy magazyn graczy u Dozorcy, w miejsce zwykłego (boty dalej korzystają
+ze zwykłego):
+- **jeden dla całego konta**, na 500 wpisów - każdy przedmiot albo stos to
+  jeden wpis - z przewijaną listą, wyszukiwarką i 12 kategoriami;
+- przy pierwszym otwarciu wszystko ze zwykłego magazynu przechodzi do nowego;
+- ulubione (gwiazdka) i blokada wpisu, zaznaczanie (klik, Ctrl+klik,
+  „Zaznacz stronę”), dwuklik i wyjmowanie zaznaczonych;
+- „Połącz zgodne stosy” i „Schowaj materiały…” z podglądem;
+- **rozbudowa za Yang**: 1000 wpisów za 100 tys. (od 20. poziomu), 2000 za
+  500 tys. (od 35.), 3500 za 2 kk (od 50.), 5000 za 5 kk (od 65.), 7500 za
+  10 kk (od 80.) i 10 000 za 20 kk (od 90.).
+
+### Towarzysz
+
+- **Towarzysz wydaje Smocze Monety w ItemShopie** (Derpsonkowy95). Na
+  stronie Opcje jego okna jest przełącznik „Smocze Monety: wydaje / nie
+  wydaje” (domyślnie wydaje), a obok stan jego konta. Kupony SM wymienia od
+  razu wszystkie, kupuje tylko to, czego sam używa (bez fryzur), i pisze Ci,
+  co kupił i za ile. „Raport” mówi, na co odkłada albo czego mu brakuje.
+- Gdy stoisz przy kowalu, Towarzysz oprócz ulepszania nakłada też bonusy na
+  swój sprzęt.
+
+### Sklep u NPC
+
+- **Masowa sprzedaż broni i zbroi z poziomu 30, 70 i 75+** (Buszek): zamiast
+  przerywać się bez słowa, pyta o każdy taki przedmiot i sprzedaje dalej.
+
+### Rynek
+
+- Cena tej samej oferty na stoisku bota nie skacze już przy kolejnych
+  przecenach (Iwakura).
+
+### Launcher
+
+- **Kopia świata jest pełna**: „Zapisz kopię świata”, import i przywracanie
+  obejmują teraz wszystkie dane świata, także sklepy NPC. Przywrócenie kopii
+  zrobionej przed tą wersją niczego nie kasuje.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.53 — 2026-10-01
 
 Serwer 2.2.53 i klient 2.0.63: zaktualizuj oba. Zawiera wszystko z 2.2.52.

@@ -17,6 +17,63 @@ every version here.
 
 ---
 
+## 2.2.50 — 2026-10-01
+
+Serwer 2.2.50 (klient zostaje 2.0.60). Alchemia Smoczych Kamieni jako opcja
+świata, a teleport w pierwszej sesji po starcie serwera nie wisi już na
+ładowaniu. Zawiera wszystko z 2.2.49.
+
+### Alchemia Smoczych Kamieni
+
+- **Nowy, opcjonalny system z gry** (Tieru). Silnik i klient miały go od
+  zawsze, paczka serwera go nie używała:
+  - od 30 poziomu przychodzi list do Alchemika (w M1 każdego królestwa);
+  - po rozmowie z nim potwory upuszczają Odłamki Smoczego Kamienia
+    (domyślnie 10% szans na zabicie, odłamek jest Twój przez 5 minut);
+  - 10 odłamków oddanych Alchemikowi to pierwszy Cor Draconis i Moc
+    Smoczego Oka: potem każde 10 podniesionych odłamków samo zamienia się w
+    Cor Draconis - jeszcze 9 tego dnia, a każdego kolejnego dnia 10 po
+    rozmowie z Alchemikiem;
+  - Cor Draconis daje Smoczy Kamień jednego z sześciu rodzajów. Kamienie
+    zakładasz w oknie alchemii (klawisz O albo przycisk w ekwipunku) i
+    włączasz przyciskiem „Aktywuj”;
+  - u Alchemika jest okno uszlachetniania kamieni i jego sklep.
+- **Co trzeba było naprawić w paczce, żeby to działało:**
+  - tabela kamieni nie wczytywała się na żadnym rdzeniu (silnik zna 6 klas
+    kamieni, tabela miała 5), a bonusy kamieni wynosiły 0 - teraz działają
+    z wartościami z tabeli Gameforge;
+  - uszlachetnianie klasy i jakości bierze 2 kamienie, tyle ile wysyła
+    klient (serwer chciał 15/10/5/3 i 4/3/2/1, więc nie udawało się nigdy);
+  - pudełko kamieni miało na serwerze 1 miejsce zamiast 32 jak w kliencie;
+  - Cor Draconis nie miał zawartości i nie dawał się otworzyć;
+  - założyć dało się tylko Smoczy Diament - pozostałe pięć rodzajów silnik
+    odrzucał jako przedmioty z torby konia.
+- **Boty biorą w niej udział.** Od 30 poziomu zbierają odłamki (nie
+  sprzedają ich handlarzowi), oddają je Alchemikowi, otwierają Cor Draconis,
+  zakładają najlepszy kamień każdego rodzaju, włączają je i wyrzucają
+  zużyte.
+- **Przełącznik „Alchemia Smoczych Kamieni”** w oknie POZIOM TRUDNOŚCI
+  launchera (w .env `M2_DRAGON_SOUL`), domyślnie włączony. Zmiana działa od
+  następnego startu serwera. Wyłączona: nikt nie dostaje listu ani odłamków,
+  Alchemik nie przyjmuje odłamków, a kamienie, które ktoś już ma, zostają
+  jego. Szansę na odłamek GM zmienia komendą `/e ds_drop N` (1-100).
+
+### Serwer
+
+- **Teleport w pierwszej sesji po starcie serwera nie wisi już na
+  ładowaniu** (Tieru). W domyślnym układzie świata (wszystkie królestwa na
+  jednym rdzeniu) ten rdzeń ma od 2.2.39 33 mapy, a silnik mieścił 32 -
+  trzydziesta trzecia nadpisywała w pakiecie startowym liczbę zalogowanych
+  kont. Baza dostawała wtedy śmieciowe wpisy logowania i pierwszy teleport
+  po starcie (np. „Teleportuj mnie” z panelu) kończył się nieskończonym
+  ładowaniem, aż do ESC i ponownego wejścia. Przy okazji wraca Loch Pająków
+  3 (mapa 217), do którego na takim świecie nie dało się przenieść.
+
+Aktualizację serwera zaproponuje launcher przy starcie. Świat, postacie i
+ustawienia są nietknięte.
+
+---
+
 ## 2.2.49 — 2026-10-01
 
 Serwer 2.2.49 i klient 2.0.60: zaktualizuj oba. Nowy Dom Towarowy od Uxìĕ

@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-01T11:04:46Z",
-  "statusMessage": "2.2.52 (serwer i klient 2.0.62 - zaktualizuj oba): oryginalne okno alchemii (klawisz O albo przycisk w ekwipunku), Aktywuj dla graczy, odlamki Smoczego Kamienia w stosach, nowy ekran logowania, boty bez kilofa i wedki w walce. Zawiera wszystko z 2.2.51.",
+  "publishedAt": "2026-10-01T15:39:27Z",
+  "statusMessage": "2.2.53 (serwer i klient 2.0.63 - zaktualizuj oba, launcher podmieni tez metin2client.exe): Cor Draconis i smocze kamienie w handlu, okno alchemii z wszystkimi kamieniami, wojny gildii na zabojstwa z tablica wyniku, boty targuja sie o cene, kolejny cel lucznika, start serwera bez internetu, angielskie nazwy. Zawiera wszystko z 2.2.52.",
   "server": {
-    "version": "2.2.52",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.52/metin2-server-protected-migration-2.2.52.zip",
-    "sha256": "7D06EBA7896D8E9DD3077218F4A5C572447D0BC1E7FEF8F94FFA1BAEC3D4AFDA",
-    "size": 145670209
+    "version": "2.2.53",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.53/metin2-server-protected-migration-2.2.53.zip",
+    "sha256": "15624E4E57A422A4CC1C82C262A1C5F6FD9B540F1401C69EEEFEC1D8BCF1E6ED",
+    "size": 145854119
   },
   "serverProtected": {
-    "version": "2.2.52",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.52/metin2-server-protected-update-2.2.52.zip",
-    "sha256": "A6A753573CF7AEE184A48DD68755492566D8B925486A6173701C7CAB5C45C2F1",
-    "size": 135507318
+    "version": "2.2.53",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.53/metin2-server-protected-update-2.2.53.zip",
+    "sha256": "1634DC783146DFDF575090BC009353CE2275C489D86B5C0050099448E9E8BD74",
+    "size": 135691228
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,14 +22,14 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.62",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.52/metin2-client-update-2.0.62.zip",
-    "sha256": "CA1AA469FF5131FFCF272F9F3B95770AD71AB453CD3CCF32BDC5F25E9E328260",
-    "size": 101014687
+    "version": "2.0.63",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.53/metin2-client-update-2.0.63.zip",
+    "sha256": "B2F5081E427F28D98317FBBF947ADE09F1E8F89569FF05594C044AD8B0CAA11D",
+    "size": 101028290
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.27/metin2client.exe",
-    "sha256": "C92E959FC64B026BE931F8A5ED93F82220429AB3E50033486246D4827A2DFCC3",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.53/metin2client.exe",
+    "sha256": "42B1EB724AD665E32FFFB56B34DD40FC21C22C299A5552AD5766F092865E7FA1",
     "size": 13590528
   }
 }

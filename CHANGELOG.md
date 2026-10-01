@@ -17,6 +17,53 @@ every version here.
 
 ---
 
+## 2.2.51 — 2026-10-01
+
+Serwer 2.2.51 i klient 2.0.61: zaktualizuj oba. Większe rajdy botów na
+bossy (Baronówna Pająków wreszcie pada), łucznik gracza bez spóźnionych
+dodatkowych strzał i nowy link do Discorda w grze. Zawiera wszystko z
+2.2.50.
+
+### Boty i bossy
+
+- **Rajd na Baronównę Pająków zbiera do 16 botów, od 60 poziomu** (Tieru).
+  Dotąd szło na nią 3–7 botów jednego królestwa i żaden rajd jej nie zabił,
+  bo leczy się o piątą część życia co 30 sekund. Na świecie testowym po
+  zmianie padła na dwóch kanałach: od 16 botów w 2,5 minuty i od 18 w 7,5.
+- **Rajdy na bossy biorą więcej botów:**
+  - także boty z połową życia (dotąd 80%) - dojście na miejsce to ich czas
+    na mikstury;
+  - wędkarzy i górników, którzy odkładają wędkę lub kilof i ruszają;
+  - gdy boss się nie poddaje, dochodzą posiłki: do trzech rund po 4 boty,
+    najwyżej do podwójnej wielkości rajdu.
+- **Boss poniżej 30% życia jest dobijany.** Rajd nie odpuszcza go już przy
+  kilkunastu procentach, gdy brakuje posiłków. Po tych zmianach padły też
+  Zjawa Żółtego Tygrysa, Olbrzymi Żółw, Dziewięć Ogonów, Ognisty Król i
+  Ezoteryczny Przywódca. Na kanałach z małą liczbą botów na poziomie bossa
+  najsilniejsi dalej potrafią wygrać.
+
+### Łucznik (gracz)
+
+- **Dodatkowe strzały lecą razem ze strzałem, a nie przy następnym** (Ren,
+  analiza: Codex). Serwer czyści listę dodatkowych celów w kliencie przy
+  każdym strzale i nie dobiera nowych celów już po wypuszczeniu strzały -
+  dodatkowe cele to te z początku ruchu. Odrzucona główna strzała nie zadaje
+  obrażeń dodatkowym celom.
+- **Ciche pudła:** każda odrzucona strzała zapisuje teraz w logu serwera
+  powód. Jeśli dalej je widzisz, wyślij zgłoszenie przyciskiem ZGŁOŚ BŁĄD w
+  launcherze - logi pokażą, która kontrola je odrzuca.
+
+### Discord
+
+- **Nowy link: discord.gg/DyCxXdZtnV** - przycisk Discord na ekranie
+  logowania, wsparcie w menu systemowym, regulamin, kontakt przy zgłoszeniu
+  błędu w launcherze i panel WWW.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.50 — 2026-10-01
 
 Serwer 2.2.50 (klient zostaje 2.0.60). Alchemia Smoczych Kamieni jako opcja

@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-09-30T23:24:27Z",
-  "statusMessage": "2.2.49 (serwer i klient 2.0.60 - zaktualizuj oba): Dom Towarowy z kupnem czesci stosu, filtrami bonusow i klas, okienko Zglos blad zawsze widoczne w launcherze, Straznik Katakumb zabiera grupe, Szybki Cios botow bez skoku do gracza. Zawiera wszystko z 2.2.48.",
+  "publishedAt": "2026-10-01T06:33:15Z",
+  "statusMessage": "2.2.50 (serwer; klient zostaje 2.0.60): Alchemia Smoczych Kamieni jako opcja swiata (przelacznik w oknie POZIOM TRUDNOSCI), teleport w pierwszej sesji po starcie serwera nie wisi na ladowaniu. Zawiera wszystko z 2.2.49.",
   "server": {
-    "version": "2.2.49",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.49/metin2-server-protected-migration-2.2.49.zip",
-    "sha256": "4EA3EFDD7451A01A5B7093D7A4F37C73C0995713041B113DAEF264199FA5DE3A",
-    "size": 145643416
+    "version": "2.2.50",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.50/metin2-server-protected-migration-2.2.50.zip",
+    "sha256": "74C64871F7D013EB11BBF55878D5158B340030B32C326C337D7D17E647176380",
+    "size": 145662554
   },
   "serverProtected": {
-    "version": "2.2.49",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.49/metin2-server-protected-update-2.2.49.zip",
-    "sha256": "BE98511AB5F56042B2FD6230EDAD65C334340D45488A88A8F47651F5483AD12A",
-    "size": 135480525
+    "version": "2.2.50",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.50/metin2-server-protected-update-2.2.50.zip",
+    "sha256": "F7EC64B0C2FE46CD5647AAAB11C449277CFE9CBA7252480A6F550E925AEEB2C5",
+    "size": 135499663
   },
   "protectedFrom": "2.2.39",
   "support": {

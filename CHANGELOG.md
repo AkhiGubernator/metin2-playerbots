@@ -17,6 +17,104 @@ every version here.
 
 ---
 
+## 2.2.53 — 2026-10-01
+
+Serwer 2.2.53 i klient 2.0.63: zaktualizuj oba. Zawiera wszystko z 2.2.52.
+Launcher sam podmieni też plik gry (metin2client.exe).
+
+### Alchemia Smoczych Kamieni
+
+- **Okno alchemii pokazuje wszystkie kamienie** - każdy rodzaj i każdą klasę,
+  nie tylko diamenty i pierwsze szlifowane (NerrVoVy, Adijhos).
+- **Cor Draconis do handlu** (Kuszaa): szkatułki można wymieniać w handlu i
+  wystawiać w sklepach. Część botów wystawia je na swoich ladach.
+- **Smocze kamienie do handlu**: kamień z okna alchemii można dać w handlu.
+- **Dzienny limit Cor Draconis do ustawienia** (Kuszaa): w oknie trudności
+  launchera i w panelu na stronie stawek, od 1 do 100 dziennie (domyślnie 10).
+- **Wyłączona alchemia znika z gry** (Hiob): nie ma przycisku w ekwipunku,
+  klawisz O nic nie otwiera, a list i strzałka Alchemika nie wracają.
+  Alchemię przełączysz też na żywo w panelu, na stronie stawek.
+
+### Ustawienia świata (Jeremus-Sama)
+
+Nowa kolumna w oknie trudności launchera i karta w panelu. Domyślnie świat
+zostaje taki jak był:
+- **dodatkowy drop z metinów i bossów**: odłamki smoczego kamienia, Cor
+  Draconis i kupony SM, tym lepsze, im mocniejszy przeciwnik;
+- **zielone i fioletowe mikstury** u handlarza z różnościami;
+- **ceny w ItemShopie** w procentach.
+
+### Wojny gildii
+
+- **Wynik wojny to liczba zabójstw** (Buszek). Wygrywa gildia, która pierwsza
+  zabije ustawioną liczbę wrogów (domyślnie 100, do zmiany w panelu); gdy
+  minie czas wojny - ta, która zabiła więcej.
+- **Tablica wyniku wojny** pokazuje cel („Do 100 zabójstw”), ile zabójstw
+  brakuje każdej stronie i która gildia prowadzi.
+
+### Łucznik (Ren)
+
+- **Kolejny cel po zabiciu**: nowa opcja w ustawieniach gry (Z łukiem /
+  Zawsze / Wyłączony). Po zabiciu potwora klient sam zaznacza najbliższego,
+  z którym już walczyłeś.
+- **W tłumie botów klient szybciej odbiera dane z serwera** - dodatkowe
+  strzały łucznika powinny lecieć razem ze strzałem.
+
+### Konie
+
+- **Ogon Konia** (Derpsonkowy95): z założonym ogonem sprint na koniu i na
+  każdym wierzchowcu nie zużywa staminy i nie urywa się.
+
+### Launcher
+
+- **Serwer startuje bez internetu** (Klimczak): gdy obrazy serwera są już
+  zbudowane, GRAJ uruchamia świat także offline.
+- **„Napraw dostęp do bazy”** używa tej samej wersji bazy co Twój świat.
+- **Zmiany z okna trudności działają od razu po restarcie z launchera**,
+  także gdy serwer był uruchomiony - wcześniej część z nich wchodziła
+  dopiero po pełnym zatrzymaniu serwera.
+
+### COOP
+
+- **Znajomi widzą wszystkie kanały świata** (Ren), także te włączone
+  później. Launcher przypomni hostowi, gdy zapora Windows nie obejmuje nowo
+  włączonych kanałów.
+
+### Boty i Towarzysz
+
+- **Towarzysz zwabia grupy zwykłym ciosem**, a umiejętności używa przy
+  zebranych potworach (prodnathin).
+- **Boty z kanałów 3 i 4 odwiedzają kanał 1**, żeby kupić na rynku i
+  obsłużyć swój sklep, a potem wracają (hubert).
+- **Boty mieszają zmiankami średnie obrażenia na broni z poziomu 30** od +7,
+  aż do 30% (sosen).
+- **Boty targują się o cenę** (Remigiusz). Gdy gotowy ekwipunek od +6 na
+  Twoim sklepie offline jest dla bota za drogi, bot napisze do Ciebie z
+  ofertą. Odpowiedz „ok”, podaj swoją cenę (np. „5kk”) albo obniż cenę na
+  sklepie - bot przyjdzie i kupi. „nie” kończy rozmowę. Wyłączysz to w
+  panelu, na stronie AI.
+
+### Świat
+
+- **Trzeci Loch Pająków jest wyłączony** - wejście do niego zamykało grę;
+  postać zapisana w nim wraca do miasta (blasty).
+
+### Po angielsku
+
+- **Angielski klient mówi po angielsku** (Ren): bossowie i potwory tego
+  świata, koń gracza („Rin's Horse”), wszystkie komunikaty serwera i
+  okrzyki potworów.
+
+### Panel zaawansowany
+
+- **Panel Sebana 1.102.7 po angielsku** (seban latino, Ren). Język ustawisz w
+  Zarządzanie → Panel webowy.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.52 — 2026-10-01
 
 Serwer 2.2.52 i klient 2.0.62: zaktualizuj oba. Zawiera wszystko z 2.2.51.

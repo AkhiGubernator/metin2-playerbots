@@ -103,13 +103,13 @@ and bots stay untouched. Then click PLAY and log in again.
 
 ## 📜 Licence
 
-From version 2.2.17 the project is under **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)** (Attribution-NonCommercial-ShareAlike):
+From version 2.2.55 the project is under **[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.en)** (Attribution-NonCommercial-NoDerivatives):
 
-- **you may** copy, share and modify the project, publicly too;
-- **you must** credit the author and link to the project, and share a modified version under the same licence;
+- **you may** play, run a server for yourself and your friends, and share the official packages unchanged, crediting the author with a link to the project;
+- **you may not** distribute modified versions or separate distributions; add-ons to the project may be made and shared on the project's Discord;
 - **you may not** make money from it: no selling it, no charging for access to a server, no selling items in the game. Voluntary donations towards running a server that give no advantage in the game, and recording and streaming gameplay, are fine.
 
-Versions up to and including 2.2.16 are under the MIT licence ([LICENSE-MIT.txt](LICENSE-MIT.txt)). Metin2 belongs to Ymir Interactive and Webzen, and the server-file packages to their authors. Details are in [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).
+Versions up to and including 2.2.16 are under the MIT licence ([LICENSE-MIT.txt](LICENSE-MIT.txt)), and versions 2.2.17 to 2.2.54 under CC BY-NC-SA 4.0. Metin2 belongs to Ymir Interactive and Webzen, and the server-file packages to their authors. Details are in [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).
 
 ## 🤝 Credits
 

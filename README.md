@@ -102,13 +102,13 @@ nietknięte. Potem kliknij GRAJ i zaloguj się jeszcze raz.
 
 ## 📜 Licencja
 
-Od wersji 2.2.17 projekt jest na licencji **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.pl)** (Uznanie autorstwa - Użycie niekomercyjne - Na tych samych warunkach):
+Od wersji 2.2.55 projekt jest na licencji **[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.pl)** (Uznanie autorstwa - Użycie niekomercyjne - Bez utworów zależnych):
 
-- **wolno** kopiować, udostępniać i przerabiać projekt, także publicznie;
-- **trzeba** podać autora i link do projektu, a przeróbkę udostępnić na tej samej licencji;
+- **wolno** grać, prowadzić serwer dla siebie i znajomych oraz udostępniać oficjalne paczki bez zmian, z podaniem autora i linku do projektu;
+- **nie wolno** rozpowszechniać przeróbek ani osobnych dystrybucji; dodatki do projektu można tworzyć i dzielić się nimi na Discordzie projektu;
 - **nie wolno** na nim zarabiać: sprzedawać go, brać opłat za dostęp do serwera ani sprzedawać przedmiotów w grze. Dobrowolne wpłaty na utrzymanie serwera, jeśli nie dają korzyści w grze, oraz nagrywanie i streamowanie rozgrywki są w porządku.
 
-Wersje do 2.2.16 włącznie są na licencji MIT ([LICENSE-MIT.txt](LICENSE-MIT.txt)). Metin2 należy do Ymir Interactive i Webzen, a pakiety plików serwerowych do ich autorów. Szczegóły są w plikach [LICENSE](LICENSE) i [NOTICE.md](NOTICE.md).
+Wersje do 2.2.16 włącznie są na licencji MIT ([LICENSE-MIT.txt](LICENSE-MIT.txt)), a wersje od 2.2.17 do 2.2.54 na CC BY-NC-SA 4.0. Metin2 należy do Ymir Interactive i Webzen, a pakiety plików serwerowych do ich autorów. Szczegóły są w plikach [LICENSE](LICENSE) i [NOTICE.md](NOTICE.md).
 
 ## 🤝 Podziękowania
 

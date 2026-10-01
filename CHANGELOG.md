@@ -17,6 +17,71 @@ every version here.
 
 ---
 
+## 2.2.55 — 2026-10-01
+
+Serwer 2.2.55 i klient 2.0.65: zaktualizuj oba, razem. Launcher podmieni też
+plik gry (metin2client.exe). Zawiera wszystko z 2.2.54.
+
+### Magazyn kolekcjonera w klasycznym wyglądzie (Amos)
+
+Magazyn u Dozorcy wygląda teraz jak okno przedmiotów z ItemShopu:
+- **siatka czarnych pól**, 120 na stronę (10 × 12), przedmioty w swoim
+  rozmiarze, strony „<< < X / Y > >>”;
+- **kategorie z licznikami** po lewej, „Zajęte” i „Rozbuduj” bez zmian;
+- wkładanie: prawy przycisk na przedmiocie w ekwipunku albo przeciągnięcie
+  na siatkę;
+- wyjmowanie: prawy przycisk, dwuklik albo przeciągnięcie do ekwipunku;
+  Shift pyta o ilość;
+- duży magazyn otwiera się bez przycięcia gry.
+
+Wyszukiwarka, sortowanie, zaznaczanie, ulubione, blokada, „Schowaj
+materiały” i „Połącz zgodne stosy” zniknęły. Wszystko, co już leży w
+magazynie, zostaje na miejscu - także wpisy zablokowane wcześniej.
+
+### Towarzysz
+
+- **Zawsze jest wolna postać** (Note): Towarzysze mają własną pulę postaci,
+  więc „Nie ma teraz wolnej postaci tej klasy” nie powinno się już pojawiać,
+  a nowy Towarzysz od razu nosi wybrany nick.
+- Towarzysz zrobiony wcześniej, który pokazywał się pod starym nickiem,
+  zaloguje się raz jeszcze, już pod właściwym.
+
+### Znaczniki na minimapie (Tyrion)
+
+- Prawy przycisk na minimapie zapisuje znacznik tam, gdzie stoisz, pod
+  wpisaną nazwą; prawy przycisk na mapie (M) - w klikniętym miejscu.
+- Złote pinezki na minimapie i na mapie, nazwa po najechaniu myszką; prawy
+  przycisk na pinezce pyta, czy ją usunąć. Do 20 znaczników na mapę; zostają
+  po teleporcie i ponownym zalogowaniu.
+
+### Plik gry i zabezpieczenia
+
+- Nowy plik gry z **dodatkowymi zabezpieczeniami przed łamaniem kodu przez
+  nieuczciwą konkurencję**. Launcher podmieni go sam przy aktualizacji
+  klienta albo przy GRAJ.
+- Gdy plik gry jest nieaktualny, gra powie o tym przy logowaniu (Kordyl13) -
+  wtedy np. okno alchemii pokazuje same diamenty. Wystarczy zamknąć grę i
+  włączyć ją przyciskiem GRAJ w launcherze.
+
+### COOP po angielsku (Edi)
+
+- Okno dołączania do świata znajomego mówi w języku gry, a przycisk
+  English / Polski przełącza je od razu. Obok polskiej instrukcji jest
+  angielska.
+
+### Start serwera (OCTODAN)
+
+- Start nie stoi już kilkanaście minut na „db Healthy”: sprawdzanie danych
+  świata przy starcie trwa sekundy.
+- Gdy serwer naprawia dane po nagłym wyłączeniu, launcher pokazuje, co się
+  dzieje, i prosi, żeby nie przerywać.
+- Przy aktualizacji serwer najpierw bezpiecznie zatrzymuje grę.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.54 — 2026-10-01
 
 Serwer 2.2.54 i klient 2.0.64: zaktualizuj oba. Zawiera wszystko z 2.2.53.

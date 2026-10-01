@@ -2,22 +2,24 @@
 
 **Polski** | [English](#english)
 
-## Od wersji 2.2.17: CC BY-NC-SA 4.0
+## Od wersji 2.2.55: CC BY-NC-ND 4.0
 
-Metin2 Playerbots od wersji 2.2.17 jest udostępniany na licencji Creative
-Commons Uznanie autorstwa - Użycie niekomercyjne - Na tych samych warunkach
-4.0 Międzynarodowa ([LICENSE](LICENSE),
-[skrót](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.pl),
-[tekst licencji](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.pl)).
+Metin2 Playerbots od wersji 2.2.55 jest udostępniany na licencji Creative
+Commons Uznanie autorstwa - Użycie niekomercyjne - Bez utworów zależnych 4.0
+Międzynarodowa ([LICENSE](LICENSE),
+[skrót](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.pl),
+[tekst licencji](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.pl)).
 W skrócie:
 
-- **wolno** kopiować, udostępniać i zmieniać projekt, także publicznie;
-- **trzeba** podać autora i link do projektu, zaznaczyć, co zmieniłeś,
-  a przeróbkę udostępnić na tej samej licencji;
+- **wolno** grać, prowadzić serwer dla siebie i znajomych oraz udostępniać
+  oficjalne paczki bez zmian, z podaniem autora i linku do projektu;
+- **nie wolno** rozpowszechniać zmienionych wersji projektu ani jego części
+  (przeróbek, osobnych dystrybucji, własnych wersji launchera, klienta,
+  paneli czy serwera);
 - **nie wolno** wykorzystywać go do celów komercyjnych.
 
 Jak podać autora:
-`Metin2 Playerbots - Tieru - https://github.com/TieruYT/metin2-playerbots - CC BY-NC-SA 4.0`
+`Metin2 Playerbots - Tieru - https://github.com/TieruYT/metin2-playerbots - CC BY-NC-ND 4.0`
 
 Kod źródłowy nowych wersji nie jest publikowany w repozytorium. Repozytorium
 zawiera wydania z paczkami, listę zmian i pliki, z których korzystają launcher
@@ -40,11 +42,45 @@ Bez zgody autora nie wolno natomiast:
   prawdziwe pieniądze);
 - sprzedawać płatnych „wersji premium”.
 
+### Dodatki do projektu
+
+Autor zezwala dodatkowo, poza licencją, na tworzenie dodatków i poprawek do
+projektu i dzielenie się nimi na Discordzie projektu albo przesyłanie ich
+autorowi, także gdy zawierają fragmenty plików projektu potrzebne do ich
+wgrania. Nie jest to zgoda na osobne dystrybucje: własne paczki, launchery,
+klienty czy serwery zbudowane z projektu wymagają zgody autora.
+
+### Eksploracja tekstów i danych
+
+Autor zastrzega, w rozumieniu art. 4 ust. 3 dyrektywy (UE) 2019/790
+i przepisów, które ją wdrażają, że projektu nie wolno zwielokrotniać ani
+wykorzystywać w celu eksploracji tekstów i danych, w tym do trenowania
+modeli sztucznej inteligencji.
+
+### Dekompilacja
+
+Pliki wykonywalne serwera i klienta są udostępniane bez kodu źródłowego.
+Dekompilowanie ich i inżynieria wsteczna są niedozwolone poza przypadkami,
+w których zezwala na to prawo (np. w zakresie niezbędnym do współdziałania
+programów).
+
+### Zmiany z pomocą narzędzi AI
+
+Te warunki dotyczą każdej zmiany projektu, także zrobionej z pomocą narzędzi
+AI. Zmieniać pliki na własny użytek wolno; rozpowszechniać zmienionych wersji
+i usuwać informacji o autorze i licencji nie wolno.
+
 ### Przesyłane poprawki
 
 Przesyłając autorowi poprawkę, kod, grafikę lub dane, zgadzasz się, że będą
-udostępnione w projekcie na tej samej licencji. Autor wymienia twórców wkładów
+udostępnione w projekcie na jego licencji. Autor wymienia twórców wkładów
 niżej, w README i w opisach wydań.
+
+## Od 2.2.17 do 2.2.54: CC BY-NC-SA 4.0
+
+Wersje od 2.2.17 do 2.2.54 zostały wydane na licencji CC BY-NC-SA 4.0
+([skrót](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.pl)) i na niej
+zostają.
 
 ## Do wersji 2.2.16 włącznie: MIT
 
@@ -81,8 +117,8 @@ i na niej zostają. Ich historia jest w tym repozytorium.
 ## Czego żadna z tych licencji nie obejmuje
 
 - **Metin2.** Gra, jej kod źródłowy, dane i klient należą do **Ymir Interactive
-  i Webzen**. Nie obejmuje ich ani CC BY-NC-SA, ani MIT, i żadna z tych licencji
-  nie może ich objąć.
+  i Webzen**. Nie obejmują ich ani licencje Creative Commons, ani MIT, i żadna
+  z tych licencji nie może ich objąć.
 - **Pakiety plików serwerowych**, na których działa projekt: r40250
   („[40250] Reference Serverfile” autorstwa TMP4) i mt2009 (Martysama r41023).
   Obowiązują ich własne warunki.
@@ -106,22 +142,25 @@ i na niej zostają. Ich historia jest w tym repozytorium.
 
 ## English
 
-### From version 2.2.17: CC BY-NC-SA 4.0
+### From version 2.2.55: CC BY-NC-ND 4.0
 
-From version 2.2.17 Metin2 Playerbots is shared under the Creative Commons
-Attribution-NonCommercial-ShareAlike 4.0 International licence
+From version 2.2.55 Metin2 Playerbots is shared under the Creative Commons
+Attribution-NonCommercial-NoDerivatives 4.0 International licence
 ([LICENSE](LICENSE),
-[summary](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en),
-[licence text](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.en)).
+[summary](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.en),
+[licence text](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.en)).
 In short:
 
-- **you may** copy, share and modify the project, publicly too;
-- **you must** credit the author and link to the project, say what you
-  changed, and share a modified version under the same licence;
+- **you may** play, run a server for yourself and your friends, and share
+  the official packages unchanged, crediting the author with a link to the
+  project;
+- **you may not** distribute modified versions of the project or of any part
+  of it (adaptations, separate distributions, your own versions of the
+  launcher, the client, the panels or the server);
 - **you may not** use it for commercial purposes.
 
 How to credit:
-`Metin2 Playerbots - Tieru - https://github.com/TieruYT/metin2-playerbots - CC BY-NC-SA 4.0`
+`Metin2 Playerbots - Tieru - https://github.com/TieruYT/metin2-playerbots - CC BY-NC-ND 4.0`
 
 The source code of new versions is not published in the repository. The
 repository holds the releases with their packages, the changelog and the files
@@ -145,11 +184,46 @@ Without the author's permission, however, you may not:
   money);
 - sell a paid "premium edition".
 
+### Add-ons to the project
+
+Beyond the licence, the author also allows making add-ons and fixes for the
+project and sharing them on the project's Discord or sending them to the
+author, including when they carry the parts of the project's files needed to
+install them. This is no permission for separate distributions: your own
+packages, launchers, clients or servers built from the project need the
+author's permission.
+
+### Text and data mining
+
+The author reserves, within the meaning of Article 4(3) of Directive (EU)
+2019/790 and the provisions implementing it, the reproduction and use of the
+project for text and data mining, including the training of artificial
+intelligence models.
+
+### Decompilation
+
+The server and client executables are shared without their source code.
+Decompiling them and reverse engineering are not allowed, except where the law
+permits it (for example as far as needed to make programs work together).
+
+### Changes made with AI tools
+
+These terms apply to every change to the project, including one made with the
+help of AI tools. Changing the files for your own use is allowed;
+distributing modified versions and removing the author and licence notices is
+not.
+
 ### Fixes you send
 
 By sending the author a fix, code, graphics or data, you agree that it will be
-shared in the project under the same licence. The author credits contributors
+shared in the project under its licence. The author credits contributors
 below, in the README and in the release notes.
+
+### From 2.2.17 to 2.2.54: CC BY-NC-SA 4.0
+
+Versions 2.2.17 to 2.2.54 were released under CC BY-NC-SA 4.0
+([summary](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)) and
+stay under it.
 
 ### Up to and including 2.2.16: MIT
 
@@ -188,8 +262,8 @@ this repository.
 ### What none of these licences cover
 
 - **Metin2.** The game, its source code, data and client belong to **Ymir
-  Interactive and Webzen**. Neither CC BY-NC-SA nor MIT covers them, and
-  neither can.
+  Interactive and Webzen**. Neither the Creative Commons licences nor MIT
+  cover them, and none can.
 - **The server-file packages** the project runs on: r40250 (the "[40250]
   Reference Serverfile" by TMP4) and mt2009 (Martysama r41023). Their own terms
   apply.

@@ -17,6 +17,51 @@ every version here.
 
 ---
 
+## 2.2.58 — 2026-10-02
+
+Serwer 2.2.58 i klient 2.0.68: zaktualizuj oba. Zawiera wszystko z 2.2.57.
+
+### Łucznik i walka
+
+- **Pasywka łucznika trafia więcej celów** (prodnathin): dodatkowe strzały
+  lecą też w potwory, które biją kogoś z drużyny (także Towarzysza), i w
+  potwory wezwane przez Metina, z którym walczysz. Liczba celów się nie
+  zmienia.
+- **Automatyczny cel po zabiciu** (Ren): po zabiciu potwora postać przełącza
+  się także na potwora, który ją atakuje, nawet jeśli jeszcze go nie
+  uderzyła.
+
+### Boty
+
+- **Boty powyżej 25. poziomu nie polują już na M3** (Charlie, prodnathin) -
+  nic im tam nie wypada. Na mapę gildii przychodzą nadal na wojny gildii,
+  Tanakę, deszcz Metinów i wezwania graczy.
+- **Targ z botem kończy się zakupem** (Drip): gdy bot zgodzi się na Twoją
+  cenę, a Ty ją ustawisz w sklepie, bot chwilę odczeka i kupi przedmiot,
+  zamiast się wycofać.
+- **Siano dla konia** (Iwakura): każdy bot zostawia sobie 5 sztuk siana dla
+  konia.
+- **Zestaw szamana** (Iwakura): szamani-boty mogą wydać na zestaw z
+  Inteligencją do 40% swojego złota.
+
+### Poprawki
+
+- **Drop yang najwyżej 1000%** (Iwakura): wyższej stawki yang nie da się już
+  ustawić, a świat z wyższą stawką dostanie 1000% przy następnym starcie
+  serwera. Doświadczenie i drop przedmiotów bez zmian.
+- **Komunikat o nieaktualnym metin2client.exe** (Adijhos): launcher podmienia
+  każdy przestarzały plik gry, także taki, którego nie znał (stary plik
+  zostaje w kopii zapasowej). Po aktualizacji uruchom grę przez GRAJ.
+- **Auto Łowy na koniu bojowym** (Charlie): przy włączonym Bojowcu obok
+  suwaka widać zasięg na koniu - postać bije z siodła tylko to, co ma blisko.
+- **Panel zaawansowany po angielsku** (Edi): nazwy przedmiotów, map,
+  wydarzeń i czat na żywo są po angielsku w angielskim panelu.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.57 — 2026-10-02
 
 Serwer 2.2.57 i klient 2.0.67: zaktualizuj oba. Launcher podmieni też plik

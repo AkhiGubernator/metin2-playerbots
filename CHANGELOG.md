@@ -17,6 +17,35 @@ every version here.
 
 ---
 
+## 2.2.57 — 2026-10-02
+
+Serwer 2.2.57 i klient 2.0.67: zaktualizuj oba. Launcher podmieni też plik
+gry (metin2client.exe). Zawiera wszystko z 2.2.56.
+
+### Poprawki
+
+- **Komunikat o nieaktualnym metin2client.exe** (Adijhos): launcher
+  pewniej podmienia stary plik gry - także przy pierwszym uruchomieniu po
+  aktualizacji. Jeśli komunikat mimo to się pojawi, zamknij grę i launcher,
+  otwórz launcher ponownie i kliknij GRAJ; jeśli wraca dalej, dodaj folder
+  gry do wykluczeń antywirusa.
+- **Flea Market po angielsku** (zhask9431): w angielskim kliencie
+  wyszukiwarka Flea Market i wyszukiwarka sklepów offline znajdują przedmioty
+  po angielskich nazwach, także z apostrofem (np. „Cupid's Chest (blue)”).
+- **Mapa Groty Pająków** (blasty): pod M widać mapę Groty Pająków V1 i V2.
+- **Quiz OX** (Edi): na arenie OX przechodzisz przez innych graczy i boty,
+  więc tłum nie blokuje drogi do O ani do X.
+- **Panel GM (F9)** (Edi): przyciski mieszczą się w swoich ramkach, a listy
+  przedmiotów, potworów i Metinów są po angielsku w angielskim kliencie.
+- **Ceny po aktualizacji rosną stopniowo** (Mat): na świecie, który
+  przeszedł na 2.2.56, ceny materiałów nie skaczą od razu kilkukrotnie,
+  tylko zmieniają się powoli od zwykłej ceny.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.56 — 2026-10-02
 
 Serwer 2.2.56 i klient 2.0.66: zaktualizuj oba. Launcher podmieni też plik

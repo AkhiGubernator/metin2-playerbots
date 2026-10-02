@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-02T09:07:36Z",
-  "statusMessage": "2.2.58 (serwer i klient 2.0.68 - zaktualizuj oba): pasywka lucznika i automatyczny cel, boty nad 25 poziomem nie poluja na M3, targ z botem konczy sie zakupem, drop yang najwyzej 1000%, launcher podmienia kazdy stary metin2client.exe, panel zaawansowany po angielsku. Zawiera wszystko z 2.2.57.",
+  "publishedAt": "2026-10-02T09:59:01Z",
+  "statusMessage": "2.2.59 (tylko serwer, klient zostaje 2.0.68): przycisk GRAJ w launcherze znow uruchamia gre. Zawiera wszystko z 2.2.58: pasywka lucznika i automatyczny cel, boty nad 25 poziomem nie poluja na M3, targ z botem, drop yang najwyzej 1000%, panel zaawansowany po angielsku.",
   "server": {
-    "version": "2.2.58",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.58/metin2-server-protected-migration-2.2.58.zip",
-    "sha256": "0D7CC1DEA3C9C03CCCA9565582198A9864907B145272F43D087BCEBAAFC7EF9A",
-    "size": 146165893
+    "version": "2.2.59",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.59/metin2-server-protected-migration-2.2.59.zip",
+    "sha256": "6B42F5B7CA2A1E5A95D3EE45AB4D5DDB7CAD40A92B891E5FCDF673A8FD679ADE",
+    "size": 146166128
   },
   "serverProtected": {
-    "version": "2.2.58",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.58/metin2-server-protected-update-2.2.58.zip",
-    "sha256": "C28D593ACD09C80183A2BB3A90EFBA48A400829B147AEF94CF24CE1BF6623106",
-    "size": 136003002
+    "version": "2.2.59",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.59/metin2-server-protected-update-2.2.59.zip",
+    "sha256": "70C2FE2E57CE951619FEF7B8894B67E5B0239FCCB79EF3158346347873A6218A",
+    "size": 136003237
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -23,12 +23,12 @@
   },
   "client": {
     "version": "2.0.68",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.58/metin2-client-update-2.0.68.zip",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.59/metin2-client-update-2.0.68.zip",
     "sha256": "5D7EAD743F42839D9AD5682CC6BCC9D4DE4560365F1A806CE9BE90B6C411C7D2",
     "size": 101204243
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.58/metin2client.exe",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.59/metin2client.exe",
     "sha256": "70989F4B03705A900920B7C700A37167E2E9830830817EABBBCBED1582CBA3CD",
     "size": 13591040,
     "replaces": [

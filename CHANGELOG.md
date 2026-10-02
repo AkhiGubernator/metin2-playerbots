@@ -17,6 +17,22 @@ every version here.
 
 ---
 
+## 2.2.59 — 2026-10-02
+
+Tylko serwer 2.2.59 - klient zostaje 2.0.68. Zawiera wszystko z 2.2.58.
+
+### Poprawki
+
+- **Przycisk GRAJ znowu uruchamia grę** (Adijhos): w 2.2.58 launcher po
+  kliknięciu GRAJ pokazywał okno z komunikatem „Get-M2FileSha256 is not
+  recognized” i nie włączał gry. Do czasu aktualizacji grę można uruchomić
+  bezpośrednio z folderu klienta (metin2client.exe).
+
+Aktualizację serwera zaproponuje launcher przy starcie. Świat, postacie i
+ustawienia są nietknięte.
+
+---
+
 ## 2.2.58 — 2026-10-02
 
 Serwer 2.2.58 i klient 2.0.68: zaktualizuj oba. Zawiera wszystko z 2.2.57.

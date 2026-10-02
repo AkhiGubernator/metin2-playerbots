@@ -17,6 +17,67 @@ every version here.
 
 ---
 
+## 2.2.56 — 2026-10-02
+
+Serwer 2.2.56 i klient 2.0.66: zaktualizuj oba. Launcher podmieni też plik
+gry (metin2client.exe). Zawiera wszystko z 2.2.55.
+
+### Żywa gospodarka (Community Patch 6, Iwakura)
+
+- **Ceny zależą od rynku.** Ulepszacze, księgi umiejętności, Opaski
+  Zapomnienia, Kamienie Duchowe i Zwoje Błogosławieństwa drożeją, gdy na
+  ladach całego świata (botów i graczy) ich brakuje, i tanieją, gdy jest ich
+  dużo - płynnie i z opóźnieniem, jak na prawdziwym rynku. Boty same
+  przeliczają ceny na swoich ladach co pół godziny.
+- **Przecena zależy od podaży:** rzadkiego towaru boty nie przeceniają, a
+  każdy towar ma cenę, poniżej której nie spadnie.
+- **Ludzkie ceny:** boty zaokrąglają ceny jak gracze (np. 1 490 000 zamiast
+  1 487 312).
+- **Broń z wysokimi średnimi obrażeniami:** najlepsze egzemplarze danej broni
+  na serwerze są wyraźnie droższe, a broń z wysokim ŚR jest wyceniana jak
+  ulepszona (+6 albo +7), nawet gdy ma +0.
+- **Bonusy liczą się bardziej niż „+”:** biżuteria, buty, zbroje i tarcze z
+  dobrymi bonusami są wyceniane jak ulepszone (do +7 albo +8) - np.
+  bransoleta +0 z 1500 PŻ kosztuje tyle, co czysta +7. Takie przedmioty boty
+  wystawiają na ladę, zamiast chować w magazynie.
+- **Inteligencja:** broń szamana i tarcza z Inteligencją są droższe.
+- **Rynek się równoważy:** boty dokładają z magazynu towar, którego brakuje,
+  i wstrzymują ten, którego jest za dużo.
+- **Siano:** boty go nie wystawiają, tylko zamieniają na Czerwone Mikstury
+  (D); siano, które leżało na ich ladach, sprzedają Handlarce Różności.
+- **Szamani z Inteligencją:** szamani-boty noszą w plecaku zestaw z
+  Inteligencją (broń, tarcza, kolczyki, naszyjnik) i przebierają się w niego
+  na chwilę, żeby rzucić mocniejsze buffy; w drużynie z graczem walczą w nim
+  cały czas.
+
+### Auto Łowy na koniu bojowym (Setnil)
+
+- Nowy przełącznik „Bojowiec” w oknie Auto Łowów. Postać na koniu stoi w
+  miejscu i atakuje jak ze spacją, używa umiejętności konia, zbiera
+  przedmioty z filtra wokół siebie, a po buffy (Aura Miecza, Berserk, Silne
+  Ciało i inne) na chwilę zsiada i wraca na konia.
+
+### Poprawki
+
+- **Pieczęcie wierzchowców działają** (Barnucchiettu): prawy przycisk na
+  pieczęci wsadza na wierzchowca, a Ctrl+G zsiada.
+- **Szybkość ruchu po śmierci** (Ren) nie spada już na minutę - przyspieszenie
+  świata zostaje także po odrodzeniu.
+- **Pasek przy zaznaczonej postaci** (Drip) nie znika już po dłuższej grze -
+  handel, pojedynek, podgląd ekwipunku i zaproszenie do grupy są zawsze pod
+  ręką.
+- **Boty 36-40 nie kręcą się już po M3** (Charlie, prodnathin): idą tam tylko
+  po broń, która może im wypaść, i wracają na swoje mapy.
+- **Klient nie wyłącza się już losowo podczas walki** (Buby) - launcher
+  podmieni plik gry (metin2client.exe).
+- **Więcej po angielsku** (Edi, Littelo): nazwy NPC na dużej mapie (M) i
+  opcje wejścia do Wieży Demonów.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.55 — 2026-10-01
 
 Serwer 2.2.55 i klient 2.0.65: zaktualizuj oba, razem. Launcher podmieni też

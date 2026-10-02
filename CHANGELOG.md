@@ -17,6 +17,63 @@ every version here.
 
 ---
 
+## 2.2.60 — 2026-10-02
+
+Serwer 2.2.60 i klient 2.0.69: zaktualizuj oba. Zawiera wszystko z 2.2.59.
+
+### COOP dla wszystkich
+
+- **COOP bez hasła**: granie ze znajomymi na Twoim świecie jest od teraz
+  za darmo dla każdego - launcher nie pyta już o hasło. Strona COOP w
+  launcherze: zaproś znajomych, a oni dołączają kodem zaproszenia.
+
+### Gildie
+
+- **Wojny gildii na mapie wojen**: bitwy gildii botów i wojny z gildią
+  gracza toczą się, tak jak w oryginalnej grze, na mapie wojen gildii, a nie
+  na M3. Boty przechodzą przez mosty do środkowej wyspy.
+
+### Towarzysz
+
+- **Blokada ekwipunku Towarzysza** (blipu): w oknie Towarzysza jest
+  przełącznik „Zablokuj ekwipunek”. Po włączeniu Towarzysz nie ulepsza, nie
+  przerabia, nie zdejmuje, nie sprzedaje i nie wyrzuca tego, co ma na sobie
+  i co dostał od Ciebie. Ty nadal możesz przekładać jego rzeczy.
+
+### Smocze Kamienie
+
+- **Uszlachetnianie u Alchemika** (Tyrion): ulepszenie klasy lub czystości
+  daje kamień o jeden stopień wyżej, a przy porażce kamień zostaje na tym
+  samym stopniu. Szanse to 30%, 25%, 20% i 15% dla kolejnych stopni.
+- **Okno komunikatów Alchemii** (Tyrion): pokazuje tylko ostatni komunikat,
+  zamiast dopisywać kolejne linie bez końca, a uszlachetnianie, które i tak
+  by się nie udało, okno odrzuca od razu.
+
+### Boty
+
+- **Peleryna Męstwa**: silne boty używają Peleryny Męstwa, gdy dadzą radę
+  przyciągniętym potworom - jedna na spot, a następna dopiero po pokonaniu
+  tłumu. Peleryny boty kupują od innych sprzedających.
+- **Zakupy od graczy** (zhask9431): boty nie płacą już w Twoim sklepie
+  dowolnie wysokich cen za broń +0 - kupują tylko po cenie bliskiej tej, na
+  jaką same ją wyceniają albo za jaką stoi u innych botów.
+- **Rękawice Króla Przepowiedni** (Kordyl13): bot trzyma jedną rękawicę i
+  jeden symbol, a nadmiar sprzedaje u handlarza.
+- **Ceny ekwipunku** (Iwakura): hełmy mają ceny (połowa zbroi tego samego
+  poziomu), a przy równych średnich obrażeniach broni wyżej stoi ta z
+  wyższymi obrażeniami umiejętności.
+
+### Poprawki
+
+- **Panel GM (F9)** (blipu): zabranie rangi GM działa od razu, także dla
+  najwyższej rangi, bez ponownego logowania, a panel pokazuje wynik każdej
+  komendy.
+
+Aktualizację serwera i klienta zaproponuje launcher przy starcie. Świat,
+postacie i ustawienia są nietknięte.
+
+---
+
 ## 2.2.59 — 2026-10-02
 
 Tylko serwer 2.2.59 - klient zostaje 2.0.68. Zawiera wszystko z 2.2.58.

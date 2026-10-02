@@ -55,7 +55,7 @@ Every kind of support helps build a livelier Metin2 world: testing, bug reports,
 - 💬 **Conversations**: bots answer whispers and trade over the chat ("Kupię…", "Sprzedam…"), a Shaman will tell you what its buffs give, and a bot you call will come over. The bots talk in Polish.
 - 🤝 **Towarzysz, your companion**: a permanent partner in your party. It fights beside you, buffs you and trades with you, and you set its equipment and skills yourself. It also joins a party a friend leads ("Grupa") and can play on its own while you are away ("Gra beze mnie").
 - 🎯 **Auto Hunt**: automatic hunting for the player. The world's settings decide whether it is for everyone or bought in the ItemShop.
-- 🎛️ **Panels and launcher**: two web panels with a live world map, rankings, the bots' equipment, AI behaviour sliders and timed events; a launcher with updates, world backups, the difficulty setting, a second channel, COOP (friends playing in your world, for supporters) and a server on a VPS.
+- 🎛️ **Panels and launcher**: two web panels with a live world map, rankings, the bots' equipment, AI behaviour sliders and timed events; a launcher with updates, world backups, the difficulty setting, a second channel, COOP (friends playing in your world, free) and a server on a VPS.
 - 💾 **A persistent world**: every bot has its own account and character in MariaDB, so levels, items and yang survive a restart.
 
 ## ⌨️ In-game keys

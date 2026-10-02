@@ -55,7 +55,7 @@ Każda forma wsparcia pomaga tworzyć coraz bardziej żywy świat Metin2: testy,
 - 💬 **Rozmowy**: boty odpowiadają na szepty, handlują przez czat („Kupię…”, „Sprzedam…”), Szaman powie, co dają jego buffy, a zawołany bot przyjdzie.
 - 🤝 **Towarzysz**: Twój stały kompan w drużynie. Walczy przy Tobie, buffuje, handluje z Tobą, a jego ekwipunek i umiejętności ustawiasz sam. Dołącza też do grupy prowadzonej przez znajomego („Grupa”) i może grać sam, gdy Ciebie nie ma („Gra beze mnie”).
 - 🎯 **Auto Łowy**: automatyczne polowanie dla gracza. W ustawieniach świata wybierasz, czy jest dla każdego, czy po zakupie w ItemShopie.
-- 🎛️ **Panele i launcher**: dwa panele WWW z mapą świata na żywo, rankingami, ekwipunkiem botów, suwakami zachowania AI i wydarzeniami czasowymi; launcher z aktualizacjami, kopią świata, poziomem trudności, drugim kanałem, COOP (gra ze znajomymi w Twoim świecie, dla wspierających) i serwerem na VPS.
+- 🎛️ **Panele i launcher**: dwa panele WWW z mapą świata na żywo, rankingami, ekwipunkiem botów, suwakami zachowania AI i wydarzeniami czasowymi; launcher z aktualizacjami, kopią świata, poziomem trudności, drugim kanałem, COOP (gra ze znajomymi w Twoim świecie, za darmo) i serwerem na VPS.
 - 💾 **Trwały świat**: każdy bot ma własne konto i postać w bazie MariaDB, więc poziom, przedmioty i yang zostają po restarcie.
 
 ## ⌨️ Skróty w grze

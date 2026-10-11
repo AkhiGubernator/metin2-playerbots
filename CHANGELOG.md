@@ -17,6 +17,13 @@ every version here.
 
 ---
 
+## 2.2.89 — 2026-10-12
+
+Poprawka aktualizacji klienta do wersji 2.0.95 (64-bit). Wydanie chronione.
+
+Zaktualizuj serwer i launcher, uruchom ponownie launcher, a następnie zaktualizuj klienta.
+Postacie i ustawienia zostają zachowane. Dziękujemy za szybkie zgłoszenia.
+
 ## 2.2.88 — 2026-10-11
 
 Serwer i launcher 2.2.88 oraz klient 2.0.94 (64-bit). Zaktualizuj oba przez launcher.

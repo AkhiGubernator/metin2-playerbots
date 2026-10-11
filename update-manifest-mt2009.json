@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-10T12:27:35Z",
-  "statusMessage": "2.2.87 i klient 2.0.93: poprawki ze zgłoszeń - boty mieszają broń 30 lvl (sosen), Towarzysz kupuje mikstury i otwiera ladę (magicznytomasz, NerrVoVy), Auto Łowy nie gubią buffów, aktualizacja na VPS z małą ilością pamięci (IRON).",
+  "publishedAt": "2026-10-11T21:40:23Z",
+  "statusMessage": "2.2.88 i klient 2.0.94 (64-bit): nowy launcher, odświeżone panele oraz usprawnienia gry i poprawki błędów. Zaktualizuj serwer i klienta przez launcher.",
   "server": {
-    "version": "2.2.87",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.87/metin2-server-protected-migration-2.2.87.zip",
-    "sha256": "FA8D9A9B71BC4B9CA0C6EB2302D1955DAF98555B5E975F61C2224ACFDC09B38B",
-    "size": 155839459
+    "version": "2.2.88",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2-server-protected-migration-2.2.88.zip",
+    "sha256": "83C5224DCABE2F9B46072D0FF49535F6B1404D4C08D06F1FC9E62220BCF3546A",
+    "size": 159795959
   },
   "serverProtected": {
-    "version": "2.2.87",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.87/metin2-server-protected-update-2.2.87.zip",
-    "sha256": "04E6A0864AF9FEFD89455BC4DAC82894564F184B7F9CF39A9F37054573A42ED5",
-    "size": 145882979
+    "version": "2.2.88",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2-server-protected-update-2.2.88.zip",
+    "sha256": "C6BF947E04E414947C937728AE8D44571C27858EB8DEA7DF7D61D36F4FB14407",
+    "size": 149839479
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,16 +22,103 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.93",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.87/metin2-client-update-2.0.93.zip",
-    "sha256": "CD4ABC65B11CC4D71D219387EB2A13E28B072E5109558100E7DC0BF9670E90FE",
-    "size": 113484867,
-    "requiresClientExe": true
+    "version": "2.0.94",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2-client-update-2.0.94.zip",
+    "sha256": "E7E138036B87CCC75A445FBF0DB04A257FD26EA10161061AD72622A3ECE4AE95",
+    "size": 135844572,
+    "requiresClientExe": true,
+    "architecture": "x64",
+    "nativeRuntime": [
+      {
+        "path": "concrt140.dll",
+        "sha256": "2405355F0A58067B258F8DF33C327E3A3D716EAAC5A3A5AEBB757842D85BD376"
+      },
+      {
+        "path": "config.exe",
+        "sha256": "5644317CAEB156CFBB72877B5D5096CF967E676805873F3355C42B9DF6825D02"
+      },
+      {
+        "path": "config_original.exe",
+        "sha256": "C6A01520F80DB8B2E3477841CC014F0F38FE4BC3F4238974B68A50FF92025D4D"
+      },
+      {
+        "path": "D3DCompiler_43.dll",
+        "sha256": "FFEDB064ADC25328B24DCF145B04045A867A5574C931516D7845BABF2A08937F"
+      },
+      {
+        "path": "d3dx9_43.dll",
+        "sha256": "36B84DFA0EF9D3FF3549A7AD54D2A8032BD22C879219EE1A959137C4EF8786C4"
+      },
+      {
+        "path": "devil.dll",
+        "sha256": "EA839E2E9CCCEEDC35B772AB06284B34B370F7FA13D7AD0A76036106C13C4F7E"
+      },
+      {
+        "path": "granny2.dll",
+        "sha256": "5464BA0B84FA5960FF0B5712C85A72B1EFBED3CC3D0BC351A2D7BD82C015FB57"
+      },
+      {
+        "path": "ILU.dll",
+        "sha256": "F77F132281384F9067DEE3BAF4F4912009DDC6011A576F3CE5EDB9E8A1532335"
+      },
+      {
+        "path": "ILUT.dll",
+        "sha256": "F72CE93C3A6AE4C1B7ED62A74C75636225EFE7C0971823F010F8DB5DB18A3B37"
+      },
+      {
+        "path": "MilesCompat64.dll",
+        "sha256": "6C9A684F66F1FE6F987A3E5A9DA7AF929CAB949FC6BA0DACC01052D11EB1CE89"
+      },
+      {
+        "path": "msvcp140.dll",
+        "sha256": "0F885B509A685D2BBFA652FED26B5FB31D88FBDAB0A978C641D1C7B8AA460AA9"
+      },
+      {
+        "path": "msvcp140_1.dll",
+        "sha256": "BFAD5AEF4C63A669E3C140655CDFDF395B6C979B400A447BD5DCB65ED8826C3D"
+      },
+      {
+        "path": "msvcp140_2.dll",
+        "sha256": "3EA06F0EE098B4823CB79599DF3780E7F23CCE52C19AAC31D2A0D47EFE33A5E9"
+      },
+      {
+        "path": "msvcp140_atomic_wait.dll",
+        "sha256": "640B2AEFCED484D0368EEA5BDD06ADDD0658A3A70A49256E560D6923B404A479"
+      },
+      {
+        "path": "msvcp140_codecvt_ids.dll",
+        "sha256": "F2069A52880EC885EE7F0511186100EB7FADA0411A2B4948FAFEA7735B878A18"
+      },
+      {
+        "path": "SecureEngineSDK64.dll",
+        "sha256": "175A75CA524B269B25FB5144DC0ABB4AC9B1673852DF3ABFBD4F6C449E01827D"
+      },
+      {
+        "path": "SpeedTreeRT.dll",
+        "sha256": "8406542DA2C03ABA735FD11597EED280714A0D8FB1AFA664DA78195725F2437D"
+      },
+      {
+        "path": "vccorlib140.dll",
+        "sha256": "19839407C3FDBC824E5BCE189BF68DDF8097F12EC28B757797FFA0415C144DDD"
+      },
+      {
+        "path": "vcruntime140.dll",
+        "sha256": "D5E4D9A3E835FA679450145D6A7D94E36573A509317111904D9B3712C30D9066"
+      },
+      {
+        "path": "vcruntime140_1.dll",
+        "sha256": "1F2D41C4AA5DB0BC33EBF7B66D72943A817D7CE6CBE880502A9403823633093F"
+      },
+      {
+        "path": "vcruntime140_threads.dll",
+        "sha256": "219915CF20822F34D5E7C1FDD4E21AE7F3396881096C51036225FB8F84B47AFA"
+      }
+    ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.87/metin2client.exe",
-    "sha256": "785EFC4CCDAE8CDD8B78D445C1C1C39CD93DD8B003F1E90B02D41B66521505EF",
-    "size": 11297280,
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2client.exe",
+    "sha256": "14CCA0DB30F0B10F48C60E9250DFCCA851CB57D9849BF8F7A675811A3F942E6E",
+    "size": 10098176,
     "replaces": [
       "8263F81BFACDFA4A664C1F2A8CE846AEE14F19E584DB40A43F3184FEF1A59531",
       "752623560AB54E2F3F84FF9ADB8961D73E2E289634075118D3FBEA984CFCEFB1",
@@ -55,8 +142,10 @@
       "49868B06256851E5EF602F013303D790831F2EC579A837805E918D67F204E1B1",
       "413E9A053841DCD291090F2BCC9A4B36F243A2181C7A58EA01D19110BE4F35C0",
       "746FDE56EF08ADCC344234EC4C523CDEB3B3952128481DE97FFDA53D21C3F4FF",
-      "78523FF32A087C8C463396475DB9547EFA1635F4481421F232993D4F34D5074B"
+      "78523FF32A087C8C463396475DB9547EFA1635F4481421F232993D4F34D5074B",
+      "785EFC4CCDAE8CDD8B78D445C1C1C39CD93DD8B003F1E90B02D41B66521505EF",
+      "4B0BC7EE7703869C79B3DC658186DB0DCBE23F6EA6B0DCF3940220C3F8A82BED"
     ]
   },
-  "statusMessageEn": "2.2.87 and client 2.0.93: fixes from your reports - the bots mix their level-30 weapons (sosen), the companion buys potions and opens its stand (magicznytomasz, NerrVoVy), Auto Hunt keeps its buffs, updating a VPS short of memory (IRON)."
+  "statusMessageEn": "2.2.88 and client 2.0.94 (64-bit): new launcher, refreshed panels, gameplay improvements and bug fixes. Update both the server and client through the launcher."
 }

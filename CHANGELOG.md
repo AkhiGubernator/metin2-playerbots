@@ -17,6 +17,17 @@ every version here.
 
 ---
 
+## 2.2.88 — 2026-10-11
+
+Serwer i launcher 2.2.88 oraz klient 2.0.94 (64-bit). Zaktualizuj oba przez launcher.
+
+- Nowy wygląd launchera i odświeżone panele WWW.
+- Klient 64-bit oraz usprawnienia płynności i ładowania gry.
+- Ulepszenia botów, gospodarki, Towarzysza, alchemii i Wiki.
+- Poprawki błędów logowania, questów i interfejsu ze zgłoszeń społeczności.
+
+Dziękujemy Kiciamolowi, Lostkowi, Iwakurze, Tyrionowi, Blasty'emu, Sebanowi Latino oraz wszystkim testerom i zgłaszającym. Wydanie chronione, bez źródeł klienta i serwera.
+
 ## 2.2.87 — 2026-10-10
 
 Serwer 2.2.87 i klient 2.0.93: zaktualizuj oba. Zawiera wszystko z 2.2.86.

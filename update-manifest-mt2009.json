@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-11T21:40:23Z",
-  "statusMessage": "2.2.88 i klient 2.0.94 (64-bit): nowy launcher, odświeżone panele oraz usprawnienia gry i poprawki błędów. Zaktualizuj serwer i klienta przez launcher.",
+  "publishedAt": "2026-10-11T22:30:37Z",
+  "statusMessage": "2.2.89 / klient 2.0.95: poprawka aktualizacji. Zaktualizuj serwer i launcher, uruchom ponownie launcher, następnie klienta.",
   "server": {
-    "version": "2.2.88",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2-server-protected-migration-2.2.88.zip",
-    "sha256": "83C5224DCABE2F9B46072D0FF49535F6B1404D4C08D06F1FC9E62220BCF3546A",
-    "size": 159795959
+    "version": "2.2.89",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.89/metin2-server-protected-migration-2.2.89.zip",
+    "sha256": "CED49546A5E3730A86211A0B8EBFF509B845A7E2F2B24A0BCA9EE4F79F7F91D0",
+    "size": 159796040
   },
   "serverProtected": {
-    "version": "2.2.88",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2-server-protected-update-2.2.88.zip",
-    "sha256": "C6BF947E04E414947C937728AE8D44571C27858EB8DEA7DF7D61D36F4FB14407",
-    "size": 149839479
+    "version": "2.2.89",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.89/metin2-server-protected-update-2.2.89.zip",
+    "sha256": "49DA9E7B40B5653B36507311502BA929FD8AA524158B41B306108347E4AA69B2",
+    "size": 149839560
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.94",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2-client-update-2.0.94.zip",
-    "sha256": "E7E138036B87CCC75A445FBF0DB04A257FD26EA10161061AD72622A3ECE4AE95",
-    "size": 135844572,
+    "version": "2.0.95",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.89/metin2-client-update-2.0.95.zip",
+    "sha256": "A4609839963D2FA45814E8886E9E95104FBA6D56E0D524A5B26AC0533EB2E2AF",
+    "size": 135844592,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -116,7 +116,7 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.88/metin2client.exe",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.89/metin2client.exe",
     "sha256": "14CCA0DB30F0B10F48C60E9250DFCCA851CB57D9849BF8F7A675811A3F942E6E",
     "size": 10098176,
     "replaces": [
@@ -144,8 +144,9 @@
       "746FDE56EF08ADCC344234EC4C523CDEB3B3952128481DE97FFDA53D21C3F4FF",
       "78523FF32A087C8C463396475DB9547EFA1635F4481421F232993D4F34D5074B",
       "785EFC4CCDAE8CDD8B78D445C1C1C39CD93DD8B003F1E90B02D41B66521505EF",
-      "4B0BC7EE7703869C79B3DC658186DB0DCBE23F6EA6B0DCF3940220C3F8A82BED"
+      "4B0BC7EE7703869C79B3DC658186DB0DCBE23F6EA6B0DCF3940220C3F8A82BED",
+      "14CCA0DB30F0B10F48C60E9250DFCCA851CB57D9849BF8F7A675811A3F942E6E"
     ]
   },
-  "statusMessageEn": "2.2.88 and client 2.0.94 (64-bit): new launcher, refreshed panels, gameplay improvements and bug fixes. Update both the server and client through the launcher."
+  "statusMessageEn": "2.2.89 / client 2.0.95: update fix. Update the server and launcher, restart the launcher, then update the client."
 }

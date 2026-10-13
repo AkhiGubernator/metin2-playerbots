@@ -17,6 +17,20 @@ every version here.
 
 ---
 
+## 2.2.93 — 2026-10-13
+
+Poprawki po Waszych zgłoszeniach. Klient 2.0.99 x64.
+
+- Poprawione miganie obiektów, które stają się przezroczyste podczas przechodzenia obok postaci.
+- Przywrócony klasyczny konfigurator obrazu i dźwięku. Limit FPS pozostaje dostępny w grze.
+- Poprawiona obsługa kliknięć w dodatkowych oknach ekwipunku, także przy otwartym plecaku konia.
+- Boty z ręcznie wybranym zachowaniem poprawnie reagują na zapełnienie ekwipunku.
+- Poprawiony zapis wybranych ustawień AI oraz wyświetlanie strony populacji w panelu WWW.
+- Panel wydarzeń wyraźnie informuje, gdy drop z Metinów jest wyłączony, i pokazuje rzeczywistą ustawioną szansę.
+
+Zaktualizuj serwer i launcher, uruchom ponownie launcher, następnie zaktualizuj klienta.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Dziękujemy za zgłoszenia i prosimy o dalszy feedback.
+
 ## 2.2.92 — 2026-10-13
 
 Poprawki stabilności klienta i botów oraz usprawnienia rynku i Wiki.

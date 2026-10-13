@@ -17,6 +17,19 @@ every version here.
 
 ---
 
+## 2.2.94 — 2026-10-13
+
+Kolejna porcja poprawek po Waszych zgłoszeniach. Klient 2.0.100 x64.
+
+- Wybór osobowości bota w panelu zachowuje wybraną opcję podczas wykonywania polecenia i pokazuje wynik zmiany.
+- Ulubione przedmioty zachowują oznaczenie przy potwierdzonym ręcznym przenoszeniu, zamianie miejsc oraz zakładaniu i zdejmowaniu wyposażenia. Nieudana operacja zachowuje dotychczasową gwiazdkę.
+- Poprawione odwrócone kierunki dźwięków przestrzennych w kliencie x64, również podczas obracania kamery.
+- Aktualizacja długo używanych światów dokładniej pokazuje postęp przygotowania historii oraz informuje o oczekiwaniu i dostępnej przestrzeni. Dane historii pozostają zachowane.
+- Zachowane wcześniejsze poprawki obrazu i klasyczny konfigurator. Test lokalny potwierdził działanie gry i brak migotania otoczenia.
+
+Zaktualizuj serwer i launcher do 2.2.94, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.100 (64-bit).
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Dziękujemy za logi i testy — prosimy o dalszy feedback dotyczący ulubionych, zmiany osobowości i dźwięków.
+
 ## 2.2.93 — 2026-10-13
 
 Poprawki po Waszych zgłoszeniach. Klient 2.0.99 x64.

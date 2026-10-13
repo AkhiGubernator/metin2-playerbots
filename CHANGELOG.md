@@ -17,6 +17,14 @@ every version here.
 
 ---
 
+## 2.2.91 — 2026-10-13
+
+Usprawnienia botów, gospodarki i paneli WWW oraz poprawki zgłoszonych błędów.
+Poprawiona obsługa logowania i niezawodność launchera. Klient 2.0.97 x64.
+
+Zaktualizuj serwer i launcher, uruchom ponownie launcher, następnie zaktualizuj klienta.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Dziękujemy autorom i testerom.
+
 ## 2.2.90 — 2026-10-12
 
 Odświeżone panele WWW, usprawnienia obsługi gry i poprawki zgłoszonych błędów.

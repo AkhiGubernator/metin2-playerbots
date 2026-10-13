@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-13T12:19:01Z",
-  "statusMessage": "2.2.92 / klient 2.0.98 x64: poprawki stabilności klienta, odświeżone Auto Łowy i ekwipunek oraz usprawnienia botów i rynku. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta.",
+  "publishedAt": "2026-10-13T15:52:02Z",
+  "statusMessage": "2.2.93 / klient 2.0.99 x64: poprawki przezroczystości otoczenia, klasyczny konfigurator oraz usprawnienia paneli i powrotów botów z pełnym ekwipunkiem. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta.",
   "server": {
-    "version": "2.2.92",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.92/metin2-server-protected-migration-2.2.92.zip",
-    "sha256": "386A1E42713E058E76A5C4B69230F4DA6D28AE967C9F1C962AA10AE1317BA85B",
-    "size": 162645771
+    "version": "2.2.93",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.93/metin2-server-protected-migration-2.2.93.zip",
+    "sha256": "943C7B53909640AF4B8695296AA3110CE29D4BF26D5848D53565420AB91016F6",
+    "size": 162650532
   },
   "serverProtected": {
-    "version": "2.2.92",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.92/metin2-server-protected-update-2.2.92.zip",
-    "sha256": "CA57AC4A51E383D748AF90AF7DB6CEE8AF4862E47E7CF2B6BE08BAE81C9057D9",
-    "size": 152689291
+    "version": "2.2.93",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.93/metin2-server-protected-update-2.2.93.zip",
+    "sha256": "AEFC73717E44BAA7A910E328228F164363F5F2DE8A9993388FBDE6531CD10B55",
+    "size": 152694052
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,24 +22,16 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.98",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.92/metin2-client-update-2.0.98.zip",
-    "sha256": "BAD98ADAE7C87AF8F9AC880CACC336BE2B38FF0CE4CA7E182A158D1EF11E1301",
-    "size": 135873648,
+    "version": "2.0.99",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.93/metin2-client-update-2.0.99.zip",
+    "sha256": "8D05A3F7C6D1C699EFC8FCBD0B9F9AE28A5AD43268F0DEE5734F2A1ACD048D55",
+    "size": 135652811,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
       {
         "path": "concrt140.dll",
         "sha256": "2405355F0A58067B258F8DF33C327E3A3D716EAAC5A3A5AEBB757842D85BD376"
-      },
-      {
-        "path": "config.exe",
-        "sha256": "5644317CAEB156CFBB72877B5D5096CF967E676805873F3355C42B9DF6825D02"
-      },
-      {
-        "path": "config_original.exe",
-        "sha256": "C6A01520F80DB8B2E3477841CC014F0F38FE4BC3F4238974B68A50FF92025D4D"
       },
       {
         "path": "D3DCompiler_43.dll",
@@ -112,13 +104,17 @@
       {
         "path": "vcruntime140_threads.dll",
         "sha256": "219915CF20822F34D5E7C1FDD4E21AE7F3396881096C51036225FB8F84B47AFA"
+      },
+      {
+        "path": "config.exe",
+        "sha256": "C6A01520F80DB8B2E3477841CC014F0F38FE4BC3F4238974B68A50FF92025D4D"
       }
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.92/metin2client.exe",
-    "sha256": "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80",
-    "size": 10100224,
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.93/metin2client.exe",
+    "sha256": "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F",
+    "size": 10104832,
     "replaces": [
       "8263F81BFACDFA4A664C1F2A8CE846AEE14F19E584DB40A43F3184FEF1A59531",
       "752623560AB54E2F3F84FF9ADB8961D73E2E289634075118D3FBEA984CFCEFB1",
@@ -146,8 +142,9 @@
       "785EFC4CCDAE8CDD8B78D445C1C1C39CD93DD8B003F1E90B02D41B66521505EF",
       "4B0BC7EE7703869C79B3DC658186DB0DCBE23F6EA6B0DCF3940220C3F8A82BED",
       "14CCA0DB30F0B10F48C60E9250DFCCA851CB57D9849BF8F7A675811A3F942E6E",
-      "FD48C803A8CD9F7369BB712F24177779DE77AF87ED0FB9EC859983DB3A61B982"
+      "FD48C803A8CD9F7369BB712F24177779DE77AF87ED0FB9EC859983DB3A61B982",
+      "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80"
     ]
   },
-  "statusMessageEn": "2.2.92 / client 2.0.98 x64: client stability fixes, refreshed Auto Hunt and inventory features, plus bot and market improvements. Update the server, restart the launcher, then update the client."
+  "statusMessageEn": "2.2.93 / client 2.0.99 x64: environment transparency fixes, the classic configurator, and improvements to panels and bots returning with full inventories. Update the server, restart the launcher, then update the client."
 }

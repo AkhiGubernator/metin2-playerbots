@@ -17,6 +17,24 @@ every version here.
 
 ---
 
+## 2.2.95 — 2026-10-14
+
+Duża aktualizacja: Patch 19, nowy event, dodatki do klienta i poprawki po Waszych zgłoszeniach. Klient 2.0.101 x64.
+
+**Uwaga:** ze względu na dużą liczbę zmian może wystąpić sporo błędów. Prosimy o pilne zgłaszanie ich przez launcher („Zgłoś błąd”) z dołączonym opisem.
+
+- Patch 19 (Iwakura i Tyrion): rozwój ekwipunku botów, hełmy i tarcze, Kamienie Duszy i bonusy, ceny na rynku, Cor Draconis znów łączy się w stosy, nowy wygląd panelu WWW z wyborem osobowości bota, zabawami dla całego świata, oknami wytwarzania i rozbudowanym edytorem (Iwakura, Tyrion, .yxzi).
+- Nowy event heksagonalnych szkatułek z Metinów - domyślnie wyłączony, włącza się go w panelu wydarzeń (Kiciamol).
+- Klient: szybkie otwieranie szeptów z czatu, kwoty w formacie 10k/10kk, liczba sztuk w opisie przedmiotu, przewijanie stron ekwipunku i zakładek okna postaci, nowa lista bonusów w Domu Towarowym (Uxìĕ [DSO]).
+- Towarzysz: oddaje medale konia u stajennego, gdy stoisz obok (NxcK_Os), ustawienie „Grupa: NIE” działa jak należy (DimitriASM), trzyma więcej Cor Draconis (teivos), sprzedaje zbędne rzeczy (zhask9431).
+- Boty: lepiej obsługują stoiska, medale konne i pełne torby (Iwakura, Tyrion, zhask9431).
+- Auto Łowy nie biegają już między Metinem a potworami wokół niego (DimitriASM).
+- Klient pamięta zapisane konta (Kordyl13) i ustawioną głośność efektów (DeeJaz, iahgod).
+- Panel WWW: poprawki karty języka gry (Moris, NxcK_Os), celu bota (Metalurji) i zmiany nicku postaci GM (kreinbargh).
+
+Zaktualizuj serwer i launcher do 2.2.95, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.101 (64-bit).
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Dziękujemy Uxìĕ [DSO] i Kiciamolowi za ich dodatki, Iwakurze i Tyrionowi za Patch 19 oraz wszystkim za zgłoszenia.
+
 ## 2.2.94 — 2026-10-13
 
 Kolejna porcja poprawek po Waszych zgłoszeniach. Klient 2.0.100 x64.

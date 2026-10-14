@@ -17,6 +17,15 @@ every version here.
 
 ---
 
+## 2.2.96 — 2026-10-14
+
+Poprawka zapisanych kont w kliencie. Klient 2.0.102 x64.
+
+- Zapisane konta, które po aktualizacji klienta do 2.0.101 zniknęły z okna logowania, znowu się wczytują, a nowe konta znowu się zapisują. Nic nie przepadło - dane zostały w pliku i wracają po aktualizacji (NerrVoVy, Kordyl13).
+
+Zaktualizuj serwer i launcher do 2.2.96, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.102 (64-bit).
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Dziękujemy NerrVoVy za szybkie zgłoszenie. Po 2.2.95 nadal prosimy o zgłaszanie błędów przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.95 — 2026-10-14
 
 Duża aktualizacja: Patch 19, nowy event, dodatki do klienta i poprawki po Waszych zgłoszeniach. Klient 2.0.101 x64.

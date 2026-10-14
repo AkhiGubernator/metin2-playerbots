@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-14T09:38:20Z",
-  "statusMessage": "2.2.95 / klient 2.0.101 x64: Patch 19 (Iwakura i Tyrion), event heksagonalnych szkatułek (Kiciamol), dodatki do klienta od Uxìĕ [DSO] i poprawki zgłoszeń. Dużo zmian - błędy zgłaszaj przez „Zgłoś błąd” w launcherze z opisem. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta.",
+  "publishedAt": "2026-10-14T12:08:49Z",
+  "statusMessage": "2.2.96 / klient 2.0.102 x64: poprawka zapisanych kont w kliencie - konta, które po 2.0.101 zniknęły z okna logowania, wracają. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta.",
   "server": {
-    "version": "2.2.95",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.95/metin2-server-protected-migration-2.2.95.zip",
-    "sha256": "EB162C90198EA43304FFEACC8B9F87C9FBEEB6BA9C09A460201ECEFD4B78E323",
-    "size": 163795499
+    "version": "2.2.96",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.96/metin2-server-protected-migration-2.2.96.zip",
+    "sha256": "29C80D004E3CDC7A36E6C306B157C340A3B98BBF7C8A9A8F814ED35CBC4A6481",
+    "size": 163795622
   },
   "serverProtected": {
-    "version": "2.2.95",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.95/metin2-server-protected-update-2.2.95.zip",
-    "sha256": "F1967AC937251738047A91C87C1D25010608F57DA53DD9148F3887FF256C8061",
-    "size": 153839019
+    "version": "2.2.96",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.96/metin2-server-protected-update-2.2.96.zip",
+    "sha256": "9A8986B00D976A213BBC5F101BD369481683321D240C041EB5D54289208918FC",
+    "size": 153839142
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.101",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.95/metin2-client-update-2.0.101.zip",
-    "sha256": "A4D81C4F4FFEF19FED416E9856D63F18484D2D86292F7BE91B981D4DADA01CCB",
-    "size": 135666262,
+    "version": "2.0.102",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.96/metin2-client-update-2.0.102.zip",
+    "sha256": "827BA1E4252C4152D2863DDE48042564FBF92BDF665D9A5B4629710AF4C18D34",
+    "size": 135666407,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -112,7 +112,7 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.95/metin2client.exe",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.96/metin2client.exe",
     "sha256": "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F",
     "size": 10104832,
     "replaces": [
@@ -146,5 +146,5 @@
       "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80"
     ]
   },
-  "statusMessageEn": "2.2.95 / client 2.0.101 x64: Patch 19 (Iwakura and Tyrion), the hexagonal chest event (Kiciamol), client additions by Uxìĕ [DSO] and reported fixes. Many changes - please report bugs with REPORT A BUG in the launcher, with a description. Update the server, restart the launcher, then update the client."
+  "statusMessageEn": "2.2.96 / client 2.0.102 x64: saved accounts fixed - the accounts that disappeared from the login window after 2.0.101 come back. Update the server, restart the launcher, then update the client."
 }

@@ -17,6 +17,19 @@ every version here.
 
 ---
 
+## 2.2.99 — 2026-10-15
+
+Launcher może chować się do zasobnika, poprawki Wieży Demonów, filtra Auto Łowów i wydarzeń Fun. Klient 2.0.104 x64.
+
+- Launcher: opcja chowania do zasobnika po zamknięciu okna - przy pierwszym zamknięciu launcher zapyta, wybór można zmienić w ustawieniach (charliee9239).
+- Wieża Demonów: boty nie tracą kolejki do kowala, gdy po zabiciu króla walczą z resztą potworów albo się leczą, a zabójstwa liczą się do kamieni otwarcia także przy otwartym oknie zadania (sosen).
+- Auto Łowy: „Gear: min.” nie liczy już średnich obrażeń i obrażeń umiejętności broni jako bonusów (DaTemox), a okno wyboru przedmiotów pokazuje nazwy w języku klienta (RapLow).
+- Panel WWW: strona Fun po angielsku (RapLow); „Anarchia u kowala” rozkłada wydawanie yang na czas trwania wydarzenia (_dumitrualexandru).
+- Klatki i skrzynie zwierzaków łączą się w stosy także w kliencie (iahgod); nazwa odłamka Smoczego Kamienia w języku gracza (RapLow).
+
+Zaktualizuj serwer i launcher do 2.2.99, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.104 (64-bit). Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.98 — 2026-10-15
 
 Poprawki botów po zgłoszeniach: tarcze i hełmy, rajdy na bossów, księgi i zwoje. Tylko serwer, klient bez zmian (2.0.103).

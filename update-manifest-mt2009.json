@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-14T22:25:06Z",
-  "statusMessage": "2.2.97 / klient 2.0.103 x64: nowy filtr Auto Łowów, szkatułki bossów i poprawki. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-15T09:29:34Z",
+  "statusMessage": "2.2.98 / klient 2.0.103 x64 bez zmian: poprawki botów po zgłoszeniach - tarcze i hełmy, rajdy na bossów, księgi i zwoje. Zaktualizuj serwer i launcher, następnie uruchom ponownie launcher - klient zostaje w wersji 2.0.103.",
   "server": {
-    "version": "2.2.97",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.97/metin2-server-protected-migration-2.2.97.zip",
-    "sha256": "0C8F9FD135F8016745DE669265BFBFABFA698F401ABF9A2B0BE4D2B6460F36F0",
-    "size": 163881280
+    "version": "2.2.98",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.98/metin2-server-protected-migration-2.2.98.zip",
+    "sha256": "CF872F2C1E69C95665AA2B3F5548990C60182419E1A71246105C36E4B477C38C",
+    "size": 163891882
   },
   "serverProtected": {
-    "version": "2.2.97",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.97/metin2-server-protected-update-2.2.97.zip",
-    "sha256": "8058B7C1BB464216676BA5CE2AB08DB5B879A7D818FF82604DDA0717D055C804",
-    "size": 153924800
+    "version": "2.2.98",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.98/metin2-server-protected-update-2.2.98.zip",
+    "sha256": "711ECF1CC22AEDD5FA93FC2B02F4ADC051D479D5D0E9D941959683F0DC0EC24C",
+    "size": 153935402
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -146,5 +146,5 @@
       "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80"
     ]
   },
-  "statusMessageEn": "2.2.97 / client 2.0.103 x64: a new Auto Hunt filter, boss caskets and fixes. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "2.2.98 / client 2.0.103 x64 unchanged: bot fixes after your reports - shields and helmets, boss raids, books and scrolls. Update the server and the launcher, then restart the launcher - the client stays on 2.0.103."
 }

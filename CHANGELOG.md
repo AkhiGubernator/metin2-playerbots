@@ -17,6 +17,21 @@ every version here.
 
 ---
 
+## 2.2.100 — 2026-10-15
+
+Boty znów wystawiają pełne lady, poprawki tarcz, zwojów i ksiąg. Klient 2.0.105 x64.
+
+- Stoiska botów: wizyta przy ladzie wystawia znowu kilka linii zamiast jednej, a boty, które akurat walczą, nie tracą kolejki (NxcK_Os, frozen.time); księgi innych klas wracają z magazynu na ladę, także u botów z drugiego kanału (sosen), a nadmiar ksiąg znów trafia na stoiska (Tyrion).
+- Księgi pomocnicze (np. Polimorfii) i medale stoją wyżej w kolejce wystawiania.
+- Tarcze i hełmy: bot nie zakłada już słabiej broniącej sztuki niż noszona, poza projektem planu od +7, i nie przerzuca ich w kółko (Tyrion).
+- Ulepszanie (decyzje Tyriona po zgłoszeniach sosena): przy nadmiarze zwojów noszone rzeczy poniżej +6 idą pod zwój zamiast czekać na zapas, nadmiar zwojów trafia na ladę, za zapas liczy się tylko podobny przedmiot, a po spaleniu noszonej rzeczy zapas jest chroniony do końca wizyty.
+- Ścieżka umiejętności nowych botów nie zależy już od płci (Drip) - wymiesza się to tylko na nowym świecie, istniejące boty zostają przy swoich ścieżkach.
+- Pomocnik Eventów (/eventhelper 1) zostaje na wszystkich kanałach i po restarcie (Neutro).
+- Launcher widzi uruchomionego klienta x64 przed aktualizacją klienta (IRON); Nożyk Zielarza i zdejmowana broń nie tracą gwiazdki ulubionych (magicznytomasz).
+
+Zaktualizuj serwer i launcher do 2.2.100, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.105 (64-bit). Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.99 — 2026-10-15
 
 Launcher może chować się do zasobnika, poprawki Wieży Demonów, filtra Auto Łowów i wydarzeń Fun. Klient 2.0.104 x64.

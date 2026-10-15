@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-15T14:30:11Z",
-  "statusMessage": "2.2.99 / klient 2.0.104 x64: launcher w zasobniku, poprawki Wieży Demonów, Auto Łowów i wydarzeń Fun. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-15T20:17:57Z",
+  "statusMessage": "2.2.100 / klient 2.0.105 x64: pełniejsze lady botów, poprawki tarcz, zwojów i ksiąg, Pomocnik Eventów na wszystkich kanałach. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
   "server": {
-    "version": "2.2.99",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.99/metin2-server-protected-migration-2.2.99.zip",
-    "sha256": "8811F19D04FA98A8AFDEE3F07384B547EA0E0B0FDC8F68394354D2397C52DE15",
-    "size": 163901611
+    "version": "2.2.100",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2-server-protected-migration-2.2.100.zip",
+    "sha256": "7E4D1E09A7AF7E33FF25C4B4393DA0B108C1984EC5CAFA8EFB39189C4DA4A9D6",
+    "size": 163910654
   },
   "serverProtected": {
-    "version": "2.2.99",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.99/metin2-server-protected-update-2.2.99.zip",
-    "sha256": "7BB611BFF485A5D56380787119C6181B74F433DB7AFE56F1D03704650603B055",
-    "size": 153945131
+    "version": "2.2.100",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2-server-protected-update-2.2.100.zip",
+    "sha256": "8DC3B106E68DF386D338DD6EA272CE2CD6BBE51EE4CCDB240F27284D2F6E1375",
+    "size": 153954174
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.104",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.99/metin2-client-update-2.0.104.zip",
-    "sha256": "1680EFB831497D5D9639409B7EC43376FB9A8DE54173277F64383986C29BE1CB",
-    "size": 135804488,
+    "version": "2.0.105",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2-client-update-2.0.105.zip",
+    "sha256": "549A783C622D7223E777A657E38EF39C667FF4D0984C01C8087797016D601F02",
+    "size": 135804432,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -112,7 +112,7 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.99/metin2client.exe",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2client.exe",
     "sha256": "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F",
     "size": 10104832,
     "replaces": [
@@ -146,5 +146,5 @@
       "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80"
     ]
   },
-  "statusMessageEn": "2.2.99 / client 2.0.104 x64: the launcher in the tray, Demon Tower, Auto Hunt and Fun event fixes. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "2.2.100 / client 2.0.105 x64: fuller bot counters, shield, scroll and book fixes, the Event Helper on every channel. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
 }

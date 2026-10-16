@@ -17,6 +17,21 @@ every version here.
 
 ---
 
+## 2.2.103 — 2026-10-16
+
+Gra po niemiecku, francusku, portugalsku i rumuńsku, nowy plik gry klienta (gra przez Sunshine/Moonlight, poprawne litery w innych językach), boty z Kamieniami Duchowymi i bronią 75 lv, mapy botów od 70 poziomu, konie botów tylko za medale. Klient 2.0.108 x64.
+
+- Tłumaczenia (Tyrion): klient po niemiecku, francusku (nowy język w wyborze na ekranie logowania), portugalsku i rumuńsku; serwer odpowiada w języku klienta - komunikaty gry, nasze misje i czat botów (czego nie przetłumaczono, zostaje po angielsku).
+- Nowy plik gry klienta: można grać przez Sunshine/Moonlight i inne programy zdalnego sterowania (CosTeiiRa, Iwakura), a klient turecki, niemiecki, francuski, hiszpański, włoski i portugalski pokazuje i wpisuje swoje litery poprawnie.
+- Kamienie Duchowe u botów: boty czytają je w kolejności swoich umiejętności i dokupują na rynku Fasolki Zen i Owoce Życia, gdy brakuje im rangi (sosen, Tyrion).
+- Broń 75 lv u botów: boty nie ulepszają jej u zwykłego kowala, stawiają ją na pierwszym miejscu w planie ulepszania i szukają jej na rynku (sosen, Tyrion).
+- Boty od 70 poziomu nie polują tam, gdzie nie dostają doświadczenia: częściej Loch Pająków V2, Doyyumhwaji i Czerwony Las, łowcy Metinów także w Czerwonym Lesie, a większe grupy botów chętniej wybierają V2 i Czerwony Las (sosen, Tyrion, Iwakura).
+- Konie botów: kolejne poziomy tylko za medale u Stajennego, a każda próba zaczyna się od oddania medalu; żaden bot nie dostaje konia za darmo (Drip).
+- Żyły rudy nie znikają już w trakcie kopania (magicznytomasz).
+
+Zaktualizuj serwer i launcher do 2.2.103, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.108 (64-bit) - launcher pobierze też nowy plik gry. Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.102 — 2026-10-16
 
 Dom Towarowy także w drugiej wiosce, zwoje z Kantoru i lepsze ulepszanie botów, ogłoszenia Heksagonalnych Szkatułek, Wiki z dropem specjalnym. Klient 2.0.107 x64.

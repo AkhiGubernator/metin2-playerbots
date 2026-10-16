@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-15T20:17:57Z",
-  "statusMessage": "2.2.100 / klient 2.0.105 x64: pełniejsze lady botów, poprawki tarcz, zwojów i ksiąg, Pomocnik Eventów na wszystkich kanałach. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-16T10:13:16Z",
+  "statusMessage": "2.2.101 / klient 2.0.106 x64 z nowym plikiem gry: Auto Łowy nie stają pod strzałami, loch małp, Towarzysz, okno kowala i Magazyn kolekcjonera. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
   "server": {
-    "version": "2.2.100",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2-server-protected-migration-2.2.100.zip",
-    "sha256": "7E4D1E09A7AF7E33FF25C4B4393DA0B108C1984EC5CAFA8EFB39189C4DA4A9D6",
-    "size": 163910654
+    "version": "2.2.101",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2-server-protected-migration-2.2.101.zip",
+    "sha256": "304A6C52162FBCB0279280DD6E94372617E55AE377FE9058ADF8F36401145A2E",
+    "size": 163917784
   },
   "serverProtected": {
-    "version": "2.2.100",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2-server-protected-update-2.2.100.zip",
-    "sha256": "8DC3B106E68DF386D338DD6EA272CE2CD6BBE51EE4CCDB240F27284D2F6E1375",
-    "size": 153954174
+    "version": "2.2.101",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2-server-protected-update-2.2.101.zip",
+    "sha256": "2938EB7D472C9B82EE8B78C21C2FA63B5162C221A2E2F9107B9BE8D266017425",
+    "size": 153961304
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.105",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2-client-update-2.0.105.zip",
-    "sha256": "549A783C622D7223E777A657E38EF39C667FF4D0984C01C8087797016D601F02",
-    "size": 135804432,
+    "version": "2.0.106",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2-client-update-2.0.106.zip",
+    "sha256": "403CEA516989A13C84DAEAA6EFFC84ECAAB4510D0C5E56B2A75C32F8B6484E2D",
+    "size": 135814493,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -112,9 +112,9 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.100/metin2client.exe",
-    "sha256": "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F",
-    "size": 10104832,
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2client.exe",
+    "sha256": "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F",
+    "size": 10106368,
     "replaces": [
       "8263F81BFACDFA4A664C1F2A8CE846AEE14F19E584DB40A43F3184FEF1A59531",
       "752623560AB54E2F3F84FF9ADB8961D73E2E289634075118D3FBEA984CFCEFB1",
@@ -143,8 +143,9 @@
       "4B0BC7EE7703869C79B3DC658186DB0DCBE23F6EA6B0DCF3940220C3F8A82BED",
       "14CCA0DB30F0B10F48C60E9250DFCCA851CB57D9849BF8F7A675811A3F942E6E",
       "FD48C803A8CD9F7369BB712F24177779DE77AF87ED0FB9EC859983DB3A61B982",
-      "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80"
+      "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80",
+      "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F"
     ]
   },
-  "statusMessageEn": "2.2.100 / client 2.0.105 x64: fuller bot counters, shield, scroll and book fixes, the Event Helper on every channel. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "2.2.101 / client 2.0.106 x64 with a new game exe: Auto Hunt keeps walking under arrows, the Monkey Dungeon, the companion, the blacksmith window and the collector's warehouse. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
 }

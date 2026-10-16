@@ -17,6 +17,21 @@ every version here.
 
 ---
 
+## 2.2.102 — 2026-10-16
+
+Dom Towarowy także w drugiej wiosce, zwoje z Kantoru i lepsze ulepszanie botów, ogłoszenia Heksagonalnych Szkatułek, Wiki z dropem specjalnym. Klient 2.0.107 x64.
+
+- Dom Towarowy działa także u Handlarki Różności w drugiej wiosce (M2): można tam przeglądać oferty i kupować bez wracania do pierwszej wioski (Dekri).
+- Ulepszanie botów (decyzje Tyriona, Iwakura): Kantor wymienia nadmiar rzadko potrzebnych albo zalegających na rynku materiałów na Zwoje Błogosławieństwa, bot kupuje zapasowy przedmiot do ulepszania po zwykłej cenie rynkowej, brakujący materiał zdobywa sam zamiast długo czekać, w wizycie w mieście zagląda na stoiska po materiały, a ulepszanie na sprzedaż wstrzymuje dopiero przy dużych brakach we własnym ekwipunku. Panel pokazuje nowe powody: „Czeka na zapas”, „Kupuję zapas z rynku”, „Poluję na materiał”.
+- Heksagonalne Szkatułki: event ogłasza się na czacie (start, przypomnienie co 15 minut, koniec), a planer eventów w panelu Sebana zna ten event i nie gubi go przy zapisie (_dumitrualexandru).
+- Wiki: drop specjalny potworów i przedmioty z grup dropu z szansami - np. Klejnot Demona; pełniejsze listy dropu u ok. 120 potworów więcej (RapLow).
+- Panel Sebana po angielsku: przetłumaczone powiadomienia i stopka menu (RapLow).
+- Rola droppera M2 tylko dla botów - postać gracza nie dostanie jej ani konia bojowego (Drip).
+- Launcher rozpoznaje uszkodzony obraz Dockera po nieudanej budowie i mówi, jak go naprawić (DaTemox).
+
+Zaktualizuj serwer i launcher do 2.2.102, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.107 (64-bit). Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.101 — 2026-10-16
 
 Auto Łowy nie stają pod strzałami, loch małp, Towarzysz, okno kowala i Magazyn kolekcjonera. Klient 2.0.106 x64 z nowym plikiem gry.

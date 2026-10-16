@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-16T10:13:16Z",
-  "statusMessage": "2.2.101 / klient 2.0.106 x64 z nowym plikiem gry: Auto Łowy nie stają pod strzałami, loch małp, Towarzysz, okno kowala i Magazyn kolekcjonera. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-16T19:14:51Z",
+  "statusMessage": "2.2.102 / klient 2.0.107 x64: Dom Towarowy także w drugiej wiosce, zwoje z Kantoru i lepsze ulepszanie botów, ogłoszenia Heksagonalnych Szkatułek, Wiki z dropem specjalnym. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
   "server": {
-    "version": "2.2.101",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2-server-protected-migration-2.2.101.zip",
-    "sha256": "304A6C52162FBCB0279280DD6E94372617E55AE377FE9058ADF8F36401145A2E",
-    "size": 163917784
+    "version": "2.2.102",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2-server-protected-migration-2.2.102.zip",
+    "sha256": "13F8D5024611E885F29E28427CC468085C21B38767B48A3E15FF2F1AE2C6AD4D",
+    "size": 163946487
   },
   "serverProtected": {
-    "version": "2.2.101",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2-server-protected-update-2.2.101.zip",
-    "sha256": "2938EB7D472C9B82EE8B78C21C2FA63B5162C221A2E2F9107B9BE8D266017425",
-    "size": 153961304
+    "version": "2.2.102",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2-server-protected-update-2.2.102.zip",
+    "sha256": "EEE8C32E4F87F7218862AEF17094A850BEF8343FA5146A1403D71FDD6033D04F",
+    "size": 153990007
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.106",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2-client-update-2.0.106.zip",
-    "sha256": "403CEA516989A13C84DAEAA6EFFC84ECAAB4510D0C5E56B2A75C32F8B6484E2D",
-    "size": 135814493,
+    "version": "2.0.107",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2-client-update-2.0.107.zip",
+    "sha256": "B0033DE23ACF44BD6DA160D0001D387A7935F21D01EA8D200FC0566653CA863D",
+    "size": 135832463,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -112,7 +112,7 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.101/metin2client.exe",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2client.exe",
     "sha256": "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F",
     "size": 10106368,
     "replaces": [
@@ -147,5 +147,5 @@
       "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F"
     ]
   },
-  "statusMessageEn": "2.2.101 / client 2.0.106 x64 with a new game exe: Auto Hunt keeps walking under arrows, the Monkey Dungeon, the companion, the blacksmith window and the collector's warehouse. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "2.2.102 / client 2.0.107 x64: the Flea Market in the second villages too, Blessing Scrolls from the Kantor and better bot refining, Hexagonal Chest announcements, the Wiki with special drops. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
 }

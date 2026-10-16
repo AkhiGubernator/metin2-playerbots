@@ -27,7 +27,7 @@ Auto Łowy nie stają pod strzałami, loch małp, Towarzysz, okno kowala i Magaz
 - Mniej botów stoi bezczynnie przy kowalach (djariczek, javierwxw, antycheat2).
 - Ulepszanie: zwój dla noszonej rzeczy bez zapasu tylko dla przedmiotów od 21 poziomu (Iwakura).
 - Towarzysz: filtr zbierania słucha nowego filtra Auto Łowów właściciela, a podpowiedź wyjaśnia pole „Ekwipunek: min.” (DaTemox); karta Towarzysza w panelu mówi, dlaczego nie można mu wybrać osobowości (magicznytomasz).
-- Okno kowala: Enter zatwierdza ulepszenie i pytanie, nowe pole „Ulepszaj dalej”; Magazyn kolekcjonera: przycisk „Dołóż pasujące” (RapLow).
+- Okno kowala: Enter zatwierdza ulepszenie i pytanie (Dekri), nowe pole „Ulepszaj dalej”; Magazyn kolekcjonera: przycisk „Dołóż pasujące” (RapLow).
 - Launcher: zgłoszenie błędu podaje plik gry, którego używa klient (michauke).
 
 Zaktualizuj serwer i launcher do 2.2.101, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.106 (64-bit) - launcher podmieni też plik gry metin2client.exe. Klient i serwer muszą być w tej samej wersji.

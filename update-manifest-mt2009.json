@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-16T19:14:51Z",
-  "statusMessage": "2.2.102 / klient 2.0.107 x64: Dom Towarowy także w drugiej wiosce, zwoje z Kantoru i lepsze ulepszanie botów, ogłoszenia Heksagonalnych Szkatułek, Wiki z dropem specjalnym. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-16T22:30:12Z",
+  "statusMessage": "2.2.103 / klient 2.0.108 x64 z nowym plikiem gry: gra po niemiecku, francusku, portugalsku i rumuńsku, gra przez Sunshine/Moonlight, Kamienie Duchowe i broń 75 lv u botów, mapy botów od 70 poziomu. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
   "server": {
-    "version": "2.2.102",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2-server-protected-migration-2.2.102.zip",
-    "sha256": "13F8D5024611E885F29E28427CC468085C21B38767B48A3E15FF2F1AE2C6AD4D",
-    "size": 163946487
+    "version": "2.2.103",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.103/metin2-server-protected-migration-2.2.103.zip",
+    "sha256": "1B8F8909E1B4A0E0CAD6732804E6C693080B557C4AA1F8A060F48FB59AA67257",
+    "size": 164239545
   },
   "serverProtected": {
-    "version": "2.2.102",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2-server-protected-update-2.2.102.zip",
-    "sha256": "EEE8C32E4F87F7218862AEF17094A850BEF8343FA5146A1403D71FDD6033D04F",
-    "size": 153990007
+    "version": "2.2.103",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.103/metin2-server-protected-update-2.2.103.zip",
+    "sha256": "BC2CD6187B1A00C8F17EBCF24F8C4E230E5905DE22D4A349A3F0668D9BEC7436",
+    "size": 154283065
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.107",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2-client-update-2.0.107.zip",
-    "sha256": "B0033DE23ACF44BD6DA160D0001D387A7935F21D01EA8D200FC0566653CA863D",
-    "size": 135832463,
+    "version": "2.0.108",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.103/metin2-client-update-2.0.108.zip",
+    "sha256": "D1DFD6F88D60688882A942F91BD907057F1BBCC319A0BF22369A64F3F448200B",
+    "size": 135958487,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -112,9 +112,9 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.102/metin2client.exe",
-    "sha256": "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F",
-    "size": 10106368,
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.103/metin2client.exe",
+    "sha256": "FD9B5C4AD5FA950BD0618B26FFDCC0CA7E11180F1D4044E102F036F8A8E87CD7",
+    "size": 10106880,
     "replaces": [
       "8263F81BFACDFA4A664C1F2A8CE846AEE14F19E584DB40A43F3184FEF1A59531",
       "752623560AB54E2F3F84FF9ADB8961D73E2E289634075118D3FBEA984CFCEFB1",
@@ -144,8 +144,9 @@
       "14CCA0DB30F0B10F48C60E9250DFCCA851CB57D9849BF8F7A675811A3F942E6E",
       "FD48C803A8CD9F7369BB712F24177779DE77AF87ED0FB9EC859983DB3A61B982",
       "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80",
-      "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F"
+      "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F",
+      "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F"
     ]
   },
-  "statusMessageEn": "2.2.102 / client 2.0.107 x64: the Flea Market in the second villages too, Blessing Scrolls from the Kantor and better bot refining, Hexagonal Chest announcements, the Wiki with special drops. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "2.2.103 / client 2.0.108 x64 with a new game exe: German, French, Portuguese and Romanian, play through Sunshine/Moonlight, the bots' Soul Stones and level-75 weapons, the maps of bots from level 70. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
 }

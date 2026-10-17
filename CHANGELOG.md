@@ -17,6 +17,24 @@ every version here.
 
 ---
 
+## 2.2.107 — 2026-10-18
+
+Turecka wersja gry, poprawki koni, logo gildii, pełnego ekranu i Auto Łowów oraz nowy plik gry. Klient 2.0.111 x64.
+
+- Turecka wersja gry (Said / saido_0): klient po turecku, launcher z trzecim językiem (Türkçe), teksty serwera po turecku (komunikaty gry, questy, rozmowy botów), panel klasyczny, panel Sebana i ItemShop. Język klienta wybrany w launcherze gra teraz naprawdę wczytuje.
+- Konie: szkolenie u Stajennego na poziomach konia 1-10 zalicza się po przejechaniu trasy, bez losowania i powtarzania jazdy (Neutro).
+- Logo gildii: wgrane logo nie jest już szumem ani nie jest odwrócone - wymaga nowego pliku gry, a logo trzeba wgrać ponownie (Dekri).
+- Pełny ekran: gra przełącza ekran z częstotliwością odświeżania monitora i nie przełącza go, gdy już jest w tym trybie - koniec czarnego ekranu przy starcie i przy Alt+Tab na monitorach 144/240 Hz; wymaga nowego pliku gry (.balthasargelt).
+- Auto Łowy: filtr podnoszenia, którego serwer nie potwierdził, jest wysyłany ponownie, zamiast wstrzymywać podnoszenie do końca sesji (Paterczyk).
+- Gwiazdki ulubionych przedmiotów nie znikają już z kolczyków z rudą ani przy szybkim zakładaniu kilku przedmiotów (Dekri).
+- Handlarka: przy zadaniu z poziomów 41-43 jedna opcja sklepu zamiast dwóch (Dekri).
+- Serwer na VPS: aktualizacja przerwana restartem VPS nie jest już zgłaszana jako „aktualna” - launcher ją dokańcza (blipu).
+- Launcher: bezpieczniejsza kolejność zapisu plików przy własnej aktualizacji; hasła w logach i zgłoszeniach są maskowane w każdym języku launchera.
+- Opisy dwóch ksiąg umiejętności, które były ze sobą zamienione, poprawione (Said).
+
+Zaktualizuj serwer i launcher do 2.2.107, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.111 (z nowym plikiem gry). Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.106 — 2026-10-17
 
 Poprawki Towarzysza, „Przemiany”, Wieży Demonów i rozmów botów, żyły rudy bez kropek na mapach i nowy plik gry. Klient 2.0.110 x64.

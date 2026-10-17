@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-17T16:17:11Z",
-  "statusMessage": "2.2.106 / klient 2.0.110 x64 z nowym plikiem gry: doświadczenie Towarzysza według premium właściciela, naprawiona „Przemiana” GM-a, Wieża Demonów od 7. piętra jednego królestwa, boty szepczą tylko do swojego królestwa i flaga królestwa na czacie, żyły rudy bez kropek na mapach. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-17T23:51:12Z",
+  "statusMessage": "2.2.107 / klient 2.0.111 x64 z nowym plikiem gry: turecka wersja gry (Said), szkolenie konia 1-10 bez losowania, poprawione logo gildii (wgraj je ponownie) i pełny ekran z częstotliwością monitora, Auto Łowy ponawiają filtr, poprawki launchera i VPS. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
   "server": {
-    "version": "2.2.106",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.106/metin2-server-protected-migration-2.2.106.zip",
-    "sha256": "65635696AE064AA4992F1D3BD79C65CA3B5EFFDAB9485A0E9C3C9A37CD56F932",
-    "size": 164418151
+    "version": "2.2.107",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2-server-protected-migration-2.2.107.zip",
+    "sha256": "179EA4A401FC0D89F59FD74842C401443BB4ADB9C66E39048B1FDCFAD4AC59CF",
+    "size": 165657781
   },
   "serverProtected": {
-    "version": "2.2.106",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.106/metin2-server-protected-update-2.2.106.zip",
-    "sha256": "6DDEFD6F5D6A6B3ED7517FA7FC5D9F40AF69D818319712CFCB5487C267CDFBF1",
-    "size": 154461671
+    "version": "2.2.107",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2-server-protected-update-2.2.107.zip",
+    "sha256": "1BE405F1880CFA6D8B1529ADD79942849A1BF450CC898D49AB75E5BEB165733F",
+    "size": 155701301
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.110",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.106/metin2-client-update-2.0.110.zip",
-    "sha256": "C81C55E08680A5B597D7533052D2867DA9E3985C7218C959036920F6EAAFCC6F",
-    "size": 135971857,
+    "version": "2.0.111",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2-client-update-2.0.111.zip",
+    "sha256": "58DBD232B8E63F204CF11BD4B5AE19FE4C26DFB2EFFC01D310971BB7FF172B26",
+    "size": 136137064,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -112,9 +112,9 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.106/metin2client.exe",
-    "sha256": "E368172A1B981F20272B6E2450EC7246C505307DFB2AA7A6CB2D2C5CECB04869",
-    "size": 10106880,
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2client.exe",
+    "sha256": "0F2E1DEEA943C28EF9246C89B736C15AED72380834C29393DCA8D3A74AFB7662",
+    "size": 10107904,
     "replaces": [
       "8263F81BFACDFA4A664C1F2A8CE846AEE14F19E584DB40A43F3184FEF1A59531",
       "752623560AB54E2F3F84FF9ADB8961D73E2E289634075118D3FBEA984CFCEFB1",
@@ -146,8 +146,9 @@
       "7D9345A5165C37EE2F92B86691BFB2AA24E54FDDF889073BDC42826DEB36ED80",
       "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F",
       "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F",
-      "FD9B5C4AD5FA950BD0618B26FFDCC0CA7E11180F1D4044E102F036F8A8E87CD7"
+      "FD9B5C4AD5FA950BD0618B26FFDCC0CA7E11180F1D4044E102F036F8A8E87CD7",
+      "E368172A1B981F20272B6E2450EC7246C505307DFB2AA7A6CB2D2C5CECB04869"
     ]
   },
-  "statusMessageEn": "2.2.106 / client 2.0.110 x64 with a new game exe: a companion's experience by its owner's premium, the GM's \"Przemiana\" fixed, the Demon Tower from the 7th floor one kingdom's, bots whisper only to their own kingdom and a kingdom flag on the chat, the ore veins off the maps. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "2.2.107 / client 2.0.111 x64 with a new game exe: the game in Turkish (Said), horse training 1-10 without the draw, the guild mark fixed (upload it again) and fullscreen at the monitor's refresh rate, Auto Hunt sends its filter again, launcher and VPS fixes. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
 }

@@ -1,18 +1,18 @@
 # ⚔️ Metin2 Playerbots
 
-**Polski** | [English (README_EN.md)](README_EN.md)
+**Polski** | [English (README_EN.md)](README_EN.md) | [Deutsch (README_DE.md)](README_DE.md) | [Română (README_RO.md)](README_RO.md) | [Português (README_PT.md)](README_PT.md) | [Türkçe (README_TR.md)](README_TR.md)
 
 [![Strona](https://img.shields.io/badge/Strona-metin2singleplayer.com-2EA44F?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://metin2singleplayer.com)
 [![Discord](https://img.shields.io/badge/Discord-Dołącz_do_społeczności-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/DyCxXdZtnV)
 [![BuyCoffee](https://img.shields.io/badge/BuyCoffee-Postaw_kaw%C4%99-FF813F?style=for-the-badge&logo=coffeescript&logoColor=white)](https://buycoffee.to/metin2-playerbots)
-[![Licencja](https://img.shields.io/badge/Licencja-CC_BY--NC--SA_4.0-EF9421?style=for-the-badge&logo=creativecommons&logoColor=white)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.pl)
+[![Licencja](https://img.shields.io/badge/Licencja-CC_BY--NC--ND_4.0-EF9421?style=for-the-badge&logo=creativecommons&logoColor=white)](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.pl)
 
 Lokalny świat Metin2 singleplayer, w którym po mapach biegają i naprawdę grają autonomiczne postacie (Playerbots): zdobywają poziomy, walczą solo i w drużynach, handlują między sobą, ulepszają ekwipunek, polują na Metiny i bossów, zakładają gildie i zapisują swój postęp w bazie danych serwera.
 
 Boty nie są zewnętrznymi programami. To pełnoprawne postacie sterowane przez AI wewnątrz silnika serwera, więc gracz widzi ich ruch, walkę, umiejętności i ekwipunek tak samo jak postacie innych graczy.
 
 > [!IMPORTANT]
-> **Od wersji 2.2.17 kod źródłowy projektu nie jest publikowany w tym repozytorium.** Znajdziesz tu wydania z paczkami aktualizacji, listę zmian ([CHANGELOG.md](CHANGELOG.md)) i pliki, z których korzystają launcher i panele. Wersje do 2.2.16 włącznie zostały wydane na licencji MIT i ich historia zostaje w repozytorium. Nowsze wersje są udostępniane na licencji [CC BY-NC-SA 4.0](LICENSE).
+> **Od wersji 2.2.17 kod źródłowy projektu nie jest publikowany w tym repozytorium.** Znajdziesz tu wydania z paczkami aktualizacji, listę zmian ([CHANGELOG.md](CHANGELOG.md)) i pliki, z których korzystają launcher i panele. Wersje do 2.2.16 włącznie zostały wydane na licencji MIT i ich historia zostaje w repozytorium. Nowsze wersje są udostępniane na licencji [CC BY-NC-ND 4.0](LICENSE).
 
 ## 📥 Jak zagrać
 
@@ -33,7 +33,7 @@ Wymagania, instrukcja krok po kroku i odpowiedzi na częste pytania są na stron
 
 ## 💬 Społeczność i wsparcie projektu
 
-- **[Strona projektu — metin2singleplayer.com](https://metin2singleplayer.com)**: opis projektu, instrukcja instalacji i FAQ, po polsku i po angielsku.
+- **[Strona projektu — metin2singleplayer.com](https://metin2singleplayer.com)**: opis projektu, instrukcja instalacji i FAQ, po polsku, angielsku, niemiecku i turecku.
 - **[Serwer Discord](https://discord.gg/DyCxXdZtnV)**: pełna paczka do pobrania, pomoc, zgłaszanie błędów, pomysły i informacje o nowych wersjach.
 - **[Wsparcie na buycoffee.to](https://buycoffee.to/metin2-playerbots)**: dobrowolne wpłaty pomagają pokrywać koszty narzędzi, serwera testowego i modeli AI używanych przy rozwoju projektu.
 

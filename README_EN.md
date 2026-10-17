@@ -1,18 +1,18 @@
 # ⚔️ Metin2 Playerbots
 
-[Polski (README.md)](README.md) | **English**
+[Polski (README.md)](README.md) | **English** | [Deutsch (README_DE.md)](README_DE.md) | [Română (README_RO.md)](README_RO.md) | [Português (README_PT.md)](README_PT.md) | [Türkçe (README_TR.md)](README_TR.md)
 
 [![Website](https://img.shields.io/badge/Website-metin2singleplayer.com-2EA44F?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://metin2singleplayer.com)
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/DyCxXdZtnV)
 [![BuyCoffee](https://img.shields.io/badge/BuyCoffee-Support_the_Project-FF813F?style=for-the-badge&logo=coffeescript&logoColor=white)](https://buycoffee.to/metin2-playerbots)
-[![Licence](https://img.shields.io/badge/Licence-CC_BY--NC--SA_4.0-EF9421?style=for-the-badge&logo=creativecommons&logoColor=white)](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en)
+[![Licence](https://img.shields.io/badge/Licence-CC_BY--NC--ND_4.0-EF9421?style=for-the-badge&logo=creativecommons&logoColor=white)](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.en)
 
 A local Metin2 singleplayer world in which autonomous characters (Playerbots) run across the maps and genuinely play: they level up, fight solo and in parties, trade with each other, refine their gear, hunt Metin stones and bosses, found guilds and keep their progress in the server's database.
 
 The bots are not external programs. They are first-class characters driven by AI inside the server engine, so a player sees their movement, combat, skills and equipment exactly as they see other players' characters.
 
 > [!IMPORTANT]
-> **From version 2.2.17 the project's source code is not published in this repository.** Here you will find the releases with their update packages, the changelog ([CHANGELOG.md](CHANGELOG.md)) and the files the launcher and the panels read. Versions up to and including 2.2.16 were released under the MIT licence and their history stays in the repository. Newer versions are shared under the [CC BY-NC-SA 4.0](LICENSE) licence.
+> **From version 2.2.17 the project's source code is not published in this repository.** Here you will find the releases with their update packages, the changelog ([CHANGELOG.md](CHANGELOG.md)) and the files the launcher and the panels read. Versions up to and including 2.2.16 were released under the MIT licence and their history stays in the repository. Newer versions are shared under the [CC BY-NC-ND 4.0](LICENSE) licence.
 
 ## 📥 How to play
 
@@ -33,7 +33,7 @@ Requirements, a step-by-step guide and answers to common questions are on [metin
 
 ## 💬 Community & Project Support
 
-- **[Project website — metin2singleplayer.com](https://metin2singleplayer.com)**: what the project is, the install guide and the FAQ, in Polish and English.
+- **[Project website — metin2singleplayer.com](https://metin2singleplayer.com)**: what the project is, the install guide and the FAQ, in Polish, English, German and Turkish.
 - **[Discord server](https://discord.gg/DyCxXdZtnV)**: the full package, help, bug reports, ideas and news about new versions.
 - **[Support on buycoffee.to](https://buycoffee.to/metin2-playerbots)**: voluntary donations help cover the tools, the test server and the AI models used to develop the project.
 
@@ -52,7 +52,7 @@ Every kind of support helps build a livelier Metin2 world: testing, bug reports,
 - 🎉 **Events**: Pirate Tanaka and Zuo's Metin rain with announcements and rewards, and the bots head there to fight by themselves.
 - 🏪 **A bot market**: real offline shops on the village stalls, prices from Iwakura's price list with inflation, adjusted by demand, and purchases between bots. The **Dom Towarowy** shows every shop's offers in one window and suggests the bots' price when you list an item (with an "Auto cena" option). The game also has an **ItemShop** for Dragon Coins, which drop from Metin stones and bosses.
 - 🔨 **Character progression**: the Blacksmith and refine scrolls, bonuses, soul stones, skill books and Spirit Stones, the Biologist's missions, the horse up to the battle horse, fishing, mining and herbalism.
-- 💬 **Conversations**: bots answer whispers and trade over the chat ("Kupię…", "Sprzedam…"), a Shaman will tell you what its buffs give, and a bot you call will come over. The bots talk in Polish.
+- 💬 **Conversations**: bots answer whispers and trade over the chat ("Kupię…", "Sprzedam…"), a Shaman will tell you what its buffs give, and a bot you call will come over. The bots answer in the reader's language: Polish, English, German, French, Portuguese or Romanian (English for every other client).
 - 🤝 **Towarzysz, your companion**: a permanent partner in your party. It fights beside you, buffs you and trades with you, and you set its equipment and skills yourself. It also joins a party a friend leads ("Grupa") and can play on its own while you are away ("Gra beze mnie").
 - 🎯 **Auto Hunt**: automatic hunting for the player. The world's settings decide whether it is for everyone or bought in the ItemShop.
 - 🎛️ **Panels and launcher**: two web panels with a live world map, rankings, the bots' equipment, AI behaviour sliders and timed events; a launcher with updates, world backups, the difficulty setting, a second channel, COOP (friends playing in your world, free) and a server on a VPS.

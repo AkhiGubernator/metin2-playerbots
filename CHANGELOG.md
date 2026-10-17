@@ -17,6 +17,23 @@ every version here.
 
 ---
 
+## 2.2.106 — 2026-10-17
+
+Poprawki Towarzysza, „Przemiany”, Wieży Demonów i rozmów botów, żyły rudy bez kropek na mapach i nowy plik gry. Klient 2.0.110 x64.
+
+- Towarzysz: doświadczenie liczone jest teraz według konta premium właściciela - Towarzysz nie wyprzedza już w poziomach właściciela bez premium (ĹŌŞƬĒĶ).
+- „Przemiana” GM-a w bota (Kiciamol): po odliczaniu klient nie mówi już „zły login lub hasło” i logowanie do bota działa.
+- Teleporter i Pierścień Teleportacji: postać poniżej 60 poziomu w wiosce widzi informację, co jest na drugiej stronie (m.in. Ziemia Ognia) i od którego poziomu się otwiera.
+- Wieża Demonów: od 7. piętra (po kowalu) bieg należy do jednego królestwa - boty innych królestw opuszczają wieżę; boty z drużyny gracza i Towarzysz zostają (sosen).
+- Boty: zaczynają rozmowę szeptem tylko z graczami ze swojego królestwa (na szept gracza z innego królestwa nadal odpowiadają), a przy wołaniu na czacie ogólnym widać flagę królestwa mówiącego (ĹŌŞƬĒĶ).
+- Boty po wydarzeniu „Anarchia u kowala” nie krążą już w kółko między handlarzem zbroją a kowalem po tarczę, której nie mogą kupić.
+- Żyły rudy nie są już widoczne jako kropki ani na dużej mapie, ani na minimapie (Dekri) - minimapa wymaga nowego pliku gry z tego wydania.
+- Panel GM (F9), „Utwórz przedmiot”: bonusy nazwane jak w opisie przedmiotu, z jednostką (np. „Wartość Ataku +x”), a magiczny atak i obrona na przedmiocie nie pokazują już „UNKNOWN_TYPE”.
+- Strona projektu na GitHubie po turecku (said), a także po niemiecku, rumuńsku i portugalsku.
+
+Zaktualizuj serwer i launcher do 2.2.106, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.110 (z nowym plikiem gry). Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.105 — 2026-10-17
 
 Narzędzia GM-a od Kiciamola, poprawki klienta, żyły rudy jak w grze, baza danych, która nie zapycha dysku logami, i licznik botów w launcherze. Klient 2.0.109 x64.

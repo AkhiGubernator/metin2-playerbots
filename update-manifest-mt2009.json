@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-16T22:30:12Z",
-  "statusMessage": "2.2.103 / klient 2.0.108 x64 z nowym plikiem gry: gra po niemiecku, francusku, portugalsku i rumuńsku, gra przez Sunshine/Moonlight, Kamienie Duchowe i broń 75 lv u botów, mapy botów od 70 poziomu. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-17T00:08:51Z",
+  "statusMessage": "Serwer 2.2.104 (klient bez zmian, 2.0.108): stabilność kanałów z dużą liczbą botów, Eliksir Poszukiwacza u Biologa, Piasek Kwarcowy i Magiczne Nasiona do zbroi 80 lv, Katakumby Diabła i boty gildii wzywane na pomoc. Zaktualizuj serwer i uruchom ponownie launcher.",
   "server": {
-    "version": "2.2.103",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.103/metin2-server-protected-migration-2.2.103.zip",
-    "sha256": "1B8F8909E1B4A0E0CAD6732804E6C693080B557C4AA1F8A060F48FB59AA67257",
-    "size": 164239545
+    "version": "2.2.104",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.104/metin2-server-protected-migration-2.2.104.zip",
+    "sha256": "4EE51CCA505A5A6425A4D429DF94538D4CABD7072D19BF9BA1A049328AE7FEF0",
+    "size": 164242961
   },
   "serverProtected": {
-    "version": "2.2.103",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.103/metin2-server-protected-update-2.2.103.zip",
-    "sha256": "BC2CD6187B1A00C8F17EBCF24F8C4E230E5905DE22D4A349A3F0668D9BEC7436",
-    "size": 154283065
+    "version": "2.2.104",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.104/metin2-server-protected-update-2.2.104.zip",
+    "sha256": "0308D0A63F4DE635949E0A56442AB0EAD10CCE9626DEDF848421115B027620D3",
+    "size": 154286481
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -148,5 +148,5 @@
       "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F"
     ]
   },
-  "statusMessageEn": "2.2.103 / client 2.0.108 x64 with a new game exe: German, French, Portuguese and Romanian, play through Sunshine/Moonlight, the bots' Soul Stones and level-75 weapons, the maps of bots from level 70. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "Server 2.2.104 (client unchanged, 2.0.108): steadier channels with many bots, the Researcher's Elixir at the Biologist, Quartz Sand and Magic Seeds for the level-80 armours, the Devil's Catacomb and guild bots called for help. Update the server and restart the launcher."
 }

@@ -17,6 +17,20 @@ every version here.
 
 ---
 
+## 2.2.105 — 2026-10-17
+
+Narzędzia GM-a od Kiciamola, poprawki klienta, żyły rudy jak w grze, baza danych, która nie zapycha dysku logami, i licznik botów w launcherze. Klient 2.0.109 x64.
+
+- GM (Kiciamol): kończenie misji gracza razem z nagrodą - z panelu F9, z okna celu i z panelu w przeglądarce („Misje graczy”); „Przemiana” - GM może zagrać botem z populacji i jednym przyciskiem wrócić do swojej postaci.
+- Klient: paczka roota znów w standardowym formacie (ĹŌŞƬĒĶ, Kiciamol); juki konia otwierają się obok ekwipunku, a panel boczny ekwipunku nie zasłania już pasa, z panelu zniknęło wejście podglądu skrzyni (ĹŌŞƬĒĶ); gwiazdki ulubionych przedmiotów nie znikają po zmianie postaci (NerrVoVy); szósty bonus broni 70 lv jest w opisie tylko raz (hiob_91327).
+- Baza danych: stara historia logów sprząta się sama (30 dni), naprawa uszkodzonej tabeli logów nie zapętla się przy pełnym dysku, a dziennik kontenerów ma limit rozmiaru (ziolek).
+- Żyły rudy pojawiają się w losowych miejscach i odnawiają jak w grze, wyczerpują się po kilku-kilkunastu minutach, a nie znikają w środku kopania (Dekri, magicznytomasz).
+- Biolog: Mikstura Szybkiej Analizy działa także wtedy, gdy wypijesz ją po nieudanym oddaniu, a Aura Miecza nie blokuje już mikstur (blipu).
+- Launcher: okno LICZBA BOTÓW pokazuje sumę botów z podziałem na kanały i szacunek, ilu botów jest w grze, oraz ustawienia „Boty grają jak żywi ludzie” i „Realizm sesji” (_dumitrualexandru, mastersenpayi).
+
+Zaktualizuj serwer i launcher do 2.2.105, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.109. Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.104 — 2026-10-17
 
 Poprawki po zgłoszeniach: stabilność serwera z dużą liczbą botów, Eliksir Poszukiwacza, materiały do zbroi 80 lv, Katakumby Diabła i boty gildii wzywane na pomoc. Tylko serwer, klient bez zmian (2.0.108).

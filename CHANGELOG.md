@@ -17,6 +17,20 @@ every version here.
 
 ---
 
+## 2.2.104 — 2026-10-17
+
+Poprawki po zgłoszeniach: stabilność serwera z dużą liczbą botów, Eliksir Poszukiwacza, materiały do zbroi 80 lv, Katakumby Diabła i boty gildii wzywane na pomoc. Tylko serwer, klient bez zmian (2.0.108).
+
+- Stabilność: kanał z dużą liczbą botów zużywa wyraźnie mniej pamięci i lepiej znosi jej brak (Deranfan).
+- Biolog: Eliksir Poszukiwacza znów zwiększa szansę przy oddawaniu przedmiotów (Deranfan).
+- Ulepszanie: Piasek Kwarcowy i Magiczne Nasiona do zbroi 80 lv znów wypadają - z potworów Lasu Duchów i Czerwonego Lasu (Deranfan).
+- Katakumby Diabła: skała-żółw mówi, ile drzwi na drugim piętrze jeszcze stoi (Deranfan).
+- Boty gildii: wszystkie boty wezwane „Pomocy!” walczą z napastnikami gracza, a bot, który został w tyle, broni się przed potworami (DimitriASM).
+- Launcher: zgłoszenie błędu z komputera, który gra tylko na VPS, podaje wersję serwera na VPS (DimitriASM).
+
+Zaktualizuj serwer i launcher do 2.2.104 i uruchom ponownie launcher. Klient zostaje w wersji 2.0.108.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.103 — 2026-10-16
 
 Gra po niemiecku, francusku, portugalsku i rumuńsku, nowy plik gry klienta (gra przez Sunshine/Moonlight, poprawne litery w innych językach), boty z Kamieniami Duchowymi i bronią 75 lv, mapy botów od 70 poziomu, konie botów tylko za medale. Klient 2.0.108 x64.

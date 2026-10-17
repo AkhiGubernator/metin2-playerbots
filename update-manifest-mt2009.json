@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-17T00:08:51Z",
-  "statusMessage": "Serwer 2.2.104 (klient bez zmian, 2.0.108): stabilność kanałów z dużą liczbą botów, Eliksir Poszukiwacza u Biologa, Piasek Kwarcowy i Magiczne Nasiona do zbroi 80 lv, Katakumby Diabła i boty gildii wzywane na pomoc. Zaktualizuj serwer i uruchom ponownie launcher.",
+  "publishedAt": "2026-10-17T11:35:15Z",
+  "statusMessage": "2.2.105 / klient 2.0.109 x64: narzędzia GM-a (kończenie misji, przemiana w bota), poprawki klienta (juki konia, pas, gwiazdki ulubionych, opis broni 70 lv), baza danych bez zapychania dysku logami, licznik botów w launcherze. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
   "server": {
-    "version": "2.2.104",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.104/metin2-server-protected-migration-2.2.104.zip",
-    "sha256": "4EE51CCA505A5A6425A4D429DF94538D4CABD7072D19BF9BA1A049328AE7FEF0",
-    "size": 164242961
+    "version": "2.2.105",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.105/metin2-server-protected-migration-2.2.105.zip",
+    "sha256": "98308C04483A0A2FA427DEF1251D102BECE25D8969025C8449153843717985D4",
+    "size": 164410989
   },
   "serverProtected": {
-    "version": "2.2.104",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.104/metin2-server-protected-update-2.2.104.zip",
-    "sha256": "0308D0A63F4DE635949E0A56442AB0EAD10CCE9626DEDF848421115B027620D3",
-    "size": 154286481
+    "version": "2.2.105",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.105/metin2-server-protected-update-2.2.105.zip",
+    "sha256": "54AFDD570A5F2A0299F9462435C6E8E379BADD840F6174213D31B4A8CF906470",
+    "size": 154454509
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.108",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.103/metin2-client-update-2.0.108.zip",
-    "sha256": "D1DFD6F88D60688882A942F91BD907057F1BBCC319A0BF22369A64F3F448200B",
-    "size": 135958487,
+    "version": "2.0.109",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.105/metin2-client-update-2.0.109.zip",
+    "sha256": "EC4F59F8C8AA9B8DE3D11635402BA38B641B018547531AD6AE2BB0F76E079965",
+    "size": 135970651,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -148,5 +148,5 @@
       "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F"
     ]
   },
-  "statusMessageEn": "Server 2.2.104 (client unchanged, 2.0.108): steadier channels with many bots, the Researcher's Elixir at the Biologist, Quartz Sand and Magic Seeds for the level-80 armours, the Devil's Catacomb and guild bots called for help. Update the server and restart the launcher."
+  "statusMessageEn": "2.2.105 / client 2.0.109 x64: GM tools (completing quests, playing a bot), client fixes (the horse bag, the belt, favourite stars, the level-70 weapon tooltip), a database that no longer fills the disk with logs, the bot count in the launcher. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
 }

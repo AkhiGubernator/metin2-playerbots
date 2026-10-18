@@ -17,6 +17,23 @@ every version here.
 
 ---
 
+## 2.2.110 — 2026-10-18
+
+Wygodniejsze zarządzanie botami, skalowanie interfejsu oraz kolejna porcja poprawek Waszych zgłoszeń. Klient 2.0.114 x64 zawiera nowe EXE.
+
+- F10: wdrożyliśmy rozbudowany panel Uxie z bocznymi zakładkami, podsumowaniem populacji i poziomów, wyszukiwaniem i filtrami botów. Są też przypinanie ulubionych, czytelniejsze logi, wyszukiwarka przedmiotów i potwierdzenie przemiany w wybranego bota.
+- Interfejs: w opcjach systemowych można zmienić skalę UI podczas gry. Przycisk „Domyślne” przywraca 100%, a ikony questów dostosowują pozycje do nowej skali. Rozdzielczość ustawiamy przed uruchomieniem gry — jej zmiana wymaga restartu klienta.
+- Auto Łowy: możesz wybrać priorytet celów — bossy, metiny, zwykłe potwory albo najbliższy cel. Dozwolone rodzaje przeciwników nadal wybierasz osobno, a ustawienie zapisuje się w profilu. Dodaliśmy też eksperymentalny skrót Auto Łowów do paska szybkiego dostępu.
+- Towarzysz: poprawiliśmy zapamiętywanie królestwa właściciela, również gdy Towarzysz gra sam i wraca po restarcie serwera.
+- Ekwipunek i GM: juki działają także na wierzchowcach innych niż koń. W F9 dostępny jest bonus czasu trwania umiejętności. Wpisanie zbyt dużej ilości EXP przy wpłacie gildyjnej poprawnie ogranicza ją do dostępnego doświadczenia.
+- Języki: poprawiliśmy otwieranie części rozmów NPC z tłumaczonymi nazwami oraz wyszukiwanie przedmiotów w Domu Towarowym ze znakami charakterystycznymi dla wybranego języka, w tym tureckiego.
+- Świat botów: dalsze poprawki handlu, obsługi straganów, przygotowania ekwipunku i korzystania z kamieni duszy. Panel otrzymał dodatkowe ustawienia populacji i sesji gry oraz opcję dostarczania Blasków do ekwipunku. Opcjonalna rotacja populacji pozostaje domyślnie wyłączona.
+- Edytor danych wyraźniej informuje o synchronizacji klienta po zmianie właściwości przedmiotów.
+
+Dziękujemy Uxie, Kiciamolowi, Lostkowi, Iwakurze, Tyrionowi i Saidowi oraz wszystkim zgłaszającym i testującym. Dajcie znać szczególnie, jak sprawują się F10, skala UI i priorytety Auto Łowów.
+
+Zamknij grę, zaktualizuj serwer i launcher do 2.2.110, uruchom launcher ponownie i zaktualizuj klienta oraz EXE do 2.0.114. Wydanie chronione; postacie i ustawienia pozostają zachowane. Problemy zgłaszaj z logami przez launcher.
+
 ## 2.2.109 — 2026-10-18
 
 Wracamy z poprawkami Waszych zgłoszeń: wygodniejszy filtr Auto Łowów, ustawienia marmurów Towarzysza i kilka napraw questów. Klient 2.0.113 x64.

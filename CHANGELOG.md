@@ -17,6 +17,22 @@ every version here.
 
 ---
 
+## 2.2.109 — 2026-10-18
+
+Wracamy z poprawkami Waszych zgłoszeń: wygodniejszy filtr Auto Łowów, ustawienia marmurów Towarzysza i kilka napraw questów. Klient 2.0.113 x64.
+
+- Auto Łowy: dodaliśmy osobne minimalne średnie obrażenia oraz obrażenia umiejętności dla zbieranej broni. Możesz zbierać broń z interesującym wynikiem bez traktowania średnich jako zwykłych bonusów. Nowe progi zapisują się razem z filtrami; szczegóły działania są w pomocy okna.
+- Towarzysz: w jego oknie wybierzesz sposób używania marmurów — pytanie po Twojej przemianie, podążanie za nią bez pytania, również samodzielne użycie własnego marmuru w walce albo całkowite wyłączenie.
+- Podgląd skrzyń: wrócił do bocznego panelu i pod mały znak „?” przy skrzyni. Znaczek pojawia się dopiero po krótkim zatrzymaniu kursora, żeby nie przeszkadzał w zwykłym klikaniu i przenoszeniu przedmiotów.
+- Biolog: boty przestrzegają ustawionego w świecie czasu oczekiwania między oddaniami. Przy kolejnych badaniach gracz widzi pozostały czas także w dzienniku i rozmowie z Biologiem.
+- Zielarstwo: ukończenie wprowadzenia przez narzędzia GM poprawnie odblokowuje dalsze rzemiosło. Naprawione jest również wejście postaci, która wcześniej została w ten sposób zablokowana.
+- Konie: poprawiliśmy otrzymywanie właściwej księgi przy zdobyciu konia wojskowego przez bota oraz podczas gry przejętą postacią.
+- Aktualizacja klienta: launcher rozpoznaje proces gry, który pozostał zawieszony po zamknięciu okna. Pozwala go zakończyć za zgodą gracza, aby dokończyć aktualizację bez restartu całego komputera.
+
+Dzięki za zgłoszenia i testy: kaethasger, blipu, sosen, Dekri i Piciu713!
+
+Zaktualizuj serwer i launcher do 2.2.109, uruchom ponownie launcher i zaktualizuj klienta do 2.0.113. Plik EXE gry pozostaje bez zmian. Postacie i ustawienia zostają zachowane; wydanie jest chronione. Jeśli coś nadal nie działa, wyślij opis i logi przez „Zgłoś błąd” w launcherze.
+
 ## 2.2.108 — 2026-10-18
 
 Patch 20 od Iwakury: rozwój ekwipunku botów, gratulacje poziomu, nowe narzędzia panelu i edytor bota, oraz Ścieżka Zielarza od Saida. Klient 2.0.112 x64.

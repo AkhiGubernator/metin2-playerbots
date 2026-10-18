@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-18T14:22:58Z",
-  "statusMessage": "2.2.109 / klient 2.0.113 x64: progi obrażeń w filtrze Auto Łowów, wybór marmurów Towarzysza, podgląd skrzyń oraz poprawki Biologa, Zielarstwa, ksiąg konnych i aktualizacji klienta. Zaktualizuj serwer i launcher, uruchom ponownie launcher, następnie zaktualizuj klienta. Plik EXE gry bez zmian.",
+  "publishedAt": "2026-10-18T21:36:15Z",
+  "statusMessage": "2.2.110 / klient 2.0.114 x64: nowy panel F10, skala UI z przywracaniem 100%, priorytety Auto Łowów, poprawki Towarzysza, juków, języków i świata botów. Zamknij grę, zaktualizuj serwer i launcher, uruchom launcher ponownie, następnie zaktualizuj klienta i EXE.",
   "server": {
-    "version": "2.2.109",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.109/metin2-server-protected-migration-2.2.109.zip",
-    "sha256": "1704DF1008E5E3D4635159F3F8BBAC31745675A750AA5FC6B58EED66DB888FFC",
-    "size": 165800650
+    "version": "2.2.110",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.110/metin2-server-protected-migration-2.2.110.zip",
+    "sha256": "86E4BAA176B14B6130548D231CBF5C1D0770D24B92E9EE77CDC99110E287E020",
+    "size": 166348785
   },
   "serverProtected": {
-    "version": "2.2.109",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.109/metin2-server-protected-update-2.2.109.zip",
-    "sha256": "EEA7D4E02027A1285B20CD814D33760CA8DFF373D26B2B029CC3EEA9CAE26790",
-    "size": 155844170
+    "version": "2.2.110",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.110/metin2-server-protected-update-2.2.110.zip",
+    "sha256": "6463DDE11EA86B5D4A2DC614BDC8BB75CB632FF31765FE1DACF2002052D01FFD",
+    "size": 156392305
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.113",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.109/metin2-client-update-2.0.113.zip",
-    "sha256": "0CD684FBAAC4792E68B6410BF411F56C1343128C224B07AE9F2341FC27DB0E7A",
-    "size": 136146852,
+    "version": "2.0.114",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.110/metin2-client-update-2.0.114.zip",
+    "sha256": "26CAC55022E69AADDEA4C3386AD2B6603F367CBAB6FB57BAFDA47F372CECB110",
+    "size": 136199515,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -112,9 +112,9 @@
     ]
   },
   "clientExe": {
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2client.exe",
-    "sha256": "0F2E1DEEA943C28EF9246C89B736C15AED72380834C29393DCA8D3A74AFB7662",
-    "size": 10107904,
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.110/metin2client.exe",
+    "sha256": "A0E7DC83286FE6627E221CE17E57BF12B5DEC1D841F287D786FDA9F092612B77",
+    "size": 10110976,
     "replaces": [
       "8263F81BFACDFA4A664C1F2A8CE846AEE14F19E584DB40A43F3184FEF1A59531",
       "752623560AB54E2F3F84FF9ADB8961D73E2E289634075118D3FBEA984CFCEFB1",
@@ -147,8 +147,9 @@
       "89D15ED370BD6DB723996CFA03CFD7E5925E4846E3DE448ADE720579174AE48F",
       "B0B4DE84EF1C0B0D456DE75EFC93FE18E096B7925E7C907CC16DFF0037931D5F",
       "FD9B5C4AD5FA950BD0618B26FFDCC0CA7E11180F1D4044E102F036F8A8E87CD7",
-      "E368172A1B981F20272B6E2450EC7246C505307DFB2AA7A6CB2D2C5CECB04869"
+      "E368172A1B981F20272B6E2450EC7246C505307DFB2AA7A6CB2D2C5CECB04869",
+      "0F2E1DEEA943C28EF9246C89B736C15AED72380834C29393DCA8D3A74AFB7662"
     ]
   },
-  "statusMessageEn": "2.2.109 / client 2.0.113 x64: Auto Hunt damage filters, Companion polymorph choices, chest preview and fixes for the Biologist, Herbalism, horse books and client updates. Update the server and launcher, restart the launcher, then update the client. Game EXE unchanged."
+  "statusMessageEn": "2.2.110 / client 2.0.114 x64: new F10 panel, UI scale with 100% Defaults, Auto Hunt priorities and Companion, saddlebag, language and bot-world fixes. Close the game, update server and launcher, restart the launcher, then update the client and EXE."
 }

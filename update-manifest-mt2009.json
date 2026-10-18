@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-17T23:51:12Z",
-  "statusMessage": "2.2.107 / klient 2.0.111 x64 z nowym plikiem gry: turecka wersja gry (Said), szkolenie konia 1-10 bez losowania, poprawione logo gildii (wgraj je ponownie) i pełny ekran z częstotliwością monitora, Auto Łowy ponawiają filtr, poprawki launchera i VPS. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
+  "publishedAt": "2026-10-18T09:14:40Z",
+  "statusMessage": "2.2.108 / klient 2.0.112 x64: Patch 20 od Iwakury (rozwój ekwipunku botów, gratulacje poziomu, „Boty nie robią questów”, wysyłanie przedmiotu, EXP i edytor bota w panelu, przytrzymany Enter u kowala) i Ścieżka Zielarza od Saida. Zaktualizuj serwer, uruchom ponownie launcher, następnie zaktualizuj klienta - klient i serwer muszą być w tej samej wersji.",
   "server": {
-    "version": "2.2.107",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2-server-protected-migration-2.2.107.zip",
-    "sha256": "179EA4A401FC0D89F59FD74842C401443BB4ADB9C66E39048B1FDCFAD4AC59CF",
-    "size": 165657781
+    "version": "2.2.108",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.108/metin2-server-protected-migration-2.2.108.zip",
+    "sha256": "07048636AD02C77B0DA66D9A670DA47B3D56ACF869E327B09708A003DB46D521",
+    "size": 165785155
   },
   "serverProtected": {
-    "version": "2.2.107",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2-server-protected-update-2.2.107.zip",
-    "sha256": "1BE405F1880CFA6D8B1529ADD79942849A1BF450CC898D49AB75E5BEB165733F",
-    "size": 155701301
+    "version": "2.2.108",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.108/metin2-server-protected-update-2.2.108.zip",
+    "sha256": "CAA5C0E99528E72AB38BC28086FDFA06D6D9C4CA75B000CF6FCA9D1F7CDD9272",
+    "size": 155828675
   },
   "protectedFrom": "2.2.39",
   "support": {
@@ -22,10 +22,10 @@
     "reportUrl": "https://script.google.com/macros/s/AKfycbweM8tWcvm59Va8BJxnS1z0o9L2GgtL0NXj6Yu_olAvJ7sPjnpckyGY6JB5fXH3lJYisA/exec?k=m2-7f3k9q"
   },
   "client": {
-    "version": "2.0.111",
-    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.107/metin2-client-update-2.0.111.zip",
-    "sha256": "58DBD232B8E63F204CF11BD4B5AE19FE4C26DFB2EFFC01D310971BB7FF172B26",
-    "size": 136137064,
+    "version": "2.0.112",
+    "url": "https://github.com/TieruYT/metin2-playerbots/releases/download/v2.2.108/metin2-client-update-2.0.112.zip",
+    "sha256": "15CA7262EA19FEB43EBEF56712805E73F80301E0085977B2AE1F5816BEA70004",
+    "size": 136143591,
     "requiresClientExe": true,
     "architecture": "x64",
     "nativeRuntime": [
@@ -150,5 +150,5 @@
       "E368172A1B981F20272B6E2450EC7246C505307DFB2AA7A6CB2D2C5CECB04869"
     ]
   },
-  "statusMessageEn": "2.2.107 / client 2.0.111 x64 with a new game exe: the game in Turkish (Said), horse training 1-10 without the draw, the guild mark fixed (upload it again) and fullscreen at the monitor's refresh rate, Auto Hunt sends its filter again, launcher and VPS fixes. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
+  "statusMessageEn": "2.2.108 / client 2.0.112 x64: Iwakura's Patch 20 (the bots' gear progress, level congratulations, a switch to keep the bots off quests, sending an item, EXP and a bot editor in the panel, a held Enter at the blacksmith) and Said's Herbalist's Path. Update the server, restart the launcher, then update the client - the client and the server must be on the same version."
 }

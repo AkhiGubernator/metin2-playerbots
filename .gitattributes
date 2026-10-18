@@ -25,6 +25,10 @@
 
 # Wiki pack inputs preserve the donor's bytes, including .sub descriptor EOLs.
 /linux-port-mt2009/client-patch-wiki/** -text
+# Said's Turkish helper and COOP guide ship in the client package as he wrote
+# them (CRLF; cmd.exe reads the .bat), not normalised to LF.
+/linux-port-mt2009/client-coop/Turkce-Yap.bat -text
+/linux-port-mt2009/client-coop/COOP*arkadasinla*.txt -text
 
 # The published client's gamedata pack the panel builds the client's item and
 # monster tables over (files/client_protos.py): its bytes are compared by SHA-256.

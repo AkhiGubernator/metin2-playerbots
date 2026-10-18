@@ -17,6 +17,22 @@ every version here.
 
 ---
 
+## 2.2.108 — 2026-10-18
+
+Patch 20 od Iwakury: rozwój ekwipunku botów, gratulacje poziomu, nowe narzędzia panelu i edytor bota, oraz Ścieżka Zielarza od Saida. Klient 2.0.112 x64.
+
+- Boty i ekwipunek (Iwakura, Patch 20): nowe zasady ulepszania i rozwoju ekwipunku botów - dojrzałe boty nie inwestują już w najsłabszy sprzęt, nadmiar broni z 30 poziomu trafia do kowala, najbogatsze boty szykują przedmioty na kolejny próg, a przedmioty z własnego magazynu wykorzystują przed zakupem na rynku. Materiały do ulepszania na straganach botów są droższe, a Konar Zelkova w misji Biologa (70 lv) wypada także wtedy, gdy masz już jeden w ekwipunku, i zbiera się w stos.
+- Poziomy (Iwakura, Patch 20): gra ogłasza zdobycie 10, 20, ... 90 poziomu i każdego od 90, graczom tego samego królestwa, a boty z królestwa gratulują na czacie (także na „lvl 50 wbity” gracza); boty nie piszą już „ziom”.
+- Questy i Cele Dnia (Iwakura, Patch 20): w panelu przełącznik „Boty nie robią questów”; Cel Dnia bota losuje się tylko wtedy, gdy da się go wykonać.
+- Panel (Iwakura, Patch 20): z karty bota - wysłanie przedmiotu, blokada i odblokowanie EXP oraz „Edytuj bota” (postać, umiejętności, ekwipunek, magazyn, z cofnięciem zmian); „Zakończ” przy quście w toku, dla gracza i dla bota; poprawione rankingi, kafelki świata i historia ksiąg; ostrzeżenie na mapie, gdy serwer nie nadąża; strona „Statystyki Spec.”.
+- Towarzysz grający bez właściciela wchodzi do gry chwilę po starcie serwera, każdy o innej porze, zamiast wszystkie naraz.
+- Kowal: przytrzymany Enter ulepsza dalej, krok po kroku - opcja w ustawieniach systemowych klienta, domyślnie włączona (Iwakura, Patch 20).
+- Ścieżka Zielarza (Said / saido_0): rangi u Baek-Go, warsztat zielarza i zlecenie dnia, nowe krzaki i rzadkie zioła - dla graczy; boty jeszcze z niej nie korzystają.
+- Klient: w folderze pack plik root.json ze standardowymi kluczami dla PackMakerLite (mkls), a w folderze gry turecki skrót zmiany języka (Turkce-Yap.bat) i turecki poradnik COOP (Said).
+
+Zaktualizuj serwer i launcher do 2.2.108, uruchom ponownie launcher, następnie zaktualizuj klienta do 2.0.112 (plik gry bez zmian). Klient i serwer muszą być w tej samej wersji.
+Postacie i ustawienia zostają zachowane. Wydanie chronione. Błędy prosimy zgłaszać przez launcher („Zgłoś błąd”) z opisem.
+
 ## 2.2.107 — 2026-10-18
 
 Turecka wersja gry, poprawki koni, logo gildii, pełnego ekranu i Auto Łowów oraz nowy plik gry. Klient 2.0.111 x64.
